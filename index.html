@@ -1,0 +1,24 @@
+<!doctype html>
+<html>
+<head>
+  <title>Zone</title>
+  <script src="zone.js"></script>
+</head>
+<body>
+
+  <button id="b1">addEventListener</button>
+  <button id="b2">onclick</button>
+
+  <script>
+
+  b1.addEventListener('click', function () {
+    console.log(!!window.zone.parent);
+  });
+
+  b2.onclick = function () {
+    console.log(!!window.zone.parent);
+  };
+
+  </script>
+</body>
+</html>
