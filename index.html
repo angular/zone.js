@@ -1,13 +1,17 @@
 <!doctype html>
 <html>
 <head>
+  <meta charset="utf-8">
   <title>Zone</title>
   <script src="zone.js"></script>
+  <script src="patch.js"></script>
 </head>
 <body>
 
   <button id="b1">addEventListener</button>
   <button id="b2">onclick</button>
+  <button id="b3">bind err</button>
+  <button id="b4">cause err</button>
 
   <script>
 
@@ -18,6 +22,16 @@
   b2.onclick = function () {
     console.log(!!window.zone.parent);
   };
+
+  b3.addEventListener('click', bar);
+
+  function foo () {
+    throw new Error('aw shucks');
+  }
+
+  function bar () {
+    b4.addEventListener('click', foo);
+  }
 
   </script>
 </body>

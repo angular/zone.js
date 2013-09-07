@@ -1,76 +1,111 @@
-[
-  'setTimeout'
-].
-forEach(zonifyGlobal);
 
-window.zone = new Zone();
+function Zone () {};
 
-// http://www.quirksmode.org/js/events_order.html
-document.addEventListener('click', function (ev) {
-  var target = ev.target;
+Zone.prototype = {
+  constructor: Zone,
+  createChild: function (locals) {
+    var Child = function () {};
+    Child.prototype = this;
 
-  while (target) {
-    if (target.onclick && !target.onclick.__patched) {
-      var fn = target.onclick;
-      target.onclick = wrapAsync(fn);
-      target.onclick.__patched = true;
+    var child = new Child();
+    for (localName in locals) {
+      child[localName] = locals[localName];
     }
-    target = target.parentElement;
+    child.parent = this;
+
+    try {
+      0()
+    } catch (e) {
+      child.constructedAtExecption = e;
+    }
+
+    return child;
+  },
+
+  getLongStacktrace: function(exception) {
+    var trace = [exception.stack];
+    var zone = this;
+    while (zone && zone.constructedAtExecption) {
+      trace.push('---', zone.constructedAtExecption.stack);
+      zone = zone.parent;
+    }
+    return trace.join('\n');
+  },
+
+  exceptionHandler: function(exception) {
+    console.log(exception, this.getLongStacktrace(exception));
+  },
+
+  run: function (fn) {
+    this.apply(fn);
+  },
+
+  bind: function(fn) {
+    var zone = this.createChild();
+    return function zoneBoundFn() {
+      return zone.apply(fn, this, arguments);
+    };
+  },
+
+  apply: function apply (fn, applyTo, applyWith) {
+    applyTo = applyTo || this;
+    applyWith = applyWith || [];
+
+    var oldZone = window.zone,
+        result;
+
+    window.zone = this;
+
+    try {
+      result = fn.apply(applyTo, applyWith);
+    } catch (e) {
+      this.exceptionHandler(e);
+    } finally {
+      window.zone = oldZone;
+    }
+    return result;
   }
-}, true);
-
-var addListener = Node.prototype.addEventListener;
-Node.prototype.addEventListener = function (eventName, fn) {
-  arguments[1] = wrapAsync(fn);
-  return addListener.apply(this, arguments);
 };
 
-
-
-function Zone (locals) {}
-Zone.prototype.createChild = function (locals) {
-  var Child = function () {};
-  Child.prototype = this;
-
-  var child = new Child();
-  for (localName in locals) {
-    child[localName] = locals[localName];
+Zone.patchFn = function(obj) {
+  var i, ii, name, delegate;
+  for(i = 1, ii = arguments.length; i < ii; i++) {
+    name = arguments[i];
+    delegate = obj[name];
+    zone[name] = function() {
+      return zone.bind(delegate);
+    };
+    obj[name] = function() {
+      return zone[name].apply(this, arguments);
+    };
   }
-  child.parent = this;
-
-  return child;
 };
 
-Zone.prototype.run = function (fn) {
-  wrapAsync(fn, this)();
+Zone.patchProperty = function (obj, prop) {
+  Object.defineProperty(obj, 'onclick', {
+    enumerable: true,
+    configurable: true,
+    set: function (fn) {
+      this.addEventListener('click', window.zone.bind(fn), false);
+      this['_' + prop + 'Original'] = fn;
+    },
+    get: function () {
+      return this['_' + prop + 'Original'];
+    }
+  });
 };
 
-function zonifyGlobal (name) {
-  window[name] = zonifyFirstArgument(window[name]);
-}
-
-function zonifyFirstArgument (fn) {
-  return function () {
-    arguments[0] = wrapAsync(arguments[0]);
-    return fn.apply(this, arguments);
+Zone.patchAddEvent = function (obj) {
+  var addDelegate = obj.addEventListener;
+  obj.addEventListener = function (eventName, fn) {
+    arguments[1] = zone.bind(fn);
+    arguments[1]._original = fn;
+    return addDelegate.apply(this, arguments);
   };
-}
 
-function wrapAsync (fn, newZone) {
-  var myZone = newZone || window.zone.createChild();
-  return function () {
-    var oldZone = window.zone;
-    window.zone = myZone;
-
-    var returnValue = fn.apply(this, arguments);
-    window.zone = oldZone;
-    return returnValue;
-  };
-}
-
-function stack () {
-  try {0()} catch (e) {
-    var stack = e.stack;
-    return stack.substr(stack.indexOf('\n')+1);
+  var removeDelegate = obj.removeEventListener;
+  obj.removeEventListener = function (eventName, fn) {
+    arguments[1] = arguments[1]._original || arguments[1];
+    return removeDelegate.apply(this, arguments);
   }
-}
+};
