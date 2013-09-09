@@ -33,7 +33,10 @@ Zone.prototype = {
     var zone = this;
     var now = Date.now();
     while (zone && zone.constructedAtExecption) {
-      trace.push('--- ' + (now - zone.constructedAtTime) + 'ms ago', zone.constructedAtExecption.stack);
+      trace.push(
+          '--- ' + (Date(zone.constructedAtTime)).toString() +
+            ' - ' + (now - zone.constructedAtTime) + 'ms ago',
+          zone.constructedAtExecption.stack);
       zone = zone.parent;
     }
     return trace.join('\n');
