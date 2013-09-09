@@ -1,5 +1,7 @@
 # Zone.js
 
+[![Build Status](https://travis-ci.org/btford/zone.js.png)](https://travis-ci.org/btford/zone.js)
+
 Implements Zones for JavaScript.
 
 
