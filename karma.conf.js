@@ -5,6 +5,7 @@ module.exports = function (config) {
     basePath: '',
     files: [
       'zone.js',
+      'patch.js',
       'test/*.spec.js'
     ],
 
