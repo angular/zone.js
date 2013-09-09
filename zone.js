@@ -14,21 +14,13 @@ Zone.prototype = {
     }
     child.parent = this;
 
-    try {
-      0()
-    } catch (e) {
-      e.stack = e.stack.
-                  split('\n').
-                  slice(3).
-                  join('\n');
-      child.constructedAtExecption = e;
-    }
+    child.constructedAtExecption = Zone.getException();
     child.constructedAtTime = Date.now();
 
     return child;
   },
 
-  getLongStacktrace: function(exception) {
+  getLongStacktrace: function (exception) {
     var trace = [exception.stack];
     var zone = this;
     var now = Date.now();
@@ -42,7 +34,7 @@ Zone.prototype = {
     return trace.join('\n');
   },
 
-  exceptionHandler: function(exception) {
+  exceptionHandler: function (exception) {
     console.log(exception.toString());
     console.log(this.getLongStacktrace(exception));
   },
@@ -75,6 +67,31 @@ Zone.prototype = {
       window.zone = oldZone;
     }
     return result;
+  }
+};
+
+Zone.getException = function () {
+  function getExceptionWithUncaughtError () {
+    return new Error();
+  };
+
+  function getExceptionWithCaughtError () {
+    try {
+      throw new Error();
+    } catch (e) {
+      return e;
+    }
+  }
+
+  // Some implementations of exception handling don't create a stack trace if the exception
+  // isn't thrown, however it's faster not to actually throw the exception.
+  var e = getExceptionWithUncaughtError();
+  if (e.stack) {
+    Zone.getException = getExceptionWithUncaughtError;
+    return e;
+  } else {
+    Zone.getException = getExceptionWithCaughtError;
+    return Zone.getException();
   }
 };
 
