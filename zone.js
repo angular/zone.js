@@ -51,7 +51,7 @@ Zone.prototype = {
     this.apply(fn);
   },
 
-  bind: function(fn) {
+  bind: function (fn) {
     var zone = this.createChild();
     return function zoneBoundFn() {
       return zone.apply(fn, this, arguments);
@@ -78,18 +78,16 @@ Zone.prototype = {
   }
 };
 
-Zone.patchFn = function(obj) {
-  var i, ii, name, delegate;
-  for(i = 1, ii = arguments.length; i < ii; i++) {
-    name = arguments[i];
-    delegate = obj[name];
-    zone[name] = function() {
+Zone.patchFn = function (obj, fnNames) {
+  fnNames.forEach(function (name) {
+    var delegate = obj[name];
+    zone[name] = function () {
       return zone.bind(delegate);
     };
-    obj[name] = function() {
+    obj[name] = function () {
       return zone[name].apply(this, arguments);
     };
-  }
+  });
 };
 
 Zone.patchProperty = function (obj, prop) {
@@ -144,7 +142,7 @@ Zone.patchAddEvent = function (obj) {
 };
 
 Zone.patch = function patch () {
-  Zone.patchFn(window, 'setTimeout', 'setInterval');
+  Zone.patchFn(window, ['setTimeout', 'setInterval']);
 
   // properties depend on addEventListener, so these need to come first
   Zone.patchAddEvent(Node.prototype);
