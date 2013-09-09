@@ -35,7 +35,6 @@ Zone.prototype = {
     while (zone && zone.constructedAtExecption) {
       trace.push('--- ' + (now - zone.constructedAtTime) + 'ms ago', zone.constructedAtExecption.stack);
       zone = zone.parent;
-      now = zone.constructedAtTime;
     }
     return trace.join('\n');
   },
@@ -91,18 +90,31 @@ Zone.patchFn = function(obj) {
 };
 
 Zone.patchProperty = function (obj, prop) {
-  Object.defineProperty(obj, prop, {
-    enumerable: true,
-    configurable: true,
-    set: function (fn) {
-      // substr(2) cuz 'onclick' -> 'click', etc
-      this.addEventListener(prop.substr(2), window.zone.bind(fn), false);
-      this['_' + prop + 'Original'] = fn;
-    },
-    get: function () {
-      return this['_' + prop + 'Original'];
-    }
-  });
+  var desc = Object.getOwnPropertyDescriptor(obj, prop);
+
+  // substr(2) cuz 'onclick' -> 'click', etc
+  var eventName = prop.substr(2);
+
+  desc.set = function (fn) {
+    this.addEventListener(eventName, window.zone.bind(fn), false);
+    this['_' + prop + 'Original'] = fn;
+  };
+
+  desc.get = function () {
+    return this['_' + prop + 'Original'];
+  };
+
+  Object.defineProperty(obj, prop, desc);
+};
+
+Zone.patchProperties = function (obj) {
+  Object.keys(HTMLElement.prototype).
+    filter(function (propertyName) {
+      return propertyName.substr(0,2) === 'on';
+    }).
+    forEach(function (eventName) {
+      Zone.patchProperty(obj, eventName);
+    });
 };
 
 Zone.patchAddEvent = function (obj) {
