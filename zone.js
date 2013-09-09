@@ -138,3 +138,20 @@ Zone.patchAddEvent = function (obj) {
     return removeDelegate.apply(this, arguments);
   }
 };
+
+Zone.patch = function patch () {
+  Zone.patchFn(window, 'setTimeout', 'setInterval');
+
+  Zone.patchAddEvent(Node.prototype);
+  Zone.patchAddEvent(XMLHttpRequest.prototype);
+
+  Zone.patchProperties(HTMLElement.prototype);
+  Zone.patchProperties(XMLHttpRequest.prototype);
+};
+
+Zone.init = function init () {
+  window.zone = new Zone();
+  Zone.patch();
+};
+
+Zone.init();
