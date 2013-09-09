@@ -120,6 +120,13 @@ Zone.patchProperty = function (obj, prop) {
     configurable: true
   };
 
+  // A property descriptor cannot have getter/setter and be writable
+  // deleting the writable property avoids this error:
+  //
+  // TypeError: property descriptors must not specify a value or be writable when a
+  // getter or setter has been specified
+  delete desc.writable;
+
   // substr(2) cuz 'onclick' -> 'click', etc
   var eventName = prop.substr(2);
   var _prop = '_' + prop;
