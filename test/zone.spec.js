@@ -62,7 +62,7 @@ describe('Zone.patch', function () {
       });
     });
 
-    it('should respect with removeEventListener', function () {
+    it('should respect removeEventListener', function () {
       var log = '';
       var logOnClick = function logOnClick () {
         log += 'a';
