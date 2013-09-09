@@ -1,7 +1,6 @@
 describe('Zone.patch', function () {
 
   beforeEach(function () {
-    window.zone = new Zone();
     zone.mark = 'root';
   });
 
