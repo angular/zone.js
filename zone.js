@@ -90,7 +90,10 @@ Zone.patchFn = function(obj) {
 };
 
 Zone.patchProperty = function (obj, prop) {
-  var desc = Object.getOwnPropertyDescriptor(obj, prop);
+  var desc = Object.getOwnPropertyDescriptor(obj, prop) || {
+    enumerable: true,
+    configurable: true
+  };
 
   // substr(2) cuz 'onclick' -> 'click', etc
   var eventName = prop.substr(2);
