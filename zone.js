@@ -1,23 +1,23 @@
+function Zone(parentZone, data) {
+  var zone = (arguments.length) ? Object.create(parentZone) : this;
 
-function Zone () {};
+  zone.parent = parentZone;
+  zone.constructedAtExecption = Zone.getStacktrace();
+  zone.constructedAtTime = Date.now();
+
+  Object.keys(data || {}).forEach(function(property) {
+    zone[property] = data[property];
+  });
+
+  return zone;
+}
+
 
 Zone.prototype = {
   constructor: Zone,
 
   createChild: function (locals) {
-    var Child = function () {};
-    Child.prototype = this;
-
-    var child = new Child();
-    for (localName in locals) {
-      child[localName] = locals[localName];
-    }
-    child.parent = this;
-
-    child.constructedAtExecption = Zone.getStacktrace();
-    child.constructedAtTime = Date.now();
-
-    return child;
+    return new Zone(this, locals);
   },
 
   getLongStacktrace: function (exception) {
