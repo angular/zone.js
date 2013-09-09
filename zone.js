@@ -39,10 +39,6 @@ Zone.prototype = {
     console.log(this.getLongStacktrace(exception));
   },
 
-  run: function (fn) {
-    this.apply(fn);
-  },
-
   bind: function (fn) {
     var zone = this.createChild();
     return function zoneBoundFn() {

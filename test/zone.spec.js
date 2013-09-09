@@ -14,7 +14,7 @@ describe('Zone.patch', function () {
     expect(zone.mark).toEqual('root');
 
     runs(function () {
-      childZone.run(function() {
+      childZone.apply(function() {
         expect(zone.mark).toEqual('child');
         expect(zone).toEqual(childZone);
 
