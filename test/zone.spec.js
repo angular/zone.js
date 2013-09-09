@@ -63,6 +63,22 @@ describe('Zone.patch', function () {
       });
     });
 
+    it('should respect with removeEventListener', function () {
+      var log = '';
+      var logOnClick = function logOnClick () {
+        log += 'a';
+      };
+
+      button.addEventListener('click', logOnClick);
+      button.removeEventListener('click', logOnClick);
+
+      runs(function () {
+        button.click();
+        waits(1);
+        expect(log).toEqual('');
+      });
+    });
+
     it('should work with onclick', function () {
       var zoneHasParent;
       button.onclick = function () {
@@ -73,6 +89,22 @@ describe('Zone.patch', function () {
         button.click();
         waits(1);
         expect(zoneHasParent).toEqual(true);
+      });
+    });
+
+    it('should only allow one onclick handler', function () {
+      var log = '';
+      button.onclick = function () {
+        log += 'a';
+      };
+      button.onclick = function () {
+        log += 'b';
+      };
+
+      runs(function () {
+        button.click();
+        waits(1);
+        expect(log).toEqual('b');
       });
     });
 

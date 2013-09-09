@@ -104,14 +104,13 @@ Zone.patchProperty = function (obj, prop) {
       this.removeEventListener(eventName, this[_prop]);
     }
 
-    var boundFn = this[_prop] = window.zone.bind(fn);
+    this[_prop] = fn;
 
-    this.addEventListener(eventName, boundFn, false);
-    this[_prop + 'Original'] = fn;
+    this.addEventListener(eventName, fn, false);
   };
 
   desc.get = function () {
-    return this[_prop + 'Original'];
+    return this[_prop];
   };
 
   Object.defineProperty(obj, prop, desc);
@@ -130,21 +129,21 @@ Zone.patchProperties = function (obj) {
 Zone.patchAddEvent = function (obj) {
   var addDelegate = obj.addEventListener;
   obj.addEventListener = function (eventName, fn) {
-    arguments[1] = zone.bind(fn);
-    arguments[1]._original = fn;
+    arguments[1] = fn._bound = zone.bind(fn);
     return addDelegate.apply(this, arguments);
   };
 
   var removeDelegate = obj.removeEventListener;
   obj.removeEventListener = function (eventName, fn) {
-    arguments[1] = arguments[1]._original || arguments[1];
+    arguments[1] = arguments[1]._bound || arguments[1];
     return removeDelegate.apply(this, arguments);
-  }
+  };
 };
 
 Zone.patch = function patch () {
   Zone.patchFn(window, 'setTimeout', 'setInterval');
 
+  // properties depend on addEventListener, so these need to come first
   Zone.patchAddEvent(Node.prototype);
   Zone.patchAddEvent(XMLHttpRequest.prototype);
 
