@@ -94,14 +94,21 @@ Zone.patchProperty = function (obj, prop) {
 
   // substr(2) cuz 'onclick' -> 'click', etc
   var eventName = prop.substr(2);
+  var _prop = '_' + prop;
 
   desc.set = function (fn) {
-    this.addEventListener(eventName, window.zone.bind(fn), false);
-    this['_' + prop + 'Original'] = fn;
+    if (this[_prop]) {
+      this.removeEventListener(eventName, this[_prop]);
+    }
+
+    var boundFn = this[_prop] = window.zone.bind(fn);
+
+    this.addEventListener(eventName, boundFn, false);
+    this[_prop + 'Original'] = fn;
   };
 
   desc.get = function () {
-    return this['_' + prop + 'Original'];
+    return this[_prop + 'Original'];
   };
 
   Object.defineProperty(obj, prop, desc);
