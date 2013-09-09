@@ -3,6 +3,7 @@ function Zone () {};
 
 Zone.prototype = {
   constructor: Zone,
+
   createChild: function (locals) {
     var Child = function () {};
     Child.prototype = this;
@@ -16,8 +17,13 @@ Zone.prototype = {
     try {
       0()
     } catch (e) {
+      e.stack = e.stack.
+                  split('\n').
+                  slice(3).
+                  join('\n');
       child.constructedAtExecption = e;
     }
+    child.constructedAtTime = Date.now();
 
     return child;
   },
@@ -25,15 +31,18 @@ Zone.prototype = {
   getLongStacktrace: function(exception) {
     var trace = [exception.stack];
     var zone = this;
+    var now = Date.now();
     while (zone && zone.constructedAtExecption) {
-      trace.push('---', zone.constructedAtExecption.stack);
+      trace.push('--- ' + (now - zone.constructedAtTime) + 'ms ago', zone.constructedAtExecption.stack);
       zone = zone.parent;
+      now = zone.constructedAtTime;
     }
     return trace.join('\n');
   },
 
   exceptionHandler: function(exception) {
-    console.log(exception, this.getLongStacktrace(exception));
+    console.log(exception.toString());
+    console.log(this.getLongStacktrace(exception));
   },
 
   run: function (fn) {
@@ -82,11 +91,12 @@ Zone.patchFn = function(obj) {
 };
 
 Zone.patchProperty = function (obj, prop) {
-  Object.defineProperty(obj, 'onclick', {
+  Object.defineProperty(obj, prop, {
     enumerable: true,
     configurable: true,
     set: function (fn) {
-      this.addEventListener('click', window.zone.bind(fn), false);
+      // substr(2) cuz 'onclick' -> 'click', etc
+      this.addEventListener(prop.substr(2), window.zone.bind(fn), false);
       this['_' + prop + 'Original'] = fn;
     },
     get: function () {
