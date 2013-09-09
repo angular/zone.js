@@ -1,3 +1,6 @@
+'use strict';
+
+
 describe('Zone.patch', function () {
 
   beforeEach(function () {
