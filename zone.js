@@ -52,7 +52,6 @@ Zone.prototype = {
   },
 
   apply: function apply (fn, applyTo, applyWith) {
-    applyTo = applyTo || this;
     applyWith = applyWith || [];
 
     var oldZone = window.zone,
@@ -108,9 +107,7 @@ Zone.getStacktrace = function () {
 Zone.patchFn = function (obj, fnNames) {
   fnNames.forEach(function (name) {
     var delegate = obj[name];
-    zone[name] = function () {
-      return zone.bind(delegate);
-    };
+    zone[name] = zone.bind(delegate);
     obj[name] = function () {
       return zone[name].apply(this, arguments);
     };
