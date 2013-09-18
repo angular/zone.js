@@ -45,7 +45,9 @@ Zone.prototype = {
   bind: function (fn) {
     var zone = this.createChild();
     return function zoneBoundFn() {
-      return zone.apply(fn, this, arguments);
+      var result = zone.apply(fn, this, arguments);
+      zone.afterTurn();
+      return result;
     };
   },
 
@@ -66,7 +68,9 @@ Zone.prototype = {
       window.zone = oldZone;
     }
     return result;
-  }
+  },
+
+  afterTurn: function () {}
 };
 
 Zone.Stacktrace = function (e) {
