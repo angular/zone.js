@@ -107,7 +107,11 @@ Zone.getStacktrace = function () {
 Zone.patchFn = function (obj, fnNames) {
   fnNames.forEach(function (name) {
     var delegate = obj[name];
-    zone[name] = zone.bind(delegate);
+    zone[name] = function () {
+      arguments[0] = zone.bind(arguments[0]);
+      return delegate.apply(obj, arguments);
+    };
+
     obj[name] = function () {
       return zone[name].apply(this, arguments);
     };
