@@ -115,6 +115,10 @@ someZone.fork({
 
 ## API
 
+### `zone.run`
+
+Explained above.
+
 ### `zone.fork`
 
 ```javascript
@@ -132,6 +136,31 @@ myZone.run(function () {
   // woo!
 });
 ```
+
+Below describes the behavior of each of these hooks.
+
+### `zone.onZoneEnter`
+
+Before a function invoked with `zone.run`, this hook runs.
+If `zone.onZoneEnter` throws, the function  passed to `run` will not be invoked.
+
+### `zone.onZoneLeave`
+
+After a function in a zone runs, the `onZoneLeave` hook runs.
+This hook will run even if the function passed to `run` throws.
+
+### `zone.onError`
+
+This hook is called when the function passed to `run` or the `onZoneEnter` hook throws.
+
+### `zone.setTimeout`, `zone.setInterval`, `zone.alert`, `zone.prompt`
+
+These hooks allow you to change the behavior of `window.setTimeout`, `window.setInterval`, etc.
+While in this zone, calls to `window.setTimeout` will redirect to `zone.setTimeout`.
+
+### `zone.addEventListener`
+
+This hook allows you to intercept calls to `EventTarget.addEventListener`.
 
 
 ## Status
