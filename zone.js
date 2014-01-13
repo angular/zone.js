@@ -5,8 +5,6 @@ function Zone(parentZone, data) {
   var zone = (arguments.length) ? Object.create(parentZone) : this;
 
   zone.parent = parentZone;
-  zone.constructedAtExecption = Zone.getStacktrace();
-  zone.constructedAtTime = Date.now();
 
   Object.keys(data || {}).forEach(function(property) {
     zone[property] = data[property];
@@ -19,39 +17,19 @@ function Zone(parentZone, data) {
 Zone.prototype = {
   constructor: Zone,
 
-  createChild: function (locals) {
+  fork: function (locals) {
     return new Zone(this, locals);
   },
 
-  getLongStacktrace: function (exception) {
-    var trace = [exception.stack];
-    var zone = this;
-    var now = Date.now();
-    while (zone && zone.constructedAtExecption) {
-      trace.push(
-          '--- ' + (Date(zone.constructedAtTime)).toString() +
-            ' - ' + (now - zone.constructedAtTime) + 'ms ago',
-          zone.constructedAtExecption.get());
-      zone = zone.parent;
-    }
-    return trace.join('\n');
-  },
-
-  exceptionHandler: function (exception) {
-    console.log(exception.toString());
-    console.log(this.getLongStacktrace(exception));
-  },
-
   bind: function (fn) {
-    var zone = this.createChild();
+    var zone = this.fork();
     return function zoneBoundFn() {
-      var result = zone.apply(fn, this, arguments);
-      zone.afterTurn();
+      var result = zone.run(fn, this, arguments);
       return result;
     };
   },
 
-  apply: function apply (fn, applyTo, applyWith) {
+  run: function run (fn, applyTo, applyWith) {
     applyWith = applyWith || [];
 
     var oldZone = window.zone,
@@ -60,48 +38,21 @@ Zone.prototype = {
     window.zone = this;
 
     try {
+      this.onZoneEnter();
       result = fn.apply(applyTo, applyWith);
     } catch (e) {
-      this.exceptionHandler(e);
+      if (zone.onError) {
+        zone.onError(e);
+      }
     } finally {
+      this.onZoneLeave();
       window.zone = oldZone;
     }
     return result;
   },
 
-  afterTurn: function () {}
-};
-
-Zone.Stacktrace = function (e) {
-  this._e = e;
-};
-Zone.Stacktrace.prototype.get = function () {
-  return this._e.stack;
-}
-
-Zone.getStacktrace = function () {
-  function getStacktraceWithUncaughtError () {
-    return new Zone.Stacktrace(new Error());
-  }
-
-  function getStacktraceWithCaughtError () {
-    try {
-      throw new Error();
-    } catch (e) {
-      return new Zone.Stacktrace(e);
-    }
-  }
-
-  // Some implementations of exception handling don't create a stack trace if the exception
-  // isn't thrown, however it's faster not to actually throw the exception.
-  var stack = getStacktraceWithUncaughtError();
-  if (stack.get()) {
-    Zone.getStacktrace = getStacktraceWithUncaughtError;
-    return stack;
-  } else {
-    Zone.getStacktrace = getStacktraceWithCaughtError;
-    return Zone.getStacktrace();
-  }
+  onZoneEnter: function () {},
+  onZoneLeave: function () {}
 };
 
 Zone.patchFn = function (obj, fnNames) {
@@ -112,11 +63,24 @@ Zone.patchFn = function (obj, fnNames) {
       return delegate.apply(obj, arguments);
     };
 
-    obj[name] = function () {
+    obj[name] = function marker () {
       return zone[name].apply(this, arguments);
     };
   });
 };
+
+Zone.patchableFn = function (obj, fnNames) {
+  fnNames.forEach(function (name) {
+    var delegate = obj[name];
+    zone[name] = function () {
+      return delegate.apply(obj, arguments);
+    };
+
+    obj[name] = function () {
+      return zone[name].apply(this, arguments);
+    };
+  });
+}
 
 Zone.patchProperty = function (obj, prop) {
   var desc = Object.getOwnPropertyDescriptor(obj, prop) || {
@@ -154,7 +118,7 @@ Zone.patchProperty = function (obj, prop) {
 };
 
 Zone.patchProperties = function (obj) {
-  Object.keys(HTMLElement.prototype).
+  Object.keys(obj).
     filter(function (propertyName) {
       return propertyName.substr(0,2) === 'on';
     }).
@@ -163,7 +127,7 @@ Zone.patchProperties = function (obj) {
     });
 };
 
-Zone.patchAddEvent = function (obj) {
+Zone.patchEventTarget = function (obj) {
   var addDelegate = obj.addEventListener;
   obj.addEventListener = function (eventName, fn) {
     arguments[1] = fn._bound = zone.bind(fn);
@@ -179,10 +143,10 @@ Zone.patchAddEvent = function (obj) {
 
 Zone.patch = function patch () {
   Zone.patchFn(window, ['setTimeout', 'setInterval']);
+  Zone.patchableFn(window, ['alert', 'prompt']);
 
-  // properties depend on addEventListener, so these need to come first
-  Zone.patchAddEvent(Node.prototype);
-  Zone.patchAddEvent(XMLHttpRequest.prototype);
+  // patched properties depend on addEventListener, so this comes first
+  Zone.patchEventTarget(EventTarget.prototype);
 
   Zone.patchProperties(HTMLElement.prototype);
   Zone.patchProperties(XMLHttpRequest.prototype);
@@ -192,5 +156,6 @@ Zone.init = function init () {
   window.zone = new Zone();
   Zone.patch();
 };
+
 
 Zone.init();

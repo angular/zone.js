@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <title>Zone</title>
   <script src="zone.js"></script>
+  <script src="long-stack-trace-zone.js"></script>
 </head>
 <body>
 
@@ -14,15 +15,17 @@
 
   <script>
 
-  b1.addEventListener('click', function () {
-    console.log(!!window.zone.parent);
+  zone.fork(Zone.longStackTraceZone).run(function () {
+    b1.addEventListener('click', function () {
+      console.log(!!window.zone.parent);
+    });
+
+    b2.onclick = function () {
+      console.log(!!window.zone.parent);
+    };
+
+    b3.addEventListener('click', bar);
   });
-
-  b2.onclick = function () {
-    console.log(!!window.zone.parent);
-  };
-
-  b3.addEventListener('click', bar);
 
   function foo () {
     throw new Error('aw shucks');
