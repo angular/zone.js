@@ -1,10 +1,60 @@
 # Zone.js
 
-**Work in Progress, use at your own peril**
-
 [![Build Status](https://travis-ci.org/btford/zone.js.png)](https://travis-ci.org/btford/zone.js)
 
-Implements Zones for JavaScript.
+Implements _Zones_ for JavaScript.
+
+## What's a Zone?
+
+A Zone is an execution context that persists across async browser events.
+You can think of it as [thread-local storage](http://en.wikipedia.org/wiki/Thread-local_storage) for JavaScript VMs.
+
+Zone.js exports a single object: `window.zone`.
+
+### Running Within a Zone
+
+You can run code within a zone with `zone.run`.
+Async events scheduled (with `setTimeout`, `setInterval`, or event listeners) stay within that zone.
+
+```javascript
+zone.run(function () {
+  zone.inTheZone = true;
+
+  setTimeout(function () {
+    console.log('in the zone: ' + !!zone.inTheZone);
+  }, 0);
+});
+
+console.log('in the zone: ' + !!zone.inTheZone);
+```
+
+The above will log:
+
+```
+'in the zone: false'
+'in the zone: true'
+```
+
+Note that the function delayed by `setTimeout` stays inside the zone.
+
+### Forking a Zone
+
+Zones have a set of hooks that allow you to change the behavior of code running within that zone.
+To change a zone, you _fork_ it to get a new one.
+
+```javascript
+zone.fork({
+  onZoneEnter: function () {
+    console.log('hi');
+  }
+}).run(function () {
+  // do stuff
+});
+```
+
+Any hooks that you don't override when forking a zone are inherited from
+
+See the [API docs](#api) below for more.
 
 
 ## Examples
