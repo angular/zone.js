@@ -12,15 +12,14 @@
 
   <script>
   /*
-   * no nesting functions
-   * bootstrap method:
-   *   first show problem
-   *   then show wrapping zone.run
+   * In this example, we have a button that makes some request
+   * to our server. We want to only make the request once per
+   * 1s, so we use a `throttle` helper. If the request fails,
+   * it's difficult to see where the failure originated from.
    *
-   * progression:
-   * bootstrap()
-   * zone.run(bootstrap);
-   * zone.fork(Zone.longStackTraceZone).run();
+   * Thankfully, we can use zones to preserve the stack even
+   * across async tasks to get a better picture of the control
+   * flow of the app.
    */
 
   var throttleMakeRequest;
