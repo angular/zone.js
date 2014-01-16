@@ -57,6 +57,23 @@ See the [API docs](#api) below for more.
 
 ## Examples
 
+There are two kinds of examples:
+
+  1. The kind you have to run
+  2. Illustrative code snippets in this README
+
+### Running the ones that you have to run
+
+For fully working examples:
+
+  1. Spawn a webserver in the root of the directory in which this repo lives.
+  (I like to use `python -m SimpleHTTPServer 3000`).
+  2. Open `http://localhost:3000/example` in your browser
+
+Below are the aforementioned snippets.
+
+### Tracking VM Turns
+
 Run some function at the end of each VM turn:
 
 ```javascript
