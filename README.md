@@ -9,8 +9,6 @@ Implements _Zones_ for JavaScript.
 A Zone is an execution context that persists across async browser events.
 You can think of it as [thread-local storage](http://en.wikipedia.org/wiki/Thread-local_storage) for JavaScript VMs.
 
-Zone.js exports a single object: `window.zone`.
-
 ### Running Within a Zone
 
 You can run code within a zone with `zone.run`.
@@ -115,9 +113,16 @@ someZone.fork({
 
 ## API
 
+Zone.js exports a single object: `window.zone`.
+
 ### `zone.run`
 
+Takes a function to be run within the zone.
 Explained above.
+
+### `zone.bind`
+
+Transforms a function to run within the given zone.
 
 ### `zone.fork`
 
