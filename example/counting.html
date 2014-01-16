@@ -3,6 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>Profiling with Zones</title>
+  <link rel="stylesheet" href="style.css">
   <script src="../zone.js"></script>
   <script src="../long-stack-trace-zone.js"></script>
 </head>
@@ -33,7 +34,8 @@
         },
 
         _print: function () {
-          output.innerHTML = 'pending fn count: ' + count + (count === 0 ? (' DONE! ' + (Date.now() - start)/1000 + 's') : '');
+          output.innerHTML = 'pending fn count: ' + count +
+              (count === 0 ? (' DONE! ' + (Date.now() - start)/1000 + 's') : '');
         },
 
         run: function () {
@@ -59,6 +61,7 @@
       };
     }());
 
+
     /*
      * We want to profile just the actions that are a result of this button, so with
      * a single line of code, we can run `main` in the countingZone
@@ -68,6 +71,7 @@
       main();
       //zone.fork(countingZone).run(main);
     });
+
 
     /*
      * Spawns a bunch of setTimeouts which in turn spawn more setTimeouts!
@@ -89,6 +93,7 @@
         }, t);
       }
     }
+
 
     /*
      * There may be other async actions going on in the background.

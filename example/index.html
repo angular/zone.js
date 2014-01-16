@@ -2,39 +2,22 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Zone.js Demo</title>
+  <title>Zone.js Examples</title>
+  <link rel="stylesheet" href="style.css">
   <script src="../zone.js"></script>
   <script src="../long-stack-trace-zone.js"></script>
 </head>
 <body>
 
-  <button id="b1">addEventListener</button>
-  <button id="b2">onclick</button>
-  <button id="b3">bind err</button>
-  <button id="b4">cause err</button>
+  <h1>Examples</h1>
 
-  <script>
+  <ol>
+    <li><a href="basic.html">Tracing user actions with long stack traces</a></li>
+    <li><a href="counting.html">Counting Tasks</a></li>
+    <li><a href="profiling.html">Profiling Across Tasks</a></li>
+    <li><a href="throttle.html">Throttle</a></li>
+    <li><a href="xml-http-request.html">XMLHttpRequest</a></li>
+  </ol>
 
-  zone.fork(Zone.longStackTraceZone).run(function () {
-    b1.addEventListener('click', function () {
-      console.log(!!window.zone.parent);
-    });
-
-    b2.onclick = function () {
-      console.log(!!window.zone.parent);
-    };
-
-    b3.addEventListener('click', bar);
-  });
-
-  function foo () {
-    throw new Error('aw shucks');
-  }
-
-  function bar () {
-    b4.addEventListener('click', foo);
-  }
-
-  </script>
 </body>
 </html>
