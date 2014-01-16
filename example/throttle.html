@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Zones throttle</title>
+  <script src="../zone.js"></script>
+  <script src="../long-stack-trace-zone.js"></script>
+</head>
+<body>
+
+  <button id="b2">Error</button>
+
+  <script>
+  /*
+   * no nesting functions
+   * bootstrap method:
+   *   first show problem
+   *   then show wrapping zone.run
+   *
+   * progression:
+   * bootstrap()
+   * zone.run(bootstrap);
+   * zone.fork(Zone.longStackTraceZone).run();
+   */
+
+  var throttleMakeRequest;
+
+  /*
+   * Start the app
+   * Bind listeners
+   */
+  function bootstrap () {
+    b2.addEventListener('click', throttleMakeRequest);
+  }
+
+  /*
+   * Makes a request to the server
+   * Will only make the request once every 1000ms
+   */
+  throttleMakeRequest = throttle(function () {
+    makeRequestToServer(handleServerResponse);
+  }, 1000);
+
+
+  /*
+   * Pretend this makes a request to a server
+   */
+  function makeRequestToServer (cb) {
+    setTimeout(cb, 100);
+  }
+
+
+  function handleServerResponse (err, data) {
+    throw new Error('Oops');
+  }
+
+
+  /*
+   * Returns a fn that can only be called once
+   * per `time` milliseconds
+   */
+  function throttle (fn, time) {
+    var id = null;
+    if (typeof time !== 'number') {
+      time = 0;
+    }
+    return function () {
+      if (!id) {
+        id = setTimeout(function () {
+          id = null;
+          fn();
+        }, time);
+      }
+    };
+  }
+
+  /*
+   * Start the application
+   *
+   * If we start the application with `zone.run`, we
+   * get long stack traces in the console!
+   */
+
+  bootstrap();
+  // zone.run(bootstrap);
+  // zone.fork(Zone.longStackTraceZone).run();
+
+  </script>
+
+</body>
+</html>
