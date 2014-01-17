@@ -2,15 +2,21 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Profiling with Zones</title>
+  <title>Counting Pending Tasks</title>
   <link rel="stylesheet" href="style.css">
   <script src="../zone.js"></script>
   <script src="../long-stack-trace-zone.js"></script>
 </head>
 <body>
 
+  <h1>Counting Pending Tasks</h1>
+
   <p>We want to know about just the events from a single mouse click
   while a bunch of other stuff is happening on the page</p>
+
+  <p>This is useful in E2E testing. Because you know when there are
+  no async tasks, you avoid adding timeouts that wait for tasks that
+  run for an indeterminable amount of time.</p>
 
   <button id="b1">Start</button>
 
@@ -34,8 +40,12 @@
         },
 
         _print: function () {
-          output.innerHTML = 'pending fn count: ' + count +
+          output.innerHTML = 'pending task count: ' + count +
               (count === 0 ? (' DONE! ' + (Date.now() - start)/1000 + 's') : '');
+        },
+
+        reset: function () {
+          start = 0;
         },
 
         run: function () {
@@ -68,17 +78,17 @@
      */
 
     b1.addEventListener('click', function () {
-      main();
-      //zone.fork(countingZone).run(main);
+      zone.fork(countingZone).run(main);
     });
 
 
     /*
      * Spawns a bunch of setTimeouts which in turn spawn more setTimeouts!
-     * This is a boring way to simulate.
+     * This is a boring way to simulate HTTP requests and other async actions.
      */
 
     function main () {
+      zone.reset();
       for (var i = 0; i < 10; i++) {
         recur(i, 800);
       }

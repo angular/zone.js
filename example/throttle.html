@@ -8,6 +8,7 @@
   <script src="../long-stack-trace-zone.js"></script>
 </head>
 <body>
+  <h1>Throttle Example</h1>
 
   <button id="b2">Error</button>
 
@@ -81,9 +82,8 @@
    * get long stack traces in the console!
    */
 
-  bootstrap();
-  // zone.run(bootstrap);
-  // zone.fork(Zone.longStackTraceZone).run();
+  //bootstrap();
+  zone.fork(Zone.longStackTraceZone).run(bootstrap);
 
   </script>
 
