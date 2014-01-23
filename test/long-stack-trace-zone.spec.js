@@ -28,6 +28,6 @@ describe('Zone.patch', function () {
 
     expect(log[0]).toBe('Error: hello');
     dump(log[1])
-    expect(log[1].split('--- ').length).toBe(3);
+    expect(log[1].split('--- ').length).toBe(4);
   });
 });
