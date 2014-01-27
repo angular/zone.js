@@ -10,6 +10,10 @@ Implements _Zones_ for JavaScript.
 A Zone is an execution context that persists across async tasks.
 You can think of it as [thread-local storage](http://en.wikipedia.org/wiki/Thread-local_storage) for JavaScript VMs.
 
+See this video from ng-conf 2014 for a detailed explanation:
+
+[![screenshot of the zone.js presentation and ng-conf 2014](/presentation.png)](//www.youtube.com/watch?v=3IqtmUscE_U)
+
 ### Running Within a Zone
 
 You can run code within a zone with `zone.run`.
