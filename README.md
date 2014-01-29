@@ -197,5 +197,8 @@ This hook allows you to intercept calls to `EventTarget.addEventListener`.
 * `elt.onevent` works in FF23, IE10, but not Chrome. There's [a fix in the works though](https://code.google.com/p/chromium/issues/detail?id=43394)!
 
 
+## See also
+* [async-listener](https://github.com/othiym23/async-listener) - a similar library for node
+
 ## License
 Apache 2.0
