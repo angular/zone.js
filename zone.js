@@ -127,7 +127,7 @@ Zone.patchProperties = function (obj) {
     });
 };
 
-Zone.patchEventTarget = function (obj) {
+Zone.patchEventTargetMethods = function (obj) {
   var addDelegate = obj.addEventListener;
   obj.addEventListener = function (eventName, fn) {
     arguments[1] = fn._bound = zone.bind(fn);
@@ -146,7 +146,8 @@ Zone.patch = function patch () {
   Zone.patchableFn(window, ['alert', 'prompt']);
 
   // patched properties depend on addEventListener, so this comes first
-  Zone.patchEventTarget(EventTarget.prototype);
+  // n.b. EventTarget is not available in all browsers so we patch Node here
+  Zone.patchEventTargetMethods(Node.prototype);
 
   Zone.patchProperties(HTMLElement.prototype);
   Zone.patchProperties(XMLHttpRequest.prototype);
