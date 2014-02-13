@@ -143,6 +143,17 @@ describe('Zone.patch', function () {
       expect(log).toEqual('b');
     });
 
+    it('should handle removing onclick', function () {
+      var log = '';
+      button.onclick = function () {
+        log += 'a';
+      };
+      button.onclick = null;
+
+      button.click();
+      expect(log).toEqual('');
+    });
+
   });
 
   describe('hooks', function () {
