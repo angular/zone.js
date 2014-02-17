@@ -1,4 +1,3 @@
-
 /*
  * Wrapped stacktrace
  *
@@ -50,11 +49,11 @@ Zone.longStackTraceZone = {
     var trace = [exception.stack];
     var zone = this;
     var now = Date.now();
-    while (zone && zone.constructedAtExecption) {
+    while (zone && zone.constructedAtException) {
       trace.push(
           '--- ' + (Date(zone.constructedAtTime)).toString() +
             ' - ' + (now - zone.constructedAtTime) + 'ms ago',
-          zone.constructedAtExecption.get());
+          zone.constructedAtException.get());
       zone = zone.parent;
     }
     return trace.join('\n');
@@ -68,7 +67,7 @@ Zone.longStackTraceZone = {
 
   fork: function (locals) {
     var newZone = this._fork(locals);
-    newZone.constructedAtExecption = Zone.getStacktrace();
+    newZone.constructedAtException = Zone.getStacktrace();
     newZone.constructedAtTime = Date.now();
     return newZone;
   },
