@@ -24,8 +24,7 @@ Zone.prototype = {
   bind: function (fn) {
     var zone = this.fork();
     return function zoneBoundFn() {
-      var result = zone.run(fn, this, arguments);
-      return result;
+      return zone.run(fn, this, arguments);
     };
   },
 
