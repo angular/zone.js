@@ -1,6 +1,6 @@
 # Zone.js
 
-[![Build Status](https://travis-ci.org/btford/zone.js.png)](https://travis-ci.org/btford/zone.js)
+[![Build Status](https://travis-ci.org/angular/zone.js.png)](https://travis-ci.org/angular/zone.js)
 
 Implements _Zones_ for JavaScript.
 
