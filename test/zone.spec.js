@@ -189,6 +189,40 @@ describe('Zone.patch', function () {
       }).toThrow();
     });
 
+    it('should fire onZoneCreeated when a zone is forked', function () {
+      var createdSpy = jasmine.createSpy();
+      var counter = 0;
+      var myZone = zone.fork({
+        onZoneCreated: function () {
+          counter += 1;
+        },
+        onZoneLeave: function () {
+          counter -= 1;
+        }
+      });
+
+      myZone.run(function () {
+
+        expect(counter).toBe(0);
+
+        setTimeout(function () {
+          expect(counter).toBe(2);
+        }, 0);
+        expect(counter).toBe(1);
+
+        setTimeout(function () {
+          expect(counter).toBe(1);
+          setTimeout(function () {}, 0);
+          expect(counter).toBe(2);
+        }, 0);
+        expect(counter).toBe(2);
+
+        jasmine.Clock.tick(1);
+
+        expect(counter).toBe(0);
+      });
+    });
+
     it('should fire onError if a function run by a zone throws', function () {
       var errorSpy = jasmine.createSpy();
       var myZone = zone.fork({

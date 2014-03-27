@@ -18,6 +18,7 @@ Zone.prototype = {
   constructor: Zone,
 
   fork: function (locals) {
+    this.onZoneCreated();
     return new Zone(this, locals);
   },
 
@@ -53,6 +54,7 @@ Zone.prototype = {
   },
 
   onZoneEnter: function () {},
+  onZoneCreated: function () {},
   onZoneLeave: function () {}
 };
 
