@@ -223,6 +223,13 @@ describe('Zone.patch', function () {
       });
     });
 
+
+    it('should throw if onError is not defined', function () {
+      expect(function () {
+        zone.run(throwError);
+      }).toThrow();
+    });
+
     it('should fire onError if a function run by a zone throws', function () {
       var errorSpy = jasmine.createSpy();
       var myZone = zone.fork({
