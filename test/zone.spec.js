@@ -172,6 +172,12 @@ describe('Zone.patch', function () {
       expect(leaveSpy).toHaveBeenCalled();
     });
 
+    it('should throw if onError is not defined', function () {
+      expect(function () {
+        zone.run(throwError);
+      }).toThrow();
+    });
+
     it('should fire onError if a function run by a zone throws', function () {
       var errorSpy = jasmine.createSpy();
       var myZone = zone.fork({
@@ -180,9 +186,9 @@ describe('Zone.patch', function () {
 
       expect(errorSpy).not.toHaveBeenCalled();
 
-      myZone.run(function () {
-        throw new Error('test');
-      });
+      expect(function () {
+        myZone.run(throwError);
+      }).not.toThrow();
 
       expect(errorSpy).toHaveBeenCalled();
     });
@@ -222,3 +228,7 @@ describe('Zone.patch', function () {
   });
 
 });
+
+function throwError () {
+  throw new Error();
+}

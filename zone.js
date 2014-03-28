@@ -42,6 +42,8 @@ Zone.prototype = {
     } catch (e) {
       if (zone.onError) {
         zone.onError(e);
+      } else {
+        throw e;
       }
     } finally {
       this.onZoneLeave();
