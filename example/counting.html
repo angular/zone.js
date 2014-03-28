@@ -5,7 +5,7 @@
   <title>Counting Pending Tasks</title>
   <link rel="stylesheet" href="style.css">
   <script src="../zone.js"></script>
-  <script src="../long-stack-trace-zone.js"></script>
+  <script src="../counting-zone.js"></script>
 </head>
 <body>
 
@@ -26,51 +26,24 @@
     /*
      * Zone that counts pending async tasks
      */
-    var countingZone = (function () {
-      var count = 0,
-          start;
-      return {
-        _wrap: function (fn) {
-          return function () {
-            var ret = fn.apply(this, arguments);
-            count -= 1;
-            zone._print();
-            return ret;
-          };
-        },
-
-        _print: function () {
-          output.innerHTML = 'pending task count: ' + count +
-              (count === 0 ? (' DONE! ' + (Date.now() - start)/1000 + 's') : '');
-        },
-
-        reset: function () {
-          start = 0;
-        },
-
-        run: function () {
-          if (!start) {
-            start = Date.now();
-          }
-          return zone.run.apply(this, arguments);
-        },
-
-
-        onError: function (e) {
-          console.log(e.stack);
-        },
-
-        setTimeout: function () {
-          count += 1;
-          zone._print();
-          arguments[0] = zone._wrap(arguments[0]);
-          return zone._setTimeout.apply(this, arguments);
-        },
-
-        _setTimeout: zone.setTimeout
-      };
-    }());
-
+    var myCountingZone = zone.fork(zone.countingZone).fork({
+      '+onZoneCreated': function () {
+        zone.countingZone.start || (zone.countingZone.start = Date.now());
+        this.print();
+      },
+      '-onZoneLeave': function (delegate) {
+        this.print();
+      },
+      '+reset': function (delegate) {
+        zone.countingZone.start = 0;
+      },
+      print: function () {
+        counter = this.counter();
+        output.innerHTML = counter ?
+            'pending task count: ' + counter :
+            ' DONE! ' + (Date.now() - zone.countingZone.start)/1000 + 's';
+      }
+    });
 
     /*
      * We want to profile just the actions that are a result of this button, so with
@@ -78,7 +51,7 @@
      */
 
     b1.addEventListener('click', function () {
-      zone.fork(countingZone).run(main);
+      myCountingZone.run(main);
     });
 
 

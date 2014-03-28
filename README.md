@@ -113,6 +113,13 @@ someZone.fork({
 
 ### Augmenting A Zone's Hook
 
+When you fork a zone, you'll often want to control how the parent zone's
+hook gets called.
+
+Prefixing a hook with `$` means that the hook will be passed the
+parent zone's hook, and the hook will be expected to return the function to
+be invoked rather than be the function itself.
+
 ```javascript
 var someZone = zone.fork({
   onZoneLeave: function () {
@@ -121,8 +128,36 @@ var someZone = zone.fork({
 });
 
 someZone.fork({
+  $onZoneLeave: function (parentOnLeave) {
+    // return the hook
+    return function onZoneLeave() {
+      parentOnLeave();
+      console.log('cya l8r');
+    };
+  }
+}).run(function () {
+  // do stuff
+});
+
+// logs: goodbye
+//       cya l8r
+```
+
+#### `+` and `-` Sugar
+Most of the time, you'll want to run a hook before or after the parent's implementation.
+You can prefix a hook with `-` for running before, and `+` for running after.
+
+The above can be written like this:
+
+```javascript
+var someZone = zone.fork({
   onZoneLeave: function () {
-    this.parent.onZoneLeave();
+    console.log('goodbye');
+  }
+});
+
+someZone.fork({
+  '+onZoneLeave': function (parentOnLeave) {
     console.log('cya l8r');
   }
 }).run(function () {
@@ -132,6 +167,8 @@ someZone.fork({
 // logs: goodbye
 //       cya l8r
 ```
+
+This frees you from writing boilerplate to compose a new hook.
 
 ## API
 
@@ -165,6 +202,10 @@ myZone.run(function () {
 ```
 
 Below describes the behavior of each of these hooks.
+
+### `zone.onZoneCreated`
+
+Runs when a zone is forked.
 
 ### `zone.onZoneEnter`
 

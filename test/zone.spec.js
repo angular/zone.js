@@ -183,13 +183,7 @@ describe('Zone.patch', function () {
       expect(leaveSpy).toHaveBeenCalled();
     });
 
-    it('should throw if onError is not defined', function () {
-      expect(function () {
-        zone.run(throwError);
-      }).toThrow();
-    });
-
-    it('should fire onZoneCreeated when a zone is forked', function () {
+    it('should fire onZoneCreated when a zone is forked', function () {
       var createdSpy = jasmine.createSpy();
       var counter = 0;
       var myZone = zone.fork({
