@@ -1,21 +1,22 @@
 /*
  * See example/counting.html
  */
-zone.countingZone = {
+Zone.countingZone = {
   '-onZoneCreated': function () {
-    zone.countingZone.counter += 1;
+    Zone.countingZone.counter += 1;
   },
   '+onZoneLeave': function () {
-    zone.countingZone.counter -= 1;
-    if (zone.countingZone.counter === 0) {
+    Zone.countingZone.counter -= 1;
+    if (Zone.countingZone.counter <= 0) {
+      Zone.countingZone.counter = 0;
       this.onFlush();
     }
   },
-  reset: function () {
-    zone.countingZone.counter = 0;
+  '-run': function () {
+    Zone.countingZone.counter = 0;
   },
   counter: function () {
-    return zone.countingZone.counter;
+    return Zone.countingZone.counter;
   },
   onFlush: function () {}
 };

@@ -26,22 +26,22 @@
     /*
      * Zone that counts pending async tasks
      */
-    var myCountingZone = zone.fork(zone.countingZone).fork({
+    var myCountingZone = zone.fork(Zone.countingZone).fork({
       '+onZoneCreated': function () {
-        zone.countingZone.start || (zone.countingZone.start = Date.now());
+        Zone.countingZone.start || (Zone.countingZone.start = Date.now());
         this.print();
       },
       '-onZoneLeave': function (delegate) {
         this.print();
       },
       '+reset': function (delegate) {
-        zone.countingZone.start = 0;
+        Zone.countingZone.start = 0;
       },
       print: function () {
         counter = this.counter();
         output.innerHTML = counter ?
             'pending task count: ' + counter :
-            ' DONE! ' + (Date.now() - zone.countingZone.start)/1000 + 's';
+            ' DONE! ' + (Date.now() - Zone.countingZone.start)/1000 + 's';
       }
     });
 
