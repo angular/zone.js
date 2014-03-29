@@ -94,14 +94,16 @@ Zone.prototype = {
 Zone.patchFn = function (obj, fnNames) {
   fnNames.forEach(function (name) {
     var delegate = obj[name];
-    zone[name] = function () {
-      arguments[0] = zone.bind(arguments[0]);
-      return delegate.apply(obj, arguments);
-    };
+    if (delegate) {
+      zone[name] = function () {
+        arguments[0] = zone.bind(arguments[0]);
+        return delegate.apply(obj, arguments);
+      };
 
-    obj[name] = function marker () {
-      return zone[name].apply(this, arguments);
-    };
+      obj[name] = function marker () {
+        return zone[name].apply(this, arguments);
+      };
+    }
   });
 };
 
@@ -182,12 +184,42 @@ Zone.patchEventTargetMethods = function (obj) {
 };
 
 Zone.patch = function patch () {
-  Zone.patchFn(window, ['setTimeout', 'setInterval']);
+  Zone.patchFn(window, [
+    'setTimeout',
+    'setInterval',
+    'requestAnimationFrame',
+    'webkitRequestAnimationFrame'
+  ]);
   Zone.patchableFn(window, ['alert', 'prompt']);
 
-  // patched properties depend on addEventListener, so this comes first
-  // n.b. EventTarget is not available in all browsers so we patch Node here
-  Zone.patchEventTargetMethods(Node.prototype);
+  // patched properties depend on addEventListener, so this needs to come first
+  if (EventTarget) {
+    Zone.patchEventTargetMethods(EventTarget.prototype);
+
+  // Note: EventTarget is not available in all browsers,
+  // if it's not available, we instead patch the APIs in the IDL that inherit from EventTarget
+  } else {
+    [ ApplicationCache.prototype,
+      EventSource.prototype,
+      FileReader.prototype,
+      InputMethodContext.prototype,
+      MediaController.prototype,
+      MessagePort.prototype,
+      Node.prototype,
+      Performance.prototype,
+      SVGElementInstance.prototype,
+      SharedWorker.prototype,
+      TextTrack.prototype,
+      TextTrackCue.prototype,
+      TextTrackList.prototype,
+      WebKitNamedFlow.prototype,
+      Window.prototype,
+      Worker.prototype,
+      WorkerGlobalScope.prototype,
+      XMLHttpRequestEventTarget.prototype,
+      XMLHttpRequestUpload.prototype
+    ].forEach(patchEventTargetMethods);
+  }
 
   Zone.patchProperties(HTMLElement.prototype);
   Zone.patchProperties(XMLHttpRequest.prototype);

@@ -80,6 +80,32 @@ describe('Zone.patch', function () {
 
   });
 
+  describe('requestAnimationFrame', function () {
+    var flag, hasParent;
+
+    it('should work', function (done) {
+
+    runs(function() {
+      flag = false;
+      hasParent = false;
+
+      window.requestAnimationFrame(function () {
+        hasParent = !!window.zone.parent;
+        flag = true;
+      });
+    });
+
+    waitsFor(function() {
+      return flag;
+    }, "requestAnimationFrame to run", 1);
+
+    runs(function() {
+      expect(hasParent).toBe(true);
+    });
+
+    });
+  });
+
 
   describe('element', function () {
 
