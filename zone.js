@@ -96,8 +96,7 @@ Zone.patchFn = function (obj, fnNames) {
     var delegate = obj[name];
     if (delegate) {
       zone[name] = function () {
-        arguments[0] = zone.bind(arguments[0]);
-        return delegate.apply(obj, arguments);
+        return delegate.apply(obj, Zone.bindArguments(arguments));
       };
 
       obj[name] = function marker () {
@@ -106,6 +105,26 @@ Zone.patchFn = function (obj, fnNames) {
     }
   });
 };
+
+Zone.patchPrototype = function (obj, fnNames) {
+  fnNames.forEach(function (name) {
+    var delegate = obj[name];
+    if (delegate) {
+      obj[name] = function () {
+        return delegate.apply(this, Zone.bindArguments(arguments));
+      };
+    }
+  });
+};
+
+Zone.bindArguments = function (args) {
+  for (var i = args.length - 1; i >= 0; i--) {
+    if (typeof args[i] === 'function') {
+      args[i] = zone.bind(args[i]);
+    }
+  }
+  return args;
+}
 
 Zone.patchableFn = function (obj, fnNames) {
   fnNames.forEach(function (name) {
@@ -223,6 +242,14 @@ Zone.patch = function patch () {
 
   Zone.patchProperties(HTMLElement.prototype);
   Zone.patchProperties(XMLHttpRequest.prototype);
+
+  // patch promises
+  if (window.Promise) {
+    Zone.patchPrototype(Promise.prototype, [
+      'then',
+      'catch'
+    ]);
+  }
 };
 
 Zone.init = function init () {

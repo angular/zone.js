@@ -85,27 +85,81 @@ describe('Zone.patch', function () {
 
     it('should work', function (done) {
 
-    runs(function() {
-      flag = false;
-      hasParent = false;
+      runs(function() {
+        flag = false;
+        hasParent = false;
 
-      window.requestAnimationFrame(function () {
-        hasParent = !!window.zone.parent;
-        flag = true;
+        window.requestAnimationFrame(function () {
+          hasParent = !!window.zone.parent;
+          flag = true;
+        });
       });
-    });
 
-    waitsFor(function() {
-      return flag;
-    }, "requestAnimationFrame to run", 1);
+      waitsFor(function() {
+        return flag;
+      }, "requestAnimationFrame to run", 1);
 
-    runs(function() {
-      expect(hasParent).toBe(true);
-    });
+      runs(function() {
+        expect(hasParent).toBe(true);
+      });
 
     });
   });
 
+  describe('Promise', function () {
+    var flag, hasParent;
+
+    beforeEach(function () {
+      flag = false;
+      hasParent = false;
+    });
+
+    it('should work with .then', function () {
+      if (!window.Promise) {
+        return;
+      }
+
+      runs(function() {
+        new Promise(function (resolve) {
+          requestAnimationFrame(resolve);
+        }).then(function () {
+          hasParent = !!window.zone.parent;
+          flag = true;
+        });
+      });
+
+      waitsFor(function() {
+        return flag;
+      }, "requestAnimationFrame to run", 1);
+
+      runs(function() {
+        expect(hasParent).toBe(true);
+      });
+    });
+
+    it('should work with .catch', function () {
+      if (!window.Promise) {
+        return;
+      }
+
+      runs(function() {
+        new Promise(function (resolve, reject) {
+          requestAnimationFrame(reject);
+        }).catch(function () {
+          hasParent = !!window.zone.parent;
+          flag = true;
+        });
+      });
+
+      waitsFor(function() {
+        return flag;
+      }, "requestAnimationFrame to run", 1);
+
+      runs(function() {
+        expect(hasParent).toBe(true);
+      });
+    });
+  })
 
   describe('element', function () {
 
