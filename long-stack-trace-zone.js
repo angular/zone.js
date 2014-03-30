@@ -35,7 +35,7 @@ Zone.getStacktrace = function () {
   // Some implementations of exception handling don't create a stack trace if the exception
   // isn't thrown, however it's faster not to actually throw the exception.
   var stack = getStacktraceWithUncaughtError();
-  if (stack.get()) {
+  if (stack && stack._e.stack) {
     Zone.getStacktrace = getStacktraceWithUncaughtError;
     return stack;
   } else {
