@@ -247,7 +247,7 @@ describe('Zone.patch', function () {
         expect(hasParent).toBe(true);
       });
     });
-  })
+  });
 
   describe('element', function () {
 
