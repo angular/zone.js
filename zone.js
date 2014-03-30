@@ -162,7 +162,6 @@ Zone.patchProperty = function (obj, prop) {
       this.removeEventListener(eventName, this[_prop]);
     }
 
-
     if (typeof fn === 'function') {
       this[_prop] = fn;
       this.addEventListener(eventName, fn, false);
