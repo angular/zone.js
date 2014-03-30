@@ -177,11 +177,11 @@ Zone.patchProperty = function (obj, prop) {
   Object.defineProperty(obj, prop, desc);
 };
 
-Zone.patchProperties = function (obj) {
-  Object.keys(obj).
+Zone.patchProperties = function (obj, properties) {
+  (properties || Object.keys(obj).
     filter(function (propertyName) {
       return propertyName.substr(0,2) === 'on';
-    }).
+    })).
     forEach(function (eventName) {
       Zone.patchProperty(obj, eventName);
     });
@@ -211,36 +211,46 @@ Zone.patch = function patch () {
   Zone.patchableFn(window, ['alert', 'prompt']);
 
   // patched properties depend on addEventListener, so this needs to come first
-  if (EventTarget) {
-    Zone.patchEventTargetMethods(EventTarget.prototype);
+  if (window.EventTarget) {
+    Zone.patchEventTargetMethods(window.EventTarget.prototype);
 
   // Note: EventTarget is not available in all browsers,
   // if it's not available, we instead patch the APIs in the IDL that inherit from EventTarget
   } else {
-    [ ApplicationCache.prototype,
-      EventSource.prototype,
-      FileReader.prototype,
-      InputMethodContext.prototype,
-      MediaController.prototype,
-      MessagePort.prototype,
-      Node.prototype,
-      Performance.prototype,
-      SVGElementInstance.prototype,
-      SharedWorker.prototype,
-      TextTrack.prototype,
-      TextTrackCue.prototype,
-      TextTrackList.prototype,
-      WebKitNamedFlow.prototype,
-      Window.prototype,
-      Worker.prototype,
-      WorkerGlobalScope.prototype,
-      XMLHttpRequestEventTarget.prototype,
-      XMLHttpRequestUpload.prototype
-    ].forEach(patchEventTargetMethods);
+    [ 'ApplicationCache',
+      'EventSource',
+      'FileReader',
+      'InputMethodContext',
+      'MediaController',
+      'MessagePort',
+      'Node',
+      'Performance',
+      'SVGElementInstance',
+      'SharedWorker',
+      'TextTrack',
+      'TextTrackCue',
+      'TextTrackList',
+      'WebKitNamedFlow',
+      'Window',
+      'Worker',
+      'WorkerGlobalScope',
+      'XMLHttpRequestEventTarget',
+      'XMLHttpRequestUpload'
+    ].
+    filter(function (thing) {
+      return window[thing];
+    }).
+    map(function (thing) {
+      return window[thing].prototype;
+    }).
+    forEach(Zone.patchEventTargetMethods);
   }
 
-  Zone.patchProperties(HTMLElement.prototype);
-  Zone.patchProperties(XMLHttpRequest.prototype);
+  if (Zone.canPatchViaPropertyDescriptor()) {
+    Zone.patchViaPropertyDescriptor();
+  } else {
+    Zone.patchViaCapturingAllTheEvents();
+  }
 
   // patch promises
   if (window.Promise) {
@@ -250,6 +260,51 @@ Zone.patch = function patch () {
     ]);
   }
 };
+
+//
+Zone.canPatchViaPropertyDescriptor = function () {
+  Object.defineProperty(HTMLElement.prototype, 'onclick', {
+    get: function () {
+      return true;
+    }
+  });
+  var elt = document.createElement('div');
+  var result = !!elt.onclick;
+  Object.defineProperty(HTMLElement.prototype, 'onclick', {});
+  return result;
+};
+
+// for browsers that we can patch the descriptor:
+// - eventually Chrome once this bug gets resolved
+// - Firefox
+Zone.patchViaPropertyDescriptor = function () {
+  Zone.patchProperties(HTMLElement.prototype, Zone.eventNames.map(function (property) {
+    return 'on' + property;
+  }));
+  Zone.patchProperties(XMLHttpRequest.prototype);
+};
+
+// Whenever any event fires, we check the event target and all parents
+// for `onwhatever` properties and replace them with zone-bound functions
+// - Chrome (for now)
+Zone.patchViaCapturingAllTheEvents = function () {
+  Zone.eventNames.forEach(function (property) {
+    var onproperty = 'on' + property;
+    document.addEventListener(property, function (event) {
+      var elt = event.target, bound;
+      while (elt) {
+        if (elt[onproperty] && !elt[onproperty]._unbound) {
+          bound = zone.bind(elt[onproperty]);
+          bound._unbound = elt[onproperty];
+          elt[onproperty] = bound;
+        }
+        elt = elt.parentElement;
+      }
+    }, true);
+  });
+};
+
+Zone.eventNames = 'copy cut paste abort blur focus canplay canplaythrough change click contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop durationchange emptied ended input invalid keydown keypress keyup load loadeddata loadedmetadata loadstart mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup pause play playing progress ratechange reset scroll seeked seeking select show stalled submit suspend timeupdate volumechange waiting mozfullscreenchange mozfullscreenerror mozpointerlockchange mozpointerlockerror error'.split(' ');
 
 Zone.init = function init () {
   window.zone = new Zone();
