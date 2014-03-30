@@ -5,10 +5,13 @@ describe('Zone.patch', function () {
 
   beforeEach(function () {
     zone.mark = 'root';
-    jasmine.Clock.useMock();
   });
 
   describe('setTimeout', function () {
+
+    beforeEach(function () {
+      jasmine.Clock.useMock();
+    });
 
     it('should work with setTimeout', function () {
 
@@ -49,6 +52,10 @@ describe('Zone.patch', function () {
 
   describe('setInterval', function () {
 
+    beforeEach(function () {
+      jasmine.Clock.useMock();
+    });
+
     it('should work with setInterval', function () {
 
       var childZone = window.zone.fork({
@@ -81,9 +88,34 @@ describe('Zone.patch', function () {
   });
 
   describe('requestAnimationFrame', function () {
-    var flag, hasParent;
+    var flag, hasParent, skip = false;
 
     it('should work', function (done) {
+
+      if (!window.requestAnimationFrame) {
+        console.log('WARNING: skipping requestAnimationFrame test (missing this API)');
+        return;
+      }
+
+      // Some browsers (especially Safari) do not fire requestAnimationFrame
+      // if they are offscreen. We can disable this test for those browsers and
+      // assume the patch works if setTimeout works, since they are mechanically
+      // the same
+      runs(function() {
+        flag = false;
+        window.requestAnimationFrame(function () {
+          flag = true;
+        });
+        setTimeout(function () {
+          skip = true;
+          flag = true;
+          console.log('WARNING: skipping requestAnimationFrame test (not firing rAF)');
+        }, 50);
+      });
+
+      waitsFor(function() {
+        return flag;
+      }, "requestAnimationFrame to run", 100);
 
       runs(function() {
         flag = false;
@@ -96,11 +128,62 @@ describe('Zone.patch', function () {
       });
 
       waitsFor(function() {
-        return flag;
-      }, "requestAnimationFrame to run", 1);
+        return flag || skip;
+      }, "requestAnimationFrame to run", 100);
 
       runs(function() {
-        expect(hasParent).toBe(true);
+        expect(hasParent || skip).toBe(true);
+      });
+
+    });
+  });
+
+  describe('webkitRequestAnimationFrame', function () {
+    var flag, hasParent, skip = false;
+
+    it('should work', function (done) {
+
+      if (!window.webkitRequestAnimationFrame) {
+        console.log('WARNING: skipping webkitRequestAnimationFrame test (missing this API)');
+        return;
+      }
+
+      // Some browsers (especially Safari) do not fire webkitRequestAnimationFrame
+      // if they are offscreen. We can disable this test for those browsers and
+      // assume the patch works if setTimeout works, since they are mechanically
+      // the same
+      runs(function() {
+        flag = false;
+        window.webkitRequestAnimationFrame(function () {
+          flag = true;
+        });
+        setTimeout(function () {
+          skip = true;
+          flag = true;
+          console.log('WARNING: skipping webkitRequestAnimationFrame test (not firing rAF)');
+        }, 50);
+      });
+
+      waitsFor(function() {
+        return flag;
+      }, 'webkitRequestAnimationFrame to run', 100);
+
+      runs(function() {
+        flag = false;
+        hasParent = false;
+
+        window.webkitRequestAnimationFrame(function () {
+          hasParent = !!window.zone.parent;
+          flag = true;
+        });
+      });
+
+      waitsFor(function() {
+        return flag || skip;
+      }, 'webkitRequestAnimationFrame to run', 100);
+
+      runs(function() {
+        expect(hasParent || skip).toBe(true);
       });
 
     });
@@ -110,27 +193,31 @@ describe('Zone.patch', function () {
     var flag, hasParent;
 
     beforeEach(function () {
+      jasmine.Clock.useMock();
       flag = false;
       hasParent = false;
     });
 
     it('should work with .then', function () {
       if (!window.Promise) {
+        console.log('WARNING: skipping Promise test (missing this API)');
         return;
       }
 
-      runs(function() {
+      runs(function () {
         new Promise(function (resolve) {
-          requestAnimationFrame(resolve);
+          setTimeout(resolve, 0);
         }).then(function () {
           hasParent = !!window.zone.parent;
           flag = true;
         });
+        jasmine.Clock.tick(1);
       });
+
 
       waitsFor(function() {
         return flag;
-      }, "requestAnimationFrame to run", 1);
+      }, 'promise to resolve', 100);
 
       runs(function() {
         expect(hasParent).toBe(true);
@@ -144,16 +231,17 @@ describe('Zone.patch', function () {
 
       runs(function() {
         new Promise(function (resolve, reject) {
-          requestAnimationFrame(reject);
+          setTimeout(reject, 0);
         }).catch(function () {
           hasParent = !!window.zone.parent;
           flag = true;
         });
+        jasmine.Clock.tick(1);
       });
 
       waitsFor(function() {
         return flag;
-      }, "requestAnimationFrame to run", 1);
+      }, "promise to reject", 100);
 
       runs(function() {
         expect(hasParent).toBe(true);
@@ -237,6 +325,11 @@ describe('Zone.patch', function () {
   });
 
   describe('hooks', function () {
+
+    beforeEach(function () {
+      jasmine.Clock.useMock();
+    });
+
     it('should fire onZoneEnter before a zone runs a function', function () {
       var enterSpy = jasmine.createSpy();
       var myZone = zone.fork({
