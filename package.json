@@ -1,7 +1,6 @@
 {
   "name": "zone.js",
   "version": "0.0.0",
-  "private": true,
   "description": "Zones for JavaScript",
   "main": "zone.js",
   "directories": {
