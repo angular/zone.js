@@ -2,7 +2,7 @@
 
 [![Build Status](https://travis-ci.org/angular/zone.js.png)](https://travis-ci.org/angular/zone.js)
 
-Implements _Zones_ for JavaScript.
+Implements _Zones_ for JavaScript, inspired by [Dart](https://www.dartlang.org/articles/zones/).
 
 
 ## What's a Zone?
