@@ -89,10 +89,10 @@
                       performance.now.bind(performance) :
                       Date.now.bind(Date);
       return {
-        onZoneEnter: function () {
+        beforeTask: function () {
           this.start = timer();
         },
-        onZoneLeave: function () {
+        afterTask: function () {
           time += timer() - this.start;
           console.log('sorting took ' + zone.time() + ' of CPU time');
         },

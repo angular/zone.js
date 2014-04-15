@@ -4,11 +4,11 @@
 Zone.exceptZone = {
   boringZone: window.zone,
   interestingZone: window.zone,
-  onZoneEnter: function () {
+  beforeTask: function () {
     this._oldZone = window.zone;
     window.zone = Zone.exceptZone.boringZone;
   },
-  onZoneLeave: function () {
+  afterTask: function () {
     window.zone = this._oldZone;
   },
   fork: function (ops) {

@@ -71,7 +71,7 @@ Zone.prototype = {
     window.zone = this;
 
     try {
-      this.onZoneEnter();
+      this.beforeTask();
       result = fn.apply(applyTo, applyWith);
     } catch (e) {
       if (zone.onError) {
@@ -80,15 +80,15 @@ Zone.prototype = {
         throw e;
       }
     } finally {
-      this.onZoneLeave();
+      this.afterTask();
       window.zone = oldZone;
     }
     return result;
   },
 
-  onZoneEnter: function () {},
+  beforeTask: function () {},
   onZoneCreated: function () {},
-  onZoneLeave: function () {}
+  afterTask: function () {}
 };
 
 Zone.patchFn = function (obj, fnNames) {

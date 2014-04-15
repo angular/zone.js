@@ -330,10 +330,10 @@ describe('Zone.patch', function () {
       jasmine.Clock.useMock();
     });
 
-    it('should fire onZoneEnter before a zone runs a function', function () {
+    it('should fire beforeTask before a zone runs a function', function () {
       var enterSpy = jasmine.createSpy();
       var myZone = zone.fork({
-        onZoneEnter: enterSpy
+        beforeTask: enterSpy
       });
 
       expect(enterSpy).not.toHaveBeenCalled();
@@ -343,10 +343,10 @@ describe('Zone.patch', function () {
       });
     });
 
-    it('should fire onZoneLeave after a zone runs a function', function () {
+    it('should fire afterTask after a zone runs a function', function () {
       var leaveSpy = jasmine.createSpy();
       var myZone = zone.fork({
-        onZoneLeave: leaveSpy
+        afterTask: leaveSpy
       });
 
       myZone.run(function () {
@@ -363,7 +363,7 @@ describe('Zone.patch', function () {
         onZoneCreated: function () {
           counter += 1;
         },
-        onZoneLeave: function () {
+        afterTask: function () {
           counter -= 1;
         }
       });

@@ -31,7 +31,7 @@
         Zone.countingZone.start || (Zone.countingZone.start = Date.now());
         this.print();
       },
-      '-onZoneLeave': function (delegate) {
+      '-afterTask': function (delegate) {
         this.print();
       },
       '+reset': function (delegate) {

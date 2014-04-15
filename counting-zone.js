@@ -5,7 +5,7 @@ Zone.countingZone = {
   '-onZoneCreated': function () {
     Zone.countingZone.counter += 1;
   },
-  '+onZoneLeave': function () {
+  '+afterTask': function () {
     Zone.countingZone.counter -= 1;
     if (Zone.countingZone.counter <= 0) {
       Zone.countingZone.counter = 0;

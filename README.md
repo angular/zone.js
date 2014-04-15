@@ -47,7 +47,7 @@ To change a zone, you _fork_ it to get a new one.
 
 ```javascript
 zone.fork({
-  onZoneEnter: function () {
+  beforeTask: function () {
     console.log('hi');
   }
 }).run(function () {
@@ -83,7 +83,7 @@ Run some function at the end of each VM turn:
 
 ```javascript
 zone.fork({
-  onZoneLeave: function () {
+  afterTask: function () {
     // do some cleanup
   }
 }).run(function () {
@@ -95,13 +95,13 @@ zone.fork({
 
 ```javascript
 var someZone = zone.fork({
-  onZoneLeave: function () {
+  afterTask: function () {
     console.log('goodbye');
   }
 });
 
 someZone.fork({
-  onZoneLeave: function () {
+  afterTask: function () {
     console.log('cya l8r');
   }
 }).run(function () {
@@ -122,15 +122,15 @@ be invoked rather than be the function itself.
 
 ```javascript
 var someZone = zone.fork({
-  onZoneLeave: function () {
+  afterTask: function () {
     console.log('goodbye');
   }
 });
 
 someZone.fork({
-  $onZoneLeave: function (parentOnLeave) {
+  $afterTask: function (parentOnLeave) {
     // return the hook
-    return function onZoneLeave() {
+    return function afterTask() {
       parentOnLeave();
       console.log('cya l8r');
     };
@@ -151,13 +151,13 @@ The above can be written like this:
 
 ```javascript
 var someZone = zone.fork({
-  onZoneLeave: function () {
+  afterTask: function () {
     console.log('goodbye');
   }
 });
 
 someZone.fork({
-  '+onZoneLeave': function (parentOnLeave) {
+  '+afterTask': function (parentOnLeave) {
     console.log('cya l8r');
   }
 }).run(function () {
@@ -187,8 +187,8 @@ Transforms a function to run within the given zone.
 
 ```javascript
 zone.fork({
-  onZoneEnter: function () {},
-  onZoneLeave: function () {},
+  beforeTask: function () {},
+  afterTask: function () {},
   onError: function () {},
   setTimeout: function () {},
   setInterval: function () {},
@@ -207,19 +207,19 @@ Below describes the behavior of each of these hooks.
 
 Runs when a zone is forked.
 
-### `zone.onZoneEnter`
+### `zone.beforeTask`
 
 Before a function invoked with `zone.run`, this hook runs.
-If `zone.onZoneEnter` throws, the function  passed to `run` will not be invoked.
+If `zone.beforeTask` throws, the function  passed to `run` will not be invoked.
 
-### `zone.onZoneLeave`
+### `zone.afterTask`
 
-After a function in a zone runs, the `onZoneLeave` hook runs.
+After a function in a zone runs, the `afterTask` hook runs.
 This hook will run even if the function passed to `run` throws.
 
 ### `zone.onError`
 
-This hook is called when the function passed to `run` or the `onZoneEnter` hook throws.
+This hook is called when the function passed to `run` or the `beforeTask` hook throws.
 
 ### `zone.setTimeout`, `zone.setInterval`, `zone.alert`, `zone.prompt`
 
