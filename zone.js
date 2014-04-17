@@ -250,6 +250,7 @@ Zone.patch = function patch () {
     Zone.patchViaPropertyDescriptor();
   } else {
     Zone.patchViaCapturingAllTheEvents();
+    Zone.patchClass('XMLHttpRequest');
   }
 
   // patch promises
@@ -302,6 +303,38 @@ Zone.patchViaCapturingAllTheEvents = function () {
       }
     }, true);
   });
+};
+
+// TODO: wrap some native API
+Zone.patchClass = function (className) {
+  var OriginalClass = window[className];
+  window[className] = function () {
+    this._o = new OriginalClass();
+  };
+
+  var instance = (new OriginalClass());
+
+  var prop;
+  for (prop in instance) {
+    (function (prop) {
+      if (typeof instance[prop] === 'function') {
+        window[className].prototype[prop] = function () {
+          return this._o[prop].apply(this._o, arguments);
+        };
+      } else {
+        Object.defineProperty(window[className].prototype, prop, {
+          set: function (fn) {
+            if (typeof fn === 'function') {
+              this._o[prop] = zone.bind(fn);
+            }
+          },
+          get: function () {
+            return this._o[prop];
+          }
+        });
+      }
+    }(prop));
+  };
 };
 
 Zone.eventNames = 'copy cut paste abort blur focus canplay canplaythrough change click contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop durationchange emptied ended input invalid keydown keypress keyup load loadeddata loadedmetadata loadstart mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup pause play playing progress ratechange reset scroll seeked seeking select show stalled submit suspend timeupdate volumechange waiting mozfullscreenchange mozfullscreenerror mozpointerlockchange mozpointerlockerror error'.split(' ');
