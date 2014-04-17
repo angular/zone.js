@@ -124,7 +124,7 @@ Zone.bindArguments = function (args) {
     }
   }
   return args;
-}
+};
 
 Zone.patchableFn = function (obj, fnNames) {
   fnNames.forEach(function (name) {
@@ -137,7 +137,7 @@ Zone.patchableFn = function (obj, fnNames) {
       return zone[name].apply(this, arguments);
     };
   });
-}
+};
 
 Zone.patchProperty = function (obj, prop) {
   var desc = Object.getOwnPropertyDescriptor(obj, prop) || {
