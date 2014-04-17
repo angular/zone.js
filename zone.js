@@ -178,7 +178,14 @@ Zone.patchProperty = function (obj, prop) {
 };
 
 Zone.patchProperties = function (obj, properties) {
-  (properties || Object.keys(obj).
+
+  (properties || (function () {
+      var props = [];
+      for (var prop in obj) {
+        props.push(prop);
+      }
+      return props;
+    }()).
     filter(function (propertyName) {
       return propertyName.substr(0,2) === 'on';
     })).
