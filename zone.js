@@ -267,6 +267,9 @@ Zone.patch = function patch () {
       'catch'
     ]);
   }
+  if (window.MutationObserver) {
+    Zone.patchClass('MutationObserver');
+  }
 };
 
 //
@@ -315,11 +318,22 @@ Zone.patchViaCapturingAllTheEvents = function () {
 // TODO: wrap some native API
 Zone.patchClass = function (className) {
   var OriginalClass = window[className];
+  if (!OriginalClass) {
+    return;
+  }
   window[className] = function () {
-    this._o = new OriginalClass();
+    var a = Zone.bindArguments(arguments);
+    switch (a.length) {
+      case 0: this._o = new OriginalClass(); break;
+      case 1: this._o = new OriginalClass(a[0]); break;
+      case 2: this._o = new OriginalClass(a[0], a[1]); break;
+      case 3: this._o = new OriginalClass(a[0], a[1], a[2]); break;
+      case 4: this._o = new OriginalClass(a[0], a[1], a[2], a[3]); break;
+      default: throw new Error('what are you even doing?');
+    }
   };
 
-  var instance = (new OriginalClass());
+  var instance = new OriginalClass(className === 'MutationObserver' ? function () {} : undefined);
 
   var prop;
   for (prop in instance) {
