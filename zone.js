@@ -267,9 +267,8 @@ Zone.patch = function patch () {
       'catch'
     ]);
   }
-  if (window.MutationObserver) {
-    Zone.patchClass('MutationObserver');
-  }
+  Zone.patchClass('MutationObserver');
+  Zone.patchClass('WebKitMutationObserver');
 };
 
 //
@@ -333,7 +332,7 @@ Zone.patchClass = function (className) {
     }
   };
 
-  var instance = new OriginalClass(className === 'MutationObserver' ? function () {} : undefined);
+  var instance = new OriginalClass(className.substr(-16) === 'MutationObserver' ? function () {} : undefined);
 
   var prop;
   for (prop in instance) {
