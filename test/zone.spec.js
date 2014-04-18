@@ -338,7 +338,6 @@ describe('Zone.patch', function () {
       runs(function () {
         var ob = new MutationObserver(function () {
           hasParent = !!window.zone.parent;
-          dump('yo')
           flag = true;
         });
 
@@ -351,7 +350,7 @@ describe('Zone.patch', function () {
 
       waitsFor(function() {
         return flag;
-      }, 'promise to resolve', 100);
+      }, 'mutation observer to fire', 100);
 
       runs(function() {
         expect(hasParent).toBe(true);
