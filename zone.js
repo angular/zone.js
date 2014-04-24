@@ -346,6 +346,8 @@ Zone.patchClass = function (className) {
           set: function (fn) {
             if (typeof fn === 'function') {
               this._o[prop] = zone.bind(fn);
+            } else {
+              this._o[prop] = fn;
             }
           },
           get: function () {

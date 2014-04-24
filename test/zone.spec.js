@@ -441,6 +441,14 @@ describe('Zone.patch', function () {
         expect(hasParent).toBe(true);
       });
     });
+
+    it('should preserve other setters', function () {
+      var req = new XMLHttpRequest();
+      req.open('get', '/', true);
+      req.send();
+      req.responseType = 'document';
+      expect(req.responseType).toBe('document');
+    });
   });
 
 
