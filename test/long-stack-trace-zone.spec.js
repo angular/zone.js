@@ -1,6 +1,5 @@
 'use strict';
 
-
 describe('Zone.patch', function () {
   var log;
 

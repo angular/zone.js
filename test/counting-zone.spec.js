@@ -1,6 +1,5 @@
 'use strict';
 
-
 describe('Zone.countingZone', function () {
   var flushSpy = jasmine.createSpy('flush'),
       countingZone = zone.fork(Zone.countingZone).fork({
