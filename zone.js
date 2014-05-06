@@ -58,10 +58,19 @@ Zone.prototype = {
   },
 
   bind: function (fn) {
+    this.enqueueTask(fn);
     var zone = this.fork();
     return function zoneBoundFn() {
       return zone.run(fn, this, arguments);
     };
+  },
+
+  bindOnce: function (fn) {
+    return this.bind(function () {
+      var result = fn.apply(this, arguments);
+      zone.dequeueTask(fn);
+      return result;
+    });
   },
 
   run: function run (fn, applyTo, applyWith) {
@@ -90,18 +99,72 @@ Zone.prototype = {
 
   beforeTask: function () {},
   onZoneCreated: function () {},
-  afterTask: function () {}
+  afterTask: function () {},
+  enqueueTask: function () {},
+  dequeueTask: function () {}
 };
 
-Zone.patchFn = function (obj, fnNames) {
-  fnNames.forEach(function (name) {
-    var delegate = obj[name];
+
+Zone.patchSetClearFn = function (obj, fnNames) {
+  fnNames.map(function (name) {
+    return name[0].toUpperCase() + name.substr(1);
+  }).
+  forEach(function (name) {
+    var setName = 'set' + name;
+    var clearName = 'clear' + name;
+    var delegate = obj[setName];
+
     if (delegate) {
-      zone[name] = function () {
-        return delegate.apply(obj, Zone.bindArguments(arguments));
+      var ids = {};
+
+      zone[setName] = function (fn) {
+        var id;
+        arguments[0] = function () {
+          delete ids[id];
+          return fn.apply(this, arguments);
+        };
+        var args = Zone.bindArgumentsOnce(arguments);
+        id = delegate.apply(obj, args);
+        ids[id] = true;
+        return id;
       };
 
-      obj[name] = function marker () {
+      obj[setName] = function () {
+        return zone[setName].apply(this, arguments);
+      };
+
+      var clearDelegate = obj[clearName];
+
+      zone[clearName] = function (id) {
+        if (ids[id]) {
+          delete ids[id];
+          zone.dequeueTask();
+        }
+        return clearDelegate.apply(this, arguments);
+      };
+
+      obj[clearName] = function () {
+        return zone[clearName].apply(this, arguments);
+      };
+    }
+  });
+};
+
+
+Zone.patchSetFn = function (obj, fnNames) {
+  fnNames.forEach(function (name) {
+    var delegate = obj[name];
+
+    if (delegate) {
+      zone[name] = function (fn) {
+        arguments[0] = function () {
+          return fn.apply(this, arguments);
+        };
+        var args = Zone.bindArgumentsOnce(arguments);
+        return delegate.apply(obj, args);
+      };
+
+      obj[name] = function () {
         return zone[name].apply(this, arguments);
       };
     }
@@ -123,6 +186,16 @@ Zone.bindArguments = function (args) {
   for (var i = args.length - 1; i >= 0; i--) {
     if (typeof args[i] === 'function') {
       args[i] = zone.bind(args[i]);
+    }
+  }
+  return args;
+};
+
+
+Zone.bindArgumentsOnce = function (args) {
+  for (var i = args.length - 1; i >= 0; i--) {
+    if (typeof args[i] === 'function') {
+      args[i] = zone.bindOnce(args[i]);
     }
   }
   return args;
@@ -206,17 +279,24 @@ Zone.patchEventTargetMethods = function (obj) {
   var removeDelegate = obj.removeEventListener;
   obj.removeEventListener = function (eventName, fn) {
     arguments[1] = arguments[1]._bound || arguments[1];
-    return removeDelegate.apply(this, arguments);
+    var result = removeDelegate.apply(this, arguments);
+    zone.dequeueTask(fn);
+    return result;
   };
 };
 
 Zone.patch = function patch () {
-  Zone.patchFn(window, [
-    'setTimeout',
-    'setInterval',
+  Zone.patchSetClearFn(window, [
+    'timeout',
+    'interval',
+    'immediate'
+  ]);
+
+  Zone.patchSetFn(window, [
     'requestAnimationFrame',
     'webkitRequestAnimationFrame'
   ]);
+
   Zone.patchableFn(window, ['alert', 'prompt']);
 
   // patched properties depend on addEventListener, so this needs to come first
@@ -316,7 +396,7 @@ Zone.patchViaCapturingAllTheEvents = function () {
   });
 };
 
-// TODO: wrap some native API
+// wrap some native API on `window`
 Zone.patchClass = function (className) {
   var OriginalClass = window[className];
   if (!OriginalClass) {

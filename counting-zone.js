@@ -1,22 +1,36 @@
 /*
  * See example/counting.html
  */
+
 Zone.countingZone = {
-  '-onZoneCreated': function () {
-    Zone.countingZone.counter += 1;
+
+  // setTimeout
+  enqueueTask: function () {
+    this.data.count += 1;
   },
-  '+afterTask': function () {
-    Zone.countingZone.counter -= 1;
-    if (Zone.countingZone.counter <= 0) {
-      Zone.countingZone.counter = 0;
-      this.onFlush();
+
+  // fires when...
+  // - clearTimeout
+  // - setTimeout finishes
+  dequeueTask: function () {
+    this.data.count -= 1;
+  },
+
+  afterTask: function () {
+    if (this.data.count === 0 && !this.data.flushed) {
+      this.data.flushed = true;
+      this.run(this.onFlush);
     }
   },
-  '-run': function () {
-    Zone.countingZone.counter = 0;
-  },
+
   counter: function () {
-    return Zone.countingZone.counter;
+    return this.data.count;
   },
+
+  data: {
+    count: 0,
+    flushed: false
+  },
+
   onFlush: function () {}
 };
