@@ -53,6 +53,39 @@ describe('Zone.countingZone', function () {
     });
   });
 
+  it('should work with setInterval', function () {
+    var latch = 0, id;
+
+    runs(function () {
+      countingZone.run(function () {
+        id = setInterval(function () {
+          latch += 1;
+        }, 0);
+        expect(countingZone.counter()).toBe(1);
+      });
+    });
+
+    waitsFor(function () {
+      return latch === 2;
+    }, 100, 'latch to increment');
+
+    runs(function () {
+      expect(countingZone.counter()).toBe(1);
+      clearInterval(id);
+    });
+  });
+
+  it('should work with clearInterval', function () {
+    var id;
+    countingZone.run(function () {
+      id = setInterval(function () {
+        latch += 1;
+      }, 0);
+      expect(countingZone.counter()).toBe(1);
+      clearInterval(id);
+      expect(countingZone.counter()).toBe(0);
+    });
+  });
 
   it('should work with addEventListener', function () {
     var elt = document.createElement('button');
