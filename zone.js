@@ -385,9 +385,7 @@ Zone.canPatchViaPropertyDescriptor = function () {
 // - eventually Chrome once this bug gets resolved
 // - Firefox
 Zone.patchViaPropertyDescriptor = function () {
-  Zone.patchProperties(HTMLElement.prototype, Zone.eventNames.map(function (property) {
-    return 'on' + property;
-  }));
+  Zone.patchProperties(HTMLElement.prototype, Zone.onEventNames);
   Zone.patchProperties(XMLHttpRequest.prototype);
 };
 
@@ -457,6 +455,9 @@ Zone.patchClass = function (className) {
 };
 
 Zone.eventNames = 'copy cut paste abort blur focus canplay canplaythrough change click contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop durationchange emptied ended input invalid keydown keypress keyup load loadeddata loadedmetadata loadstart mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup pause play playing progress ratechange reset scroll seeked seeking select show stalled submit suspend timeupdate volumechange waiting mozfullscreenchange mozfullscreenerror mozpointerlockchange mozpointerlockerror error'.split(' ');
+Zone.onEventNames = Zone.eventNames.map(function (property) {
+  return 'on' + property;
+});
 
 Zone.init = function init () {
   if (typeof module !== 'undefined' && module && module.exports) {
