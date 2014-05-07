@@ -1,6 +1,6 @@
 'use strict';
 
-describe('Zone.patch', function () {
+describe('longStackTraceZone', function () {
   var log;
 
   var lstz = zone.fork(Zone.longStackTraceZone).fork({
