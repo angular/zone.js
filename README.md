@@ -221,6 +221,16 @@ This hook will run even if the function passed to `run` throws.
 
 This hook is called when the function passed to `run` or the `beforeTask` hook throws.
 
+### `zone.enqueueTask`
+
+This hook is called when a function is registered with the VM.
+For instance `setTimeout` and `addEventListener`.
+
+### `zone.dequeueTask`
+
+This hook is called when a function is unregistered with the VM.
+For instance `clearTimeout` and `removeEventListener`.
+
 ### `zone.setTimeout`, `zone.setInterval`, `zone.alert`, `zone.prompt`
 
 These hooks allow you to change the behavior of `window.setTimeout`, `window.setInterval`, etc.
