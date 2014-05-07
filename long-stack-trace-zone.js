@@ -8,13 +8,11 @@ Zone.Stacktrace = function (e) {
   this._e = e;
 };
 Zone.Stacktrace.prototype.get = function () {
-  var frames = this._e.stack.split('\n');
-
-  var markerIndex;
-  for (var markerIndex = frames.length - 1; markerIndex >= 0; markerIndex -= 1) {
-    if (frames[markerIndex].indexOf('marker@') === 0) {
-      return frames.slice(markerIndex+1).join('\n');
-    }
+  if (zone.stackFramesFilter) {
+    return this._e.stack.
+        split('\n').
+        filter(zone.stackFramesFilter).
+        join('\n');
   }
   return this._e.stack;
 }
@@ -46,8 +44,15 @@ Zone.getStacktrace = function () {
 
 Zone.longStackTraceZone = {
   getLongStacktrace: function (exception) {
-    var trace = [exception.stack];
+    var trace = [];
     var zone = this;
+    if (zone.stackFramesFilter) {
+      trace.push(exception.stack.split('\n').
+          filter(zone.stackFramesFilter).
+          join('\n'));
+    } else {
+      trace.push(exception.stack);
+    }
     var now = Date.now();
     while (zone && zone.constructedAtException) {
       trace.push(
@@ -57,6 +62,10 @@ Zone.longStackTraceZone = {
       zone = zone.parent;
     }
     return trace.join('\n');
+  },
+
+  stackFramesFilter: function (line) {
+    return line.indexOf('zone.js') === -1;
   },
 
   onError: function (exception) {
