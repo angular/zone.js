@@ -128,6 +128,17 @@ describe('Zone', function () {
     expect(zone.mark).toBe('root');
   });
 
+  describe('fork', function () {
+    it('should fork deep copy', function () {
+      var protoZone = { too: { deep: true } },
+          a = zone.fork(protoZone),
+          b = zone.fork(protoZone);
+
+      expect(a.too).not.toBe(b.too);
+      expect(a.too).toEqual(b.too);
+    });
+  });
+
 });
 
 function throwError () {

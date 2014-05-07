@@ -39,7 +39,9 @@ function Zone(parentZone, data) {
 
     // set the new zone's hook (replacing the parent zone's)
     } else {
-      zone[property] = data[property];
+      zone[property] = (typeof data[property] === 'object') ?
+                        JSON.parse(JSON.stringify(data[property])) :
+                        data[property];
     }
   });
 
