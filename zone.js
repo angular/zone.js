@@ -57,8 +57,8 @@ Zone.prototype = {
     return new Zone(this, locals);
   },
 
-  bind: function (fn) {
-    this.enqueueTask(fn);
+  bind: function (fn, skipEnqueue) {
+    skipEnqueue || this.enqueueTask(fn);
     var zone = this.fork();
     return function zoneBoundFn() {
       return zone.run(fn, this, arguments);
@@ -364,8 +364,8 @@ Zone.patch = function patch () {
       'catch'
     ]);
   }
-  Zone.patchClass('MutationObserver');
-  Zone.patchClass('WebKitMutationObserver');
+  Zone.patchMutationObserverClass('MutationObserver');
+  Zone.patchMutationObserverClass('WebKitMutationObserver');
 };
 
 //
@@ -452,6 +452,62 @@ Zone.patchClass = function (className) {
       }
     }(prop));
   };
+};
+
+// wrap some native API on `window`
+Zone.patchMutationObserverClass = function (className) {
+  var OriginalClass = window[className];
+  if (!OriginalClass) {
+    return;
+  }
+  window[className] = function (fn) {
+    this._o = new OriginalClass(zone.bind(fn, true));
+  };
+
+  var instance = new OriginalClass(function () {});
+
+  window[className].prototype.disconnect = function () {
+    var result = this._o.disconnect.apply(this._o, arguments);
+    this._active && zone.dequeueTask();
+    this._active = false;
+    return result;
+  };
+
+  window[className].prototype.observe = function () {
+    if (!this._active) {
+      zone.enqueueTask();
+    }
+    dump(this._active)
+    this._active = true;
+    return this._o.observe.apply(this._o, arguments);
+  };
+
+  var prop;
+  for (prop in instance) {
+    (function (prop) {
+      if (typeof window[className].prototype !== undefined) {
+        return;
+      }
+      if (typeof instance[prop] === 'function') {
+        window[className].prototype[prop] = function () {
+          return this._o[prop].apply(this._o, arguments);
+        };
+      } else {
+        Object.defineProperty(window[className].prototype, prop, {
+          set: function (fn) {
+            if (typeof fn === 'function') {
+              this._o[prop] = zone.bind(fn);
+            } else {
+              this._o[prop] = fn;
+            }
+          },
+          get: function () {
+            return this._o[prop];
+          }
+        });
+      }
+    }(prop));
+  }
 };
 
 Zone.eventNames = 'copy cut paste abort blur focus canplay canplaythrough change click contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop durationchange emptied ended input invalid keydown keypress keyup load loadeddata loadedmetadata loadstart mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup pause play playing progress ratechange reset scroll seeked seeking select show stalled submit suspend timeupdate volumechange waiting mozfullscreenchange mozfullscreenerror mozpointerlockchange mozpointerlockerror error'.split(' ');
