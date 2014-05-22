@@ -6,7 +6,7 @@
 'use strict';
 
 describe('document.registerElement', function () {
-  if (!'registerElement' in document) {
+  if (!('registerElement' in document)) {
     console.log('WARNING: skipping document.registerElement test (missing this API)');
     return;
   }

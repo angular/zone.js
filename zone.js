@@ -512,7 +512,7 @@ Zone.patchMutationObserverClass = function (className) {
 };
 
 Zone.patchRegisterElement = function () {
-  if (!'registerElement' in document) {
+  if (!('registerElement' in document)) {
     return;
   }
   var _registerElement = document.registerElement;
