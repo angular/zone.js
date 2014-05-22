@@ -60,6 +60,13 @@ Hooks that you don't override when forking a zone are inherited from the existin
 See the [API docs](#api) below for more.
 
 
+## Usage
+
+To start using Zones, you need to include the `zone.js` script in this package onto
+your page. This script should appear in the `<head>` of your HTML file before any other
+scripts, including shims/polyfills.
+
+
 ## Examples
 
 There are two kinds of examples:
