@@ -366,6 +366,7 @@ Zone.patch = function patch () {
   }
   Zone.patchMutationObserverClass('MutationObserver');
   Zone.patchMutationObserverClass('WebKitMutationObserver');
+  Zone.patchRegisterElement();
 };
 
 //
@@ -509,6 +510,27 @@ Zone.patchMutationObserverClass = function (className) {
     }(prop));
   }
 };
+
+Zone.patchRegisterElement = function () {
+  if (!'registerElement' in document) {
+    return;
+  }
+  var _registerElement = document.registerElement;
+  var callbacks = [
+    'createdCallback',
+    'attachedCallback',
+    'detachedCallback',
+    'attributeChangedCallback'
+  ];
+  document.registerElement = function (name, opts) {
+    callbacks.forEach(function (callback) {
+      if (opts.prototype[callback]) {
+        opts.prototype[callback] = zone.bind(opts.prototype[callback]);
+      }
+    });
+    return _registerElement.apply(document, [name, opts]);
+  };
+}
 
 Zone.eventNames = 'copy cut paste abort blur focus canplay canplaythrough change click contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop durationchange emptied ended input invalid keydown keypress keyup load loadeddata loadedmetadata loadstart mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup pause play playing progress ratechange reset scroll seeked seeking select show stalled submit suspend timeupdate volumechange waiting mozfullscreenchange mozfullscreenerror mozpointerlockchange mozpointerlockerror error'.split(' ');
 Zone.onEventNames = Zone.eventNames.map(function (property) {
