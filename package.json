@@ -15,7 +15,7 @@
     "url": "git://github.com/btford/zone.js.git"
   },
   "author": "Brian Ford",
-  "license": "MIT",
+  "license": "Apache 2.0",
   "bugs": {
     "url": "https://github.com/btford/zone.js/issues"
   },
