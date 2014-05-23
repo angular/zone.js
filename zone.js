@@ -478,7 +478,6 @@ Zone.patchMutationObserverClass = function (className) {
     if (!this._active) {
       zone.enqueueTask();
     }
-    dump(this._active)
     this._active = true;
     return this._o.observe.apply(this._o, arguments);
   };
