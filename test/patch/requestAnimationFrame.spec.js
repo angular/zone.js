@@ -51,6 +51,57 @@ describe('requestAnimationFrame', function () {
   });
 });
 
+describe('mozRequestAnimationFrame', function () {
+  var flag, hasParent, skip = false;
+
+  it('should work', function (done) {
+
+    if (!window.mozRequestAnimationFrame) {
+      console.log('WARNING: skipping mozRequestAnimationFrame test (missing this API)');
+      return;
+    }
+
+    // Some browsers (especially Safari) do not fire mozRequestAnimationFrame
+    // if they are offscreen. We can disable this test for those browsers and
+    // assume the patch works if setTimeout works, since they are mechanically
+    // the same
+    runs(function() {
+      flag = false;
+      window.mozRequestAnimationFrame(function () {
+        flag = true;
+      });
+      setTimeout(function () {
+        skip = true;
+        flag = true;
+        console.log('WARNING: skipping mozRequestAnimationFrame test (not firing rAF)');
+      }, 50);
+    });
+
+    waitsFor(function() {
+      return flag;
+    }, 'mozRequestAnimationFrame to run', 100);
+
+    runs(function() {
+      flag = false;
+      hasParent = false;
+
+      window.mozRequestAnimationFrame(function () {
+        hasParent = !!window.zone.parent;
+        flag = true;
+      });
+    });
+
+    waitsFor(function() {
+      return flag || skip;
+    }, 'mozRequestAnimationFrame to run', 100);
+
+    runs(function() {
+      expect(hasParent || skip).toBe(true);
+    });
+
+  });
+});
+
 describe('webkitRequestAnimationFrame', function () {
   var flag, hasParent, skip = false;
 

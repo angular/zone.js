@@ -309,6 +309,7 @@ Zone.patch = function patch () {
 
   Zone.patchSetFn(window, [
     'requestAnimationFrame',
+    'mozRequestAnimationFrame',
     'webkitRequestAnimationFrame'
   ]);
 
