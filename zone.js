@@ -1,5 +1,9 @@
 'use strict';
 
+(function (window) {
+
+var zone = null;
+
 
 function Zone(parentZone, data) {
   var zone = (arguments.length) ? Object.create(parentZone) : this;
@@ -79,10 +83,10 @@ Zone.prototype = {
   run: function run (fn, applyTo, applyWith) {
     applyWith = applyWith || [];
 
-    var oldZone = window.zone,
+    var oldZone = zone,
         result;
 
-    window.zone = this;
+    window.zone = zone = this;
 
     try {
       this.beforeTask();
@@ -95,7 +99,7 @@ Zone.prototype = {
       }
     } finally {
       this.afterTask();
-      window.zone = oldZone;
+      window.zone = zone = oldZone;
     }
     return result;
   },
@@ -665,13 +669,14 @@ Zone.onEventNames = Zone.eventNames.map(function (property) {
 });
 
 Zone.init = function init () {
-  if (typeof module !== 'undefined' && module && module.exports) {
-    module.exports = new Zone();
-  } else {
-    window.zone = new Zone();
-  }
+  window.zone = zone = new Zone();
   Zone.patch();
 };
 
 
 Zone.init();
+
+window.Zone = Zone;
+
+}((typeof module !== 'undefined' && module && module.exports) ?
+    module.exports : window));
