@@ -1,5 +1,7 @@
 'use strict';
 
+(function (window) {
+
 
 function Zone(parentZone, data) {
   var zone = (arguments.length) ? Object.create(parentZone) : this;
@@ -118,7 +120,7 @@ Zone.patchSetClearFn = function (obj, fnNames) {
       var ids = {};
 
       if (setName === 'setInterval') {
-        zone[setName] = function (fn) {
+        window.zone[setName] = function (fn) {
           var id;
           arguments[0] = function () {
             delete ids[id];
@@ -130,7 +132,7 @@ Zone.patchSetClearFn = function (obj, fnNames) {
           return id;
         };
       } else {
-        zone[setName] = function (fn) {
+        window.zone[setName] = function (fn) {
           var id;
           arguments[0] = function () {
             delete ids[id];
@@ -538,13 +540,14 @@ Zone.onEventNames = Zone.eventNames.map(function (property) {
 });
 
 Zone.init = function init () {
-  if (typeof module !== 'undefined' && module && module.exports) {
-    module.exports = new Zone();
-  } else {
-    window.zone = new Zone();
-  }
+  window.zone = new Zone();
   Zone.patch();
 };
 
 
 Zone.init();
+
+window.Zone = Zone;
+
+}((typeof module !== 'undefined' && module && module.exports) ?
+    module.exports : window));
