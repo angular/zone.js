@@ -106,4 +106,28 @@ describe('document.registerElement', function () {
     });
   });
 
+
+  it('should work with prototypes that have non-writable, non-configurable descriptors', function () {
+    runs(function () {
+      var proto = Object.create(HTMLElement.prototype);
+      Object.defineProperty(proto, 'createdCallback', {
+        writeable: false,
+        configurable: false,
+        value: flagAndCheckZone
+      });
+      document.registerElement('x-prop-desc', {
+        prototype: proto
+      });
+      var elt = document.createElement('x-prop-desc');
+    });
+
+    waitsFor(function() {
+      return flag;
+    }, 'createdCallback to fire', 100);
+
+    runs(function() {
+      expect(hasParent).toBe(true);
+    });
+  });
+
 });

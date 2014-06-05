@@ -368,6 +368,7 @@ Zone.patch = function patch () {
   }
   Zone.patchMutationObserverClass('MutationObserver');
   Zone.patchMutationObserverClass('WebKitMutationObserver');
+  Zone.patchDefineProperty();
   Zone.patchRegisterElement();
 };
 
@@ -512,6 +513,49 @@ Zone.patchMutationObserverClass = function (className) {
   }
 };
 
+// might need similar for object.freeze
+// i regret nothing
+Zone.patchDefineProperty = function () {
+  var _defineProperty = Object.defineProperty;
+  var _getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+
+  Object.defineProperty = function (obj, prop, desc) {
+    if (isUnconfigurable(obj, prop)) {
+      throw new TypeError('Cannot assign to read only property \'' + prop + '\' of ' + obj);
+    }
+    return rewriteDescriptor(obj, prop, desc);
+  };
+
+  Object.getOwnPropertyDescriptor = function (obj, prop) {
+    var desc = _getOwnPropertyDescriptor(obj, prop);
+    if (isUnconfigurable(obj, prop)) {
+      desc.configurable = false;
+    }
+    return desc;
+  };
+
+  Zone._redefineProperty = function (obj, prop, desc) {
+    return rewriteDescriptor(obj, prop, desc);
+  };
+
+  function isUnconfigurable (obj, prop) {
+    return obj && obj.__unconfigurables && obj.__unconfigurables[prop];
+  }
+
+  function rewriteDescriptor (obj, prop, desc) {
+    if (!desc.configurable) {
+      desc.configurable = true;
+      if (!obj.__unconfigurables) {
+        _defineProperty(obj, '__unconfigurables', {
+          value: {}
+        });
+      }
+      obj.__unconfigurables[prop] = true;
+    }
+    return _defineProperty(obj, prop, desc);
+  }
+};
+
 Zone.patchRegisterElement = function () {
   if (!('registerElement' in document)) {
     return;
@@ -526,7 +570,11 @@ Zone.patchRegisterElement = function () {
   document.registerElement = function (name, opts) {
     callbacks.forEach(function (callback) {
       if (opts.prototype[callback]) {
-        opts.prototype[callback] = zone.bind(opts.prototype[callback]);
+        var descriptor = Object.getOwnPropertyDescriptor(opts.prototype, callback);
+        if (descriptor.value) {
+          descriptor.value = zone.bind(descriptor.value);
+          Zone._redefineProperty(opts.prototype, callback, descriptor);
+        }
       }
     });
     return _registerElement.apply(document, [name, opts]);
