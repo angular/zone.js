@@ -518,12 +518,14 @@ Zone.patchMutationObserverClass = function (className) {
 Zone.patchDefineProperty = function () {
   var _defineProperty = Object.defineProperty;
   var _getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+  var _create = Object.create;
 
   Object.defineProperty = function (obj, prop, desc) {
     if (isUnconfigurable(obj, prop)) {
       throw new TypeError('Cannot assign to read only property \'' + prop + '\' of ' + obj);
     }
-    return rewriteDescriptor(obj, prop, desc);
+    desc = rewriteDescriptor(obj, prop, desc);
+    return _defineProperty(obj, prop, desc);
   };
 
   Object.defineProperties = function (obj, props) {
@@ -531,6 +533,15 @@ Zone.patchDefineProperty = function () {
       Object.defineProperty(obj, prop, props[prop]);
     });
     return obj;
+  };
+
+  Object.create = function (obj, proto) {
+    if (typeof proto === 'object') {
+      Object.keys(proto).forEach(function (prop) {
+        proto[prop] = rewriteDescriptor(obj, prop, proto[prop]);
+      });
+    }
+    return _create(obj, proto);
   };
 
   Object.getOwnPropertyDescriptor = function (obj, prop) {
@@ -542,7 +553,8 @@ Zone.patchDefineProperty = function () {
   };
 
   Zone._redefineProperty = function (obj, prop, desc) {
-    return rewriteDescriptor(obj, prop, desc);
+    desc = rewriteDescriptor(obj, prop, desc);
+    return _defineProperty(obj, prop, desc);
   };
 
   function isUnconfigurable (obj, prop) {
@@ -550,16 +562,14 @@ Zone.patchDefineProperty = function () {
   }
 
   function rewriteDescriptor (obj, prop, desc) {
+    desc.configurable = true;
     if (!desc.configurable) {
-      desc.configurable = true;
       if (!obj.__unconfigurables) {
-        _defineProperty(obj, '__unconfigurables', {
-          value: {}
-        });
+        _defineProperty(obj, '__unconfigurables', { writable: true, value: {} });
       }
       obj.__unconfigurables[prop] = true;
     }
-    return _defineProperty(obj, prop, desc);
+    return desc;
   }
 };
 
