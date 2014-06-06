@@ -6,10 +6,13 @@ module.exports = function (config) {
     files: [
       'zone.js',
       '*-zone.js',
-      'test/**/*.spec.js'
+      'test/**/*.spec.js',
+      {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false}
     ],
 
     reporters: ['progress'],
+
+    preprocessors: {},
 
     port: 9876,
     colors: true,
