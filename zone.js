@@ -524,7 +524,9 @@ Zone.patchDefineProperty = function () {
     if (isUnconfigurable(obj, prop)) {
       throw new TypeError('Cannot assign to read only property \'' + prop + '\' of ' + obj);
     }
-    desc = rewriteDescriptor(obj, prop, desc);
+    if (prop !== 'prototype') {
+      desc = rewriteDescriptor(obj, prop, desc);
+    }
     return _defineProperty(obj, prop, desc);
   };
 
