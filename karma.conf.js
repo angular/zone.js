@@ -6,7 +6,8 @@ module.exports = function (config) {
     files: [
       'zone.js',
       '*-zone.js',
-      'test/lib/brick.js',
+      //'test/lib/brick.js',
+      'test/util.js',
       'test/**/*.spec.js',
       {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false}
     ],
@@ -15,7 +16,7 @@ module.exports = function (config) {
 
     preprocessors: {},
 
-    port: 9876,
+    //port: 9876,
     colors: true,
 
     logLevel: config.LOG_INFO,
