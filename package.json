@@ -12,12 +12,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/btford/zone.js.git"
+    "url": "git://github.com/angular/zone.js.git"
   },
   "author": "Brian Ford",
   "license": "Apache 2.0",
   "bugs": {
-    "url": "https://github.com/btford/zone.js/issues"
+    "url": "https://github.com/angular/zone.js/issues"
   },
   "devDependencies": {
     "karma": "~0.10.2",
