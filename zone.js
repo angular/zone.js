@@ -590,7 +590,7 @@ Zone.patchRegisterElement = function () {
     callbacks.forEach(function (callback) {
       if (opts.prototype[callback]) {
         var descriptor = Object.getOwnPropertyDescriptor(opts.prototype, callback);
-        if (descriptor.value) {
+        if (descriptor && descriptor.value) {
           descriptor.value = zone.bind(descriptor.value || opts.prototype[callback]);
           Zone._redefineProperty(opts.prototype, callback, descriptor);
         }
