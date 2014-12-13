@@ -20,7 +20,7 @@ You can run code within a zone with `zone.run`.
 Tasks scheduled (with `setTimeout`, `setInterval`, or event listeners) stay within that zone.
 
 ```javascript
-zone.run(function () {
+zone.fork().run(function () {
   zone.inTheZone = true;
 
   setTimeout(function () {
