@@ -1,10 +1,6 @@
 'use strict';
 
-describe('HTML Imports', function () {
-  if (!supportsImports()) {
-    console.log('WARNING: HTML Imports test (missing this API)');
-    return;
-  }
+describe('HTML Imports', ifEnvSupports(supportsImports, function () {
 
   var flag, hasParent;
 
@@ -79,8 +75,9 @@ describe('HTML Imports', function () {
     return flag;
   }
 
-});
+}));
 
 function supportsImports() {
   return 'import' in document.createElement('link');
 }
+supportsImports.message = 'HTML Imports';

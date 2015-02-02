@@ -5,12 +5,7 @@
 
 'use strict';
 
-describe('document.registerElement', function () {
-  if (!('registerElement' in document)) {
-    console.log('WARNING: skipping document.registerElement test (missing this API)');
-    return;
-  }
-
+describe('document.registerElement', ifEnvSupports(registerElement, function () {
   var flag, hasParent;
 
   // register a custom element for each callback
@@ -156,4 +151,9 @@ describe('document.registerElement', function () {
     });
   });
 
-});
+}));
+
+function registerElement() {
+  return ('registerElement' in document);
+}
+registerElement.message = 'document.registerElement';

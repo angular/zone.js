@@ -1,6 +1,6 @@
 'use strict';
 
-describe('MutationObserver', function () {
+describe('MutationObserver', ifEnvSupports('MutationObserver', function () {
   var elt;
 
   beforeEach(function () {
@@ -8,11 +8,6 @@ describe('MutationObserver', function () {
   });
 
   it('should work', function () {
-    if (!window.MutationObserver) {
-      console.log('WARNING: skipping MutationObserver test (missing this API)');
-      return;
-    }
-
     var flag = false,
         hasParent;
 
@@ -40,11 +35,6 @@ describe('MutationObserver', function () {
   });
 
   it('should dequeue upon disconnect', function () {
-    if (!window.MutationObserver) {
-      console.log('WARNING: skipping MutationObserver test (missing this API)');
-      return;
-    }
-
     var flag = false,
         childZone = zone.fork({
           dequeueTask: function () {
@@ -63,11 +53,6 @@ describe('MutationObserver', function () {
   });
 
   it('should enqueue once upon observation', function () {
-    if (!window.MutationObserver) {
-      console.log('WARNING: skipping MutationObserver test (missing this API)');
-      return;
-    }
-
     var count = 0,
         childZone = zone.fork({
           enqueueTask: function () {
@@ -88,11 +73,6 @@ describe('MutationObserver', function () {
   });
 
   it('should only dequeue upon disconnect if something is observed', function () {
-    if (!window.MutationObserver) {
-      console.log('WARNING: skipping MutationObserver test (missing this API)');
-      return;
-    }
-
     var flag = false,
         elt = document.createElement('div'),
         childZone = zone.fork({
@@ -108,15 +88,10 @@ describe('MutationObserver', function () {
     });
 
   });
-});
+}));
 
-describe('WebKitMutationObserver', function () {
+describe('WebKitMutationObserver', ifEnvSupports('WebKitMutationObserver', function () {
   it('should ensure observers run within the zone', function () {
-    if (!window.WebKitMutationObserver) {
-      console.log('WARNING: skipping WebKitMutationObserver test (missing this API)');
-      return;
-    }
-
     var flag = false,
         elt = document.createElement('div'),
         hasParent;
@@ -143,4 +118,4 @@ describe('WebKitMutationObserver', function () {
     });
 
   });
-});
+}));
