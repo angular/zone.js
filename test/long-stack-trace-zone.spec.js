@@ -11,26 +11,25 @@ describe('longStackTraceZone', function () {
 
   beforeEach(function () {
     log = [];
-    jasmine.Clock.useMock();
   });
 
-  it('should produce long stack traces', function () {
+  it('should produce long stack traces', function (done) {
     lstz.run(function () {
       setTimeout(function () {
         setTimeout(function () {
+          setTimeout(function () {
+            expect(log[0]).toBe('Error: hello');
+            expect(log[1].split('--- ').length).toBe(4);
+            done();
+          }, 0);
           throw new Error('hello');
         }, 0);
       }, 0);
     });
-
-    jasmine.Clock.tick(0);
-
-    expect(log[0]).toBe('Error: hello');
-    expect(log[1].split('--- ').length).toBe(4);
   });
 
 
-  it('should filter based on stackFramesFilter', function () {
+  it('should filter based on stackFramesFilter', function (done) {
     lstz.fork({
       stackFramesFilter: function (line) {
         return line.indexOf('jasmine.js') === -1;
@@ -38,12 +37,13 @@ describe('longStackTraceZone', function () {
     }).run(function () {
       setTimeout(function () {
         setTimeout(function () {
+          setTimeout(function () {
+            expect(log[1]).not.toContain('jasmine.js');
+            done();
+          }, 0);
           throw new Error('hello');
         }, 0);
       }, 0);
     });
-
-    jasmine.Clock.tick(0);
-    expect(log[1]).not.toContain('jasmine.js');
   });
 });

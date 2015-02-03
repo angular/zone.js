@@ -8,10 +8,6 @@ describe('Zone', function () {
 
   describe('hooks', function () {
 
-    beforeEach(function () {
-      jasmine.Clock.useMock();
-    });
-
     it('should fire beforeTask before a zone runs a function', function () {
       var enterSpy = jasmine.createSpy();
       var myZone = zone.fork({
@@ -24,6 +20,7 @@ describe('Zone', function () {
         expect(enterSpy).toHaveBeenCalled();
       });
     });
+
 
     it('should fire afterTask after a zone runs a function', function () {
       var leaveSpy = jasmine.createSpy();
@@ -38,7 +35,8 @@ describe('Zone', function () {
       expect(leaveSpy).toHaveBeenCalled();
     });
 
-    it('should fire onZoneCreated when a zone is forked', function () {
+
+    it('should fire onZoneCreated when a zone is forked', function (done) {
       var createdSpy = jasmine.createSpy();
       var counter = 0;
       var myZone = zone.fork({
@@ -54,21 +52,15 @@ describe('Zone', function () {
 
         expect(counter).toBe(0);
 
-        setTimeout(function () {
-          expect(counter).toBe(2);
-        }, 0);
+        setTimeout(function () {}, 0);
         expect(counter).toBe(1);
 
         setTimeout(function () {
+          expect(counter).toBe(0);
+          setTimeout(done, 5);
           expect(counter).toBe(1);
-          setTimeout(function () {}, 0);
-          expect(counter).toBe(2);
         }, 0);
         expect(counter).toBe(2);
-
-        jasmine.Clock.tick(1);
-
-        expect(counter).toBe(0);
       });
     });
 
@@ -78,6 +70,7 @@ describe('Zone', function () {
         zone.run(throwError);
       }).toThrow();
     });
+
 
     it('should fire onError if a function run by a zone throws', function () {
       var errorSpy = jasmine.createSpy();
@@ -94,14 +87,12 @@ describe('Zone', function () {
       expect(errorSpy).toHaveBeenCalled();
     });
 
+
     it('should allow you to override alert', function () {
       var spy = jasmine.createSpy();
       var myZone = zone.fork({
         alert: spy
       });
-
-      //alert('foo');
-      //expect(spy).not.toHaveBeenCalled();
 
       myZone.run(function () {
         alert('foo');
@@ -110,6 +101,7 @@ describe('Zone', function () {
       expect(spy).toHaveBeenCalled();
     });
   });
+
 
   it('should allow zones to be run from within another zone', function () {
     var a = zone.fork({
@@ -127,6 +119,7 @@ describe('Zone', function () {
     });
     expect(zone.mark).toBe('root');
   });
+
 
   describe('fork', function () {
     it('should fork deep copy', function () {

@@ -7,31 +7,17 @@ describe('MutationObserver', ifEnvSupports('MutationObserver', function () {
     elt = document.createElement('div');
   });
 
-  it('should work', function () {
-    var flag = false,
-        hasParent;
-
-    runs(function () {
-      var ob = new MutationObserver(function () {
-        hasParent = !!window.zone.parent;
-        flag = true;
-      });
-
-      ob.observe(elt, {
-        childList: true
-      });
-
-      elt.innerHTML = '<p>hey</p>';
+  it('should run observers within the zone', function (done) {
+    var ob = new MutationObserver(function () {
+      expect(window.zone.parent).toBeDefined();
+      done();
     });
 
-    waitsFor(function() {
-      return flag;
-    }, 'mutation observer to fire', 100);
-
-    runs(function() {
-      expect(hasParent).toBe(true);
+    ob.observe(elt, {
+      childList: true
     });
 
+    elt.innerHTML = '<p>hey</p>';
   });
 
   it('should dequeue upon disconnect', function () {
@@ -91,31 +77,18 @@ describe('MutationObserver', ifEnvSupports('MutationObserver', function () {
 }));
 
 describe('WebKitMutationObserver', ifEnvSupports('WebKitMutationObserver', function () {
-  it('should ensure observers run within the zone', function () {
-    var flag = false,
-        elt = document.createElement('div'),
-        hasParent;
+  it('should run observers within the zone', function (done) {
+    var elt = document.createElement('div');
 
-    runs(function () {
-      var ob = new WebKitMutationObserver(function () {
-        hasParent = !!window.zone.parent;
-        flag = true;
-      });
-
-      ob.observe(elt, {
-        childList: true
-      });
-
-      elt.innerHTML = '<p>hey</p>';
+    var ob = new WebKitMutationObserver(function () {
+      expect(window.zone.parent).toBeDefined();
+      done();
     });
 
-    waitsFor(function() {
-      return flag;
-    }, 'mutation observer to fire', 100);
-
-    runs(function() {
-      expect(hasParent).toBe(true);
+    ob.observe(elt, {
+      childList: true
     });
 
+    elt.innerHTML = '<p>hey</p>';
   });
 }));

@@ -357,6 +357,7 @@ Zone.patch = function patch () {
   } else {
     Zone.patchViaCapturingAllTheEvents();
     Zone.patchClass('XMLHttpRequest');
+    Zone.patchWebSocket();
   }
 
   // patch promises
@@ -413,6 +414,17 @@ Zone.patchViaCapturingAllTheEvents = function () {
   });
 };
 
+
+Zone.patchWebSocket = function() {
+  var WS = window.WebSocket;
+  window.WebSocket = function(a, b) {
+    var socket = arguments.length > 1 ? new WS(a, b) : new WS(a);
+    Zone.patchProperties(socket, ['onmessage']);
+    return socket;
+  };
+}
+
+
 // wrap some native API on `window`
 Zone.patchClass = function (className) {
   var OriginalClass = window[className];
@@ -457,6 +469,7 @@ Zone.patchClass = function (className) {
     }(prop));
   };
 };
+
 
 // wrap some native API on `window`
 Zone.patchMutationObserverClass = function (className) {
@@ -600,7 +613,7 @@ Zone.patchRegisterElement = function () {
   };
 }
 
-Zone.eventNames = 'copy cut paste abort blur focus canplay canplaythrough change click contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop durationchange emptied ended input invalid keydown keypress keyup load loadeddata loadedmetadata loadstart mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup pause play playing progress ratechange reset scroll seeked seeking select show stalled submit suspend timeupdate volumechange waiting mozfullscreenchange mozfullscreenerror mozpointerlockchange mozpointerlockerror error webglcontextrestored webglcontextlost webglcontextcreationerror'.split(' ');
+Zone.eventNames = 'copy cut paste abort blur focus canplay canplaythrough change click contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop durationchange emptied ended input invalid keydown keypress keyup load loadeddata loadedmetadata loadstart message mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup pause play playing progress ratechange reset scroll seeked seeking select show stalled submit suspend timeupdate volumechange waiting mozfullscreenchange mozfullscreenerror mozpointerlockchange mozpointerlockerror error webglcontextrestored webglcontextlost webglcontextcreationerror'.split(' ');
 Zone.onEventNames = Zone.eventNames.map(function (property) {
   return 'on' + property;
 });

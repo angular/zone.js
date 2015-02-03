@@ -6,149 +6,107 @@
 'use strict';
 
 describe('document.registerElement', ifEnvSupports(registerElement, function () {
-  var flag, hasParent;
 
   // register a custom element for each callback
-  var callbacks = [
+  var callbackNames = [
     'created',
     'attached',
     'detached',
     'attributeChanged'
   ];
 
-  function flagAndCheckZone() {
-    flag = true;
-    hasParent = !!window.zone.parent;
-  }
+  var callbacks = {};
 
-  var customElements = callbacks.map(function (callbackName) {
+  var customElements = callbackNames.map(function (callbackName) {
     var fullCallbackName = callbackName + 'Callback';
     var proto = Object.create(HTMLElement.prototype);
-    proto[fullCallbackName] = flagAndCheckZone;
+    proto[fullCallbackName] = function (arg) {
+      callbacks[callbackName](arg);
+    };
     return document.registerElement('x-' + callbackName.toLowerCase(), {
       prototype: proto
     });
   });
 
 
-  beforeEach(function () {
-    flag = false;
-    hasParent = false;
+  it('should work with createdCallback', function (done) {
+    callbacks.created = function () {
+      expect(window.zone.parent).toBeDefined();
+      done();
+    };
+    var elt = document.createElement('x-created');
   });
 
 
-  it('should work with createdCallback', function () {
-    runs(function () {
-      var elt = document.createElement('x-created');
-    });
-
-    waitsFor(function() {
-      return flag;
-    }, 'createdCallback to fire', 100);
-
-    runs(function() {
-      expect(hasParent).toBe(true);
-    });
+  it('should work with attachedCallback', function (done) {
+    callbacks.attached = function () {
+      expect(window.zone.parent).toBeDefined();
+      done();
+    };
+    var elt = document.createElement('x-attached');
+    document.body.appendChild(elt);
+    document.body.removeChild(elt);
   });
 
 
-  it('should work with attachedCallback', function () {
-    runs(function () {
-      var elt = document.createElement('x-attached');
-      document.body.appendChild(elt);
-      document.body.removeChild(elt);
-    });
-
-    waitsFor(function() {
-      return flag;
-    }, 'attachedCallback to fire', 100);
-
-    runs(function() {
-      expect(hasParent).toBe(true);
-    });
+  it('should work with detachedCallback', function (done) {
+    callbacks.detached = function () {
+      expect(window.zone.parent).toBeDefined();
+      done();
+    };
+    var elt = document.createElement('x-detached');
+    document.body.appendChild(elt);
+    document.body.removeChild(elt);
   });
 
 
-  it('should work with detachedCallback', function () {
-    runs(function () {
-      var elt = document.createElement('x-detached');
-      document.body.appendChild(elt);
-      document.body.removeChild(elt);
-    });
-
-    waitsFor(function() {
-      return flag;
-    }, 'detachedCallback to fire', 100);
-
-    runs(function() {
-      expect(hasParent).toBe(true);
-    });
+  it('should work with attributeChanged', function (done) {
+    callbacks.attributeChanged = function () {
+      expect(window.zone.parent).toBeDefined();
+      done();
+    };
+    var elt = document.createElement('x-attributechanged');
+    elt.id = 'bar';
   });
 
 
-  it('should work with attributeChanged', function () {
-    runs(function () {
-      var elt = document.createElement('x-attributechanged');
-      elt.id = 'bar';
+  it('should work with non-writable, non-configurable prototypes created with defineProperty', function (done) {
+    var proto = Object.create(HTMLElement.prototype);
+    Object.defineProperty(proto, 'createdCallback', {
+      writeable: false,
+      configurable: false,
+      value: checkZone
     });
-
-    waitsFor(function() {
-      return flag;
-    }, 'attributeChanged to fire', 100);
-
-    runs(function() {
-      expect(hasParent).toBe(true);
+    document.registerElement('x-prop-desc', {
+      prototype: proto
     });
+    var elt = document.createElement('x-prop-desc');
+
+    function checkZone() {
+      expect(window.zone.parent).toBeDefined();
+      done();
+    }
   });
 
 
-  it('should work with prototypes that have non-writable, non-configurable descriptors', function () {
-    runs(function () {
-      var proto = Object.create(HTMLElement.prototype);
-      Object.defineProperty(proto, 'createdCallback', {
+  it('should work with non-writable, non-configurable prototypes created with defineProperties', function (done) {
+    var proto = Object.create(HTMLElement.prototype);
+    Object.defineProperties(proto, {
+      createdCallback: {
         writeable: false,
         configurable: false,
-        value: flagAndCheckZone
-      });
-      document.registerElement('x-prop-desc', {
-        prototype: proto
-      });
-      var elt = document.createElement('x-prop-desc');
+        value: checkZone
+      }
     });
-
-    waitsFor(function() {
-      return flag;
-    }, 'createdCallback to fire', 100);
-
-    runs(function() {
-      expect(hasParent).toBe(true);
+    document.registerElement('x-props-desc', {
+      prototype: proto
     });
-  });
+    var elt = document.createElement('x-props-desc');
 
-
-  it('should work with prototypes that have non-writable, non-configurable descriptors', function () {
-    runs(function () {
-      var proto = Object.create(HTMLElement.prototype);
-      Object.defineProperties(proto, {
-        createdCallback: {
-          writeable: false,
-          configurable: false,
-          value: flagAndCheckZone
-        }
-      });
-      document.registerElement('x-props-desc', {
-        prototype: proto
-      });
-      var elt = document.createElement('x-props-desc');
-    });
-
-    waitsFor(function() {
-      return flag;
-    }, 'createdCallback to fire', 100);
-
-    runs(function() {
-      expect(hasParent).toBe(true);
-    });
+    function checkZone() {
+      expect(window.zone.parent).toBeDefined();
+      done();
+    }
   });
 
 }));

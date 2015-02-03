@@ -4,10 +4,9 @@ describe('setInterval', function () {
 
   beforeEach(function () {
     zone.mark = 'root';
-    jasmine.Clock.useMock();
   });
 
-  it('should work with setInterval', function () {
+  it('should work with setInterval', function (done) {
     var childZone = window.zone.fork({
       mark: 'child'
     });
@@ -20,16 +19,15 @@ describe('setInterval', function () {
 
       var cancelId = window.setInterval(function() {
         // creates implied zone in all callbacks.
-        expect(zone).not.toEqual(childZone);
-        expect(zone.parent).toEqual(childZone);
-        expect(zone.mark).toEqual('child'); // proto inherited
+        expect(zone).not.toBe(childZone);
+        expect(zone.parent).toBe(childZone);
+        expect(zone.mark).toBe('child'); // proto inherited
+
+        clearInterval(cancelId);
+        done();
       }, 10);
 
-      jasmine.Clock.tick(11);
-
       expect(zone.mark).toEqual('child');
-
-      clearInterval(cancelId);
     });
 
     expect(zone.mark).toEqual('root');

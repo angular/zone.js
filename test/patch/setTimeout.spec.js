@@ -4,10 +4,9 @@ describe('setTimeout', function () {
 
   beforeEach(function () {
     zone.mark = 'root';
-    jasmine.Clock.useMock();
   });
 
-  it('should work with setTimeout', function () {
+  it('should work with setTimeout', function (done) {
 
     var childZone = window.zone.fork({
       mark: 'child'
@@ -24,6 +23,7 @@ describe('setTimeout', function () {
         expect(zone).not.toEqual(childZone);
         expect(zone.parent).toEqual(childZone);
         expect(zone.mark).toEqual('child'); // proto inherited
+        done();
       }, 0);
 
       expect(zone.mark).toEqual('child');
@@ -32,14 +32,14 @@ describe('setTimeout', function () {
     expect(zone.mark).toEqual('root');
   });
 
-  it('should allow canceling of fns registered with setTimeout', function () {
+  it('should allow canceling of fns registered with setTimeout', function (done) {
     var spy = jasmine.createSpy();
     var cancelId = window.setTimeout(spy, 0);
     window.clearTimeout(cancelId);
-
-    jasmine.Clock.tick(1);
-
-    expect(spy).not.toHaveBeenCalled();
+    setTimeout(function () {
+      expect(spy).not.toHaveBeenCalled();
+      done();
+    });
   });
 
 });
