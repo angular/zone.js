@@ -414,12 +414,12 @@ Zone.patchViaCapturingAllTheEvents = function () {
   });
 };
 
-
+// we have to patch the instance since the proto is non-configurable
 Zone.patchWebSocket = function() {
   var WS = window.WebSocket;
   window.WebSocket = function(a, b) {
     var socket = arguments.length > 1 ? new WS(a, b) : new WS(a);
-    Zone.patchProperties(socket, ['onmessage']);
+    Zone.patchProperties(socket, ['onclose', 'onerror', 'onmessage', 'onopen']);
     return socket;
   };
 }
