@@ -375,6 +375,14 @@ Zone.patch = function patch () {
 
 //
 Zone.canPatchViaPropertyDescriptor = function () {
+  if (!Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'onclick') &&
+      typeof Element !== 'undefined') {
+    // WebKit https://bugs.webkit.org/show_bug.cgi?id=134364
+    // IDL interface attributes are not configurable
+    var desc = Object.getOwnPropertyDescriptor(Element.prototype, 'onclick');
+    if (desc && !desc.configurable) return false;
+  }
+
   Object.defineProperty(HTMLElement.prototype, 'onclick', {
     get: function () {
       return true;
