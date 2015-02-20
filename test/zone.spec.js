@@ -140,6 +140,32 @@ describe('Zone', function () {
     });
   });
 
+  describe('bindPromiseFn', function () {
+    var mockPromise = function() {
+      return {
+        then: function (a, b) {
+          window.__setTimeout(a, 0);
+          return mockPromise();
+        }
+      };
+    };
+
+    it('should return a method that returns promises that run in the correct zone', function (done) {
+      zone.fork({ mark: 'a' }).run(function () {
+        var patched = Zone.bindPromiseFn(function() {
+          return mockPromise();
+        });
+
+        patched().then(function () {
+          expect(zone.mark).toBe('a');
+        }).then(function () {
+          expect(zone.mark).toBe('a');
+          done();
+        });
+      });
+    });
+  });
+
 });
 
 function throwError () {

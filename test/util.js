@@ -21,3 +21,6 @@ function ifEnvSupports(test, block) {
     }
   };
 };
+
+// useful for testing mocks
+window.__setTimeout = window.setTimeout;

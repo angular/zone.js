@@ -4,10 +4,10 @@ module.exports = function (config) {
   config.set({
     basePath: '',
     files: [
+      'test/util.js',
       'zone.js',
       '*-zone.js',
       //'test/lib/brick.js',
-      'test/util.js',
       'test/**/*.spec.js',
       {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false}
     ],
