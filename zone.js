@@ -45,6 +45,8 @@ function Zone(parentZone, data) {
     }
   });
 
+  zone.$id = ++Zone.nextId;
+
   return zone;
 }
 
@@ -165,6 +167,8 @@ Zone.patchSetClearFn = function (obj, fnNames) {
     }
   });
 };
+
+Zone.nextId = 1;
 
 
 Zone.patchSetFn = function (obj, fnNames) {

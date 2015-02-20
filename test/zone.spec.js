@@ -6,6 +6,14 @@ describe('Zone', function () {
     zone.mark = 'root';
   });
 
+  it('should have an id', function () {
+    expect(zone.$id).toBeDefined();
+  });
+
+  it('forked zones should have a greater id than their parent', function () {
+    expect(zone.fork().$id).toBeGreaterThan(zone.$id);
+  });
+
   describe('hooks', function () {
 
     it('should fire beforeTask before a zone runs a function', function () {
