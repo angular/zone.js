@@ -46,12 +46,14 @@ Zone.longStackTraceZone = {
   getLongStacktrace: function (exception) {
     var trace = [];
     var zone = this;
-    if (zone.stackFramesFilter) {
-      trace.push(exception.stack.split('\n').
-          filter(zone.stackFramesFilter).
-          join('\n'));
-    } else {
-      trace.push(exception.stack);
+    if (exception) {
+      if (zone.stackFramesFilter) {
+        trace.push(exception.stack.split('\n').
+            filter(zone.stackFramesFilter).
+            join('\n'));
+      } else {
+        trace.push(exception.stack);
+      }
     }
     var now = Date.now();
     while (zone && zone.constructedAtException) {

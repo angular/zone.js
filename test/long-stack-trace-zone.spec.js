@@ -46,4 +46,8 @@ describe('longStackTraceZone', function () {
       }, 0);
     });
   });
+
+  it('should expose LST via getLogStackTrace', function () {
+    expect(lstz.getLongStacktrace()).toBeDefined();
+  });
 });
