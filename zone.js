@@ -246,23 +246,23 @@ Zone.bindPromiseFn = (function() {
         return patchThenable(delegate.apply(this, arguments));
       };
     };
+  }
 
-    function patchThenable(thenable) {
-      var then = thenable.then;
-      thenable.then = function () {
-        var args = Zone.bindArguments(arguments);
-        var nextThenable = then.apply(thenable, args);
-        return patchThenable(nextThenable);
-      };
+  function patchThenable(thenable) {
+    var then = thenable.then;
+    thenable.then = function () {
+      var args = Zone.bindArguments(arguments);
+      var nextThenable = then.apply(thenable, args);
+      return patchThenable(nextThenable);
+    };
 
-      var ocatch = thenable.catch;
-      thenable.catch = function () {
-        var args = Zone.bindArguments(arguments);
-        var nextThenable = ocatch.apply(thenable, args);
-        return patchThenable(nextThenable);
-      };
-      return thenable;
-    }
+    var ocatch = thenable.catch;
+    thenable.catch = function () {
+      var args = Zone.bindArguments(arguments);
+      var nextThenable = ocatch.apply(thenable, args);
+      return patchThenable(nextThenable);
+    };
+    return thenable;
   }
 }());
 
