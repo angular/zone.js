@@ -150,7 +150,7 @@ var someZone = zone.fork({
 });
 
 someZone.fork({
-  '+afterTask': function (parentOnLeave) {
+  '+afterTask': function () {
     console.log('cya l8r');
   }
 }).run(function () {
@@ -180,9 +180,12 @@ Transforms a function to run within the given zone.
 
 ```javascript
 zone.fork({
+  onZoneCreated: function () {},
   beforeTask: function () {},
   afterTask: function () {},
   onError: function () {},
+  enqueueTask: function() {},
+  dequeueTask: function() {},
   setTimeout: function () {},
   setInterval: function () {},
   alert: function () {},
