@@ -1,3 +1,4 @@
 blink-core/
 blink-idl/
 parsed-idl/
+/node_modules
