@@ -114,38 +114,25 @@ Zone.patchSetClearFn = function (obj, fnNames) {
   }).
   forEach(function (name) {
     var setName = 'set' + name;
-    var clearName = 'clear' + name;
     var delegate = obj[setName];
 
     if (delegate) {
+      var clearName = 'clear' + name;
       var ids = {};
 
-      if (setName === 'setInterval') {
-        zone[setName] = function (fn) {
-          var id;
-          arguments[0] = function () {
-            delete ids[id];
-            return fn.apply(this, arguments);
-          };
-          var args = Zone.bindArguments(arguments);
-          id = delegate.apply(obj, args);
-          ids[id] = true;
-          return id;
-        };
-      } else {
-        zone[setName] = function (fn) {
-          var id;
-          arguments[0] = function () {
-            delete ids[id];
-            return fn.apply(this, arguments);
-          };
-          var args = Zone.bindArgumentsOnce(arguments);
-          id = delegate.apply(obj, args);
-          ids[id] = true;
-          return id;
-        };
-      }
+      var bindArgs = setName === 'setInterval' ? Zone.bindArguments : Zone.bindArgumentsOnce;
 
+      zone[setName] = function (fn) {
+        var id;
+        arguments[0] = function () {
+          delete ids[id];
+          return fn.apply(this, arguments);
+        };
+        var args = bindArgs(arguments);
+        id = delegate.apply(obj, args);
+        ids[id] = true;
+        return id;
+      };
 
       obj[setName] = function () {
         return zone[setName].apply(this, arguments);
