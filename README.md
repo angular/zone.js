@@ -84,20 +84,6 @@ For fully working examples:
 
 Below are the aforementioned snippets.
 
-### Tracking VM Turns
-
-Run some function at the end of each VM turn:
-
-```javascript
-zone.fork({
-  afterTask: function () {
-    // do some cleanup
-  }
-}).run(function () {
-  // do stuff
-});
-```
-
 ### Overriding A Zone's Hook
 
 ```javascript
