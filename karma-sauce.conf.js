@@ -24,11 +24,17 @@ module.exports = function (config) {
   };
 
   config.set({
+    captureTimeout: 120000,
+    browserNoActivityTimeout: 1500000,
+
     sauceLabs: {
-      testName: 'Dom Interceptor Unit Tests',
-      startConnect: true,
-      options: {
-        'selenium-version': '2.37.0'
+      testName: 'Zone.js',
+      startConnect: false,
+      options:  {
+          'selenium-version': '2.41.0',
+          'command-timeout': 600,
+          'idle-timeout': 600,
+          'max-duration': 5400
       }
     },
 
@@ -44,7 +50,6 @@ module.exports = function (config) {
       'karma-*'
     ]
   });
-
 
   if (process.env.TRAVIS) {
     config.sauceLabs.build = 'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')';
