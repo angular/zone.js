@@ -17,12 +17,9 @@ describe('setInterval', function () {
       expect(zone.mark).toEqual('child');
       expect(zone).toEqual(childZone);
 
-      var cancelId = window.setInterval(function() {
-        // creates implied zone in all callbacks.
-        expect(zone).not.toBe(childZone);
-        expect(zone.parent).toBe(childZone);
-        expect(zone.mark).toBe('child'); // proto inherited
-
+      var cancelId = setInterval(function() {
+        // the callback runs in the same zone
+        expect(zone).toBe(childZone);
         clearInterval(cancelId);
         done();
       }, 10);

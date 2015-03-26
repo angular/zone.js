@@ -14,14 +14,16 @@ describe('element', function () {
     button.remove();
   });
 
-  it('should work with addEventListener', function () {
-    var zoneHasParent;
-    button.addEventListener('click', function () {
-      zoneHasParent = !!window.zone.parent;
+  it('should work with addEventListener', function (done) {
+    var outerZone = zone;
+    zone.fork().run(function() {
+       button.addEventListener('click', function () {
+         expect(zone.parent).toBe(outerZone);
+         done();
+       })
     });
 
     button.click();
-    expect(zoneHasParent).toEqual(true);
   });
 
   it('should respect removeEventListener', function () {

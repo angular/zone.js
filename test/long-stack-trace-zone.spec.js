@@ -15,8 +15,8 @@ describe('longStackTraceZone', function () {
 
   it('should produce long stack traces', function (done) {
     lstz.run(function () {
-      setTimeout(function () {
-        setTimeout(function () {
+      zone.fork().run(function () {
+        zone.fork().run(function () {
           setTimeout(function () {
             expect(log[0]).toBe('Error: hello');
             expect(log[1].split('--- ').length).toBe(4);
@@ -35,8 +35,8 @@ describe('longStackTraceZone', function () {
         return line.indexOf('jasmine.js') === -1;
       }
     }).run(function () {
-      setTimeout(function () {
-        setTimeout(function () {
+      zone.fork().run(function () {
+        zone.fork().run(function () {
           setTimeout(function () {
             expect(log[1]).not.toContain('jasmine.js');
             done();
