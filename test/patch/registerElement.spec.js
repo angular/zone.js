@@ -5,6 +5,11 @@
 
 'use strict';
 
+function registerElement() {
+  return ('registerElement' in document);
+}
+registerElement.message = 'document.registerElement';
+
 describe('document.registerElement', ifEnvSupports(registerElement, function () {
 
   // register a custom element for each callback
@@ -110,8 +115,3 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
   });
 
 }));
-
-function registerElement() {
-  return ('registerElement' in document);
-}
-registerElement.message = 'document.registerElement';
