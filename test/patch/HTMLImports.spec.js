@@ -1,5 +1,10 @@
 'use strict';
 
+function supportsImports() {
+  return 'import' in document.createElement('link');
+}
+supportsImports.message = 'HTML Imports';
+
 describe('HTML Imports', ifEnvSupports(supportsImports, function () {
 
   it('should work with addEventListener', function (done) {
@@ -38,8 +43,3 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function () {
     document.head.appendChild(link);
   });
 }));
-
-function supportsImports() {
-  return 'import' in document.createElement('link');
-}
-supportsImports.message = 'HTML Imports';
