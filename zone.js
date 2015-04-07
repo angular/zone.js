@@ -3,6 +3,7 @@
 
 function Zone(parentZone, data) {
   var zone = (arguments.length) ? Object.create(parentZone) : this;
+  var id;
 
   zone.parent = parentZone;
 
@@ -10,10 +11,11 @@ function Zone(parentZone, data) {
 
     var _property = property.substr(1);
 
+    if (property === '$id') {
+      id = data[property];
     // augment the new zone with a hook decorates the parent's hook
-    if (property[0] === '$') {
+    } else if (property[0] === '$') {
       zone[_property] = data[property](parentZone[_property] || function () {});
-
     // augment the new zone with a hook that runs after the parent's hook
     } else if (property[0] === '+') {
       if (parentZone[_property]) {
@@ -45,7 +47,7 @@ function Zone(parentZone, data) {
     }
   });
 
-  zone.$id = ++Zone.nextId;
+  zone.$id = id ? id : Zone.nextId++;
 
   return zone;
 }
@@ -53,6 +55,10 @@ function Zone(parentZone, data) {
 
 Zone.prototype = {
   constructor: Zone,
+
+  path: function () {
+    return (this.parent ? this.parent.path() : '') + '/' + this.$id;
+  },
 
   fork: function (locals) {
     this.onZoneCreated();

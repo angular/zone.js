@@ -10,6 +10,24 @@ describe('Zone', function () {
     expect(zone.$id).toBeDefined();
   });
 
+  it('should be possible to override the auto-generated id', function () {
+    zone.fork({'$id': 'test'}).run(function () {
+      expect(zone.$id).toEqual('test');
+      console.log(zone.path());
+    });
+  });
+
+  it('should return the full path', function () {
+    Zone.nextId = 2;
+    zone.fork().run(function () {
+      zone.fork({'$id': 'foo'}).run(function () {
+        zone.fork().run(function () {
+          expect(zone.path()).toEqual('/1/2/foo/3');
+        });
+      });
+    })
+  });
+
   it('forked zones should have a greater id than their parent', function () {
     expect(zone.fork().$id).toBeGreaterThan(zone.$id);
   });
