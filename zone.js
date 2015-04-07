@@ -123,10 +123,10 @@ Zone.patchSetClearFn = function (obj, fnNames) {
       var bindArgs = setName === 'setInterval' ? Zone.bindArguments : Zone.bindArgumentsOnce;
 
       zone[setName] = function (fn) {
-        var id;
+        var id, fnRef = fn;
         arguments[0] = function () {
           delete ids[id];
-          return fn.apply(this, arguments);
+          return fnRef.apply(this, arguments);
         };
         var args = bindArgs(arguments);
         id = delegate.apply(obj, args);
@@ -164,8 +164,9 @@ Zone.patchSetFn = function (obj, fnNames) {
 
     if (delegate) {
       zone[name] = function (fn) {
+        var fnRef = fn;
         arguments[0] = function () {
-          return fn.apply(this, arguments);
+          return fnRef.apply(this, arguments);
         };
         var args = Zone.bindArgumentsOnce(arguments);
         return delegate.apply(obj, args);
