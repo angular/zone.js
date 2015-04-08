@@ -14,7 +14,9 @@ module.exports = function (config) {
 
     reporters: ['progress'],
 
-    preprocessors: {},
+    preprocessors: {
+      'test/commonjs.spec.js': [ 'browserify' ]
+    },
 
     //port: 9876,
     colors: true,
@@ -22,7 +24,7 @@ module.exports = function (config) {
     logLevel: config.LOG_INFO,
 
     browsers: ['Firefox'],
-    frameworks: ['jasmine'],
+    frameworks: ['jasmine', 'browserify'],
 
     captureTimeout: 60000,
 
