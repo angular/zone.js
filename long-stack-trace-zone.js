@@ -76,13 +76,13 @@ Zone.longStackTraceZone = {
     reporter(this.getLongStacktrace(exception));
   },
 
-  fork: function (locals) {
-    var newZone = this._fork(locals);
-    newZone.constructedAtException = Zone.getStacktrace();
-    newZone.constructedAtTime = Date.now();
-    return newZone;
-  },
-
-  _fork: zone.fork
+  '$fork': function (parentFork) {
+    return function() {
+      var newZone = parentFork.apply(this, arguments);
+      newZone.constructedAtException = Zone.getStacktrace();
+      newZone.constructedAtTime = Date.now();
+      return newZone;
+    }
+  }
 };
 
