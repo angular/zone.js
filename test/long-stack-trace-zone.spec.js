@@ -50,4 +50,16 @@ describe('longStackTraceZone', function () {
   it('should expose LST via getLogStackTrace', function () {
     expect(lstz.getLongStacktrace()).toBeDefined();
   });
+
+  it('should honor parent\'s fork()', function () {
+    zone
+      .fork({
+        '+fork': function() { log.push('fork'); }
+      })
+      .fork(Zone.longStackTraceZone)
+      .fork();
+
+    expect(log).toEqual(['fork', 'fork']);
+  });
+
 });
