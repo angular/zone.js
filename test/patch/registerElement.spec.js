@@ -5,12 +5,14 @@
 
 'use strict';
 
+var _global = typeof window === 'undefined' ? global : window;
+
 function registerElement() {
-  return ('registerElement' in document);
+  return typeof document !== 'undefined' && ('registerElement' in document);
 }
 registerElement.message = 'document.registerElement';
 
-describe('document.registerElement', ifEnvSupports(registerElement, function () {
+describe('document.registerElement', _global.ifEnvSupports(registerElement, function () {
 
   // register a custom element for each callback
   var callbackNames = [

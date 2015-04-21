@@ -20,6 +20,8 @@
     "url": "https://github.com/angular/zone.js/issues"
   },
   "devDependencies": {
+    "gulp": "^3.8.8",
+    "gulp-jasmine": "^1.0.1",
     "jasmine-core": "^2.2.0",
     "karma": "^0.12.31",
     "karma-browserify": "^4.1.2",

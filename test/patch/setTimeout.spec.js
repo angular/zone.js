@@ -1,6 +1,7 @@
 'use strict';
 
 describe('setTimeout', function () {
+  var _global = typeof window === 'undefined' ? global : window;
 
   beforeEach(function () {
     zone.mark = 'root';
@@ -8,7 +9,7 @@ describe('setTimeout', function () {
 
   it('should work with setTimeout', function (done) {
 
-    var childZone = window.zone.fork({
+    var childZone = _global.zone.fork({
       mark: 'child'
     });
 
@@ -18,7 +19,7 @@ describe('setTimeout', function () {
       expect(zone.mark).toEqual('child');
       expect(zone).toEqual(childZone);
 
-      window.setTimeout(function() {
+      _global.setTimeout(function() {
         // creates implied zone in all callbacks.
         expect(zone).not.toEqual(childZone);
         expect(zone.parent).toEqual(childZone);
@@ -34,8 +35,8 @@ describe('setTimeout', function () {
 
   it('should allow canceling of fns registered with setTimeout', function (done) {
     var spy = jasmine.createSpy();
-    var cancelId = window.setTimeout(spy, 0);
-    window.clearTimeout(cancelId);
+    var cancelId = _global.setTimeout(spy, 0);
+    _global.clearTimeout(cancelId);
     setTimeout(function () {
       expect(spy).not.toHaveBeenCalled();
       done();

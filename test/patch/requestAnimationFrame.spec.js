@@ -1,8 +1,10 @@
 'use strict';
 
+var _global = typeof window === 'undefined' ? global : window;
+
 describe('requestAnimationFrame', function () {
   it('should run the passed callback in a zone', function (done) {
-    if (!window.requestAnimationFrame) {
+    if (!_global.requestAnimationFrame) {
       console.log('WARNING: skipping requestAnimationFrame test (missing this API)');
       return done();
     }
@@ -11,8 +13,8 @@ describe('requestAnimationFrame', function () {
     // if they are offscreen. We can disable this test for those browsers and
     // assume the patch works if setTimeout works, since they are mechanically
     // the same
-    window.requestAnimationFrame(function () {
-      expect(window.zone.parent).toBeDefined();
+    _global.requestAnimationFrame(function () {
+      expect(_global.zone.parent).toBeDefined();
       done();
     });
   });
@@ -20,7 +22,7 @@ describe('requestAnimationFrame', function () {
 
 describe('mozRequestAnimationFrame', function () {
   it('should run the passed callback in a zone', function (done) {
-    if (!window.mozRequestAnimationFrame) {
+    if (!_global.mozRequestAnimationFrame) {
       console.log('WARNING: skipping mozRequestAnimationFrame test (missing this API)');
       return done();
     }
@@ -29,8 +31,8 @@ describe('mozRequestAnimationFrame', function () {
     // if they are offscreen. We can disable this test for those browsers and
     // assume the patch works if setTimeout works, since they are mechanically
     // the same
-    window.mozRequestAnimationFrame(function () {
-      expect(window.zone.parent).toBeDefined();
+    _global.mozRequestAnimationFrame(function () {
+      expect(_global.zone.parent).toBeDefined();
       done();
     });
   });
@@ -38,7 +40,7 @@ describe('mozRequestAnimationFrame', function () {
 
 describe('webkitRequestAnimationFrame', function () {
   it('should run the passed callback in a zone', function (done) {
-    if (!window.webkitRequestAnimationFrame) {
+    if (!_global.webkitRequestAnimationFrame) {
       console.log('WARNING: skipping webkitRequestAnimationFrame test (missing this API)');
       return done();
     }
@@ -47,8 +49,8 @@ describe('webkitRequestAnimationFrame', function () {
     // if they are offscreen. We can disable this test for those browsers and
     // assume the patch works if setTimeout works, since they are mechanically
     // the same
-    window.webkitRequestAnimationFrame(function () {
-      expect(window.zone.parent).toBeDefined();
+    _global.webkitRequestAnimationFrame(function () {
+      expect(_global.zone.parent).toBeDefined();
       done();
     });
   });

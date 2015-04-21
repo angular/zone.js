@@ -1,6 +1,8 @@
 'use strict';
 
-describe('MutationObserver', ifEnvSupports('MutationObserver', function () {
+var _global = typeof window === 'undefined' ? global : window;
+
+describe('MutationObserver', _global.ifEnvSupports('MutationObserver', function () {
   var elt;
 
   beforeEach(function () {

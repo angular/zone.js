@@ -1,13 +1,14 @@
 'use strict';
 
 describe('setInterval', function () {
+  var _global = typeof window === 'undefined' ? global : window;
 
   beforeEach(function () {
     zone.mark = 'root';
   });
 
   it('should work with setInterval', function (done) {
-    var childZone = window.zone.fork({
+    var childZone = _global.zone.fork({
       mark: 'child'
     });
 
@@ -17,7 +18,7 @@ describe('setInterval', function () {
       expect(zone.mark).toEqual('child');
       expect(zone).toEqual(childZone);
 
-      var cancelId = window.setInterval(function() {
+      var cancelId = _global.setInterval(function() {
         // creates implied zone in all callbacks.
         expect(zone).not.toBe(childZone);
         expect(zone.parent).toBe(childZone);

@@ -1,6 +1,8 @@
 'use strict';
 
-describe('XMLHttpRequest', function () {
+var _global = typeof window === 'undefined' ? global : window;
+
+describe('XMLHttpRequest', _global.ifEnvSupports('XMLHttpRequest', function () {
 
   it('should work with onreadystatechange', function (done) {
     var req = new XMLHttpRequest();
@@ -30,4 +32,4 @@ describe('XMLHttpRequest', function () {
     expect(req.responseType).toBe('document');
   });
 
-});
+}));

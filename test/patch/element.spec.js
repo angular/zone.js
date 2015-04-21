@@ -1,6 +1,13 @@
 'use strict';
 
-describe('element', function () {
+var _global = typeof window === 'undefined' ? global : window;
+
+function element() {
+  return typeof document !== 'undefined';
+}
+element.message = 'element';
+
+describe('element', _global.ifEnvSupports(element, function () {
 
   var button;
 
@@ -73,4 +80,4 @@ describe('element', function () {
     expect(log).toEqual('');
   });
 
-});
+}));
