@@ -1,11 +1,13 @@
 'use strict';
 
+var _global = typeof window === 'undefined' ? global : window;
+
 function supportsImports() {
-  return 'import' in document.createElement('link');
+  return typeof document !== 'undefined' && 'import' in document.createElement('link');
 }
 supportsImports.message = 'HTML Imports';
 
-describe('HTML Imports', ifEnvSupports(supportsImports, function () {
+describe('HTML Imports', _global.ifEnvSupports(supportsImports, function () {
 
   it('should work with addEventListener', function (done) {
     var link = document.createElement('link');

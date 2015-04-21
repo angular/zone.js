@@ -4,6 +4,9 @@
  * We need this because in some implementations, constructing a trace is slow
  * and so we want to defer accessing the trace for as long as possible
  */
+var _global = typeof window === 'undefined' ? global : window;
+var Zone = _global.Zone;
+ 
 Zone.Stacktrace = function (e) {
   this._e = e;
 };

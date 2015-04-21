@@ -144,7 +144,8 @@ describe('Zone', function () {
     var mockPromise = function() {
       return {
         then: function (a, b) {
-          window.__setTimeout(a, 0);
+          var _global = typeof window === 'undefined' ? global : window;
+          _global.__setTimeout(a, 0);
           return mockPromise();
         }
       };

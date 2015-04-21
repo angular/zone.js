@@ -9,10 +9,12 @@ describe('whatever', run(function () {
 }, 'does not support whatevs'))
 
  */
+var _global = typeof window === 'undefined' ? global : window;
+
 function ifEnvSupports(test, block) {
   return function () {
     var message = (test.message || test.name || test);
-    if (typeof test === 'string' ? !!window[test] : test()) {
+    if (typeof test === 'string' ? !!_global[test] : test()) {
       block();
     } else {
       it('should skip the test if the API does not exist', function () {
@@ -21,6 +23,7 @@ function ifEnvSupports(test, block) {
     }
   };
 };
+_global.ifEnvSupports = ifEnvSupports;
 
 // useful for testing mocks
-window.__setTimeout = window.setTimeout;
+_global.__setTimeout = _global.setTimeout;

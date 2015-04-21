@@ -1,5 +1,7 @@
 'use strict';
 
+var _global = typeof window === 'undefined' ? global : window;
+
 (function (exports) {
 
 var zone = null;
@@ -218,7 +220,7 @@ Zone.bindArgumentsOnce = function (args) {
  */
 Zone.bindPromiseFn = (function() {
   // if the browser natively supports Promises, we can just return a native promise
-  if (window.Promise) {
+  if (_global.Promise) {
     return function (delegate) {
       return function() {
         var delegatePromise = delegate.apply(this, arguments);
@@ -344,23 +346,23 @@ Zone.patchEventTargetMethods = function (obj) {
 };
 
 Zone.patch = function patch () {
-  Zone.patchSetClearFn(window, [
+  Zone.patchSetClearFn(_global, [
     'timeout',
     'interval',
     'immediate'
   ]);
 
-  Zone.patchSetFn(window, [
+  Zone.patchSetFn(_global, [
     'requestAnimationFrame',
     'mozRequestAnimationFrame',
     'webkitRequestAnimationFrame'
   ]);
 
-  Zone.patchableFn(window, ['alert', 'prompt']);
+  Zone.patchableFn(_global, ['alert', 'prompt']);
 
   // patched properties depend on addEventListener, so this needs to come first
-  if (window.EventTarget) {
-    Zone.patchEventTargetMethods(window.EventTarget.prototype);
+  if (_global.EventTarget) {
+    Zone.patchEventTargetMethods(_global.EventTarget.prototype);
 
   // Note: EventTarget is not available in all browsers,
   // if it's not available, we instead patch the APIs in the IDL that inherit from EventTarget
@@ -386,24 +388,27 @@ Zone.patch = function patch () {
       'XMLHttpRequestUpload'
     ].
     filter(function (thing) {
-      return window[thing];
+      return _global[thing];
     }).
     map(function (thing) {
-      return window[thing].prototype;
+      return _global[thing].prototype;
     }).
     forEach(Zone.patchEventTargetMethods);
   }
 
-  if (Zone.canPatchViaPropertyDescriptor()) {
+  var isDocumentAvailable = typeof document != 'undefined';
+  if (isDocumentAvailable && Zone.canPatchViaPropertyDescriptor()) {
     Zone.patchViaPropertyDescriptor();
   } else {
-    Zone.patchViaCapturingAllTheEvents();
+    if (isDocumentAvailable) {
+      Zone.patchViaCapturingAllTheEvents();
+    }
     Zone.patchClass('XMLHttpRequest');
     Zone.patchWebSocket();
   }
 
   // patch promises
-  if (window.Promise) {
+  if (_global.Promise) {
     Zone.patchPrototype(Promise.prototype, [
       'then',
       'catch'
@@ -412,7 +417,9 @@ Zone.patch = function patch () {
   Zone.patchMutationObserverClass('MutationObserver');
   Zone.patchMutationObserverClass('WebKitMutationObserver');
   Zone.patchDefineProperty();
-  Zone.patchRegisterElement();
+  if (isDocumentAvailable) {
+    Zone.patchRegisterElement();
+  }
 };
 
 //
@@ -466,22 +473,24 @@ Zone.patchViaCapturingAllTheEvents = function () {
 
 // we have to patch the instance since the proto is non-configurable
 Zone.patchWebSocket = function() {
-  var WS = window.WebSocket;
-  window.WebSocket = function(a, b) {
-    var socket = arguments.length > 1 ? new WS(a, b) : new WS(a);
-    Zone.patchProperties(socket, ['onclose', 'onerror', 'onmessage', 'onopen']);
-    return socket;
-  };
+  var WS = _global.WebSocket;
+  if (typeof WS !== 'undefined') {
+    _global.WebSocket = function(a, b) {
+      var socket = arguments.length > 1 ? new WS(a, b) : new WS(a);
+      Zone.patchProperties(socket, ['onclose', 'onerror', 'onmessage', 'onopen']);
+      return socket;
+    };
+  }
 }
 
 
-// wrap some native API on `window`
+// wrap some native API on `_global`
 Zone.patchClass = function (className) {
-  var OriginalClass = window[className];
+  var OriginalClass = _global[className];
   if (!OriginalClass) {
     return;
   }
-  window[className] = function () {
+  _global[className] = function () {
     var a = Zone.bindArguments(arguments);
     switch (a.length) {
       case 0: this._o = new OriginalClass(); break;
@@ -499,11 +508,11 @@ Zone.patchClass = function (className) {
   for (prop in instance) {
     (function (prop) {
       if (typeof instance[prop] === 'function') {
-        window[className].prototype[prop] = function () {
+        _global[className].prototype[prop] = function () {
           return this._o[prop].apply(this._o, arguments);
         };
       } else {
-        Object.defineProperty(window[className].prototype, prop, {
+        Object.defineProperty(_global[className].prototype, prop, {
           set: function (fn) {
             if (typeof fn === 'function') {
               this._o[prop] = zone.bind(fn);
@@ -521,26 +530,26 @@ Zone.patchClass = function (className) {
 };
 
 
-// wrap some native API on `window`
+// wrap some native API on `_global`
 Zone.patchMutationObserverClass = function (className) {
-  var OriginalClass = window[className];
+  var OriginalClass = _global[className];
   if (!OriginalClass) {
     return;
   }
-  window[className] = function (fn) {
+  _global[className] = function (fn) {
     this._o = new OriginalClass(zone.bind(fn, true));
   };
 
   var instance = new OriginalClass(function () {});
 
-  window[className].prototype.disconnect = function () {
+  _global[className].prototype.disconnect = function () {
     var result = this._o.disconnect.apply(this._o, arguments);
     this._active && zone.dequeueTask();
     this._active = false;
     return result;
   };
 
-  window[className].prototype.observe = function () {
+  _global[className].prototype.observe = function () {
     if (!this._active) {
       zone.enqueueTask();
     }
@@ -551,15 +560,15 @@ Zone.patchMutationObserverClass = function (className) {
   var prop;
   for (prop in instance) {
     (function (prop) {
-      if (typeof window[className].prototype !== undefined) {
+      if (typeof _global[className].prototype !== undefined) {
         return;
       }
       if (typeof instance[prop] === 'function') {
-        window[className].prototype[prop] = function () {
+        _global[className].prototype[prop] = function () {
           return this._o[prop].apply(this._o, arguments);
         };
       } else {
-        Object.defineProperty(window[className].prototype, prop, {
+        Object.defineProperty(_global[className].prototype, prop, {
           set: function (fn) {
             if (typeof fn === 'function') {
               this._o[prop] = zone.bind(fn);
@@ -678,5 +687,5 @@ Zone.init();
 
 exports.Zone = Zone;
 
-}((typeof module !== 'undefined' && module && module.exports) ?
-    module.exports : window));
+}((typeof window !== 'undefined' && typeof module !== 'undefined' && module && module.exports) ?
+    module.exports : _global));

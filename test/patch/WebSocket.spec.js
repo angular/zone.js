@@ -1,6 +1,9 @@
 'use strict';
 
-describe('WebSocket', function () {
+var _global = typeof window === 'undefined' ? global : window;
+
+describe('WebSocket', _global.ifEnvSupports('WebSocket', function () {
+  
   var socket,
       TEST_SERVER_URL = 'ws://localhost:8001',
       flag;
@@ -14,11 +17,11 @@ describe('WebSocket', function () {
     socket.close();
   });
 
-  it('should work with addEventListener', function () {
-    var parent = window.zone;
+  it('should work with addEventListener', function (done) {
+    var parent = _global.zone;
 
     socket.addEventListener('message', function (contents) {
-      expect(window.zone.parent).toBe(parent);
+      expect(_global.zone.parent).toBe(parent);
       expect(contents).toBe('HI');
       done();
     });
@@ -46,9 +49,9 @@ describe('WebSocket', function () {
   });
 
   it('should work with onmessage', function (done) {
-    var parent = window.zone;
+    var parent = _global.zone;
     socket.onmessage = function (contents) {
-      expect(window.zone.parent).toBe(parent);
+      expect(_global.zone.parent).toBe(parent);
       expect(contents.data).toBe('hi');
       done();
     };
@@ -83,4 +86,4 @@ describe('WebSocket', function () {
     expect(log).toEqual('');
   });
 
-});
+}));

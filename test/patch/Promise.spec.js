@@ -1,12 +1,14 @@
 'use strict';
 
-describe('Promise', ifEnvSupports('Promise', function () {
+var _global = typeof window === 'undefined' ? global : window;
+
+describe('Promise', _global.ifEnvSupports('Promise', function () {
 
   it('should work with .then', function (done) {
     new Promise(function (resolve) {
       resolve();
     }).then(function () {
-      expect(window.zone.parent).toBeDefined();
+      expect(_global.zone.parent).toBeDefined();
       done();
     });
   });
@@ -15,7 +17,7 @@ describe('Promise', ifEnvSupports('Promise', function () {
     new Promise(function (resolve, reject) {
       reject();
     }).catch(function () {
-      expect(window.zone.parent).toBeDefined();
+      expect(_global.zone.parent).toBeDefined();
       done();
     });
   });
