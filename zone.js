@@ -104,6 +104,16 @@ Zone.prototype = {
     return result;
   },
 
+  // onError is used to override error handling.
+  // When a custom error handler is provided, it should most probably rethrow the exception
+  // not to break the expected control flow:
+  //
+  // `promise.then(fnThatThrows).catch(fn);`
+  //
+  // When this code is executed in a zone with a custom onError handler that doesn't rethrow, the
+  // `.catch()` branch will not be taken as the `fnThatThrows` exception will be swallowed by the
+  // handler.
+  onError: null,
   beforeTask: function () {},
   onZoneCreated: function () {},
   afterTask: function () {},
