@@ -1,6 +1,6 @@
-'use strict';
-
 (function (exports) {
+
+'use strict';
 
 var zone = null;
 
