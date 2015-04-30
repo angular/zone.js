@@ -4,6 +4,9 @@ module.exports = function (config) {
 
   require('./karma.conf')(config);
 
+  // The WS server is not available with Sauce
+  config.exclude.push('test/**/WebSocket.spec.js');
+
   var customLaunchers = {
     'SL_Chrome': {
       base: 'SauceLabs',
