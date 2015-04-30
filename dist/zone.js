@@ -63,7 +63,7 @@ function Zone(parentZone, data) {
     }
   });
 
-  zone.$id = ++Zone.nextId;
+  zone.$id = Zone.nextId++;
 
   return zone;
 }
@@ -138,6 +138,7 @@ Zone.prototype = {
   dequeueTask: function () {}
 };
 
+// Root zone ID === 1
 Zone.nextId = 1;
 
 Zone.bindPromiseFn = require('./patch/promise').bindPromiseFn;
