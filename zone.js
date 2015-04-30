@@ -452,6 +452,7 @@ Zone.canPatchViaPropertyDescriptor = function () {
 Zone.patchViaPropertyDescriptor = function () {
   Zone.patchProperties(HTMLElement.prototype, Zone.onEventNames);
   Zone.patchProperties(XMLHttpRequest.prototype);
+  Zone.patchProperties(WebSocket.prototype);
 };
 
 // Whenever any event fires, we check the event target and all parents
