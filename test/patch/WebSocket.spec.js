@@ -18,9 +18,9 @@ describe('WebSocket', function () {
   it('should work with addEventListener', function (done) {
     var parent = window.zone;
 
-    socket.addEventListener('message', function (contents) {
+    socket.addEventListener('message', function (event) {
       expect(window.zone.parent).toBe(parent);
-      expect(contents.data).toBe('hi');
+      expect(event.data).toBe('hi');
       done();
     });
     socket.send('hi');
@@ -46,9 +46,8 @@ describe('WebSocket', function () {
     socket.send('hi');
   });
 
-  // TODO(vicb) this test is not working
-  // https://github.com/angular/zone.js/issues/81
-  xit('should work with onmessage', function (done) {
+
+  it('should work with onmessage', function (done) {
     var parent = window.zone;
     socket.onmessage = function (contents) {
       expect(window.zone.parent).toBe(parent);
