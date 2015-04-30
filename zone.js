@@ -49,7 +49,7 @@ function Zone(parentZone, data) {
     }
   });
 
-  zone.$id = ++Zone.nextId;
+  zone.$id = Zone.nextId++;
 
   return zone;
 }
