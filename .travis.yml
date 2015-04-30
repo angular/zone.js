@@ -13,6 +13,7 @@ before_script:
   - mkdir -p $LOGS_DIR
   - ./scripts/sauce/sauce_connect_setup.sh
   - ./scripts/sauce/sauce_connect_block.sh
+  - node test/ws-server.js &
 
 script:
   - karma start karma-sauce.conf.js
