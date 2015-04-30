@@ -5,14 +5,13 @@ module.exports = function (config) {
     basePath: '',
     files: [
       'test/util.js',
-      {pattern: 'zone.js', watched: true, served: false, included: false},
-      //'test/lib/brick.js',
+      {pattern: 'lib/zone.js', watched: true, served: false, included: false},
       'test/commonjs.spec.js',
       {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false}
     ],
 
     exclude: [
-      
+
     ],
 
     reporters: ['progress'],

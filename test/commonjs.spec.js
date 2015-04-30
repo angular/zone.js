@@ -4,7 +4,7 @@ describe('Zone in CommonJS environment', function () {
   var commonJSExports;
 
   beforeEach(function () {
-    commonJSExports = require('../zone.js');
+    commonJSExports = require('../lib/zone.js');
   });
 
   it('defines proper exports properties in CommonJS environment', function () {
