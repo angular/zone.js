@@ -472,16 +472,34 @@ Zone.patchViaCapturingAllTheEvents = function () {
   });
 };
 
+
 // we have to patch the instance since the proto is non-configurable
 Zone.patchWebSocket = function() {
   var WS = window.WebSocket;
   Zone.patchEventTargetMethods(WS.prototype);
   window.WebSocket = function(a, b) {
     var socket = arguments.length > 1 ? new WS(a, b) : new WS(a);
-    Zone.patchProperties(socket, ['onclose', 'onerror', 'onmessage', 'onopen']);
-    return socket;
+    var proxySocket;
+
+    // Safari 7.0 has non-configurable own 'onmessage' and friends properties on the socket instance
+    var onmessageDesc = Object.getOwnPropertyDescriptor(socket, 'onmessage');
+    if (onmessageDesc && onmessageDesc.configurable === false) {
+      proxySocket = Object.create(socket);
+      ['addEventListener', 'removeEventListener', 'send', 'close'].forEach(function(propName) {
+        proxySocket[propName] = function() {
+          return socket[propName].apply(socket, arguments);
+        };
+      });
+    } else {
+      // we can patch the real socket
+      proxySocket = socket;
+    }
+
+    Zone.patchProperties(proxySocket, ['onclose', 'onerror', 'onmessage', 'onopen']);
+
+    return proxySocket;
   };
-}
+};
 
 
 // wrap some native API on `window`
