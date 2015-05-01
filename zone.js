@@ -682,9 +682,11 @@ Zone.init = function init () {
   Zone.patch();
 };
 
+if (window.Zone) {
+  console.warn('Zone already exported on window the object!');
+}
 
 Zone.init();
-
 exports.Zone = Zone;
 
 }((typeof module !== 'undefined' && module && module.exports) ?
