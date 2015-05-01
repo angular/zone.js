@@ -405,8 +405,13 @@ Zone.patch = function patch () {
   }
 
   if (Zone.canPatchViaPropertyDescriptor()) {
-    Zone.patchViaPropertyDescriptor();
+    // for browsers that we can patch the descriptor:
+    // - Chrome, Firefox
+    Zone.patchProperties(HTMLElement.prototype, Zone.onEventNames);
+    Zone.patchProperties(XMLHttpRequest.prototype);
+    Zone.patchProperties(WebSocket.prototype);
   } else {
+    // Safari
     Zone.patchViaCapturingAllTheEvents();
     Zone.patchClass('XMLHttpRequest');
     Zone.patchWebSocket();
@@ -446,14 +451,6 @@ Zone.canPatchViaPropertyDescriptor = function () {
   return result;
 };
 
-// for browsers that we can patch the descriptor:
-// - eventually Chrome once this bug gets resolved
-// - Firefox
-Zone.patchViaPropertyDescriptor = function () {
-  Zone.patchProperties(HTMLElement.prototype, Zone.onEventNames);
-  Zone.patchProperties(XMLHttpRequest.prototype);
-  Zone.patchProperties(WebSocket.prototype);
-};
 
 // Whenever any event fires, we check the event target and all parents
 // for `onwhatever` properties and replace them with zone-bound functions
