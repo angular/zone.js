@@ -5,18 +5,21 @@ module.exports = function (config) {
     basePath: '',
     files: [
       'test/util.js',
-      'zone.js',
-      '*-zone.js',
+      {pattern: 'zone.js', watched: true, served: false, included: false},
       //'test/lib/brick.js',
-      'test/**/*.spec.js',
+      'test/commonjs.spec.js',
       {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false}
     ],
 
     exclude: [
-      'test/commonjs.spec.js'
+      
     ],
 
     reporters: ['progress'],
+
+    preprocessors: {
+      'test/commonjs.spec.js': [ 'browserify' ]
+    },
 
     //port: 9876,
     colors: true,
@@ -24,7 +27,7 @@ module.exports = function (config) {
     logLevel: config.LOG_INFO,
 
     browsers: ['Firefox'],
-    frameworks: ['jasmine'],
+    frameworks: ['jasmine', 'browserify'],
 
     captureTimeout: 60000,
 
