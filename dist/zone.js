@@ -22,7 +22,7 @@ browserPatch.apply();
 function Zone(parentZone, data) {
   var zone = (arguments.length) ? Object.create(parentZone) : this;
 
-  zone.parent = parentZone;
+  zone.parent = parentZone || null;
 
   Object.keys(data || {}).forEach(function(property) {
 
@@ -91,6 +91,10 @@ Zone.prototype = {
       boundZone.dequeueTask(fn);
       return result;
     });
+  },
+
+  isRootZone: function() {
+    return this.parent === null;
   },
 
   run: function run (fn, applyTo, applyWith) {
