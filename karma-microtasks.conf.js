@@ -7,6 +7,7 @@ module.exports = function (config) {
       'test/util.js',
       'dist/zone-microtask.js',
       'dist/*-zone.js',
+      'test/jasmine-patch.js',
       //'test/lib/brick.js',
       'test/microtasks.spec.js',
       {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false}
