@@ -46,41 +46,53 @@ describe('element', function () {
     expect(log).toEqual('aa');
   });
 
-  it('should work with onclick', function () {
-    var childTestZone;
 
-    testZone.run(function() {
+  describe('onclick', function() {
+
+    function onClickDescriptor() {
+      return Zone.canPatchViaPropertyDescriptor();
+    }
+    onClickDescriptor.message = 'onclick property descriptor on HTMLElement prototype';
+
+
+    it('should spawn new child zones', ifEnvSupports(onClickDescriptor, function () {
+      var childTestZone;
+
+      testZone.run(function() {
+        button.onclick = function () {
+          childTestZone = window.zone;
+        };
+      });
+
+      button.click();
+      expect(childTestZone.parent).toBe(testZone);
+    }));
+
+
+    it('should only allow one onclick handler', function () {
+      var log = '';
       button.onclick = function () {
-        childTestZone = window.zone;
+        log += 'a';
       };
+      button.onclick = function () {
+        log += 'b';
+      };
+
+      button.click();
+      expect(log).toEqual('b');
     });
 
-    button.click();
-    expect(childTestZone.parent).toBe(testZone);
-  });
 
-  it('should only allow one onclick handler', function () {
-    var log = '';
-    button.onclick = function () {
-      log += 'a';
-    };
-    button.onclick = function () {
-      log += 'b';
-    };
+    it('should handle removing onclick', function () {
+      var log = '';
+      button.onclick = function () {
+        log += 'a';
+      };
+      button.onclick = null;
 
-    button.click();
-    expect(log).toEqual('b');
-  });
-
-  it('should handle removing onclick', function () {
-    var log = '';
-    button.onclick = function () {
-      log += 'a';
-    };
-    button.onclick = null;
-
-    button.click();
-    expect(log).toEqual('');
+      button.click();
+      expect(log).toEqual('');
+    });
   });
 
 });
