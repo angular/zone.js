@@ -2,4 +2,3 @@
 // see:
 //
 // this file is intentionally empty; if `lib/brick.js` doesn't error, then we're cool
-console.log(window.__html__)
