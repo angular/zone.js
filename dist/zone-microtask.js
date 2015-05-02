@@ -107,6 +107,7 @@ Zone.prototype = {
 
     var oldZone = global.zone;
 
+    // MAKE THIS ZONE THE CURRENT ZONE
     global.zone = this;
 
     try {
@@ -120,6 +121,7 @@ Zone.prototype = {
       }
     } finally {
       this.afterTask();
+      // REVERT THE CURRENT ZONE BACK TO THE ORIGINAL ZONE
       global.zone = oldZone;
     }
   },
