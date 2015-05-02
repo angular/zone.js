@@ -3,6 +3,7 @@
 describe('element', function () {
 
   var button;
+  var testZone = zone.fork();
 
   beforeEach(function () {
     button = document.createElement('button');
@@ -15,13 +16,16 @@ describe('element', function () {
   });
 
   it('should work with addEventListener', function () {
-    var zoneHasParent;
-    button.addEventListener('click', function () {
-      zoneHasParent = !!window.zone.parent;
+    var childTestZone;
+
+    testZone.run(function() {
+      button.addEventListener('click', function () {
+        childTestZone = window.zone;
+      });
     });
 
     button.click();
-    expect(zoneHasParent).toEqual(true);
+    expect(childTestZone.parent).toBe(testZone);
   });
 
   it('should respect removeEventListener', function () {
@@ -43,13 +47,16 @@ describe('element', function () {
   });
 
   it('should work with onclick', function () {
-    var zoneHasParent;
-    button.onclick = function () {
-      zoneHasParent = !!window.zone.parent;
-    };
+    var childTestZone;
+
+    testZone.run(function() {
+      button.onclick = function () {
+        childTestZone = window.zone;
+      };
+    });
 
     button.click();
-    expect(zoneHasParent).toEqual(true);
+    expect(childTestZone.parent).toBe(testZone);
   });
 
   it('should only allow one onclick handler', function () {
