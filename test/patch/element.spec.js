@@ -49,24 +49,30 @@ describe('element', function () {
 
   describe('onclick', function() {
 
-    function onClickDescriptor() {
-      return Zone.canPatchViaPropertyDescriptor();
+    function supportsOnClick() {
+      var div = document.createElement('div');
+      var clickPropDesc = Object.getOwnPropertyDescriptor(div, 'onclick');
+      return !(EventTarget &&
+               div instanceof EventTarget &&
+               clickPropDesc && clickPropDesc.value === null);
     }
-    onClickDescriptor.message = 'onclick property descriptor on HTMLElement prototype';
+    supportsOnClick.message = 'Supports Element#onclick patching';
 
 
-    it('should spawn new child zones', ifEnvSupports(onClickDescriptor, function () {
-      var childTestZone;
+    ifEnvSupports(supportsOnClick, function() {
+      it('should spawn new child zones', function () {
+        var childTestZone;
 
-      testZone.run(function() {
-        button.onclick = function () {
-          childTestZone = window.zone;
-        };
+        testZone.run(function() {
+          button.onclick = function () {
+            childTestZone = window.zone;
+          };
+        });
+
+        button.click();
+        expect(childTestZone.parent).toBe(testZone);
       });
-
-      button.click();
-      expect(childTestZone.parent).toBe(testZone);
-    }));
+    });
 
 
     it('should only allow one onclick handler', function () {
