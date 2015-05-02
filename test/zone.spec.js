@@ -129,6 +129,26 @@ describe('Zone', function () {
   });
 
 
+  describe('isRootZone', function() {
+
+    it('should return true for root zone', function() {
+      expect(zone.isRootZone()).toBe(true);
+    });
+
+
+    it('should return false for non-root zone', function() {
+      var executed = false;
+
+      zone.fork().run(function() {
+        executed = true;
+        expect(zone.isRootZone()).toBe(false);
+      });
+
+      expect(executed).toBe(true);
+    });
+  });
+
+
   describe('fork', function () {
     it('should fork deep copy', function () {
       var protoZone = { too: { deep: true } },
