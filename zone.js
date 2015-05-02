@@ -90,6 +90,7 @@ Zone.prototype = {
     var oldZone = zone,
         result;
 
+    // MAKE THIS ZONE THE CURRENT ZONE
     exports.zone = zone = this;
 
     try {
@@ -103,6 +104,8 @@ Zone.prototype = {
       }
     } finally {
       this.afterTask();
+
+      // REVERT THE CURRENT ZONE BACK TO THE ORIGINAL ZONE
       exports.zone = zone = oldZone;
     }
     return result;
