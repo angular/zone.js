@@ -340,13 +340,16 @@ Zone.patchProperties = function (obj, properties) {
 Zone.patchEventTargetMethods = function (obj) {
   var addDelegate = obj.addEventListener;
   obj.addEventListener = function (eventName, fn) {
-    arguments[1] = fn._bound = zone.bind(fn);
+    fn._bound = fn._bound || {};
+    arguments[1] = fn._bound[eventName] = zone.bind(fn);
     return addDelegate.apply(this, arguments);
   };
 
   var removeDelegate = obj.removeEventListener;
   obj.removeEventListener = function (eventName, fn) {
-    arguments[1] = arguments[1]._bound || arguments[1];
+    if(arguments[1]._bound && arguments[1]._bound[eventName]) {
+      arguments[1] = arguments[1]._bound[eventName];
+    }
     var result = removeDelegate.apply(this, arguments);
     zone.dequeueTask(fn);
     return result;

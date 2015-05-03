@@ -26,17 +26,19 @@ describe('element', function () {
 
   it('should respect removeEventListener', function () {
     var log = '';
-    var logOnClick = function logOnClick () {
+    var logFunction = function logFunction () {
       log += 'a';
     };
 
-    button.addEventListener('click', logOnClick);
+    button.addEventListener('click', logFunction);
+    button.addEventListener('focus', logFunction);
     button.click();
-    expect(log).toEqual('a');
+    button.dispatchEvent(new Event('focus'));
+    expect(log).toEqual('aa');
 
-    button.removeEventListener('click', logOnClick);
+    button.removeEventListener('click', logFunction);
     button.click();
-    expect(log).toEqual('a');
+    expect(log).toEqual('aa');
   });
 
   it('should work with onclick', function () {
