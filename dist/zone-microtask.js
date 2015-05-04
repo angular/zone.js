@@ -19,7 +19,6 @@ global.Promise = es6Promise.Promise;
 
 browserPatch.apply();
 
-
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"../core":2,"../ext/es6-promise.js":3,"../microtask":4,"../patch/browser":5}],2:[function(require,module,exports){
 (function (global){
