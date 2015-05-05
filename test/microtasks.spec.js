@@ -1,12 +1,10 @@
 'use strict';
 
 describe('Microtasks', function () {
-  // TODO(vicb): using JS for scheduling microtasks ?
-  // see https://github.com/angular/zone.js/issues/97
-  xit('should execute microtasks enqueued in the root zone', function(done) {
+  it('should execute microtasks enqueued in the root zone', function(done) {
     var microtaskExecuted = false;
 
-    Zone.scheduleMicrotask(function() {
+    zone.scheduleMicrotask(function() {
       microtaskExecuted = true;
     });
 
@@ -14,6 +12,39 @@ describe('Microtasks', function () {
       expect(microtaskExecuted).toEqual(true);
       done();
     });
+  });
+
+  // For some reason this test does not work in Jasmine ('mat1.mit' is scheduled after the last
+  // setTimeout) everything is fine when executed from a browser window with zone-microtask.js
+  // loaded
+  xit('should correctly schedule microtasks vs macrotasks', function(done) {
+    var log = ['+root'];
+
+    zone.scheduleMicrotask(function() {
+      log.push('root.mit');
+    });
+
+    setTimeout(function() {
+      log.push('+mat1');
+      zone.scheduleMicrotask(function() {
+        log.push('mat1.mit');
+      });
+      log.push('-mat1');
+    });
+
+    setTimeout(function() {
+      log.push('mat2');
+    });
+
+    setTimeout(function() {
+      expect(log).toEqual([
+        '+root', '-root', 'root.mit',
+        '+mat1', '-mat1', 'mat1.mit',
+        'mat2']);
+      done();
+    });
+
+    log.push('-root');
   });
 
   it('should executed Promise callback in the zone where they are scheduled', function(done) {

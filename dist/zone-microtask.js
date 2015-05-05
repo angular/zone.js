@@ -184,15 +184,18 @@ module.exports = {
     var lib$es6$promise$asap$$toString = {}.toString;
     var lib$es6$promise$asap$$vertxNext;
     function lib$es6$promise$asap$$asap(callback, arg) {
-      lib$es6$promise$asap$$queue[lib$es6$promise$asap$$len] = callback;
-      lib$es6$promise$asap$$queue[lib$es6$promise$asap$$len + 1] = arg;
-      lib$es6$promise$asap$$len += 2;
-      if (lib$es6$promise$asap$$len === 2) {
-        // If len is 2, that means that we need to schedule an async flush.
-        // If additional callbacks are queued before the queue is flushed, they
-        // will be processed by this flush that we are scheduling.
-        lib$es6$promise$asap$$scheduleFlush();
-      }
+      window.zone.scheduleMicrotask(function() {
+        callback(arg);
+      });
+      //queue[len] = callback;
+      //queue[len + 1] = arg;
+      //len += 2;
+      //if (len === 2) {
+      //  // If len is 2, that means that we need to schedule an async flush.
+      //  // If additional callbacks are queued before the queue is flushed, they
+      //  // will be processed by this flush that we are scheduling.
+      //  scheduleFlush();
+      //}
     }
 
     var lib$es6$promise$asap$$default = lib$es6$promise$asap$$asap;
@@ -206,34 +209,6 @@ module.exports = {
     var lib$es6$promise$asap$$isWorker = typeof Uint8ClampedArray !== 'undefined' &&
       typeof importScripts !== 'undefined' &&
       typeof MessageChannel !== 'undefined';
-
-    var lib$es6$promise$asap$$local;
-    var lib$es6$promise$asap$$hasZoneJs = false;
-
-    if (typeof global !== 'undefined') {
-      lib$es6$promise$asap$$local = global;
-    } else if (typeof self !== 'undefined') {
-      lib$es6$promise$asap$$local = self;
-    } else {
-      try {
-        lib$es6$promise$asap$$local = Function('return this')();
-      } catch (e) { }
-    }
-
-    if (lib$es6$promise$asap$$local) {
-      lib$es6$promise$asap$$hasZoneJs = lib$es6$promise$asap$$local.Zone && lib$es6$promise$asap$$local.Zone.scheduleMicrotask;
-    }
-
-    function lib$es6$promise$asap$$useZoneJs() {
-      var fn = lib$es6$promise$asap$$queue[0];
-      var arg = lib$es6$promise$asap$$queue[1];
-      lib$es6$promise$asap$$local.Zone.scheduleMicrotask(function() {
-        fn(arg);
-      });
-      lib$es6$promise$asap$$queue[0] = undefined;
-      lib$es6$promise$asap$$queue[1] = undefined;
-      lib$es6$promise$asap$$len = 0;
-    }
 
     // node
     function lib$es6$promise$asap$$useNextTick() {
@@ -308,14 +283,9 @@ module.exports = {
       }
     }
 
-    // TODO(vicb)
-    lib$es6$promise$asap$$hasZoneJs = true;
-
     var lib$es6$promise$asap$$scheduleFlush;
     // Decide what async method to use to triggering processing of queued callbacks:
-    if (lib$es6$promise$asap$$hasZoneJs) {
-      lib$es6$promise$asap$$scheduleFlush = lib$es6$promise$asap$$useZoneJs;
-    } else if (lib$es6$promise$asap$$isNode) {
+    if (lib$es6$promise$asap$$isNode) {
       lib$es6$promise$asap$$scheduleFlush = lib$es6$promise$asap$$useNextTick();
     } else if (lib$es6$promise$asap$$BrowserMutationObserver) {
       lib$es6$promise$asap$$scheduleFlush = lib$es6$promise$asap$$useMutationObserver();
@@ -1139,55 +1109,29 @@ module.exports = {
 }).call(this);
 
 
-}).call(this,require('_process'),typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"_process":15}],4:[function(require,module,exports){
+}).call(this,{},typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],4:[function(require,module,exports){
 'use strict';
 
-// run() call depth
-var nestedRun = 0;
-// Pending microtasks
-var microtaskQueue = [];
-// Whether we are currently draining the microtask queue
-var drainingMicrotasks = false;
+// TODO(vicb) asap implementation should work if Promise is not available
+// es6-promise has fallbacks
+
+if (typeof Promise === "undefined" || Promise.toString().indexOf("[native code]") === -1) {
+  throw new Error('Promise is not available natively !')
+}
+
+var resolvedPromise = Promise.resolve(void 0);
+
+function asap(fn) {
+  resolvedPromise.then(fn);
+}
 
 function scheduleMicrotask(fn) {
-  microtaskQueue.push(fn);
-}
-
-function beforeTask() {
-  nestedRun++;
-}
-
-function afterTask() {
-  nestedRun--;
-  // Check if there are microtasks to execute unless:
-  // - we are already executing them (drainingMicrotasks is true),
-  // - we are in a recursive call to run (nesetdRun > 0)
-  if (!drainingMicrotasks && nestedRun == 0) {
-    this.runMicrotasks();
-  }
-}
-
-function runMicrotasks() {
-  drainingMicrotasks = true;
-  do {
-    // Drain the microtask queue
-    while (microtaskQueue.length > 0) {
-      var microtask = microtaskQueue.shift();
-      microtask();
-    }
-    this.afterTurn();
-    // Check the queue length again as afterTurn might have enqueued more microtasks
-  } while (microtaskQueue.length > 0)
-  drainingMicrotasks = false;
+  asap(this.bind(fn));
 }
 
 function addMicrotaskSupport(zoneClass) {
-  zoneClass.prototype.beforeTask = beforeTask;
-  zoneClass.prototype.afterTask = afterTask;
-  zoneClass.prototype.runMicrotasks = runMicrotasks;
-  zoneClass.prototype.afterTurn = function() {};
-  zoneClass.scheduleMicrotask = scheduleMicrotask;
+  zoneClass.prototype.scheduleMicrotask = scheduleMicrotask;
   return zoneClass;
 }
 
@@ -1896,64 +1840,4 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],15:[function(require,module,exports){
-// shim for using process in browser
-
-var process = module.exports = {};
-var queue = [];
-var draining = false;
-
-function drainQueue() {
-    if (draining) {
-        return;
-    }
-    draining = true;
-    var currentQueue;
-    var len = queue.length;
-    while(len) {
-        currentQueue = queue;
-        queue = [];
-        var i = -1;
-        while (++i < len) {
-            currentQueue[i]();
-        }
-        len = queue.length;
-    }
-    draining = false;
-}
-process.nextTick = function (fun) {
-    queue.push(fun);
-    if (!draining) {
-        setTimeout(drainQueue, 0);
-    }
-};
-
-process.title = 'browser';
-process.browser = true;
-process.env = {};
-process.argv = [];
-process.version = ''; // empty string to avoid regexp issues
-process.versions = {};
-
-function noop() {}
-
-process.on = noop;
-process.addListener = noop;
-process.once = noop;
-process.off = noop;
-process.removeListener = noop;
-process.removeAllListeners = noop;
-process.emit = noop;
-
-process.binding = function (name) {
-    throw new Error('process.binding is not supported');
-};
-
-// TODO(shtylman)
-process.cwd = function () { return '/' };
-process.chdir = function (dir) {
-    throw new Error('process.chdir is not supported');
-};
-process.umask = function() { return 0; };
-
 },{}]},{},[1]);

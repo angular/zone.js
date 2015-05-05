@@ -12,6 +12,9 @@ var distFolder = './dist';
 function generateBrowserScript(inFile, outFile) {
   var b = browserify({
     entries: inFile,
+    // es6-promise references process for use in node context, but we don't want to include the
+    // browser version from browserify
+    insertGlobalVars: {'process': function() { return '{}'; } },
     debug: false
   });
 
