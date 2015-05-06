@@ -21,7 +21,7 @@ describe('Microtasks', function () {
   });
 
   // Does not currently work with Firefox, see https://bugzilla.mozilla.org/show_bug.cgi?id=1162013
-  xit('should correctly schedule microtasks vs macrotasks', function(done) {
+  it('should correctly schedule microtasks vs macrotasks', function(done) {
     var log = ['+root'];
 
     zone.scheduleMicrotask(function() {
