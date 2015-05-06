@@ -18,3 +18,5 @@ before_script:
 script:
   - karma start karma-sauce.conf.js
   - karma start karma-browserify-sauce.conf.js
+  - karma start karma-microtasks-sauce.conf.js
+

@@ -75,7 +75,4 @@ describe('Microtasks', function () {
       resolve(null);
     });
   });
-
-  // TODO(vicb): setImmediate should schedule a microtask (in the zone where it is called)
-  // TODO(vicb): create a "-sauce" version of this file, add to Travis
 });

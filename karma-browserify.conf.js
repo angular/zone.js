@@ -10,10 +10,6 @@ module.exports = function (config) {
       {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false}
     ],
 
-    exclude: [
-
-    ],
-
     reporters: ['progress'],
 
     preprocessors: {
