@@ -2,14 +2,20 @@
 
 describe('Microtasks', function () {
   it('should execute microtasks enqueued in the root zone', function(done) {
-    var microtaskExecuted = false;
+    var log = [];
 
     zone.scheduleMicrotask(function() {
-      microtaskExecuted = true;
+      log.push(1);
+    });
+    zone.scheduleMicrotask(function() {
+      log.push(2);
+    });
+    zone.scheduleMicrotask(function() {
+      log.push(3);
     });
 
     setTimeout(function() {
-      expect(microtaskExecuted).toEqual(true);
+      expect(log).toEqual([1, 2, 3]);
       done();
     }, 0);
   });
