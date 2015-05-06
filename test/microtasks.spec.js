@@ -11,12 +11,10 @@ describe('Microtasks', function () {
     setTimeout(function() {
       expect(microtaskExecuted).toEqual(true);
       done();
-    });
+    }, 0);
   });
 
-  // For some reason this test does not work in Jasmine ('mat1.mit' is scheduled after the last
-  // setTimeout) everything is fine when executed from a browser window with zone-microtask.js
-  // loaded
+  // Does not currently work with Firefox, see https://bugzilla.mozilla.org/show_bug.cgi?id=1162013
   xit('should correctly schedule microtasks vs macrotasks', function(done) {
     var log = ['+root'];
 
@@ -30,11 +28,11 @@ describe('Microtasks', function () {
         log.push('mat1.mit');
       });
       log.push('-mat1');
-    });
+    }, 0);
 
     setTimeout(function() {
       log.push('mat2');
-    });
+    }, 0);
 
     setTimeout(function() {
       expect(log).toEqual([
@@ -42,7 +40,7 @@ describe('Microtasks', function () {
         '+mat1', '-mat1', 'mat1.mit',
         'mat2']);
       done();
-    });
+    }, 0);
 
     log.push('-root');
   });
