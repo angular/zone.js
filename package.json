@@ -1,6 +1,6 @@
 {
   "name": "zone.js",
-  "version": "0.4.4",
+  "version": "0.5.0",
   "description": "Zones for JavaScript",
   "main": "lib/zone.js",
   "files": [
