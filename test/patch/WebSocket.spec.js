@@ -1,9 +1,11 @@
 'use strict';
 
 describe('WebSocket', function () {
-  var socket,
-      TEST_SERVER_URL = 'ws://localhost:8001',
-      flag;
+  var socket;
+  var TEST_SERVER_URL = 'ws://localhost:8001';
+  var flag;
+  var testZone = window.zone.fork();
+
 
   beforeEach(function (done) {
     socket = new WebSocket(TEST_SERVER_URL);
@@ -20,16 +22,19 @@ describe('WebSocket', function () {
     socket.close();
   });
 
-  it('should work with addEventListener', function (done) {
-    var parent = window.zone;
 
-    socket.addEventListener('message', function (event) {
-      expect(window.zone.parent).toBe(parent);
-      expect(event.data).toBe('hi');
-      done();
+  it('should work with addEventListener', function (done) {
+    testZone.run(function() {
+      socket.addEventListener('message', function (event) {
+        expect(window.zone.parent).toBe(testZone);
+        expect(event.data).toBe('hi');
+        done();
+      });
     });
+
     socket.send('hi');
   });
+
 
   it('should respect removeEventListener', function (done) {
     var log = '';
@@ -53,12 +58,13 @@ describe('WebSocket', function () {
 
 
   it('should work with onmessage', function (done) {
-    var parent = window.zone;
-    socket.onmessage = function (contents) {
-      expect(window.zone.parent).toBe(parent);
-      expect(contents.data).toBe('hi');
-      done();
-    };
+    testZone.run(function() {
+      socket.onmessage = function (contents) {
+        expect(window.zone.parent).toBe(testZone);
+        expect(contents.data).toBe('hi');
+        done();
+      };
+    });
     socket.send('hi');
   });
 
@@ -79,6 +85,7 @@ describe('WebSocket', function () {
     socket.send('hi');
   });
 
+
   it('should handle removing onmessage', function (done) {
     var log = '';
     socket.onmessage = function () {
@@ -93,5 +100,4 @@ describe('WebSocket', function () {
       done();
     }, 500);
   });
-
 });

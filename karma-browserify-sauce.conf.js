@@ -8,18 +8,7 @@ module.exports = function (config) {
     'SL_Chrome': {
       base: 'SauceLabs',
       browserName: 'chrome',
-      version: '35'
-    },
-    'SL_Firefox': {
-      base: 'SauceLabs',
-      browserName: 'firefox',
-      version: '26'
-    },
-    'SL_Safari': {
-      base: 'SauceLabs',
-      browserName: 'safari',
-      platform: 'OS X 10.9',
-      version: '7'
+      version: '42'
     }
   };
 
@@ -31,7 +20,7 @@ module.exports = function (config) {
       testName: 'Zone.js',
       startConnect: false,
       options:  {
-          'selenium-version': '2.41.0',
+          'selenium-version': '2.45.0',
           'command-timeout': 600,
           'idle-timeout': 600,
           'max-duration': 5400

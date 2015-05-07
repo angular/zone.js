@@ -6,6 +6,7 @@ module.exports = function (config) {
     files: [
       'test/util.js',
       'zone.js',
+      'test/jasmine-patch.js',
       '*-zone.js',
       //'test/lib/brick.js',
       'test/**/*.spec.js',

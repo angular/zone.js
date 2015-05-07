@@ -129,6 +129,50 @@ describe('Zone', function () {
   });
 
 
+  describe('isRootZone', function() {
+
+    it('should return true for root zone', function() {
+      expect(zone.isRootZone()).toBe(true);
+    });
+
+
+    it('should return false for non-root zone', function() {
+      var executed = false;
+
+      zone.fork().run(function() {
+        executed = true;
+        expect(zone.isRootZone()).toBe(false);
+      });
+
+      expect(executed).toBe(true);
+    });
+  });
+
+
+  describe('bind', function() {
+
+    it('should execute all callbacks from root zone without forking zones', function(done) {
+      // using setTimeout for the test which relies on patching via bind
+      setTimeout(function() {
+        expect(zone.isRootZone()).toBe(true);
+        done();
+      });
+    });
+
+
+    it('should fork a zone for non-root zone', function(done) {
+      // using setTimeout for the test which relies on patching via bind
+      var childZone = zone.fork();
+      childZone.run(function() {
+        setTimeout(function() {
+          expect(zone.parent).toBe(childZone);
+          done();
+        });
+      });
+    });
+  });
+
+
   describe('fork', function () {
     it('should fork deep copy', function () {
       var protoZone = { too: { deep: true } },

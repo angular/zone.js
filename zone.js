@@ -8,7 +8,7 @@ var zone = null;
 function Zone(parentZone, data) {
   var zone = (arguments.length) ? Object.create(parentZone) : this;
 
-  zone.parent = parentZone;
+  zone.parent = parentZone || null;
 
   Object.keys(data || {}).forEach(function(property) {
 
@@ -65,7 +65,7 @@ Zone.prototype = {
 
   bind: function (fn, skipEnqueue) {
     skipEnqueue || this.enqueueTask(fn);
-    var zone = this.fork();
+    var zone = this.isRootZone() ? this : this.fork();
     return function zoneBoundFn() {
       return zone.run(fn, this, arguments);
     };
@@ -80,12 +80,17 @@ Zone.prototype = {
     });
   },
 
+  isRootZone: function() {
+    return this.parent === null;
+  },
+
   run: function run (fn, applyTo, applyWith) {
     applyWith = applyWith || [];
 
     var oldZone = zone,
         result;
 
+    // MAKE THIS ZONE THE CURRENT ZONE
     exports.zone = zone = this;
 
     try {
@@ -99,6 +104,8 @@ Zone.prototype = {
       }
     } finally {
       this.afterTask();
+
+      // REVERT THE CURRENT ZONE BACK TO THE ORIGINAL ZONE
       exports.zone = zone = oldZone;
     }
     return result;
