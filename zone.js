@@ -65,9 +65,9 @@ Zone.prototype = {
 
   bind: function (fn, skipEnqueue) {
     skipEnqueue || this.enqueueTask(fn);
-    var zone = this.fork();
+    var currentZone = this;
     return function zoneBoundFn() {
-      return zone.run(fn, this, arguments);
+      return currentZone.run(fn, this, arguments);
     };
   },
 

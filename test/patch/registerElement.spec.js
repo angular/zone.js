@@ -22,30 +22,36 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
 
   var callbacks = {};
 
-  var customElements = callbackNames.map(function (callbackName) {
-    var fullCallbackName = callbackName + 'Callback';
-    var proto = Object.create(HTMLElement.prototype);
-    proto[fullCallbackName] = function (arg) {
-      callbacks[callbackName](arg);
-    };
-    return document.registerElement('x-' + callbackName.toLowerCase(), {
-      prototype: proto
+  var outerZone = zone;
+
+  var customElements;
+
+  zone.fork().run(function () {
+    customElements = callbackNames.map(function (callbackName) {
+      var fullCallbackName = callbackName + 'Callback';
+      var proto = Object.create(HTMLElement.prototype);
+      proto[fullCallbackName] = function (arg) {
+        callbacks[callbackName](arg);
+      };
+      return document.registerElement('x-' + callbackName.toLowerCase(), {
+        prototype: proto
+      });
     });
   });
 
 
   it('should work with createdCallback', function (done) {
     callbacks.created = function () {
-      expect(window.zone.parent).toBeDefined();
+      expect(zone.parent).toBe(outerZone);
       done();
     };
-    var elt = document.createElement('x-created');
+    document.createElement('x-created');
   });
 
 
   it('should work with attachedCallback', function (done) {
     callbacks.attached = function () {
-      expect(window.zone.parent).toBeDefined();
+      expect(zone.parent).toBe(outerZone);
       done();
     };
     var elt = document.createElement('x-attached');
@@ -56,7 +62,7 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
 
   it('should work with detachedCallback', function (done) {
     callbacks.detached = function () {
-      expect(window.zone.parent).toBeDefined();
+      expect(zone.parent).toBe(outerZone);
       done();
     };
     var elt = document.createElement('x-detached');
@@ -67,7 +73,7 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
 
   it('should work with attributeChanged', function (done) {
     callbacks.attributeChanged = function () {
-      expect(window.zone.parent).toBeDefined();
+      expect(zone.parent).toBe(outerZone);
       done();
     };
     var elt = document.createElement('x-attributechanged');
@@ -88,7 +94,7 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
     var elt = document.createElement('x-prop-desc');
 
     function checkZone() {
-      expect(window.zone.parent).toBeDefined();
+      expect(zone.parent).toBe(outerZone);
       done();
     }
   });
@@ -109,7 +115,7 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
     var elt = document.createElement('x-props-desc');
 
     function checkZone() {
-      expect(window.zone.parent).toBeDefined();
+      expect(zone.parent).toBe(outerZone);
       done();
     }
   });

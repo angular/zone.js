@@ -18,11 +18,9 @@ describe('setTimeout', function () {
       expect(zone.mark).toEqual('child');
       expect(zone).toEqual(childZone);
 
-      window.setTimeout(function() {
-        // creates implied zone in all callbacks.
-        expect(zone).not.toEqual(childZone);
-        expect(zone.parent).toEqual(childZone);
-        expect(zone.mark).toEqual('child'); // proto inherited
+      setTimeout(function() {
+        // the callback runs in the same zone
+        expect(zone).toEqual(childZone);
         done();
       }, 0);
 

@@ -11,9 +11,12 @@ describe('requestAnimationFrame', function () {
     // if they are offscreen. We can disable this test for those browsers and
     // assume the patch works if setTimeout works, since they are mechanically
     // the same
-    window.requestAnimationFrame(function () {
-      expect(window.zone.parent).toBeDefined();
-      done();
+    var outerZone = zone;
+    zone.fork().run(function() {
+      window.requestAnimationFrame(function () {
+        expect(zone.parent).toBe(outerZone);
+        done();
+      });
     });
   });
 });
@@ -29,9 +32,12 @@ describe('mozRequestAnimationFrame', function () {
     // if they are offscreen. We can disable this test for those browsers and
     // assume the patch works if setTimeout works, since they are mechanically
     // the same
-    window.mozRequestAnimationFrame(function () {
-      expect(window.zone.parent).toBeDefined();
-      done();
+    var outerZone = zone;
+    zone.fork().run(function() {
+      window.mozRequestAnimationFrame(function () {
+        expect(zone.parent).toBe(outerZone);
+        done();
+      });
     });
   });
 });
@@ -47,9 +53,12 @@ describe('webkitRequestAnimationFrame', function () {
     // if they are offscreen. We can disable this test for those browsers and
     // assume the patch works if setTimeout works, since they are mechanically
     // the same
-    window.webkitRequestAnimationFrame(function () {
-      expect(window.zone.parent).toBeDefined();
-      done();
+    var outerZone = zone;
+    zone.fork().run(function() {
+      window.webkitRequestAnimationFrame(function () {
+        expect(zone.parent).toBe(outerZone);
+        done();
+      });
     });
   });
 });

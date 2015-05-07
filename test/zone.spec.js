@@ -44,32 +44,16 @@ describe('Zone', function () {
     });
 
 
-    it('should fire onZoneCreated when a zone is forked', function (done) {
-      var createdSpy = jasmine.createSpy();
+    it('should fire onZoneCreated when a zone is forked', function () {
       var counter = 0;
       var myZone = zone.fork({
         onZoneCreated: function () {
-          counter += 1;
-        },
-        afterTask: function () {
-          counter -= 1;
+          counter++;
         }
       });
 
-      myZone.run(function () {
-
-        expect(counter).toBe(0);
-
-        setTimeout(function () {}, 0);
-        expect(counter).toBe(1);
-
-        setTimeout(function () {
-          expect(counter).toBe(0);
-          setTimeout(done, 5);
-          expect(counter).toBe(1);
-        }, 0);
-        expect(counter).toBe(2);
-      });
+      myZone.fork();
+      expect(counter).toBe(1);
     });
 
 
