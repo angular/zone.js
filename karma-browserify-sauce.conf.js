@@ -20,7 +20,7 @@ module.exports = function (config) {
       testName: 'Zone.js',
       startConnect: false,
       options:  {
-          'selenium-version': '2.41.0',
+          'selenium-version': '2.45.0',
           'command-timeout': 600,
           'idle-timeout': 600,
           'max-duration': 5400
