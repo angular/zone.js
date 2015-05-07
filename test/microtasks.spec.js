@@ -20,7 +20,6 @@ describe('Microtasks', function () {
     }, 0);
   });
 
-  // Does not currently work with Firefox, see https://bugzilla.mozilla.org/show_bug.cgi?id=1162013
   it('should correctly schedule microtasks vs macrotasks', function(done) {
     var log = ['+root'];
 

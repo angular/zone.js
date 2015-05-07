@@ -68,6 +68,8 @@ describe('Zone.countingZone', function () {
 
   it('should work with clearInterval', function (done) {
     var id;
+    var latch = 0;
+
     countingZone.run(function () {
       id = setInterval(function () {
         latch += 1;
@@ -97,7 +99,6 @@ describe('Zone.countingZone', function () {
         expect(countingZone.counter()).toBe(0);
 
         done();
-        clicked = true;
       }
 
       expect(countingZone.counter()).toBe(0);
