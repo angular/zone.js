@@ -25,37 +25,48 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function () {
     document.head.appendChild(link);
   });
 
-  it('should work with onerror', function (done) {
-    var link;
+  function supportsOnEvents() {
+    var link = document.createElement('link');
+    var linkPropDesc = Object.getOwnPropertyDescriptor(link, 'onerror');
+    return !(linkPropDesc && linkPropDesc.value === null);
+  }
+  supportsOnEvents.message = 'Supports HTMLLinkElement#onxxx patching';
 
-    testZone.run(function() {
-      link = document.createElement('link');
-      link.rel = 'import';
-      link.href = 'anotherUrl';
-      link.onerror = function () {
-        assertInChildOf(testZone);
-        document.head.removeChild(link);
-        done();
-      };
+
+  ifEnvSupports(supportsOnEvents, function() {
+    it('should work with onerror', function (done) {
+      var link;
+
+      testZone.run(function() {
+        link = document.createElement('link');
+        link.rel = 'import';
+        link.href = 'anotherUrl';
+        link.onerror = function () {
+          assertInChildOf(testZone);
+          document.head.removeChild(link);
+          done();
+        };
+      });
+
+      document.head.appendChild(link);
     });
 
-    document.head.appendChild(link);
-  });
+    it('should work with onload', function (done) {
+      var link;
 
-  it('should work with onload', function (done) {
-    var link;
+      testZone.run(function() {
+        link = document.createElement('link');
+        link.rel = 'import';
+        link.href = '/base/test/assets/import.html';
+        link.onload = function () {
+          assertInChildOf(testZone);
+          document.head.removeChild(link);
+          done();
+        };
+      });
 
-    testZone.run(function() {
-      link = document.createElement('link');
-      link.rel = 'import';
-      link.href = '/base/test/assets/import.html';
-      link.onload = function () {
-        assertInChildOf(testZone);
-        document.head.removeChild(link);
-        done();
-      };
+      document.head.appendChild(link);
     });
-
-    document.head.appendChild(link);
   });
+
 }));
