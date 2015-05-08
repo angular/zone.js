@@ -1500,23 +1500,27 @@ function patchClass(className) {
   if (!OriginalClass) return;
 
   global[className] = function (fn) {
-    this._o = new OriginalClass(zone.bind(fn, true));
+    this._o = new OriginalClass(global.zone.bind(fn, true));
+    // Remember where the class was instantiate to execute the enqueueTask and dequeueTask hooks
+    this._creationZone = global.zone;
   };
 
   var instance = new OriginalClass(function () {});
 
   global[className].prototype.disconnect = function () {
     var result = this._o.disconnect.apply(this._o, arguments);
-    this._active && global.zone.dequeueTask();
-    this._active = false;
+    if (this._active) {
+      this._creationZone.dequeueTask();
+      this._active = false;
+    }
     return result;
   };
 
   global[className].prototype.observe = function () {
     if (!this._active) {
-      global.zone.enqueueTask();
+      this._creationZone.enqueueTask();
+      this._active = true;
     }
-    this._active = true;
     return this._o.observe.apply(this._o, arguments);
   };
 
@@ -1534,7 +1538,7 @@ function patchClass(className) {
         Object.defineProperty(global[className].prototype, prop, {
           set: function (fn) {
             if (typeof fn === 'function') {
-              this._o[prop] = zone.bind(fn);
+              this._o[prop] = global.zone.bind(fn);
             } else {
               this._o[prop] = fn;
             }
