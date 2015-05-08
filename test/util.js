@@ -23,15 +23,38 @@ function ifEnvSupports(test, block) {
 };
 
 function assertInChildOf(parentZone) {
-  var zone = window.zone.parent;
-  while (zone) {
-    if (zone === parentZone) return;
-    zone = zone.parent;
-  }
-
-  throw new Error('The current zone [' + window.zone.$id +
-                  '] is not a child of the given zone [' + parentZone.$id + '] !');
+  expect(window.zone).toBeChildOf(parentZone);
 }
+
+var customMatchers = {
+  // Assert that a zone is a child of an other zone
+  // usage: `expect(childZone).toBeChildOf(parentZone);`
+  toBeChildOf: function() {
+    return {
+      compare: function(childZone, parentZone) {
+        var zone = childZone.parent;
+        while (zone) {
+          if (zone === parentZone) {
+            return {
+              pass: true,
+              message: 'The zone [' + childZone.$id + '] is a child of the zone [' + parentZone.$id + ']'
+            };
+          }
+          zone = zone.parent;
+        }
+
+        return {
+          pass: false,
+          message: 'The zone [' + childZone.$id + '] is not a child of the zone [' + parentZone.$id + ']'
+        };
+      }
+    }
+  }
+}
+
+beforeEach(function() {
+  jasmine.addMatchers(customMatchers);
+});
 
 // useful for testing mocks
 window.__setTimeout = window.setTimeout;
