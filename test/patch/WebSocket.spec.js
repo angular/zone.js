@@ -26,7 +26,7 @@ describe('WebSocket', function () {
   it('should work with addEventListener', function (done) {
     testZone.run(function() {
       socket.addEventListener('message', function (event) {
-        expect(window.zone.parent).toBe(testZone);
+        assertInChildOf(testZone);
         expect(event.data).toBe('hi');
         done();
       });
@@ -60,7 +60,7 @@ describe('WebSocket', function () {
   it('should work with onmessage', function (done) {
     testZone.run(function() {
       socket.onmessage = function (contents) {
-        expect(window.zone.parent).toBe(testZone);
+        assertInChildOf(testZone);
         expect(contents.data).toBe('hi');
         done();
       };
@@ -71,11 +71,13 @@ describe('WebSocket', function () {
 
   it('should only allow one onmessage handler', function (done) {
     var log = '';
+
     socket.onmessage = function () {
       log += 'a';
       expect(log).toEqual('b');
       done();
     };
+
     socket.onmessage = function () {
       log += 'b';
       expect(log).toEqual('b');
@@ -88,9 +90,11 @@ describe('WebSocket', function () {
 
   it('should handle removing onmessage', function (done) {
     var log = '';
+
     socket.onmessage = function () {
       log += 'a';
     };
+
     socket.onmessage = null;
 
     socket.send('hi');

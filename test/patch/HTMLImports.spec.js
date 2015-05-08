@@ -9,8 +9,10 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function () {
   var testZone = window.zone.fork();
 
   it('should work with addEventListener', function (done) {
+    var link;
+
     testZone.run(function() {
-      var link = document.createElement('link');
+      link = document.createElement('link');
       link.rel = 'import';
       link.href = 'someUrl';
       link.addEventListener('error', function () {
@@ -18,13 +20,16 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function () {
         document.head.removeChild(link);
         done();
       });
-      document.head.appendChild(link);
     });
+
+    document.head.appendChild(link);
   });
 
   it('should work with onerror', function (done) {
+    var link;
+
     testZone.run(function() {
-      var link = document.createElement('link');
+      link = document.createElement('link');
       link.rel = 'import';
       link.href = 'anotherUrl';
       link.onerror = function () {
@@ -32,13 +37,16 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function () {
         document.head.removeChild(link);
         done();
       };
-      document.head.appendChild(link);
     });
+
+    document.head.appendChild(link);
   });
 
   it('should work with onload', function (done) {
+    var link;
+
     testZone.run(function() {
-      var link = document.createElement('link');
+      link = document.createElement('link');
       link.rel = 'import';
       link.href = '/base/test/assets/import.html';
       link.onload = function () {
@@ -46,7 +54,8 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function () {
         document.head.removeChild(link);
         done();
       };
-      document.head.appendChild(link);
     });
+
+    document.head.appendChild(link);
   });
 }));

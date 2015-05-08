@@ -4,8 +4,10 @@ describe('XMLHttpRequest', function () {
   var testZone = window.zone.fork();
 
   it('should work with onreadystatechange', function (done) {
+    var req;
+
     testZone.run(function() {
-      var req = new XMLHttpRequest();
+      req = new XMLHttpRequest();
       var firstCall = true;
       req.onreadystatechange = function () {
         // Make sure that the callback will only be called once
@@ -14,13 +16,16 @@ describe('XMLHttpRequest', function () {
         done();
       };
       req.open('get', '/', true);
-      req.send();
     });
+
+    req.send();
   });
 
   it('should work with onprogress', function (done) {
+    var req;
+
     testZone.run(function() {
-      var req = new XMLHttpRequest();
+      req = new XMLHttpRequest();
       req.onprogress = function () {
         // Make sure that the callback will only be called once
         req.onprogress = null;
@@ -28,8 +33,9 @@ describe('XMLHttpRequest', function () {
         done();
       };
       req.open('get', '/', true);
-      req.send();
     });
+
+    req.send();
   });
 
   it('should preserve other setters', function () {
