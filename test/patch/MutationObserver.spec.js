@@ -2,22 +2,25 @@
 
 describe('MutationObserver', ifEnvSupports('MutationObserver', function () {
   var elt;
+  var testZone = window.zone.fork();
 
   beforeEach(function () {
     elt = document.createElement('div');
   });
 
   it('should run observers within the zone', function (done) {
-    var ob = new MutationObserver(function () {
-      expect(window.zone.parent).toBeDefined();
-      done();
-    });
+    testZone.run(function() {
+      var ob = new MutationObserver(function () {
+        assertInChildOf(testZone);
+        done();
+      });
 
-    ob.observe(elt, {
-      childList: true
-    });
+      ob.observe(elt, {
+        childList: true
+      });
 
-    elt.innerHTML = '<p>hey</p>';
+      elt.innerHTML = '<p>hey</p>';
+    });
   });
 
   it('should dequeue upon disconnect', function () {
@@ -77,18 +80,22 @@ describe('MutationObserver', ifEnvSupports('MutationObserver', function () {
 }));
 
 describe('WebKitMutationObserver', ifEnvSupports('WebKitMutationObserver', function () {
+  var testZone = window.zone.fork();
+
   it('should run observers within the zone', function (done) {
-    var elt = document.createElement('div');
+    testZone.run(function() {
+      var elt = document.createElement('div');
 
-    var ob = new WebKitMutationObserver(function () {
-      expect(window.zone.parent).toBeDefined();
-      done();
+      var ob = new WebKitMutationObserver(function () {
+        assertInChildOf(testZone);
+        done();
+      });
+
+      ob.observe(elt, {
+        childList: true
+      });
+
+      elt.innerHTML = '<p>hey</p>';
     });
-
-    ob.observe(elt, {
-      childList: true
-    });
-
-    elt.innerHTML = '<p>hey</p>';
   });
 }));
