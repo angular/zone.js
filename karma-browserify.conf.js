@@ -5,9 +5,9 @@ module.exports = function (config) {
     basePath: '',
     files: [
       'test/util.js',
-      {pattern: 'lib/zone.js', watched: true, served: false, included: false},
       'test/commonjs.spec.js',
-      {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false}
+      {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false},
+      {pattern: 'lib/**/*.js', watched: true, served: false, included: false}
     ],
 
     reporters: ['progress'],

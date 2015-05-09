@@ -5,13 +5,18 @@ module.exports = function (config) {
     basePath: '',
     files: [
       'test/util.js',
-      'dist/zone.js',
+      'test/setup.js',
       'dist/*-zone.js',
       'test/jasmine-patch.js',
       //'test/lib/brick.js',
       'test/**/*.spec.js',
-      {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false}
+      {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false},
+      {pattern: 'lib/**/*.js', watched: true, served: false, included: false}
     ],
+
+    preprocessors: {
+      'test/setup.js': [ 'browserify' ]
+    },
 
     exclude: [
       'test/commonjs.spec.js',
@@ -26,7 +31,7 @@ module.exports = function (config) {
     logLevel: config.LOG_INFO,
 
     browsers: ['Firefox'],
-    frameworks: ['jasmine'],
+    frameworks: ['jasmine', 'browserify'],
 
     captureTimeout: 60000,
 
