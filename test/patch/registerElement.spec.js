@@ -41,7 +41,7 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
 
   it('should work with createdCallback', function (done) {
     callbacks.created = function () {
-      assertInChildOf(testZone);
+      expect(window.zone).toBeDirectChildOf(testZone);
       done();
     };
 
@@ -51,7 +51,7 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
 
   it('should work with attachedCallback', function (done) {
     callbacks.attached = function () {
-      assertInChildOf(testZone);
+      expect(window.zone).toBeDirectChildOf(testZone);
       done();
     };
 
@@ -63,7 +63,7 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
 
   it('should work with detachedCallback', function (done) {
     callbacks.detached = function () {
-      assertInChildOf(testZone);
+      expect(window.zone).toBeDirectChildOf(testZone);
       done();
     };
 
@@ -75,7 +75,7 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
 
   it('should work with attributeChanged', function (done) {
     callbacks.attributeChanged = function () {
-      assertInChildOf(testZone);
+      expect(window.zone).toBeDirectChildOf(testZone);
       done();
     };
 
@@ -97,7 +97,7 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
       document.registerElement('x-prop-desc', { prototype: proto });
 
       function checkZone() {
-        assertInChildOf(testZone);
+        expect(window.zone).toBeDirectChildOf(testZone);
         done();
       }
     });
@@ -121,7 +121,7 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
       document.registerElement('x-props-desc', { prototype: proto });
 
       function checkZone() {
-        assertInChildOf(testZone);
+        expect(window.zone).toBeDirectChildOf(testZone);
         done();
       }
     });

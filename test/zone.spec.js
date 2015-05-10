@@ -1,10 +1,7 @@
 'use strict';
 
 describe('Zone', function () {
-
-  beforeEach(function () {
-    zone.mark = 'root';
-  });
+  var rootZone = window.zone;
 
   it('should have an id', function () {
     expect(zone.$id).toBeDefined();
@@ -112,20 +109,16 @@ describe('Zone', function () {
 
 
   it('should allow zones to be run from within another zone', function () {
-    var a = zone.fork({
-          mark: 'a'
-        }),
-        b = zone.fork({
-          mark: 'b'
-        });
+    var zoneA = zone.fork();
+    var zoneB = zone.fork();
 
-    a.run(function () {
-      b.run(function () {
-        expect(zone.mark).toBe('b');
+    zoneA.run(function () {
+      zoneB.run(function () {
+        expect(window.zone).toBe(zoneB);
       });
-      expect(zone.mark).toBe('a');
+      expect(window.zone).toBe(zoneA);
     });
-    expect(zone.mark).toBe('root');
+    expect(window.zone).toBe(rootZone);
   });
 
 
@@ -165,7 +158,7 @@ describe('Zone', function () {
       var childZone = zone.fork();
       childZone.run(function() {
         setTimeout(function() {
-          expect(zone.parent).toBe(childZone);
+          expect(window.zone).toBeDirectChildOf(childZone);
           done();
         });
       });
@@ -175,12 +168,12 @@ describe('Zone', function () {
 
   describe('fork', function () {
     it('should fork deep copy', function () {
-      var protoZone = { too: { deep: true } },
-          a = zone.fork(protoZone),
-          b = zone.fork(protoZone);
+      var protoZone = { too: { deep: true } };
+      var zoneA = zone.fork(protoZone);
+      var zoneB = zone.fork(protoZone);
 
-      expect(a.too).not.toBe(b.too);
-      expect(a.too).toEqual(b.too);
+      expect(zoneA.too).not.toBe(zoneB.too);
+      expect(zoneA.too).toEqual(zoneB.too);
     });
   });
 
@@ -195,15 +188,17 @@ describe('Zone', function () {
     };
 
     it('should return a method that returns promises that run in the correct zone', function (done) {
-      zone.fork({ mark: 'a' }).run(function () {
+      var zoneA = zone.fork();
+
+      zoneA.run(function () {
         var patched = Zone.bindPromiseFn(function() {
           return mockPromise();
         });
 
         patched().then(function () {
-          expect(zone.mark).toBe('a');
+          expect(window.zone).toBeDirectChildOf(zoneA);
         }).then(function () {
-          expect(zone.mark).toBe('a');
+          expect(window.zone).toBeDirectChildOf(zoneA);
           done();
         });
       });

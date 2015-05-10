@@ -12,7 +12,7 @@ describe('XMLHttpRequest', function () {
       req.onreadystatechange = function () {
         // Make sure that the callback will only be called once
         req.onreadystatechange = null;
-        assertInChildOf(testZone);
+        expect(window.zone).toBeDirectChildOf(testZone);
         done();
       };
       req.open('get', '/', true);
@@ -29,7 +29,7 @@ describe('XMLHttpRequest', function () {
       req.onprogress = function () {
         // Make sure that the callback will only be called once
         req.onprogress = null;
-        assertInChildOf(testZone);
+        expect(window.zone).toBeDirectChildOf(testZone);
         done();
       };
       req.open('get', '/', true);

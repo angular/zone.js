@@ -26,7 +26,7 @@ describe('WebSocket', function () {
   it('should work with addEventListener', function (done) {
     testZone.run(function() {
       socket.addEventListener('message', function (event) {
-        assertInChildOf(testZone);
+        expect(window.zone).toBeDirectChildOf(testZone);
         expect(event.data).toBe('hi');
         done();
       });
@@ -60,7 +60,7 @@ describe('WebSocket', function () {
   it('should work with onmessage', function (done) {
     testZone.run(function() {
       socket.onmessage = function (contents) {
-        assertInChildOf(testZone);
+        expect(window.zone).toBeDirectChildOf(testZone);
         expect(contents.data).toBe('hi');
         done();
       };

@@ -13,7 +13,7 @@ describe('MutationObserver', ifEnvSupports('MutationObserver', function () {
 
     testZone.run(function() {
       ob = new MutationObserver(function () {
-        assertInChildOf(testZone);
+        expect(window.zone).toBeDirectChildOf(testZone);
         done();
       });
 
@@ -91,7 +91,7 @@ describe('WebKitMutationObserver', ifEnvSupports('WebKitMutationObserver', funct
       elt = document.createElement('div');
 
       var ob = new WebKitMutationObserver(function () {
-        assertInChildOf(testZone);
+        expect(window.zone).toBeDirectChildOf(testZone);
         done();
       });
 

@@ -22,10 +22,6 @@ function ifEnvSupports(test, block) {
   };
 };
 
-function assertInChildOf(parentZone) {
-  expect(window.zone).toBeChildOf(parentZone);
-}
-
 var customMatchers = {
   // Assert that a zone is a child of an other zone
   // usage: `expect(childZone).toBeChildOf(parentZone);`

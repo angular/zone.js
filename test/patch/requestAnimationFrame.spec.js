@@ -16,7 +16,7 @@ describe('requestAnimationFrame', function () {
         // assume the patch works if setTimeout works, since they are mechanically
         // the same
         window.requestAnimationFrame(function () {
-          assertInChildOf(testZone);
+          expect(window.zone).toBeDirectChildOf(testZone);
           done();
         });
       });
@@ -36,7 +36,7 @@ describe('requestAnimationFrame', function () {
         // assume the patch works if setTimeout works, since they are mechanically
         // the same
         window.mozRequestAnimationFrame(function () {
-          assertInChildOf(testZone);
+          expect(window.zone).toBeDirectChildOf(testZone);
           done();
         });
       });
@@ -56,7 +56,7 @@ describe('requestAnimationFrame', function () {
         // assume the patch works if setTimeout works, since they are mechanically
         // the same
         window.webkitRequestAnimationFrame(function () {
-          assertInChildOf(testZone);
+          expect(window.zone).toBeDirectChildOf(testZone);
           done();
         });
       });

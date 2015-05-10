@@ -16,7 +16,7 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function () {
       link.rel = 'import';
       link.href = 'someUrl';
       link.addEventListener('error', function () {
-        assertInChildOf(testZone);
+        expect(window.zone).toBeDirectChildOf(testZone);
         document.head.removeChild(link);
         done();
       });
@@ -42,7 +42,7 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function () {
         link.rel = 'import';
         link.href = 'anotherUrl';
         link.onerror = function () {
-          assertInChildOf(testZone);
+          expect(window.zone).toBeDirectChildOf(testZone);
           document.head.removeChild(link);
           done();
         };
@@ -59,7 +59,7 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function () {
         link.rel = 'import';
         link.href = '/base/test/assets/import.html';
         link.onload = function () {
-          assertInChildOf(testZone);
+          expect(window.zone).toBeDirectChildOf(testZone);
           document.head.removeChild(link);
           done();
         };

@@ -10,7 +10,7 @@ describe('Promise', ifEnvSupports('Promise', function () {
       new Promise(function (resolveFn) {
         resolve = resolveFn;
       }).then(function () {
-        assertInChildOf(testZone);
+        expect(window.zone).toBeDirectChildOf(testZone);
         done();
       });
     });
@@ -25,7 +25,7 @@ describe('Promise', ifEnvSupports('Promise', function () {
       new Promise(function (resolveFn, rejectFn) {
         reject = rejectFn;
       }).catch(function () {
-        assertInChildOf(testZone);
+        expect(window.zone).toBeDirectChildOf(testZone);
         done();
       });
     });

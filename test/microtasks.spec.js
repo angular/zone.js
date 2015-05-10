@@ -53,9 +53,11 @@ describe('Microtasks', function () {
   it('should executed Promise callback in the zone where they are scheduled', function(done) {
     var resolvedPromise = Promise.resolve(null);
 
-    zone.fork({_name: 'foo'}).run(function() {
+    var testZone = window.zone.fork();
+
+    testZone.run(function() {
       resolvedPromise.then(function() {
-        expect(zone._name).toBe('foo');
+        expect(window.zone).toBeDirectChildOf(testZone);
         done();
       });
     });
@@ -65,16 +67,18 @@ describe('Microtasks', function () {
     var resolve;
     var promise = new Promise(function (rs) {
       resolve = rs;
-    })
+    });
 
-    zone.fork({_name: 'foo'}).run(function() {
+    var testZone = window.zone.fork();
+
+    testZone.run(function() {
       promise.then(function() {
-        expect(zone._name).toBe('foo');
+        expect(window.zone).toBeDirectChildOf(testZone);
         done();
       });
     });
 
-    zone.fork({_name: 'bar'}).run(function() {
+    window.zone.fork().run(function() {
       resolve(null);
     });
   });

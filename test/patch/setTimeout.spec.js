@@ -2,34 +2,18 @@
 
 describe('setTimeout', function () {
 
-  beforeEach(function () {
-    zone.mark = 'root';
-  });
-
   it('should work with setTimeout', function (done) {
 
-    var childZone = window.zone.fork({
-      mark: 'child'
-    });
+    var testZone = window.zone.fork();
 
-    expect(zone.mark).toEqual('root');
-
-    childZone.run(function() {
-      expect(zone.mark).toEqual('child');
-      expect(zone).toEqual(childZone);
+    testZone.run(function() {
 
       window.setTimeout(function() {
         // creates implied zone in all callbacks.
-        expect(zone).not.toEqual(childZone);
-        expect(zone.parent).toEqual(childZone);
-        expect(zone.mark).toEqual('child'); // proto inherited
+        expect(window.zone).toBeDirectChildOf(testZone);
         done();
       }, 0);
-
-      expect(zone.mark).toEqual('child');
     });
-
-    expect(zone.mark).toEqual('root');
   });
 
   it('should allow canceling of fns registered with setTimeout', function (done) {

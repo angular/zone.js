@@ -16,16 +16,13 @@ describe('element', function () {
   });
 
   it('should work with addEventListener', function () {
-    var childTestZone;
-
     testZone.run(function() {
       button.addEventListener('click', function () {
-        childTestZone = window.zone;
+        expect(window.zone).toBeDirectChildOf(testZone);
       });
     });
 
     button.click();
-    expect(childTestZone.parent).toBe(testZone);
   });
 
   it('should respect removeEventListener', function () {
@@ -61,16 +58,13 @@ describe('element', function () {
 
     ifEnvSupports(supportsOnClick, function() {
       it('should spawn new child zones', function () {
-        var childTestZone;
-
         testZone.run(function() {
           button.onclick = function () {
-            childTestZone = window.zone;
+            expect(window.zoneA).toBeDirectChildOf(testZone);
           };
         });
 
         button.click();
-        expect(childTestZone.parent).toBe(testZone);
       });
     });
 
