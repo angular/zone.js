@@ -49,6 +49,23 @@ var customMatchers = {
         };
       }
     }
+  },
+  toBeDirectChildOf: function() {
+    return {
+      compare: function(childZone, parentZone) {
+        if (childZone.parent === parentZone) {
+          return {
+            pass: true,
+            message: 'The zone [' + childZone.$id + '] is a direct child of the zone [' + parentZone.$id + ']'
+          };
+        }
+
+        return {
+          pass: false,
+          message: 'The zone [' + childZone.$id + '] is not a direct child of the zone [' + parentZone.$id + ']'
+        };
+      }
+    }
   }
 }
 
