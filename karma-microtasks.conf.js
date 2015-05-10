@@ -8,9 +8,13 @@ module.exports = function (config) {
       'test/setup-microtask.js',
       'dist/*-zone.js',
       'test/jasmine-patch.js',
-      'test/microtasks.spec.js',
+      'test/**/*.spec.js',
       {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false},
       {pattern: 'lib/**/*.js', watched: true, served: false, included: false}
+    ],
+
+    exclude: [
+      'test/commonjs.spec.js',
     ],
 
     preprocessors: {
