@@ -82,4 +82,25 @@ describe('Microtasks', function () {
       resolve(null);
     });
   });
+
+  describe('Promise', function() {
+    it('should go through scheduleMicrotask', function(done) {
+      var called = false;
+      var testZone = zone.fork({
+        '$scheduleMicrotask': function (parentScheduleMicrotask) {
+          return function(microtask) {
+            called = true;
+            parentScheduleMicrotask.call(this, microtask);
+          }
+        }
+      });
+
+      testZone.run(function() {
+        Promise.resolve('value').then(function() {
+          expect(called).toEqual(true);
+          done();
+        });
+      });
+    });
+  });
 });
