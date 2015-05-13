@@ -7,7 +7,6 @@ module.exports = function (config) {
       'test/util.js',
       'test/setup.js',
       'dist/*-zone.js',
-      'test/jasmine-patch.js',
       //'test/lib/brick.js',
       'test/**/*.spec.js',
       {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false},

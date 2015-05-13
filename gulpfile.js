@@ -37,7 +37,15 @@ gulp.task('build/zone-microtask.js', function() {
   return generateBrowserScript('./lib/browser/zone-microtask.js', 'zone-microtask.js');
 });
 
-gulp.task('build', ['build/zone.js', 'build/zone-microtask.js']);
+gulp.task('build/jasmine-patch.js', function() {
+  return generateBrowserScript('./lib/browser/jasmine-patch.js', 'jasmine-patch.js');
+});
+
+gulp.task('build', [
+  'build/zone.js',
+  'build/zone-microtask.js',
+  'build/jasmine-patch.js'
+]);
 
 
 
