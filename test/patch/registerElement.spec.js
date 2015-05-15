@@ -130,14 +130,16 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
   });
 
 
-  it('should check that callback is own property', function (done) {
+  it('should check bind callback if not own property', function (done) {
     testZone.run(function() {
       var originalProto = {
         createdCallback: function() {}
       }
       var secondaryProto = Object.create(originalProto);
+      expect(secondaryProto.createdCallback).toBe(originalProto.createdCallback);
       expect(function() {
-        document.registerElement('x-no-opts', { prototype: secondaryProto });
+        document.registerElement('x-inherited-callback', { prototype: secondaryProto });
+        expect(secondaryProto.createdCallback).not.toBe(originalProto.createdCallback);
         done();
       }).not.toThrow();
     });
