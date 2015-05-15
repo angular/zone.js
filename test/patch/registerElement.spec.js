@@ -145,4 +145,11 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
     });
   });
 
+
+  it('should not throw if no options passed to registerElement', function () {
+    expect(function() {
+      document.registerElement('x-no-opts');
+    }).not.toThrow();
+  });
+
 }));
