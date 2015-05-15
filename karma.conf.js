@@ -6,7 +6,8 @@ module.exports = function (config) {
     files: [
       'test/util.js',
       'test/setup.js',
-      'dist/*-zone.js',
+      'dist/counting-zone.js',
+      'dist/except-zone.js',
       //'test/lib/brick.js',
       'test/**/*.spec.js',
       {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false},
