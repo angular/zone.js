@@ -2,7 +2,8 @@
 
 describe('WebSocket', ifEnvSupports('WebSocket', function () {
   var socket;
-  var TEST_SERVER_URL = 'ws://localhost:8001';
+  var hostname = process.env.WEBSOCKET_HOST;
+  var TEST_SERVER_URL = 'ws://' + hostname + ':8001';
   var flag;
   var testZone = window.zone.fork();
 

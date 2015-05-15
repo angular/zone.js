@@ -1,9 +1,6 @@
 // Sauce configuration
 
 module.exports = function (config) {
-  // The WS server is not available with Sauce
-  config.exclude.push('test/**/WebSocket.spec.js');
-
   var customLaunchers = {
     'SL_Chrome': {
       base: 'SauceLabs',
