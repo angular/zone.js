@@ -6,7 +6,8 @@ module.exports = function (config) {
     files: [
       'test/util.js',
       'test/setup-microtask.js',
-      'dist/*-zone.js',
+      'dist/counting-zone.js',
+      'dist/except-zone.js',
       'test/**/*.spec.js',
       {pattern: 'test/assets/**/*.*', watched: true, served: true, included: false},
       {pattern: 'lib/**/*.js', watched: true, served: false, included: false}
