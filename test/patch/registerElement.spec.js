@@ -129,4 +129,18 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
     var elt = document.createElement('x-props-desc');
   });
 
+
+  it('should check that callback is own property', function (done) {
+    testZone.run(function() {
+      var originalProto = {
+        createdCallback: function() {}
+      }
+      var secondaryProto = Object.create(originalProto);
+      expect(function() {
+        document.registerElement('x-no-opts', { prototype: secondaryProto });
+        done();
+      }).not.toThrow();
+    });
+  });
+
 }));
