@@ -17,7 +17,7 @@ describe('Microtasks', function () {
     setTimeout(function() {
       expect(log).toEqual([1, 2, 3]);
       done();
-    }, 0);
+    }, 10);
   });
 
   it('should correctly schedule microtasks vs macrotasks', function(done) {
@@ -33,11 +33,11 @@ describe('Microtasks', function () {
         log.push('mat1.mit');
       });
       log.push('-mat1');
-    }, 0);
+    }, 10);
 
     setTimeout(function() {
       log.push('mat2');
-    }, 0);
+    }, 20);
 
     setTimeout(function() {
       expect(log).toEqual([
@@ -45,7 +45,7 @@ describe('Microtasks', function () {
         '+mat1', '-mat1', 'mat1.mit',
         'mat2']);
       done();
-    }, 0);
+    }, 30);
 
     log.push('-root');
   });

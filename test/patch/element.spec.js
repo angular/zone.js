@@ -12,7 +12,6 @@ describe('element', function () {
 
   afterEach(function () {
     document.body.removeChild(button);
-    button.remove();
   });
 
   it('should work with addEventListener', function () {
@@ -35,7 +34,9 @@ describe('element', function () {
     button.addEventListener('focus', logFunction);
     button.click();
     expect(log).toEqual('a');
-    button.dispatchEvent(new Event('focus'));
+    var focusEvent = document.createEvent('Event');
+    focusEvent.initEvent('focus', true, true)
+    button.dispatchEvent(focusEvent);
     expect(log).toEqual('aa');
 
     button.removeEventListener('click', logFunction);

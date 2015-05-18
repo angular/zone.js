@@ -8,7 +8,7 @@ Zone.Stacktrace = function (e) {
   this._e = e;
 };
 Zone.Stacktrace.prototype.get = function () {
-  if (zone.stackFramesFilter) {
+  if (zone.stackFramesFilter && this._e.stack) {
     return this._e.stack.
         split('\n').
         filter(zone.stackFramesFilter).
@@ -47,7 +47,7 @@ Zone.longStackTraceZone = {
     var trace = [];
     var zone = this;
     if (exception) {
-      if (zone.stackFramesFilter) {
+      if (zone.stackFramesFilter && exception.stack) {
         trace.push(exception.stack.split('\n').
             filter(zone.stackFramesFilter).
             join('\n'));

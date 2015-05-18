@@ -1,6 +1,6 @@
 'use strict';
 
-describe('WebSocket', function () {
+describe('WebSocket', ifEnvSupports('WebSocket', function () {
   var socket;
   var TEST_SERVER_URL = 'ws://localhost:8001';
   var flag;
@@ -104,4 +104,4 @@ describe('WebSocket', function () {
       done();
     }, 500);
   });
-});
+}));
