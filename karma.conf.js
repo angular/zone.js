@@ -6,6 +6,7 @@ module.exports = function (config) {
     files: [
       'test/util.js',
       'test/setup.js',
+      'test/setup-jasmine.js',
       'dist/counting-zone.js',
       'dist/except-zone.js',
       //'test/lib/brick.js',
@@ -15,7 +16,8 @@ module.exports = function (config) {
     ],
 
     preprocessors: {
-      'test/setup.js': [ 'browserify' ]
+      'test/setup.js': [ 'browserify' ],
+      'test/util.js': [ 'browserify' ]
     },
 
     exclude: [

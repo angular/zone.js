@@ -6,6 +6,7 @@ var source = require('vinyl-source-stream');
 var rename = require('gulp-rename');
 var uglify = require('gulp-uglify');
 var buffer = require('vinyl-buffer');
+var jasmine = require('gulp-jasmine');
 
 var distFolder = './dist';
 
@@ -29,6 +30,8 @@ function generateBrowserScript(inFile, outFile) {
   ;
 }
 
+// Build tasks
+
 gulp.task('build/zone.js', function() {
   return generateBrowserScript('./lib/browser/zone.js', 'zone.js');
 });
@@ -51,6 +54,26 @@ gulp.task('build', [
   'build/jasmine-patch.js',
   'build/long-stack-trace-zone.js'
 ]);
+
+// Test tasks
+
+gulp.task('test/node', function () {
+  require('./test/setup-node.js');
+
+  var tests = [
+    './dist/jasmine-patch.js',
+    './test/setup-jasmine.js',
+  	'./test/zone.spec.js',
+  	'./test/long-stack-trace-zone.spec.js',
+  	'./test/patch/*.js'
+  ];
+  return gulp
+    .src(tests)
+    .pipe(jasmine({
+      timeout: 1000,
+      verbose: true
+    }));
+});
 
 
 

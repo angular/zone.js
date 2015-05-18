@@ -6,6 +6,7 @@ module.exports = function (config) {
     files: [
       'test/util.js',
       'test/setup-microtask.js',
+      'test/setup-jasmine.js',
       'dist/counting-zone.js',
       'dist/except-zone.js',
       'test/**/*.spec.js',
@@ -18,7 +19,8 @@ module.exports = function (config) {
     ],
 
     preprocessors: {
-      'test/setup-microtask.js': [ 'browserify' ]
+      'test/setup-microtask.js': [ 'browserify' ],
+      'test/util.js': [ 'browserify' ]
     },
 
     reporters: ['progress'],

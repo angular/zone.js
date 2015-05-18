@@ -1,7 +1,7 @@
 'use strict';
 
 describe('Zone', function () {
-  var rootZone = window.zone;
+  var rootZone = zone;
 
   it('should have an id', function () {
     expect(zone.$id).toBeDefined();
@@ -58,6 +58,7 @@ describe('Zone', function () {
         expect(counter).toBe(0);
 
         setTimeout(function () {}, 0);
+
         expect(counter).toBe(1);
 
         setTimeout(function () {
@@ -114,11 +115,11 @@ describe('Zone', function () {
 
     zoneA.run(function () {
       zoneB.run(function () {
-        expect(window.zone).toBe(zoneB);
+        expect(zone).toBe(zoneB);
       });
-      expect(window.zone).toBe(zoneA);
+      expect(zone).toBe(zoneA);
     });
-    expect(window.zone).toBe(rootZone);
+    expect(zone).toBe(rootZone);
   });
 
 
@@ -158,7 +159,7 @@ describe('Zone', function () {
       var childZone = zone.fork();
       childZone.run(function() {
         setTimeout(function() {
-          expect(window.zone).toBeDirectChildOf(childZone);
+          expect(zone).toBeDirectChildOf(childZone);
           done();
         });
       });
@@ -181,7 +182,7 @@ describe('Zone', function () {
     var mockPromise = function() {
       return {
         then: function (a, b) {
-          window.__setTimeout(a, 0);
+          __setTimeout(a, 0);
           return mockPromise();
         }
       };
@@ -196,9 +197,9 @@ describe('Zone', function () {
         });
 
         patched().then(function () {
-          expect(window.zone).toBeDirectChildOf(zoneA);
+          expect(zone).toBeDirectChildOf(zoneA);
         }).then(function () {
-          expect(window.zone).toBeDirectChildOf(zoneA);
+          expect(zone).toBeDirectChildOf(zoneA);
           done();
         });
       });

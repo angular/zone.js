@@ -1,7 +1,7 @@
 'use strict';
 
-describe('XMLHttpRequest', function () {
-  var testZone = window.zone.fork();
+describe('XMLHttpRequest', ifBrowserEnvSupports('XMLHttpRequest', function () {
+  var testZone = zone.fork();
 
   it('should work with onreadystatechange', function (done) {
     var req;
@@ -12,7 +12,7 @@ describe('XMLHttpRequest', function () {
       req.onreadystatechange = function () {
         // Make sure that the callback will only be called once
         req.onreadystatechange = null;
-        expect(window.zone).toBeDirectChildOf(testZone);
+        expect(zone).toBeDirectChildOf(testZone);
         done();
       };
       req.open('get', '/', true);
@@ -21,11 +21,11 @@ describe('XMLHttpRequest', function () {
     req.send();
   });
 
-  var supportsOnProgress = function() { 
+  var supportsOnProgress = function() {
     return 'onprogress' in new XMLHttpRequest();
   }
   supportsOnProgress.message = "XMLHttpRequest.onprogress";
-  
+
   describe('onprogress', ifEnvSupports(supportsOnProgress, function () {
     it('should work with onprogress', function (done) {
       var req;
@@ -52,5 +52,4 @@ describe('XMLHttpRequest', function () {
     expect(req.responseType).toBe('document');
   });
 
-});
-
+}));

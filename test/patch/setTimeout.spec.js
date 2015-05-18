@@ -4,13 +4,13 @@ describe('setTimeout', function () {
 
   it('should work with setTimeout', function (done) {
 
-    var testZone = window.zone.fork();
+    var testZone = zone.fork();
 
     testZone.run(function() {
 
-      window.setTimeout(function() {
+      setTimeout(function() {
         // creates implied zone in all callbacks.
-        expect(window.zone).toBeDirectChildOf(testZone);
+        expect(zone).toBeDirectChildOf(testZone);
         done();
       }, 0);
     });
@@ -18,8 +18,8 @@ describe('setTimeout', function () {
 
   it('should allow canceling of fns registered with setTimeout', function (done) {
     var spy = jasmine.createSpy();
-    var cancelId = window.setTimeout(spy, 0);
-    window.clearTimeout(cancelId);
+    var cancelId = setTimeout(spy, 0);
+    clearTimeout(cancelId);
     setTimeout(function () {
       expect(spy).not.toHaveBeenCalled();
       done();
