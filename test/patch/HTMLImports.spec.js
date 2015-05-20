@@ -3,10 +3,11 @@
 function supportsImports() {
   return 'import' in document.createElement('link');
 }
+
 supportsImports.message = 'HTML Imports';
 
-describe('HTML Imports', ifEnvSupports(supportsImports, function () {
-  var testZone = window.zone.fork();
+describe('HTML Imports', ifBrowserEnvSupports(supportsImports, function () {
+  var testZone = zone.fork();
 
   it('should work with addEventListener', function (done) {
     var link;
@@ -16,7 +17,7 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function () {
       link.rel = 'import';
       link.href = 'someUrl';
       link.addEventListener('error', function () {
-        expect(window.zone).toBeDirectChildOf(testZone);
+        expect(zone).toBeDirectChildOf(testZone);
         document.head.removeChild(link);
         done();
       });
@@ -42,7 +43,7 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function () {
         link.rel = 'import';
         link.href = 'anotherUrl';
         link.onerror = function () {
-          expect(window.zone).toBeDirectChildOf(testZone);
+          expect(zone).toBeDirectChildOf(testZone);
           document.head.removeChild(link);
           done();
         };
@@ -59,7 +60,7 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function () {
         link.rel = 'import';
         link.href = '/base/test/assets/import.html';
         link.onload = function () {
-          expect(window.zone).toBeDirectChildOf(testZone);
+          expect(zone).toBeDirectChildOf(testZone);
           document.head.removeChild(link);
           done();
         };

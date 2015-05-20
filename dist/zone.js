@@ -302,6 +302,7 @@ function apply() {
       'Window',
       'Worker',
       'WorkerGlobalScope',
+      'XMLHttpRequest',
       'XMLHttpRequestEventTarget',
       'XMLHttpRequestUpload'
     ];
@@ -561,7 +562,9 @@ function apply() {
     });
     utils.patchProperties(HTMLElement.prototype, onEventNames);
     utils.patchProperties(XMLHttpRequest.prototype);
-    utils.patchProperties(WebSocket.prototype);
+    if (typeof WebSocket !== 'undefined') {
+      utils.patchProperties(WebSocket.prototype);
+    }
   } else {
     // Safari
     patchViaCapturingAllTheEvents();
@@ -817,7 +820,7 @@ function patchClass(className) {
     }
   };
 
-  var instance = new OriginalClass(className.substr(-16) === 'MutationObserver' ? function () {} : undefined);
+  var instance = new OriginalClass();
 
   var prop;
   for (prop in instance) {

@@ -1,7 +1,7 @@
 'use strict';
 
 describe('Promise', ifEnvSupports('Promise', function () {
-  var testZone = window.zone.fork();
+  var testZone = zone.fork();
 
   it('should work with .then', function (done) {
     var resolve;
@@ -10,7 +10,7 @@ describe('Promise', ifEnvSupports('Promise', function () {
       new Promise(function (resolveFn) {
         resolve = resolveFn;
       }).then(function () {
-        expect(window.zone).toBeDirectChildOf(testZone);
+        expect(zone).toBeDirectChildOf(testZone);
         done();
       });
     });
@@ -25,7 +25,7 @@ describe('Promise', ifEnvSupports('Promise', function () {
       new Promise(function (resolveFn, rejectFn) {
         reject = rejectFn;
       }).catch(function () {
-        expect(window.zone).toBeDirectChildOf(testZone);
+        expect(zone).toBeDirectChildOf(testZone);
         done();
       });
     });

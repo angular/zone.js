@@ -1,12 +1,12 @@
 'use strict';
 
-describe('requestAnimationFrame', function () {
-  var testZone = window.zone.fork();
+describe('requestAnimationFrame', ifEnvSupports('document', function () {
+  var testZone = zone.fork();
 
   describe('requestAnimationFrame', function () {
     it('should run the passed callback in a zone', function (done) {
       testZone.run(function() {
-        if (!window.requestAnimationFrame) {
+        if (typeof requestAnimationFrame === 'undefined') {
           console.log('WARNING: skipping requestAnimationFrame test (missing this API)');
           return done();
         }
@@ -15,8 +15,8 @@ describe('requestAnimationFrame', function () {
         // if they are offscreen. We can disable this test for those browsers and
         // assume the patch works if setTimeout works, since they are mechanically
         // the same
-        window.requestAnimationFrame(function () {
-          expect(window.zone).toBeDirectChildOf(testZone);
+        requestAnimationFrame(function () {
+          expect(zone).toBeDirectChildOf(testZone);
           done();
         });
       });
@@ -26,7 +26,7 @@ describe('requestAnimationFrame', function () {
   describe('mozRequestAnimationFrame', function () {
     it('should run the passed callback in a zone', function (done) {
       testZone.run(function() {
-        if (!window.mozRequestAnimationFrame) {
+        if (typeof mozRequestAnimationFrame === 'undefined') {
           console.log('WARNING: skipping mozRequestAnimationFrame test (missing this API)');
           return done();
         }
@@ -35,8 +35,8 @@ describe('requestAnimationFrame', function () {
         // if they are offscreen. We can disable this test for those browsers and
         // assume the patch works if setTimeout works, since they are mechanically
         // the same
-        window.mozRequestAnimationFrame(function () {
-          expect(window.zone).toBeDirectChildOf(testZone);
+        mozRequestAnimationFrame(function () {
+          expect(zone).toBeDirectChildOf(testZone);
           done();
         });
       });
@@ -46,7 +46,7 @@ describe('requestAnimationFrame', function () {
   describe('webkitRequestAnimationFrame', function () {
     it('should run the passed callback in a zone', function (done) {
       testZone.run(function() {
-        if (!window.webkitRequestAnimationFrame) {
+        if (typeof webkitRequestAnimationFrame === 'undefined') {
           console.log('WARNING: skipping webkitRequestAnimationFrame test (missing this API)');
           return done();
         }
@@ -55,11 +55,11 @@ describe('requestAnimationFrame', function () {
         // if they are offscreen. We can disable this test for those browsers and
         // assume the patch works if setTimeout works, since they are mechanically
         // the same
-        window.webkitRequestAnimationFrame(function () {
-          expect(window.zone).toBeDirectChildOf(testZone);
+        webkitRequestAnimationFrame(function () {
+          expect(zone).toBeDirectChildOf(testZone);
           done();
         });
       });
     });
   });
-});
+}));

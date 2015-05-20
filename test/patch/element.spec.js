@@ -1,6 +1,6 @@
 'use strict';
 
-describe('element', function () {
+describe('element', ifEnvSupports('document', function () {
 
   var button;
   var testZone = zone.fork();
@@ -17,7 +17,7 @@ describe('element', function () {
   it('should work with addEventListener', function () {
     testZone.run(function() {
       button.addEventListener('click', function () {
-        expect(window.zone).toBeDirectChildOf(testZone);
+        expect(zone).toBeDirectChildOf(testZone);
       });
     });
 
@@ -61,7 +61,7 @@ describe('element', function () {
       it('should spawn new child zones', function () {
         testZone.run(function() {
           button.onclick = function () {
-            expect(window.zoneA).toBeDirectChildOf(testZone);
+            expect(zoneA).toBeDirectChildOf(testZone);
           };
         });
 
@@ -96,4 +96,4 @@ describe('element', function () {
     });
   });
 
-});
+}));

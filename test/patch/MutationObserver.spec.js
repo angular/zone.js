@@ -1,8 +1,8 @@
 'use strict';
 
-describe('MutationObserver', ifEnvSupports('MutationObserver', function () {
+describe('MutationObserver', ifBrowserEnvSupports('MutationObserver', function () {
   var elt;
-  var testZone = window.zone.fork();
+  var testZone = zone.fork();
 
   beforeEach(function () {
     elt = document.createElement('div');
@@ -13,7 +13,7 @@ describe('MutationObserver', ifEnvSupports('MutationObserver', function () {
 
     testZone.run(function() {
       ob = new MutationObserver(function () {
-        expect(window.zone).toBeDirectChildOf(testZone);
+        expect(zone).toBeDirectChildOf(testZone);
         done();
       });
 
@@ -82,7 +82,7 @@ describe('MutationObserver', ifEnvSupports('MutationObserver', function () {
 }));
 
 describe('WebKitMutationObserver', ifEnvSupports('WebKitMutationObserver', function () {
-  var testZone = window.zone.fork();
+  var testZone = zone.fork();
 
   it('should run observers within the zone', function (done) {
     var elt;
@@ -91,7 +91,7 @@ describe('WebKitMutationObserver', ifEnvSupports('WebKitMutationObserver', funct
       elt = document.createElement('div');
 
       var ob = new WebKitMutationObserver(function () {
-        expect(window.zone).toBeDirectChildOf(testZone);
+        expect(zone).toBeDirectChildOf(testZone);
         done();
       });
 

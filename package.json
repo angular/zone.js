@@ -27,6 +27,7 @@
   "devDependencies": {
     "browserify": "^9.0.8",
     "gulp": "^3.8.11",
+    "gulp-jasmine": "^2.0.1",
     "gulp-rename": "^1.2.2",
     "gulp-uglify": "^1.2.0",
     "jasmine-core": "^2.2.0",

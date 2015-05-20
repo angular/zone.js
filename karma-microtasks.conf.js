@@ -6,7 +6,9 @@ module.exports = function (config) {
     files: [
       'test/util.js',
       'test/setup-microtask.js',
-      'dist/*-zone.js',
+      'test/setup-jasmine.js',
+      'dist/counting-zone.js',
+      'dist/except-zone.js',
       'test/**/*.spec.js',
       {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false},
       {pattern: 'lib/**/*.js', watched: true, served: false, included: false}
@@ -17,7 +19,8 @@ module.exports = function (config) {
     ],
 
     preprocessors: {
-      'test/setup-microtask.js': [ 'browserify' ]
+      'test/setup-microtask.js': [ 'browserify' ],
+      'test/util.js': [ 'browserify' ]
     },
 
     reporters: ['progress'],
