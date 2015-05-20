@@ -11,6 +11,24 @@ describe('Zone', function () {
     expect(zone.fork().$id).toBeGreaterThan(zone.$id);
   });
 
+  it('should be possible to override the auto-generated id', function () {
+    zone.fork({'$id': 'test'}).run(function () {
+      expect(zone.$id).toEqual('test');
+    });
+  });
+
+  it('should return the full path', function () {
+    Zone.nextId = 2;
+
+    zone.fork().run(function () {
+      zone.fork({'$id': 'foo'}).run(function () {
+        zone.fork().run(function () {
+          expect(zone.path()).toEqual('/1/2/foo/4');
+        });
+      });
+    })
+  });
+
   describe('hooks', function () {
 
     it('should fire beforeTask before a zone runs a function', function () {
