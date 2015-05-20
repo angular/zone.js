@@ -129,4 +129,27 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
     var elt = document.createElement('x-props-desc');
   });
 
+
+  it('should check bind callback if not own property', function (done) {
+    testZone.run(function() {
+      var originalProto = {
+        createdCallback: function() {}
+      }
+      var secondaryProto = Object.create(originalProto);
+      expect(secondaryProto.createdCallback).toBe(originalProto.createdCallback);
+      expect(function() {
+        document.registerElement('x-inherited-callback', { prototype: secondaryProto });
+        expect(secondaryProto.createdCallback).not.toBe(originalProto.createdCallback);
+        done();
+      }).not.toThrow();
+    });
+  });
+
+
+  it('should not throw if no options passed to registerElement', function () {
+    expect(function() {
+      document.registerElement('x-no-opts');
+    }).not.toThrow();
+  });
+
 }));
