@@ -9,7 +9,7 @@ module.exports = function (config) {
       'dist/*-zone.js',
       //'test/lib/brick.js',
       'test/**/*.spec.js',
-      {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false},
+      {pattern: 'test/assets/**/*.*', watched: true, served: true, included: false},
       {pattern: 'lib/**/*.js', watched: true, served: false, included: false}
     ],
 

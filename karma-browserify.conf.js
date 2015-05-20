@@ -6,7 +6,7 @@ module.exports = function (config) {
     files: [
       'test/util.js',
       'test/commonjs.spec.js',
-      {pattern: 'test/assets/**/*.html', watched: true, served: true, included: false},
+      {pattern: 'test/assets/**/*.*', watched: true, served: true, included: false},
       {pattern: 'lib/**/*.js', watched: true, served: false, included: false}
     ],
 
