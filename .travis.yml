@@ -21,3 +21,6 @@ script:
   - karma start karma-browserify-sauce.conf.js
   - karma start karma-microtasks-sauce.conf.js
 
+addons:
+  hosts:
+    - travis.dev

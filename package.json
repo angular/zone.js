@@ -26,6 +26,7 @@
   },
   "devDependencies": {
     "browserify": "^9.0.8",
+    "envify": "^3.4.0",
     "gulp": "^3.8.11",
     "gulp-rename": "^1.2.2",
     "gulp-uglify": "^1.2.0",
