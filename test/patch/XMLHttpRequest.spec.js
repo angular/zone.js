@@ -21,11 +21,11 @@ describe('XMLHttpRequest', function () {
     req.send();
   });
 
-  var supportsOnProgress = function() { 
+  var supportsOnProgress = function() {
     return 'onprogress' in new XMLHttpRequest();
   }
   supportsOnProgress.message = "XMLHttpRequest.onprogress";
-  
+
   describe('onprogress', ifEnvSupports(supportsOnProgress, function () {
     it('should work with onprogress', function (done) {
       var req;
@@ -52,5 +52,12 @@ describe('XMLHttpRequest', function () {
     expect(req.responseType).toBe('document');
   });
 
+  it('should preserve static constants', function() {
+    expect(XMLHttpRequest.UNSENT).toEqual(0);
+    expect(XMLHttpRequest.OPENED).toEqual(1);
+    expect(XMLHttpRequest.HEADERS_RECEIVED).toEqual(2);
+    expect(XMLHttpRequest.LOADING).toEqual(3);
+    expect(XMLHttpRequest.DONE).toEqual(4);
+  });
 });
 
