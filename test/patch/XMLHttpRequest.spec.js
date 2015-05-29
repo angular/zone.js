@@ -1,7 +1,7 @@
 'use strict';
 
 describe('XMLHttpRequest', function () {
-  var testZone = window.zone.fork();
+  var testZone = zone.fork();
 
   it('should work with onreadystatechange', function (done) {
     var req;
@@ -12,7 +12,7 @@ describe('XMLHttpRequest', function () {
       req.onreadystatechange = function () {
         // Make sure that the callback will only be called once
         req.onreadystatechange = null;
-        expect(window.zone).toBeDirectChildOf(testZone);
+        expect(zone).toBeDirectChildOf(testZone);
         done();
       };
       req.open('get', '/', true);
@@ -34,7 +34,7 @@ describe('XMLHttpRequest', function () {
         req.onprogress = function () {
           // Make sure that the callback will only be called once
           req.onprogress = null;
-          expect(window.zone).toBeDirectChildOf(testZone);
+          expect(zone).toBeDirectChildOf(testZone);
           done();
         };
         req.open('get', '/', true);

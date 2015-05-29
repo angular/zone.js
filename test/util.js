@@ -70,4 +70,4 @@ beforeEach(function() {
 });
 
 // useful for testing mocks
-window.__setTimeout = window.setTimeout;
+window.__setTimeout = setTimeout;

@@ -12,7 +12,7 @@ describe('Geolocation', ifEnvSupports(supportsGeolocation, function () {
     testZone.run(function() {
       navigator.geolocation.getCurrentPosition(
         function(pos) {
-          expect(window.zone).toBeDirectChildOf(testZone);
+          expect(zone).toBeDirectChildOf(testZone);
           done();
         }
       );
@@ -24,7 +24,7 @@ describe('Geolocation', ifEnvSupports(supportsGeolocation, function () {
       var watchId;
       watchId = navigator.geolocation.watchPosition(
         function(pos) {
-          expect(window.zone).toBeDirectChildOf(testZone);
+          expect(zone).toBeDirectChildOf(testZone);
           navigator.geolocation.clearWatch(watchId);
           done();
         }

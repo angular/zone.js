@@ -4,7 +4,7 @@ describe('WebSocket', ifEnvSupports('WebSocket', function () {
   var socket;
   var TEST_SERVER_URL = 'ws://localhost:8001';
   var flag;
-  var testZone = window.zone.fork();
+  var testZone = zone.fork();
 
 
   beforeEach(function (done) {
@@ -26,7 +26,7 @@ describe('WebSocket', ifEnvSupports('WebSocket', function () {
   it('should work with addEventListener', function (done) {
     testZone.run(function() {
       socket.addEventListener('message', function (event) {
-        expect(window.zone).toBeDirectChildOf(testZone);
+        expect(zone).toBeDirectChildOf(testZone);
         expect(event.data).toBe('hi');
         done();
       });
@@ -60,7 +60,7 @@ describe('WebSocket', ifEnvSupports('WebSocket', function () {
   it('should work with onmessage', function (done) {
     testZone.run(function() {
       socket.onmessage = function (contents) {
-        expect(window.zone).toBeDirectChildOf(testZone);
+        expect(zone).toBeDirectChildOf(testZone);
         expect(contents.data).toBe('hi');
         done();
       };

@@ -1,7 +1,7 @@
 'use strict';
 
 describe('Zone', function () {
-  var rootZone = window.zone;
+  var rootZone = zone;
 
   it('should have an id', function () {
     expect(zone.$id).toBeDefined();
@@ -114,11 +114,11 @@ describe('Zone', function () {
 
     zoneA.run(function () {
       zoneB.run(function () {
-        expect(window.zone).toBe(zoneB);
+        expect(zone).toBe(zoneB);
       });
-      expect(window.zone).toBe(zoneA);
+      expect(zone).toBe(zoneA);
     });
-    expect(window.zone).toBe(rootZone);
+    expect(zone).toBe(rootZone);
   });
 
 
@@ -158,7 +158,7 @@ describe('Zone', function () {
       var childZone = zone.fork();
       childZone.run(function() {
         setTimeout(function() {
-          expect(window.zone).toBeDirectChildOf(childZone);
+          expect(zone).toBeDirectChildOf(childZone);
           done();
         });
       });
@@ -196,9 +196,9 @@ describe('Zone', function () {
         });
 
         patched().then(function () {
-          expect(window.zone).toBeDirectChildOf(zoneA);
+          expect(zone).toBeDirectChildOf(zoneA);
         }).then(function () {
-          expect(window.zone).toBeDirectChildOf(zoneA);
+          expect(zone).toBeDirectChildOf(zoneA);
           done();
         });
       });
