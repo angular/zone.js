@@ -25,7 +25,7 @@ describe('Zone.countingZone', function () {
   });
 
 
-  it('should work with clearTimeout', function (done) {
+  it('should work with clearTimeout', function () {
     var countingZone = makeCountingZone();
 
     makeCountingZone().run(function () {
@@ -33,21 +33,20 @@ describe('Zone.countingZone', function () {
       expect(countingZone.counter()).toBe(1);
       clearTimeout(id);
       expect(countingZone.counter()).toBe(0);
-      done();
     });
   });
 
 
   it('should work with setInterval', function (done) {
-    var latch = 0,
-        countingZone = makeCountingZone(),
-        id;
+    var latch = 0;
+    var countingZone = makeCountingZone();
+    var id;
 
     countingZone.run(function () {
       expect(countingZone.counter()).toBe(0);
 
       id = setInterval(function () {
-        latch += 1;
+        latch++;;
 
         // setInterval should run multiple times
         if (latch === 2) {
@@ -66,18 +65,17 @@ describe('Zone.countingZone', function () {
   });
 
 
-  it('should work with clearInterval', function (done) {
+  it('should work with clearInterval', function () {
     var id;
     var latch = 0;
 
     countingZone.run(function () {
       id = setInterval(function () {
-        latch += 1;
+        latch++;
       }, 0);
       expect(countingZone.counter()).toBe(1);
       clearInterval(id);
       expect(countingZone.counter()).toBe(0);
-      done();
     });
   });
 
