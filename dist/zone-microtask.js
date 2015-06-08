@@ -5,7 +5,7 @@
 var core = require('../core');
 var microtask = require('../microtask');
 var browserPatch = require('../patch/browser');
-var es6Promise = require('../ext/es6-promise.js');
+var es6Promise = require('es6-promise');
 
 if (global.Zone) {
   console.warn('Zone already exported on window the object!');
@@ -20,7 +20,7 @@ global.Promise = es6Promise.Promise;
 browserPatch.apply();
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../core":2,"../ext/es6-promise.js":3,"../microtask":4,"../patch/browser":5}],2:[function(require,module,exports){
+},{"../core":2,"../microtask":3,"../patch/browser":4,"es6-promise":15}],2:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -154,13 +154,863 @@ module.exports = {
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{"./patch/promise":10}],3:[function(require,module,exports){
+(function (global){
+'use strict';
+
+var es6Promise = require('es6-promise').Promise;
+
+// es6-promise asap should schedule microtasks via zone.scheduleMicrotask so that any
+// user defined hooks are triggered
+es6Promise._setAsap(function(fn, arg) {
+  global.zone.scheduleMicrotask(function() {
+    fn(arg);
+  });
+});
+
+// The default implementation of scheduleMicrotask use the original es6-promise implementation
+// to schedule a microtask
+function scheduleMicrotask(fn) {
+  es6Promise._asap(this.bind(fn));
+}
+
+function addMicrotaskSupport(zoneClass) {
+  zoneClass.prototype.scheduleMicrotask = scheduleMicrotask;
+  return zoneClass;
+}
+
+module.exports = {
+  addMicrotaskSupport: addMicrotaskSupport
+};
+
+// TODO(vicb): Create a benchmark for the different methods & the usage of the queue
+// see https://github.com/angular/zone.js/issues/97
+
+var hasNativePromise = typeof Promise !== "undefined" &&
+                       Promise.toString().indexOf("[native code]") !== -1;
+
+var isFirefox = global.navigator &&
+                global.navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+
+// TODO(vicb): remove '!isFirefox' when the bug gets fixed:
+// https://bugzilla.mozilla.org/show_bug.cgi?id=1162013
+if (hasNativePromise && !isFirefox) {
+  // When available use a native Promise to schedule microtasks.
+  // When not available, es6-promise fallback will be used
+  var resolvedPromise = Promise.resolve();
+  es6Promise._setScheduler(function(fn) {
+    resolvedPromise.then(fn);
+  });
+}
+
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"es6-promise":15}],4:[function(require,module,exports){
+(function (global){
+'use strict';
+
+var fnPatch = require('./functions');
+var promisePatch = require('./promise');
+var mutationObserverPatch = require('./mutation-observer');
+var definePropertyPatch = require('./define-property');
+var registerElementPatch = require('./register-element');
+var webSocketPatch = require('./websocket');
+var eventTargetPatch = require('./event-target');
+var propertyDescriptorPatch = require('./property-descriptor');
+var geolocationPatch = require('./geolocation');
+
+function apply() {
+  fnPatch.patchSetClearFunction(global, [
+    'timeout',
+    'interval',
+    'immediate'
+  ]);
+
+  fnPatch.patchSetFunction(global, [
+    'requestAnimationFrame',
+    'mozRequestAnimationFrame',
+    'webkitRequestAnimationFrame'
+  ]);
+
+  fnPatch.patchFunction(global, [
+    'alert',
+    'prompt'
+  ]);
+
+  eventTargetPatch.apply();
+
+  propertyDescriptorPatch.apply();
+
+  promisePatch.apply();
+
+  mutationObserverPatch.patchClass('MutationObserver');
+  mutationObserverPatch.patchClass('WebKitMutationObserver');
+
+  definePropertyPatch.apply();
+
+  registerElementPatch.apply();
+
+  geolocationPatch.apply();
+}
+
+module.exports = {
+  apply: apply
+};
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./define-property":5,"./event-target":6,"./functions":7,"./geolocation":8,"./mutation-observer":9,"./promise":10,"./property-descriptor":11,"./register-element":12,"./websocket":13}],5:[function(require,module,exports){
+'use strict';
+
+// might need similar for object.freeze
+// i regret nothing
+
+var _defineProperty = Object.defineProperty;
+var _getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+var _create = Object.create;
+
+function apply() {
+  Object.defineProperty = function (obj, prop, desc) {
+    if (isUnconfigurable(obj, prop)) {
+      throw new TypeError('Cannot assign to read only property \'' + prop + '\' of ' + obj);
+    }
+    if (prop !== 'prototype') {
+      desc = rewriteDescriptor(obj, prop, desc);
+    }
+    return _defineProperty(obj, prop, desc);
+  };
+
+  Object.defineProperties = function (obj, props) {
+    Object.keys(props).forEach(function (prop) {
+      Object.defineProperty(obj, prop, props[prop]);
+    });
+    return obj;
+  };
+
+  Object.create = function (obj, proto) {
+    if (typeof proto === 'object') {
+      Object.keys(proto).forEach(function (prop) {
+        proto[prop] = rewriteDescriptor(obj, prop, proto[prop]);
+      });
+    }
+    return _create(obj, proto);
+  };
+
+  Object.getOwnPropertyDescriptor = function (obj, prop) {
+    var desc = _getOwnPropertyDescriptor(obj, prop);
+    if (isUnconfigurable(obj, prop)) {
+      desc.configurable = false;
+    }
+    return desc;
+  };
+};
+
+function _redefineProperty(obj, prop, desc) {
+  desc = rewriteDescriptor(obj, prop, desc);
+  return _defineProperty(obj, prop, desc);
+};
+
+function isUnconfigurable (obj, prop) {
+  return obj && obj.__unconfigurables && obj.__unconfigurables[prop];
+}
+
+function rewriteDescriptor (obj, prop, desc) {
+  desc.configurable = true;
+  if (!desc.configurable) {
+    if (!obj.__unconfigurables) {
+      _defineProperty(obj, '__unconfigurables', { writable: true, value: {} });
+    }
+    obj.__unconfigurables[prop] = true;
+  }
+  return desc;
+}
+
+module.exports = {
+  apply: apply,
+  _redefineProperty: _redefineProperty
+};
+
+
+
+},{}],6:[function(require,module,exports){
+(function (global){
+'use strict';
+
+var utils = require('../utils');
+
+function apply() {
+  // patched properties depend on addEventListener, so this needs to come first
+  if (global.EventTarget) {
+    utils.patchEventTargetMethods(global.EventTarget.prototype);
+
+  // Note: EventTarget is not available in all browsers,
+  // if it's not available, we instead patch the APIs in the IDL that inherit from EventTarget
+  } else {
+    var apis = [ 'ApplicationCache',
+      'EventSource',
+      'FileReader',
+      'InputMethodContext',
+      'MediaController',
+      'MessagePort',
+      'Node',
+      'Performance',
+      'SVGElementInstance',
+      'SharedWorker',
+      'TextTrack',
+      'TextTrackCue',
+      'TextTrackList',
+      'WebKitNamedFlow',
+      'Window',
+      'Worker',
+      'WorkerGlobalScope',
+      'XMLHttpRequest',
+      'XMLHttpRequestEventTarget',
+      'XMLHttpRequestUpload'
+    ];
+
+    apis.forEach(function(thing) {
+      global[thing] && utils.patchEventTargetMethods(global[thing].prototype);
+    });
+  }
+}
+
+module.exports = {
+  apply: apply
+};
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../utils":14}],7:[function(require,module,exports){
+(function (global){
+'use strict';
+
+var utils = require('../utils');
+
+function patchSetClearFunction(obj, fnNames) {
+  fnNames.map(function (name) {
+    return name[0].toUpperCase() + name.substr(1);
+  }).forEach(function (name) {
+    var setName = 'set' + name;
+    var delegate = obj[setName];
+
+    if (delegate) {
+      var clearName = 'clear' + name;
+      var ids = {};
+
+      var bindArgs = setName === 'setInterval' ? utils.bindArguments : utils.bindArgumentsOnce;
+
+      global.zone[setName] = function (fn) {
+        var id, fnRef = fn;
+        arguments[0] = function () {
+          delete ids[id];
+          return fnRef.apply(this, arguments);
+        };
+        var args = bindArgs(arguments);
+        id = delegate.apply(obj, args);
+        ids[id] = true;
+        return id;
+      };
+
+      obj[setName] = function () {
+        return global.zone[setName].apply(this, arguments);
+      };
+
+      var clearDelegate = obj[clearName];
+
+      global.zone[clearName] = function (id) {
+        if (ids[id]) {
+          delete ids[id];
+          global.zone.dequeueTask();
+        }
+        return clearDelegate.apply(this, arguments);
+      };
+
+      obj[clearName] = function () {
+        return global.zone[clearName].apply(this, arguments);
+      };
+    }
+  });
+};
+
+function patchSetFunction(obj, fnNames) {
+  fnNames.forEach(function (name) {
+    var delegate = obj[name];
+
+    if (delegate) {
+      global.zone[name] = function (fn) {
+        var fnRef = fn;
+        arguments[0] = function () {
+          return fnRef.apply(this, arguments);
+        };
+        var args = utils.bindArgumentsOnce(arguments);
+        return delegate.apply(obj, args);
+      };
+
+      obj[name] = function () {
+        return zone[name].apply(this, arguments);
+      };
+    }
+  });
+};
+
+function patchFunction(obj, fnNames) {
+  fnNames.forEach(function (name) {
+    var delegate = obj[name];
+    global.zone[name] = function () {
+      return delegate.apply(obj, arguments);
+    };
+
+    obj[name] = function () {
+      return global.zone[name].apply(this, arguments);
+    };
+  });
+};
+
+
+module.exports = {
+  patchSetClearFunction: patchSetClearFunction,
+  patchSetFunction: patchSetFunction,
+  patchFunction: patchFunction
+};
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../utils":14}],8:[function(require,module,exports){
+(function (global){
+'use strict';
+
+var utils = require('../utils');
+
+function apply() {
+  if (global.navigator && global.navigator.geolocation) {
+    utils.patchPrototype(global.navigator.geolocation, [
+      'getCurrentPosition',
+      'watchPosition'
+    ]);
+  }
+}
+
+module.exports = {
+  apply: apply
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../utils":14}],9:[function(require,module,exports){
+(function (global){
+'use strict';
+
+// wrap some native API on `window`
+function patchClass(className) {
+  var OriginalClass = global[className];
+  if (!OriginalClass) return;
+
+  global[className] = function (fn) {
+    this._o = new OriginalClass(global.zone.bind(fn, true));
+    // Remember where the class was instantiate to execute the enqueueTask and dequeueTask hooks
+    this._creationZone = global.zone;
+  };
+
+  var instance = new OriginalClass(function () {});
+
+  global[className].prototype.disconnect = function () {
+    var result = this._o.disconnect.apply(this._o, arguments);
+    if (this._active) {
+      this._creationZone.dequeueTask();
+      this._active = false;
+    }
+    return result;
+  };
+
+  global[className].prototype.observe = function () {
+    if (!this._active) {
+      this._creationZone.enqueueTask();
+      this._active = true;
+    }
+    return this._o.observe.apply(this._o, arguments);
+  };
+
+  var prop;
+  for (prop in instance) {
+    (function (prop) {
+      if (typeof global[className].prototype !== undefined) {
+        return;
+      }
+      if (typeof instance[prop] === 'function') {
+        global[className].prototype[prop] = function () {
+          return this._o[prop].apply(this._o, arguments);
+        };
+      } else {
+        Object.defineProperty(global[className].prototype, prop, {
+          set: function (fn) {
+            if (typeof fn === 'function') {
+              this._o[prop] = global.zone.bind(fn);
+            } else {
+              this._o[prop] = fn;
+            }
+          },
+          get: function () {
+            return this._o[prop];
+          }
+        });
+      }
+    }(prop));
+  }
+};
+
+module.exports = {
+  patchClass: patchClass
+};
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],10:[function(require,module,exports){
+(function (global){
+'use strict';
+
+var utils = require('../utils');
+
+/*
+ * Patches a function that returns a Promise-like instance.
+ *
+ * This function must be used when either:
+ * - Native Promises are not available,
+ * - The function returns a Promise-like object.
+ *
+ * This is required because zones rely on a Promise monkey patch that could not be applied when
+ * Promise is not natively available or when the returned object is not an instance of Promise.
+ *
+ * Note that calling `bindPromiseFn` on a function that returns a native Promise will also work
+ * with minimal overhead.
+ *
+ * ```
+ * var boundFunction = bindPromiseFn(FunctionReturningAPromise);
+ *
+ * boundFunction.then(successHandler, errorHandler);
+ * ```
+ */
+var bindPromiseFn;
+
+if (global.Promise) {
+  bindPromiseFn = function (delegate) {
+    return function() {
+      var delegatePromise = delegate.apply(this, arguments);
+
+      // if the delegate returned an instance of Promise, forward it.
+      if (delegatePromise instanceof Promise) {
+        return delegatePromise;
+      }
+
+      // Otherwise wrap the Promise-like in a global Promise
+      return new Promise(function(resolve, reject) {
+        delegatePromise.then(resolve, reject);
+      });
+    };
+  };
+} else {
+  bindPromiseFn = function (delegate) {
+    return function () {
+      return _patchThenable(delegate.apply(this, arguments));
+    };
+  };
+}
+
+
+function _patchPromiseFnsOnObject(objectPath, fnNames) {
+  var obj = global;
+
+  var exists = objectPath.every(function (segment) {
+    obj = obj[segment];
+    return obj;
+  });
+
+  if (!exists) {
+    return;
+  }
+
+  fnNames.forEach(function (name) {
+    var fn = obj[name];
+    if (fn) {
+      obj[name] = bindPromiseFn(fn);
+    }
+  });
+}
+
+function _patchThenable(thenable) {
+  var then = thenable.then;
+  thenable.then = function () {
+    var args = utils.bindArguments(arguments);
+    var nextThenable = then.apply(thenable, args);
+    return _patchThenable(nextThenable);
+  };
+
+  var ocatch = thenable.catch;
+  thenable.catch = function () {
+    var args = utils.bindArguments(arguments);
+    var nextThenable = ocatch.apply(thenable, args);
+    return _patchThenable(nextThenable);
+  };
+
+  return thenable;
+}
+
+
+function apply() {
+  // Patch .then() and .catch() on native Promises to execute callbacks in the zone where
+  // those functions are called.
+  if (global.Promise) {
+    utils.patchPrototype(Promise.prototype, [
+      'then',
+      'catch'
+    ]);
+
+    // Patch browser APIs that return a Promise
+    var patchFns = [
+      // fetch
+      [[], ['fetch']],
+      [['Response', 'prototype'], ['arrayBuffer', 'blob', 'json', 'text']]
+    ];
+
+    patchFns.forEach(function(objPathAndFns) {
+      _patchPromiseFnsOnObject(objPathAndFns[0], objPathAndFns[1]);
+    });
+  }
+}
+
+module.exports = {
+  apply: apply,
+  bindPromiseFn: bindPromiseFn
+};
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../utils":14}],11:[function(require,module,exports){
+(function (global){
+'use strict';
+
+var webSocketPatch = require('./websocket');
+var utils = require('../utils');
+
+var eventNames = 'copy cut paste abort blur focus canplay canplaythrough change click contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop durationchange emptied ended input invalid keydown keypress keyup load loadeddata loadedmetadata loadstart message mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup pause play playing progress ratechange reset scroll seeked seeking select show stalled submit suspend timeupdate volumechange waiting mozfullscreenchange mozfullscreenerror mozpointerlockchange mozpointerlockerror error webglcontextrestored webglcontextlost webglcontextcreationerror'.split(' ');
+
+function apply() {
+  if (canPatchViaPropertyDescriptor()) {
+    // for browsers that we can patch the descriptor:  Chrome & Firefox
+    var onEventNames = eventNames.map(function (property) {
+      return 'on' + property;
+    });
+    utils.patchProperties(HTMLElement.prototype, onEventNames);
+    utils.patchProperties(XMLHttpRequest.prototype);
+    if (typeof WebSocket !== 'undefined') {
+      utils.patchProperties(WebSocket.prototype);
+    }
+  } else {
+    // Safari
+    patchViaCapturingAllTheEvents();
+    utils.patchClass('XMLHttpRequest');
+    webSocketPatch.apply();
+  }
+}
+
+function canPatchViaPropertyDescriptor() {
+  if (!Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'onclick') && typeof Element !== 'undefined') {
+    // WebKit https://bugs.webkit.org/show_bug.cgi?id=134364
+    // IDL interface attributes are not configurable
+    var desc = Object.getOwnPropertyDescriptor(Element.prototype, 'onclick');
+    if (desc && !desc.configurable) return false;
+  }
+
+  Object.defineProperty(HTMLElement.prototype, 'onclick', {
+    get: function () {
+      return true;
+    }
+  });
+  var elt = document.createElement('div');
+  var result = !!elt.onclick;
+  Object.defineProperty(HTMLElement.prototype, 'onclick', {});
+  return result;
+};
+
+// Whenever any event fires, we check the event target and all parents
+// for `onwhatever` properties and replace them with zone-bound functions
+// - Chrome (for now)
+function patchViaCapturingAllTheEvents() {
+  eventNames.forEach(function (property) {
+    var onproperty = 'on' + property;
+    document.addEventListener(property, function (event) {
+      var elt = event.target, bound;
+      while (elt) {
+        if (elt[onproperty] && !elt[onproperty]._unbound) {
+          bound = global.zone.bind(elt[onproperty]);
+          bound._unbound = elt[onproperty];
+          elt[onproperty] = bound;
+        }
+        elt = elt.parentElement;
+      }
+    }, true);
+  });
+};
+
+module.exports = {
+  apply: apply
+};
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../utils":14,"./websocket":13}],12:[function(require,module,exports){
+(function (global){
+'use strict';
+
+var _redefineProperty = require('./define-property')._redefineProperty;
+
+function apply() {
+  if (!('registerElement' in global.document)) {
+    return;
+  }
+
+  var _registerElement = document.registerElement;
+  var callbacks = [
+    'createdCallback',
+    'attachedCallback',
+    'detachedCallback',
+    'attributeChangedCallback'
+  ];
+
+  document.registerElement = function (name, opts) {
+    if (opts && opts.prototype) {
+      callbacks.forEach(function (callback) {
+        if (opts.prototype.hasOwnProperty(callback)) {
+          var descriptor = Object.getOwnPropertyDescriptor(opts.prototype, callback);
+          if (descriptor.value) {
+            descriptor.value = global.zone.bind(descriptor.value);
+            _redefineProperty(opts.prototype, callback, descriptor);
+          } else {
+            opts.prototype[callback] = global.zone.bind(opts.prototype[callback]);
+          }
+        } else if (opts.prototype[callback]) {
+          opts.prototype[callback] = global.zone.bind(opts.prototype[callback]);
+        }
+      });
+    }
+
+    return _registerElement.apply(document, [name, opts]);
+  };
+}
+
+module.exports = {
+  apply: apply
+};
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"./define-property":5}],13:[function(require,module,exports){
+(function (global){
+'use strict';
+
+var utils = require('../utils');
+
+// we have to patch the instance since the proto is non-configurable
+function apply() {
+  var WS = global.WebSocket;
+  utils.patchEventTargetMethods(WS.prototype);
+  global.WebSocket = function(a, b) {
+    var socket = arguments.length > 1 ? new WS(a, b) : new WS(a);
+    var proxySocket;
+
+    // Safari 7.0 has non-configurable own 'onmessage' and friends properties on the socket instance
+    var onmessageDesc = Object.getOwnPropertyDescriptor(socket, 'onmessage');
+    if (onmessageDesc && onmessageDesc.configurable === false) {
+      proxySocket = Object.create(socket);
+      ['addEventListener', 'removeEventListener', 'send', 'close'].forEach(function(propName) {
+        proxySocket[propName] = function() {
+          return socket[propName].apply(socket, arguments);
+        };
+      });
+    } else {
+      // we can patch the real socket
+      proxySocket = socket;
+    }
+
+    utils.patchProperties(proxySocket, ['onclose', 'onerror', 'onmessage', 'onopen']);
+
+    return proxySocket;
+  };
+}
+
+module.exports = {
+  apply: apply
+};
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../utils":14}],14:[function(require,module,exports){
+(function (global){
+'use strict';
+
+function bindArguments(args) {
+  for (var i = args.length - 1; i >= 0; i--) {
+    if (typeof args[i] === 'function') {
+      args[i] = global.zone.bind(args[i]);
+    }
+  }
+  return args;
+};
+
+function bindArgumentsOnce(args) {
+  for (var i = args.length - 1; i >= 0; i--) {
+    if (typeof args[i] === 'function') {
+      args[i] = global.zone.bindOnce(args[i]);
+    }
+  }
+  return args;
+};
+
+function patchPrototype(obj, fnNames) {
+  fnNames.forEach(function (name) {
+    var delegate = obj[name];
+    if (delegate) {
+      obj[name] = function () {
+        return delegate.apply(this, bindArguments(arguments));
+      };
+    }
+  });
+};
+
+function patchProperty(obj, prop) {
+  var desc = Object.getOwnPropertyDescriptor(obj, prop) || {
+    enumerable: true,
+    configurable: true
+  };
+
+  // A property descriptor cannot have getter/setter and be writable
+  // deleting the writable and value properties avoids this error:
+  //
+  // TypeError: property descriptors must not specify a value or be writable when a
+  // getter or setter has been specified
+  delete desc.writable;
+  delete desc.value;
+
+  // substr(2) cuz 'onclick' -> 'click', etc
+  var eventName = prop.substr(2);
+  var _prop = '_' + prop;
+
+  desc.set = function (fn) {
+    if (this[_prop]) {
+      this.removeEventListener(eventName, this[_prop]);
+    }
+
+    if (typeof fn === 'function') {
+      this[_prop] = fn;
+      this.addEventListener(eventName, fn, false);
+    } else {
+      this[_prop] = null;
+    }
+  };
+
+  desc.get = function () {
+    return this[_prop];
+  };
+
+  Object.defineProperty(obj, prop, desc);
+};
+
+function patchProperties(obj, properties) {
+
+  (properties || (function () {
+      var props = [];
+      for (var prop in obj) {
+        props.push(prop);
+      }
+      return props;
+    }()).
+    filter(function (propertyName) {
+      return propertyName.substr(0,2) === 'on';
+    })).
+    forEach(function (eventName) {
+      patchProperty(obj, eventName);
+    });
+};
+
+function patchEventTargetMethods(obj) {
+  var addDelegate = obj.addEventListener;
+  obj.addEventListener = function (eventName, fn) {
+    fn._bound = fn._bound || {};
+    arguments[1] = fn._bound[eventName] = zone.bind(fn);
+    return addDelegate.apply(this, arguments);
+  };
+
+  var removeDelegate = obj.removeEventListener;
+  obj.removeEventListener = function (eventName, fn) {
+    if(arguments[1]._bound && arguments[1]._bound[eventName]) {
+      var _bound = arguments[1]._bound;
+      arguments[1] = _bound[eventName];
+      delete _bound[eventName];
+    }
+    var result = removeDelegate.apply(this, arguments);
+    global.zone.dequeueTask(fn);
+    return result;
+  };
+};
+
+// wrap some native API on `window`
+function patchClass(className) {
+  var OriginalClass = global[className];
+  if (!OriginalClass) return;
+
+  global[className] = function () {
+    var a = bindArguments(arguments);
+    switch (a.length) {
+      case 0: this._o = new OriginalClass(); break;
+      case 1: this._o = new OriginalClass(a[0]); break;
+      case 2: this._o = new OriginalClass(a[0], a[1]); break;
+      case 3: this._o = new OriginalClass(a[0], a[1], a[2]); break;
+      case 4: this._o = new OriginalClass(a[0], a[1], a[2], a[3]); break;
+      default: throw new Error('what are you even doing?');
+    }
+  };
+
+  var instance = new OriginalClass();
+
+  var prop;
+  for (prop in instance) {
+    (function (prop) {
+      if (typeof instance[prop] === 'function') {
+        global[className].prototype[prop] = function () {
+          return this._o[prop].apply(this._o, arguments);
+        };
+      } else {
+        Object.defineProperty(global[className].prototype, prop, {
+          set: function (fn) {
+            if (typeof fn === 'function') {
+              this._o[prop] = global.zone.bind(fn);
+            } else {
+              this._o[prop] = fn;
+            }
+          },
+          get: function () {
+            return this._o[prop];
+          }
+        });
+      }
+    }(prop));
+  }
+
+  for (prop in OriginalClass) {
+    if (prop !== 'prototype' && OriginalClass.hasOwnProperty(prop)) {
+      global[className][prop] = OriginalClass[prop];
+    }
+  }
+};
+
+module.exports = {
+  bindArguments: bindArguments,
+  bindArgumentsOnce: bindArgumentsOnce,
+  patchPrototype: patchPrototype,
+  patchProperty: patchProperty,
+  patchProperties: patchProperties,
+  patchEventTargetMethods: patchEventTargetMethods,
+  patchClass: patchClass
+};
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{}],15:[function(require,module,exports){
 (function (process,global){
 /*!
  * @overview es6-promise - a tiny implementation of Promises/A+.
  * @copyright Copyright (c) 2014 Yehuda Katz, Tom Dale, Stefan Penner and contributors (Conversion to ES6 API by Jake Archibald)
  * @license   Licensed under MIT license
  *            See https://raw.githubusercontent.com/jakearchibald/es6-promise/master/LICENSE
- * @version   2.1.1
+ * @version   2.3.0
  */
 
 (function() {
@@ -190,22 +1040,31 @@ module.exports = {
     var lib$es6$promise$asap$$len = 0;
     var lib$es6$promise$asap$$toString = {}.toString;
     var lib$es6$promise$asap$$vertxNext;
-    function lib$es6$promise$asap$$asap(callback, arg) {
-      window.zone.scheduleMicrotask(function() {
-        callback(arg);
-      });
-      //queue[len] = callback;
-      //queue[len + 1] = arg;
-      //len += 2;
-      //if (len === 2) {
-      //  // If len is 2, that means that we need to schedule an async flush.
-      //  // If additional callbacks are queued before the queue is flushed, they
-      //  // will be processed by this flush that we are scheduling.
-      //  scheduleFlush();
-      //}
+    var lib$es6$promise$asap$$customSchedulerFn;
+
+    var lib$es6$promise$asap$$asap = function asap(callback, arg) {
+      lib$es6$promise$asap$$queue[lib$es6$promise$asap$$len] = callback;
+      lib$es6$promise$asap$$queue[lib$es6$promise$asap$$len + 1] = arg;
+      lib$es6$promise$asap$$len += 2;
+      if (lib$es6$promise$asap$$len === 2) {
+        // If len is 2, that means that we need to schedule an async flush.
+        // If additional callbacks are queued before the queue is flushed, they
+        // will be processed by this flush that we are scheduling.
+        if (lib$es6$promise$asap$$customSchedulerFn) {
+          lib$es6$promise$asap$$customSchedulerFn(lib$es6$promise$asap$$flush);
+        } else {
+          lib$es6$promise$asap$$scheduleFlush();
+        }
+      }
     }
 
-    var lib$es6$promise$asap$$default = lib$es6$promise$asap$$asap;
+    function lib$es6$promise$asap$$setScheduler(scheduleFn) {
+      lib$es6$promise$asap$$customSchedulerFn = scheduleFn;
+    }
+
+    function lib$es6$promise$asap$$setAsap(asapFn) {
+      lib$es6$promise$asap$$asap = asapFn;
+    }
 
     var lib$es6$promise$asap$$browserWindow = (typeof window !== 'undefined') ? window : undefined;
     var lib$es6$promise$asap$$browserGlobal = lib$es6$promise$asap$$browserWindow || {};
@@ -338,7 +1197,7 @@ module.exports = {
     }
 
     function lib$es6$promise$$internal$$handleForeignThenable(promise, thenable, then) {
-       lib$es6$promise$asap$$default(function(promise) {
+       lib$es6$promise$asap$$asap(function(promise) {
         var sealed = false;
         var error = lib$es6$promise$$internal$$tryThen(then, thenable, function(value) {
           if (sealed) { return; }
@@ -419,7 +1278,7 @@ module.exports = {
       promise._state = lib$es6$promise$$internal$$FULFILLED;
 
       if (promise._subscribers.length !== 0) {
-        lib$es6$promise$asap$$default(lib$es6$promise$$internal$$publish, promise);
+        lib$es6$promise$asap$$asap(lib$es6$promise$$internal$$publish, promise);
       }
     }
 
@@ -428,7 +1287,7 @@ module.exports = {
       promise._state = lib$es6$promise$$internal$$REJECTED;
       promise._result = reason;
 
-      lib$es6$promise$asap$$default(lib$es6$promise$$internal$$publishRejection, promise);
+      lib$es6$promise$asap$$asap(lib$es6$promise$$internal$$publishRejection, promise);
     }
 
     function lib$es6$promise$$internal$$subscribe(parent, child, onFulfillment, onRejection) {
@@ -442,7 +1301,7 @@ module.exports = {
       subscribers[length + lib$es6$promise$$internal$$REJECTED]  = onRejection;
 
       if (length === 0 && parent._state) {
-        lib$es6$promise$asap$$default(lib$es6$promise$$internal$$publish, parent);
+        lib$es6$promise$asap$$asap(lib$es6$promise$$internal$$publish, parent);
       }
     }
 
@@ -699,7 +1558,7 @@ module.exports = {
     /**
       Promise objects represent the eventual result of an asynchronous operation. The
       primary way of interacting with a promise is through its `then` method, which
-      registers callbacks to receive either a promise’s eventual value or the reason
+      registers callbacks to receive either a promise's eventual value or the reason
       why the promise cannot be fulfilled.
 
       Terminology
@@ -822,6 +1681,9 @@ module.exports = {
     lib$es6$promise$promise$$Promise.race = lib$es6$promise$promise$race$$default;
     lib$es6$promise$promise$$Promise.resolve = lib$es6$promise$promise$resolve$$default;
     lib$es6$promise$promise$$Promise.reject = lib$es6$promise$promise$reject$$default;
+    lib$es6$promise$promise$$Promise._setScheduler = lib$es6$promise$asap$$setScheduler;
+    lib$es6$promise$promise$$Promise._setAsap = lib$es6$promise$asap$$setAsap;
+    lib$es6$promise$promise$$Promise._asap = lib$es6$promise$asap$$asap;
 
     lib$es6$promise$promise$$Promise.prototype = {
       constructor: lib$es6$promise$promise$$Promise,
@@ -1032,7 +1894,7 @@ module.exports = {
 
         if (state) {
           var callback = arguments[state - 1];
-          lib$es6$promise$asap$$default(function(){
+          lib$es6$promise$asap$$asap(function(){
             lib$es6$promise$$internal$$invokeCallback(state, child, callback, result);
           });
         } else {
@@ -1117,821 +1979,4 @@ module.exports = {
 
 
 }).call(this,{},typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],4:[function(require,module,exports){
-(function (global){
-'use strict';
-
-function scheduleMicrotask(fn) {
-  asap(this.bind(fn));
-}
-
-function addMicrotaskSupport(zoneClass) {
-  zoneClass.prototype.scheduleMicrotask = scheduleMicrotask;
-  return zoneClass;
-}
-
-module.exports = {
-  addMicrotaskSupport: addMicrotaskSupport
-};
-
-// TODO(vicb): There are plan to be able to use asap() from es6-promise
-// see https://github.com/jakearchibald/es6-promise/pull/113
-// for now adapt code from asap.js in es6-promise
-// Note: the node support has been dropped here
-
-// TODO(vicb): Create a benchmark for the different methods & the usage of the queue
-// see https://github.com/angular/zone.js/issues/97
-
-var len = 0;
-
-var hasNativePromise = typeof Promise ==! "undefined" &&
-                       Promise.toString().indexOf("[native code]") !== -1;
-
-var isFirefox = global.navigator &&
-                global.navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-
-function asap(callback) {
-  queue[len] = callback;
-  len += 1;
-  if (len === 1) {
-    scheduleFlush();
-  }
-}
-
-var browserWindow = (typeof global.window !== 'undefined') ? global.window : undefined;
-var browserGlobal = browserWindow || {};
-var BrowserMutationObserver = browserGlobal.MutationObserver || browserGlobal.WebKitMutationObserver;
-
-// test for web worker but not in IE10
-var isWorker = typeof Uint8ClampedArray !== 'undefined' &&
-  typeof importScripts !== 'undefined' &&
-  typeof MessageChannel !== 'undefined';
-
-function useMutationObserver() {
-  var iterations = 0;
-  var observer = new BrowserMutationObserver(flush);
-  var node = document.createTextNode('');
-  observer.observe(node, { characterData: true });
-
-  return function() {
-    node.data = (iterations = ++iterations % 2);
-  };
-}
-
-// web worker
-function useMessageChannel() {
-  var channel = new MessageChannel();
-  channel.port1.onmessage = flush;
-  return function () {
-    channel.port2.postMessage(0);
-  };
-}
-
-function useSetTimeout() {
-  return function() {
-    setTimeout(flush, 1);
-  };
-}
-
-function usePromise() {
-  var resolvedPromise = Promise.resolve(void 0);
-  return function() {
-    resolvedPromise.then(flush);
-  }
-}
-
-var queue = new Array(1000);
-
-function flush() {
-  for (var i = 0; i < len; i++) {
-    var callback = queue[i];
-    callback();
-    queue[i] = undefined;
-  }
-
-  len = 0;
-}
-
-var scheduleFlush;
-// Decide what async method to use to triggering processing of queued callbacks:
-if (hasNativePromise && !isFirefox) {
-  // TODO(vicb): remove '!isFirefox' when the bug is fixed:
-  // https://bugzilla.mozilla.org/show_bug.cgi?id=1162013
-  scheduleFlush = usePromise();
-} else if (BrowserMutationObserver) {
-  scheduleFlush = useMutationObserver();
-} else if (isWorker) {
-  scheduleFlush = useMessageChannel();
-} else {
-  scheduleFlush = useSetTimeout();
-}
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],5:[function(require,module,exports){
-(function (global){
-'use strict';
-
-var fnPatch = require('./functions');
-var promisePatch = require('./promise');
-var mutationObserverPatch = require('./mutation-observer');
-var definePropertyPatch = require('./define-property');
-var registerElementPatch = require('./register-element');
-var webSocketPatch = require('./websocket');
-var eventTargetPatch = require('./event-target');
-var propertyDescriptorPatch = require('./property-descriptor');
-
-function apply() {
-  fnPatch.patchSetClearFunction(global, [
-    'timeout',
-    'interval',
-    'immediate'
-  ]);
-
-  fnPatch.patchSetFunction(global, [
-    'requestAnimationFrame',
-    'mozRequestAnimationFrame',
-    'webkitRequestAnimationFrame'
-  ]);
-
-  fnPatch.patchFunction(global, [
-    'alert',
-    'prompt'
-  ]);
-
-  eventTargetPatch.apply();
-
-  propertyDescriptorPatch.apply();
-
-  promisePatch.apply();
-
-  mutationObserverPatch.patchClass('MutationObserver');
-  mutationObserverPatch.patchClass('WebKitMutationObserver');
-
-  definePropertyPatch.apply();
-
-  registerElementPatch.apply();
-}
-
-module.exports = {
-  apply: apply
-};
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./define-property":6,"./event-target":7,"./functions":8,"./mutation-observer":9,"./promise":10,"./property-descriptor":11,"./register-element":12,"./websocket":13}],6:[function(require,module,exports){
-'use strict';
-
-// might need similar for object.freeze
-// i regret nothing
-
-var _defineProperty = Object.defineProperty;
-var _getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
-var _create = Object.create;
-
-function apply() {
-  Object.defineProperty = function (obj, prop, desc) {
-    if (isUnconfigurable(obj, prop)) {
-      throw new TypeError('Cannot assign to read only property \'' + prop + '\' of ' + obj);
-    }
-    if (prop !== 'prototype') {
-      desc = rewriteDescriptor(obj, prop, desc);
-    }
-    return _defineProperty(obj, prop, desc);
-  };
-
-  Object.defineProperties = function (obj, props) {
-    Object.keys(props).forEach(function (prop) {
-      Object.defineProperty(obj, prop, props[prop]);
-    });
-    return obj;
-  };
-
-  Object.create = function (obj, proto) {
-    if (typeof proto === 'object') {
-      Object.keys(proto).forEach(function (prop) {
-        proto[prop] = rewriteDescriptor(obj, prop, proto[prop]);
-      });
-    }
-    return _create(obj, proto);
-  };
-
-  Object.getOwnPropertyDescriptor = function (obj, prop) {
-    var desc = _getOwnPropertyDescriptor(obj, prop);
-    if (isUnconfigurable(obj, prop)) {
-      desc.configurable = false;
-    }
-    return desc;
-  };
-};
-
-function _redefineProperty(obj, prop, desc) {
-  desc = rewriteDescriptor(obj, prop, desc);
-  return _defineProperty(obj, prop, desc);
-};
-
-function isUnconfigurable (obj, prop) {
-  return obj && obj.__unconfigurables && obj.__unconfigurables[prop];
-}
-
-function rewriteDescriptor (obj, prop, desc) {
-  desc.configurable = true;
-  if (!desc.configurable) {
-    if (!obj.__unconfigurables) {
-      _defineProperty(obj, '__unconfigurables', { writable: true, value: {} });
-    }
-    obj.__unconfigurables[prop] = true;
-  }
-  return desc;
-}
-
-module.exports = {
-  apply: apply,
-  _redefineProperty: _redefineProperty
-};
-
-
-
-},{}],7:[function(require,module,exports){
-(function (global){
-'use strict';
-
-var utils = require('../utils');
-
-function apply() {
-  // patched properties depend on addEventListener, so this needs to come first
-  if (global.EventTarget) {
-    utils.patchEventTargetMethods(global.EventTarget.prototype);
-
-  // Note: EventTarget is not available in all browsers,
-  // if it's not available, we instead patch the APIs in the IDL that inherit from EventTarget
-  } else {
-    var apis = [ 'ApplicationCache',
-      'EventSource',
-      'FileReader',
-      'InputMethodContext',
-      'MediaController',
-      'MessagePort',
-      'Node',
-      'Performance',
-      'SVGElementInstance',
-      'SharedWorker',
-      'TextTrack',
-      'TextTrackCue',
-      'TextTrackList',
-      'WebKitNamedFlow',
-      'Window',
-      'Worker',
-      'WorkerGlobalScope',
-      'XMLHttpRequestEventTarget',
-      'XMLHttpRequestUpload'
-    ];
-
-    apis.forEach(function(thing) {
-      global[thing] && utils.patchEventTargetMethods(global[thing].prototype);
-    });
-  }
-}
-
-module.exports = {
-  apply: apply
-};
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":14}],8:[function(require,module,exports){
-(function (global){
-'use strict';
-
-var utils = require('../utils');
-
-function patchSetClearFunction(obj, fnNames) {
-  fnNames.map(function (name) {
-    return name[0].toUpperCase() + name.substr(1);
-  }).forEach(function (name) {
-    var setName = 'set' + name;
-    var delegate = obj[setName];
-
-    if (delegate) {
-      var clearName = 'clear' + name;
-      var ids = {};
-
-      var bindArgs = setName === 'setInterval' ? utils.bindArguments : utils.bindArgumentsOnce;
-
-      global.zone[setName] = function (fn) {
-        var id, fnRef = fn;
-        arguments[0] = function () {
-          delete ids[id];
-          return fnRef.apply(this, arguments);
-        };
-        var args = bindArgs(arguments);
-        id = delegate.apply(obj, args);
-        ids[id] = true;
-        return id;
-      };
-
-      obj[setName] = function () {
-        return global.zone[setName].apply(this, arguments);
-      };
-
-      var clearDelegate = obj[clearName];
-
-      global.zone[clearName] = function (id) {
-        if (ids[id]) {
-          delete ids[id];
-          global.zone.dequeueTask();
-        }
-        return clearDelegate.apply(this, arguments);
-      };
-
-      obj[clearName] = function () {
-        return global.zone[clearName].apply(this, arguments);
-      };
-    }
-  });
-};
-
-function patchSetFunction(obj, fnNames) {
-  fnNames.forEach(function (name) {
-    var delegate = obj[name];
-
-    if (delegate) {
-      global.zone[name] = function (fn) {
-        var fnRef = fn;
-        arguments[0] = function () {
-          return fnRef.apply(this, arguments);
-        };
-        var args = utils.bindArgumentsOnce(arguments);
-        return delegate.apply(obj, args);
-      };
-
-      obj[name] = function () {
-        return zone[name].apply(this, arguments);
-      };
-    }
-  });
-};
-
-function patchFunction(obj, fnNames) {
-  fnNames.forEach(function (name) {
-    var delegate = obj[name];
-    global.zone[name] = function () {
-      return delegate.apply(obj, arguments);
-    };
-
-    obj[name] = function () {
-      return global.zone[name].apply(this, arguments);
-    };
-  });
-};
-
-
-module.exports = {
-  patchSetClearFunction: patchSetClearFunction,
-  patchSetFunction: patchSetFunction,
-  patchFunction: patchFunction
-};
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":14}],9:[function(require,module,exports){
-(function (global){
-'use strict';
-
-// wrap some native API on `window`
-function patchClass(className) {
-  var OriginalClass = global[className];
-  if (!OriginalClass) return;
-
-  global[className] = function (fn) {
-    this._o = new OriginalClass(global.zone.bind(fn, true));
-    // Remember where the class was instantiate to execute the enqueueTask and dequeueTask hooks
-    this._creationZone = global.zone;
-  };
-
-  var instance = new OriginalClass(function () {});
-
-  global[className].prototype.disconnect = function () {
-    var result = this._o.disconnect.apply(this._o, arguments);
-    if (this._active) {
-      this._creationZone.dequeueTask();
-      this._active = false;
-    }
-    return result;
-  };
-
-  global[className].prototype.observe = function () {
-    if (!this._active) {
-      this._creationZone.enqueueTask();
-      this._active = true;
-    }
-    return this._o.observe.apply(this._o, arguments);
-  };
-
-  var prop;
-  for (prop in instance) {
-    (function (prop) {
-      if (typeof global[className].prototype !== undefined) {
-        return;
-      }
-      if (typeof instance[prop] === 'function') {
-        global[className].prototype[prop] = function () {
-          return this._o[prop].apply(this._o, arguments);
-        };
-      } else {
-        Object.defineProperty(global[className].prototype, prop, {
-          set: function (fn) {
-            if (typeof fn === 'function') {
-              this._o[prop] = global.zone.bind(fn);
-            } else {
-              this._o[prop] = fn;
-            }
-          },
-          get: function () {
-            return this._o[prop];
-          }
-        });
-      }
-    }(prop));
-  }
-};
-
-module.exports = {
-  patchClass: patchClass
-};
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],10:[function(require,module,exports){
-(function (global){
-'use strict';
-
-var utils = require('../utils');
-
-/*
- * patch a fn that returns a promise
- */
-var bindPromiseFn = (function() {
-  // if the browser natively supports Promises, we can just return a native promise
-  if (global.Promise) {
-    return function (delegate) {
-      return function() {
-        var delegatePromise = delegate.apply(this, arguments);
-        if (delegatePromise instanceof Promise) {
-          return delegatePromise;
-        } else {
-          return new Promise(function(resolve, reject) {
-            delegatePromise.then(resolve, reject);
-          });
-        }
-      };
-    };
-  } else {
-    // if the browser does not have native promises, we have to patch each promise instance
-    return function (delegate) {
-      return function () {
-        return patchThenable(delegate.apply(this, arguments));
-      };
-    };
-  }
-
-  function patchThenable(thenable) {
-    var then = thenable.then;
-    thenable.then = function () {
-      var args = utils.bindArguments(arguments);
-      var nextThenable = then.apply(thenable, args);
-      return patchThenable(nextThenable);
-    };
-
-    var ocatch = thenable.catch;
-    thenable.catch = function () {
-      var args = utils.bindArguments(arguments);
-      var nextThenable = ocatch.apply(thenable, args);
-      return patchThenable(nextThenable);
-    };
-    return thenable;
-  }
-}());
-
-function apply() {
-  if (global.Promise) {
-    utils.patchPrototype(Promise.prototype, [
-      'then',
-      'catch'
-    ]);
-  }
-}
-
-module.exports = {
-  apply: apply,
-  bindPromiseFn: bindPromiseFn
-};
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":14}],11:[function(require,module,exports){
-(function (global){
-'use strict';
-
-var webSocketPatch = require('./websocket');
-var utils = require('../utils');
-
-var eventNames = 'copy cut paste abort blur focus canplay canplaythrough change click contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop durationchange emptied ended input invalid keydown keypress keyup load loadeddata loadedmetadata loadstart message mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup pause play playing progress ratechange reset scroll seeked seeking select show stalled submit suspend timeupdate volumechange waiting mozfullscreenchange mozfullscreenerror mozpointerlockchange mozpointerlockerror error webglcontextrestored webglcontextlost webglcontextcreationerror'.split(' ');
-
-function apply() {
-  if (canPatchViaPropertyDescriptor()) {
-    // for browsers that we can patch the descriptor:  Chrome & Firefox
-    var onEventNames = eventNames.map(function (property) {
-      return 'on' + property;
-    });
-    utils.patchProperties(HTMLElement.prototype, onEventNames);
-    utils.patchProperties(XMLHttpRequest.prototype);
-    utils.patchProperties(WebSocket.prototype);
-  } else {
-    // Safari
-    patchViaCapturingAllTheEvents();
-    utils.patchClass('XMLHttpRequest');
-    webSocketPatch.apply();
-  }
-}
-
-function canPatchViaPropertyDescriptor() {
-  if (!Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'onclick') && typeof Element !== 'undefined') {
-    // WebKit https://bugs.webkit.org/show_bug.cgi?id=134364
-    // IDL interface attributes are not configurable
-    var desc = Object.getOwnPropertyDescriptor(Element.prototype, 'onclick');
-    if (desc && !desc.configurable) return false;
-  }
-
-  Object.defineProperty(HTMLElement.prototype, 'onclick', {
-    get: function () {
-      return true;
-    }
-  });
-  var elt = document.createElement('div');
-  var result = !!elt.onclick;
-  Object.defineProperty(HTMLElement.prototype, 'onclick', {});
-  return result;
-};
-
-// Whenever any event fires, we check the event target and all parents
-// for `onwhatever` properties and replace them with zone-bound functions
-// - Chrome (for now)
-function patchViaCapturingAllTheEvents() {
-  eventNames.forEach(function (property) {
-    var onproperty = 'on' + property;
-    document.addEventListener(property, function (event) {
-      var elt = event.target, bound;
-      while (elt) {
-        if (elt[onproperty] && !elt[onproperty]._unbound) {
-          bound = global.zone.bind(elt[onproperty]);
-          bound._unbound = elt[onproperty];
-          elt[onproperty] = bound;
-        }
-        elt = elt.parentElement;
-      }
-    }, true);
-  });
-};
-
-module.exports = {
-  apply: apply
-};
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":14,"./websocket":13}],12:[function(require,module,exports){
-(function (global){
-'use strict';
-
-var _redefineProperty = require('./define-property')._redefineProperty;
-
-function apply() {
-  if (!('registerElement' in global.document)) {
-    return;
-  }
-
-  var _registerElement = document.registerElement;
-  var callbacks = [
-    'createdCallback',
-    'attachedCallback',
-    'detachedCallback',
-    'attributeChangedCallback'
-  ];
-
-  document.registerElement = function (name, opts) {
-    callbacks.forEach(function (callback) {
-      if (opts.prototype[callback]) {
-        var descriptor = Object.getOwnPropertyDescriptor(opts.prototype, callback);
-        if (descriptor.value) {
-          descriptor.value = global.zone.bind(descriptor.value || opts.prototype[callback]);
-          _redefineProperty(opts.prototype, callback, descriptor);
-        }
-      }
-    });
-    return _registerElement.apply(document, [name, opts]);
-  };
-}
-
-module.exports = {
-  apply: apply
-};
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./define-property":6}],13:[function(require,module,exports){
-(function (global){
-'use strict';
-
-var utils = require('../utils.js');
-
-// we have to patch the instance since the proto is non-configurable
-function apply() {
-  var WS = global.WebSocket;
-  utils.patchEventTargetMethods(WS.prototype);
-  global.WebSocket = function(a, b) {
-    var socket = arguments.length > 1 ? new WS(a, b) : new WS(a);
-    var proxySocket;
-
-    // Safari 7.0 has non-configurable own 'onmessage' and friends properties on the socket instance
-    var onmessageDesc = Object.getOwnPropertyDescriptor(socket, 'onmessage');
-    if (onmessageDesc && onmessageDesc.configurable === false) {
-      proxySocket = Object.create(socket);
-      ['addEventListener', 'removeEventListener', 'send', 'close'].forEach(function(propName) {
-        proxySocket[propName] = function() {
-          return socket[propName].apply(socket, arguments);
-        };
-      });
-    } else {
-      // we can patch the real socket
-      proxySocket = socket;
-    }
-
-    utils.patchProperties(proxySocket, ['onclose', 'onerror', 'onmessage', 'onopen']);
-
-    return proxySocket;
-  };
-}
-
-module.exports = {
-  apply: apply
-};
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils.js":14}],14:[function(require,module,exports){
-(function (global){
-'use strict';
-
-function bindArguments(args) {
-  for (var i = args.length - 1; i >= 0; i--) {
-    if (typeof args[i] === 'function') {
-      args[i] = global.zone.bind(args[i]);
-    }
-  }
-  return args;
-};
-
-function bindArgumentsOnce(args) {
-  for (var i = args.length - 1; i >= 0; i--) {
-    if (typeof args[i] === 'function') {
-      args[i] = global.zone.bindOnce(args[i]);
-    }
-  }
-  return args;
-};
-
-function patchPrototype(obj, fnNames) {
-  fnNames.forEach(function (name) {
-    var delegate = obj[name];
-    if (delegate) {
-      obj[name] = function () {
-        return delegate.apply(this, bindArguments(arguments));
-      };
-    }
-  });
-};
-
-function patchProperty(obj, prop) {
-  var desc = Object.getOwnPropertyDescriptor(obj, prop) || {
-    enumerable: true,
-    configurable: true
-  };
-
-  // A property descriptor cannot have getter/setter and be writable
-  // deleting the writable and value properties avoids this error:
-  //
-  // TypeError: property descriptors must not specify a value or be writable when a
-  // getter or setter has been specified
-  delete desc.writable;
-  delete desc.value;
-
-  // substr(2) cuz 'onclick' -> 'click', etc
-  var eventName = prop.substr(2);
-  var _prop = '_' + prop;
-
-  desc.set = function (fn) {
-    if (this[_prop]) {
-      this.removeEventListener(eventName, this[_prop]);
-    }
-
-    if (typeof fn === 'function') {
-      this[_prop] = fn;
-      this.addEventListener(eventName, fn, false);
-    } else {
-      this[_prop] = null;
-    }
-  };
-
-  desc.get = function () {
-    return this[_prop];
-  };
-
-  Object.defineProperty(obj, prop, desc);
-};
-
-function patchProperties(obj, properties) {
-
-  (properties || (function () {
-      var props = [];
-      for (var prop in obj) {
-        props.push(prop);
-      }
-      return props;
-    }()).
-    filter(function (propertyName) {
-      return propertyName.substr(0,2) === 'on';
-    })).
-    forEach(function (eventName) {
-      patchProperty(obj, eventName);
-    });
-};
-
-function patchEventTargetMethods(obj) {
-  var addDelegate = obj.addEventListener;
-  obj.addEventListener = function (eventName, fn) {
-    fn._bound = fn._bound || {};
-    arguments[1] = fn._bound[eventName] = zone.bind(fn);
-    return addDelegate.apply(this, arguments);
-  };
-
-  var removeDelegate = obj.removeEventListener;
-  obj.removeEventListener = function (eventName, fn) {
-    if(arguments[1]._bound && arguments[1]._bound[eventName]) {
-      var _bound = arguments[1]._bound;
-      arguments[1] = _bound[eventName];
-      delete _bound[eventName];
-    }
-    var result = removeDelegate.apply(this, arguments);
-    global.zone.dequeueTask(fn);
-    return result;
-  };
-};
-
-// wrap some native API on `window`
-function patchClass(className) {
-  var OriginalClass = global[className];
-  if (!OriginalClass) return;
-
-  global[className] = function () {
-    var a = bindArguments(arguments);
-    switch (a.length) {
-      case 0: this._o = new OriginalClass(); break;
-      case 1: this._o = new OriginalClass(a[0]); break;
-      case 2: this._o = new OriginalClass(a[0], a[1]); break;
-      case 3: this._o = new OriginalClass(a[0], a[1], a[2]); break;
-      case 4: this._o = new OriginalClass(a[0], a[1], a[2], a[3]); break;
-      default: throw new Error('what are you even doing?');
-    }
-  };
-
-  var instance = new OriginalClass(className.substr(-16) === 'MutationObserver' ? function () {} : undefined);
-
-  var prop;
-  for (prop in instance) {
-    (function (prop) {
-      if (typeof instance[prop] === 'function') {
-        global[className].prototype[prop] = function () {
-          return this._o[prop].apply(this._o, arguments);
-        };
-      } else {
-        Object.defineProperty(global[className].prototype, prop, {
-          set: function (fn) {
-            if (typeof fn === 'function') {
-              this._o[prop] = global.zone.bind(fn);
-            } else {
-              this._o[prop] = fn;
-            }
-          },
-          get: function () {
-            return this._o[prop];
-          }
-        });
-      }
-    }(prop));
-  };
-};
-
-module.exports = {
-  bindArguments: bindArguments,
-  bindArgumentsOnce: bindArgumentsOnce,
-  patchPrototype: patchPrototype,
-  patchProperty: patchProperty,
-  patchProperties: patchProperties,
-  patchEventTargetMethods: patchEventTargetMethods,
-  patchClass: patchClass
-};
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
 },{}]},{},[1]);

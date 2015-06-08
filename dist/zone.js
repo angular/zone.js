@@ -148,7 +148,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./patch/promise":8}],3:[function(require,module,exports){
+},{"./patch/promise":9}],3:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -160,6 +160,7 @@ var registerElementPatch = require('./register-element');
 var webSocketPatch = require('./websocket');
 var eventTargetPatch = require('./event-target');
 var propertyDescriptorPatch = require('./property-descriptor');
+var geolocationPatch = require('./geolocation');
 
 function apply() {
   fnPatch.patchSetClearFunction(global, [
@@ -191,6 +192,8 @@ function apply() {
   definePropertyPatch.apply();
 
   registerElementPatch.apply();
+
+  geolocationPatch.apply();
 }
 
 module.exports = {
@@ -198,7 +201,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./define-property":4,"./event-target":5,"./functions":6,"./mutation-observer":7,"./promise":8,"./property-descriptor":9,"./register-element":10,"./websocket":11}],4:[function(require,module,exports){
+},{"./define-property":4,"./event-target":5,"./functions":6,"./geolocation":7,"./mutation-observer":8,"./promise":9,"./property-descriptor":10,"./register-element":11,"./websocket":12}],4:[function(require,module,exports){
 'use strict';
 
 // might need similar for object.freeze
@@ -302,6 +305,7 @@ function apply() {
       'Window',
       'Worker',
       'WorkerGlobalScope',
+      'XMLHttpRequest',
       'XMLHttpRequestEventTarget',
       'XMLHttpRequestUpload'
     ];
@@ -317,7 +321,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":12}],6:[function(require,module,exports){
+},{"../utils":13}],6:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -411,7 +415,27 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":12}],7:[function(require,module,exports){
+},{"../utils":13}],7:[function(require,module,exports){
+(function (global){
+'use strict';
+
+var utils = require('../utils');
+
+function apply() {
+  if (global.navigator && global.navigator.geolocation) {
+    utils.patchPrototype(global.navigator.geolocation, [
+      'getCurrentPosition',
+      'watchPosition'
+    ]);
+  }
+}
+
+module.exports = {
+  apply: apply
+}
+
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../utils":13}],8:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -478,63 +502,116 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 (function (global){
 'use strict';
 
 var utils = require('../utils');
 
 /*
- * patch a fn that returns a promise
+ * Patches a function that returns a Promise-like instance.
+ *
+ * This function must be used when either:
+ * - Native Promises are not available,
+ * - The function returns a Promise-like object.
+ *
+ * This is required because zones rely on a Promise monkey patch that could not be applied when
+ * Promise is not natively available or when the returned object is not an instance of Promise.
+ *
+ * Note that calling `bindPromiseFn` on a function that returns a native Promise will also work
+ * with minimal overhead.
+ *
+ * ```
+ * var boundFunction = bindPromiseFn(FunctionReturningAPromise);
+ *
+ * boundFunction.then(successHandler, errorHandler);
+ * ```
  */
-var bindPromiseFn = (function() {
-  // if the browser natively supports Promises, we can just return a native promise
-  if (global.Promise) {
-    return function (delegate) {
-      return function() {
-        var delegatePromise = delegate.apply(this, arguments);
-        if (delegatePromise instanceof Promise) {
-          return delegatePromise;
-        } else {
-          return new Promise(function(resolve, reject) {
-            delegatePromise.then(resolve, reject);
-          });
-        }
-      };
+var bindPromiseFn;
+
+if (global.Promise) {
+  bindPromiseFn = function (delegate) {
+    return function() {
+      var delegatePromise = delegate.apply(this, arguments);
+
+      // if the delegate returned an instance of Promise, forward it.
+      if (delegatePromise instanceof Promise) {
+        return delegatePromise;
+      }
+
+      // Otherwise wrap the Promise-like in a global Promise
+      return new Promise(function(resolve, reject) {
+        delegatePromise.then(resolve, reject);
+      });
     };
-  } else {
-    // if the browser does not have native promises, we have to patch each promise instance
-    return function (delegate) {
-      return function () {
-        return patchThenable(delegate.apply(this, arguments));
-      };
+  };
+} else {
+  bindPromiseFn = function (delegate) {
+    return function () {
+      return _patchThenable(delegate.apply(this, arguments));
     };
+  };
+}
+
+
+function _patchPromiseFnsOnObject(objectPath, fnNames) {
+  var obj = global;
+
+  var exists = objectPath.every(function (segment) {
+    obj = obj[segment];
+    return obj;
+  });
+
+  if (!exists) {
+    return;
   }
 
-  function patchThenable(thenable) {
-    var then = thenable.then;
-    thenable.then = function () {
-      var args = utils.bindArguments(arguments);
-      var nextThenable = then.apply(thenable, args);
-      return patchThenable(nextThenable);
-    };
+  fnNames.forEach(function (name) {
+    var fn = obj[name];
+    if (fn) {
+      obj[name] = bindPromiseFn(fn);
+    }
+  });
+}
 
-    var ocatch = thenable.catch;
-    thenable.catch = function () {
-      var args = utils.bindArguments(arguments);
-      var nextThenable = ocatch.apply(thenable, args);
-      return patchThenable(nextThenable);
-    };
-    return thenable;
-  }
-}());
+function _patchThenable(thenable) {
+  var then = thenable.then;
+  thenable.then = function () {
+    var args = utils.bindArguments(arguments);
+    var nextThenable = then.apply(thenable, args);
+    return _patchThenable(nextThenable);
+  };
+
+  var ocatch = thenable.catch;
+  thenable.catch = function () {
+    var args = utils.bindArguments(arguments);
+    var nextThenable = ocatch.apply(thenable, args);
+    return _patchThenable(nextThenable);
+  };
+
+  return thenable;
+}
+
 
 function apply() {
+  // Patch .then() and .catch() on native Promises to execute callbacks in the zone where
+  // those functions are called.
   if (global.Promise) {
     utils.patchPrototype(Promise.prototype, [
       'then',
       'catch'
     ]);
+
+    // Patch browser APIs that return a Promise
+    var patchFns = [
+      // fetch
+      [[], ['fetch']],
+      [['Response', 'prototype'], ['arrayBuffer', 'blob', 'json', 'text']]
+    ];
+
+    patchFns.forEach(function(objPathAndFns) {
+      _patchPromiseFnsOnObject(objPathAndFns[0], objPathAndFns[1]);
+    });
   }
 }
 
@@ -544,7 +621,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":12}],9:[function(require,module,exports){
+},{"../utils":13}],10:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -561,7 +638,9 @@ function apply() {
     });
     utils.patchProperties(HTMLElement.prototype, onEventNames);
     utils.patchProperties(XMLHttpRequest.prototype);
-    utils.patchProperties(WebSocket.prototype);
+    if (typeof WebSocket !== 'undefined') {
+      utils.patchProperties(WebSocket.prototype);
+    }
   } else {
     // Safari
     patchViaCapturingAllTheEvents();
@@ -614,7 +693,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":12,"./websocket":11}],10:[function(require,module,exports){
+},{"../utils":13,"./websocket":12}],11:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -634,15 +713,22 @@ function apply() {
   ];
 
   document.registerElement = function (name, opts) {
-    callbacks.forEach(function (callback) {
-      if (opts.prototype[callback]) {
-        var descriptor = Object.getOwnPropertyDescriptor(opts.prototype, callback);
-        if (descriptor.value) {
-          descriptor.value = global.zone.bind(descriptor.value || opts.prototype[callback]);
-          _redefineProperty(opts.prototype, callback, descriptor);
+    if (opts && opts.prototype) {
+      callbacks.forEach(function (callback) {
+        if (opts.prototype.hasOwnProperty(callback)) {
+          var descriptor = Object.getOwnPropertyDescriptor(opts.prototype, callback);
+          if (descriptor.value) {
+            descriptor.value = global.zone.bind(descriptor.value);
+            _redefineProperty(opts.prototype, callback, descriptor);
+          } else {
+            opts.prototype[callback] = global.zone.bind(opts.prototype[callback]);
+          }
+        } else if (opts.prototype[callback]) {
+          opts.prototype[callback] = global.zone.bind(opts.prototype[callback]);
         }
-      }
-    });
+      });
+    }
+
     return _registerElement.apply(document, [name, opts]);
   };
 }
@@ -652,11 +738,11 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./define-property":4}],11:[function(require,module,exports){
+},{"./define-property":4}],12:[function(require,module,exports){
 (function (global){
 'use strict';
 
-var utils = require('../utils.js');
+var utils = require('../utils');
 
 // we have to patch the instance since the proto is non-configurable
 function apply() {
@@ -691,7 +777,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils.js":12}],12:[function(require,module,exports){
+},{"../utils":13}],13:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -817,7 +903,7 @@ function patchClass(className) {
     }
   };
 
-  var instance = new OriginalClass(className.substr(-16) === 'MutationObserver' ? function () {} : undefined);
+  var instance = new OriginalClass();
 
   var prop;
   for (prop in instance) {
@@ -841,7 +927,13 @@ function patchClass(className) {
         });
       }
     }(prop));
-  };
+  }
+
+  for (prop in OriginalClass) {
+    if (prop !== 'prototype' && OriginalClass.hasOwnProperty(prop)) {
+      global[className][prop] = OriginalClass[prop];
+    }
+  }
 };
 
 module.exports = {
