@@ -163,6 +163,13 @@ describe('Zone', function () {
         });
       });
     });
+
+
+    it('should throw if argument is not a function', function () {
+      expect(function () {
+        zone.bind(11);
+      }).toThrowError('Expecting function got: 11');
+    });
   });
 
 
