@@ -148,7 +148,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./patch/promise":9}],3:[function(require,module,exports){
+},{"./patch/promise":10}],3:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -161,6 +161,7 @@ var webSocketPatch = require('./websocket');
 var eventTargetPatch = require('./event-target');
 var propertyDescriptorPatch = require('./property-descriptor');
 var geolocationPatch = require('./geolocation');
+var fileReaderPatch = require('./file-reader');
 
 function apply() {
   fnPatch.patchSetClearFunction(global, [
@@ -194,6 +195,8 @@ function apply() {
   registerElementPatch.apply();
 
   geolocationPatch.apply();
+  
+  fileReaderPatch.apply();
 }
 
 module.exports = {
@@ -201,7 +204,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./define-property":4,"./event-target":5,"./functions":6,"./geolocation":7,"./mutation-observer":8,"./promise":9,"./property-descriptor":10,"./register-element":11,"./websocket":12}],4:[function(require,module,exports){
+},{"./define-property":4,"./event-target":5,"./file-reader":6,"./functions":7,"./geolocation":8,"./mutation-observer":9,"./promise":10,"./property-descriptor":11,"./register-element":12,"./websocket":13}],4:[function(require,module,exports){
 'use strict';
 
 // might need similar for object.freeze
@@ -321,7 +324,61 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13}],6:[function(require,module,exports){
+},{"../utils":14}],6:[function(require,module,exports){
+(function (global){
+var utils = require('../utils');
+
+function apply(){
+  var fileReaderEvents = [
+    'onabort',
+    'onerror',
+    'onload',
+    'onloadstart',
+    'onloadend',
+    'onprogress'
+  ];
+  var fileReaderMethods = [
+    'addEventListener',
+    'removeEventListener',
+    'readAsArrayBuffer',
+    'readAsBinaryString',
+    'readAsDataURL',
+    'readAsText'
+  ];
+    
+  var FR = global.FileReader;
+  utils.patchEventTargetMethods(FR.prototype);
+    
+  //patch the global
+  global.FileReader = function(){
+    var fileReader = new FR();
+    var proxyReader;
+    
+    //this is different - have to check the prototype?
+    var onloadEv = Object.getOwnPropertyDescriptor(FR.prototype,'onloadend');
+    //safari (and IE?) fix
+    if(onloadEv && onloadEv.configurable === false){
+      proxyReader = Object.create(fileReader);
+      fileReaderMethods.forEach(function(methodName){
+        proxyReader[methodName] = function(){
+          fileReader[methodName].apply(fileReader, arguments);
+        };
+      });
+    }
+    else {
+      proxyReader = fileReader;
+    }
+    
+    utils.patchProperties(proxyReader, fileReaderEvents);
+    return proxyReader;
+  };
+}
+
+module.exports = {
+    apply: apply
+};
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../utils":14}],7:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -415,7 +472,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13}],7:[function(require,module,exports){
+},{"../utils":14}],8:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -435,7 +492,7 @@ module.exports = {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13}],8:[function(require,module,exports){
+},{"../utils":14}],9:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -502,7 +559,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],9:[function(require,module,exports){
+},{}],10:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -621,7 +678,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13}],10:[function(require,module,exports){
+},{"../utils":14}],11:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -693,7 +750,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13,"./websocket":12}],11:[function(require,module,exports){
+},{"../utils":14,"./websocket":13}],12:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -738,7 +795,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./define-property":4}],12:[function(require,module,exports){
+},{"./define-property":4}],13:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -777,7 +834,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13}],13:[function(require,module,exports){
+},{"../utils":14}],14:[function(require,module,exports){
 (function (global){
 'use strict';
 
