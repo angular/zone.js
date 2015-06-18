@@ -10,9 +10,8 @@ describe('FileReader', function () {
    beforeEach(function(){
        blob = new Blob(mockFileData);
    });
-   
-   //failing 
-   it('should work with reader.onloadend',function(done){
+ 
+   it('should work with reader.on____',function(done){
        
        testZone.run(function(){
            reader = new FileReader();
@@ -20,7 +19,6 @@ describe('FileReader', function () {
            reader.onloadend = function(data){
                reader.onloadend = null;
                expect(data).toBeDefined();
-               //fails here 
                expect(zone).toBeDirectChildOf(testZone);
                done();
            }
@@ -29,7 +27,6 @@ describe('FileReader', function () {
        });
    });
    
-   //working
    it('should work with reader.addEventListener',function(done){
        
        testZone.run(function(){
@@ -37,7 +34,6 @@ describe('FileReader', function () {
            
            reader.addEventListener('loadend',function(data){
                expect(data).toBeDefined();
-               //works here
                expect(zone).toBeDirectChildOf(testZone);
                done();
            });
