@@ -20,7 +20,7 @@ global.Promise = es6Promise.Promise;
 browserPatch.apply();
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../core":2,"../microtask":3,"../patch/browser":4,"es6-promise":15}],2:[function(require,module,exports){
+},{"../core":2,"../microtask":3,"../patch/browser":4,"es6-promise":16}],2:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -153,7 +153,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./patch/promise":10}],3:[function(require,module,exports){
+},{"./patch/promise":11}],3:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -204,7 +204,7 @@ if (hasNativePromise && !isFirefox) {
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"es6-promise":15}],4:[function(require,module,exports){
+},{"es6-promise":16}],4:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -217,6 +217,7 @@ var webSocketPatch = require('./websocket');
 var eventTargetPatch = require('./event-target');
 var propertyDescriptorPatch = require('./property-descriptor');
 var geolocationPatch = require('./geolocation');
+var fileReaderPatch = require('./file-reader');
 
 function apply() {
   fnPatch.patchSetClearFunction(global, [
@@ -250,6 +251,8 @@ function apply() {
   registerElementPatch.apply();
 
   geolocationPatch.apply();
+  
+  fileReaderPatch.apply();
 }
 
 module.exports = {
@@ -257,7 +260,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./define-property":5,"./event-target":6,"./functions":7,"./geolocation":8,"./mutation-observer":9,"./promise":10,"./property-descriptor":11,"./register-element":12,"./websocket":13}],5:[function(require,module,exports){
+},{"./define-property":5,"./event-target":6,"./file-reader":7,"./functions":8,"./geolocation":9,"./mutation-observer":10,"./promise":11,"./property-descriptor":12,"./register-element":13,"./websocket":14}],5:[function(require,module,exports){
 'use strict';
 
 // might need similar for object.freeze
@@ -377,7 +380,61 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":14}],7:[function(require,module,exports){
+},{"../utils":15}],7:[function(require,module,exports){
+(function (global){
+var utils = require('../utils');
+
+function apply(){
+  var fileReaderEvents = [
+    'onabort',
+    'onerror',
+    'onload',
+    'onloadstart',
+    'onloadend',
+    'onprogress'
+  ];
+  var fileReaderMethods = [
+    'addEventListener',
+    'removeEventListener',
+    'readAsArrayBuffer',
+    'readAsBinaryString',
+    'readAsDataURL',
+    'readAsText'
+  ];
+    
+  var FR = global.FileReader;
+  utils.patchEventTargetMethods(FR.prototype);
+    
+  //patch the global
+  global.FileReader = function(){
+    var fileReader = new FR();
+    var proxyReader;
+    
+    //this is different - have to check the prototype?
+    var onloadEv = Object.getOwnPropertyDescriptor(FR.prototype,'onloadend');
+    //safari (and IE?) fix
+    if(onloadEv && onloadEv.configurable === false){
+      proxyReader = Object.create(fileReader);
+      fileReaderMethods.forEach(function(methodName){
+        proxyReader[methodName] = function(){
+          fileReader[methodName].apply(fileReader, arguments);
+        };
+      });
+    }
+    else {
+      proxyReader = fileReader;
+    }
+    
+    utils.patchProperties(proxyReader, fileReaderEvents);
+    return proxyReader;
+  };
+}
+
+module.exports = {
+    apply: apply
+};
+}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
+},{"../utils":15}],8:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -471,7 +528,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":14}],8:[function(require,module,exports){
+},{"../utils":15}],9:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -491,7 +548,7 @@ module.exports = {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":14}],9:[function(require,module,exports){
+},{"../utils":15}],10:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -558,7 +615,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],10:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -677,7 +734,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":14}],11:[function(require,module,exports){
+},{"../utils":15}],12:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -749,7 +806,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":14,"./websocket":13}],12:[function(require,module,exports){
+},{"../utils":15,"./websocket":14}],13:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -794,7 +851,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./define-property":5}],13:[function(require,module,exports){
+},{"./define-property":5}],14:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -833,7 +890,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":14}],14:[function(require,module,exports){
+},{"../utils":15}],15:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -1003,7 +1060,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],15:[function(require,module,exports){
+},{}],16:[function(require,module,exports){
 (function (process,global){
 /*!
  * @overview es6-promise - a tiny implementation of Promises/A+.
