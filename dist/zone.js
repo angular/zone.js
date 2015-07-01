@@ -77,6 +77,9 @@ Zone.prototype = {
   },
 
   bind: function (fn, skipEnqueue) {
+    if (typeof fn !== 'function') {
+      throw new Error('Expecting function got: ' + fn);
+    }
     skipEnqueue || this.enqueueTask(fn);
     var zone = this.isRootZone() ? this : this.fork();
     return function zoneBoundFn() {

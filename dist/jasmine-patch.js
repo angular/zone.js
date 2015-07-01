@@ -22,27 +22,27 @@ function apply() {
   var originalIt = global.it;
   var originalFit = global.fit;
 
-  global.it = function zoneResettingIt(description, specFn) {
+  global.it = function zoneResettingIt(description, specFn, timeOut) {
     if (specFn.length) {
       originalIt(description, function zoneResettingSpecFn(originalDone) {
         specFn(function zoneResettingDone() {
           jasmineZone.run(originalDone);
         });
-      });
+      }, timeOut);
     } else {
-      originalIt(description, specFn);
+      originalIt(description, specFn, timeOut);
     }
   };
 
-  global.fit = function zoneResettingFit(description, specFn) {
+  global.fit = function zoneResettingFit(description, specFn, timeOut) {
     if (specFn.length) {
       originalFit(description, function zoneResettingSpecFn(originalDone) {
         specFn(function zoneResettingDone() {
           jasmineZone.run(originalDone);
         });
-      });
+      }, timeOut);
     } else {
-      originalFit(description, specFn);
+      originalFit(description, specFn, timeOut);
     }
   };
 
