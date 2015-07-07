@@ -14,17 +14,43 @@ describe('element', function () {
     document.body.removeChild(button);
   });
 
-  it('should work with addEventListener', function () {
+  it('should work with addEventListener when called with a function listener', function () {
+    var clickEvent = document.createEvent('Event');
+    clickEvent.initEvent('click', true, true);
+
     testZone.run(function() {
-      button.addEventListener('click', function () {
+      button.addEventListener('click', function (event) {
         expect(zone).toBeDirectChildOf(testZone);
+        expect(event).toBe(clickEvent)
       });
     });
 
-    button.click();
+    button.dispatchEvent(clickEvent);
   });
 
-  it('should respect removeEventListener', function () {
+  it('should work with addEventListener when called with an EventListener-implementing listener', function () {
+    var eventListener = {
+      x: 5,
+      handleEvent: function(event) {
+        // Test that context is preserved
+        expect(this.x).toBe(5);
+
+        expect(event).toBe(clickEvent);
+        expect(zone).toBeDirectChildOf(testZone);
+      }
+    };
+
+    var clickEvent = document.createEvent('Event');
+    clickEvent.initEvent('click', true, true);
+
+    testZone.run(function() {
+      button.addEventListener('click', eventListener);
+    });
+
+    button.dispatchEvent(clickEvent);
+  });
+
+  it('should respect removeEventListener when called with a function listener', function () {
     var log = '';
     var logFunction = function logFunction () {
       log += 'a';
@@ -42,6 +68,20 @@ describe('element', function () {
     button.removeEventListener('click', logFunction);
     button.click();
     expect(log).toEqual('aa');
+  });
+
+  it('should respect removeEventListener with an EventListener-implementing listener', function () {
+    var eventListener = {
+      x: 5,
+      handleEvent: jasmine.createSpy('handleEvent')
+    };
+
+    button.addEventListener('click', eventListener);
+    button.removeEventListener('click', eventListener);
+
+    button.click();
+
+    expect(eventListener.handleEvent).not.toHaveBeenCalled();
   });
 
 
