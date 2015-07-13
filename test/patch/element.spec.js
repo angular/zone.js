@@ -21,7 +21,7 @@ describe('element', function () {
     testZone.run(function() {
       button.addEventListener('click', function (event) {
         expect(zone).toBeDirectChildOf(testZone);
-        expect(event).toBe(clickEvent)
+        expect(event).toBe(clickEvent);
       });
     });
 
@@ -50,24 +50,45 @@ describe('element', function () {
     button.dispatchEvent(clickEvent);
   });
 
-  it('should respect removeEventListener when called with a function listener', function () {
-    var log = '';
-    var logFunction = function logFunction () {
-      log += 'a';
-    };
-
-    button.addEventListener('click', logFunction);
-    button.addEventListener('focus', logFunction);
-    button.click();
-    expect(log).toEqual('a');
+  it('should work with addEventListener when invoked in a zone with an addEventListener interceptor', function () {
+    var count = 0;
     var focusEvent = document.createEvent('Event');
-    focusEvent.initEvent('focus', true, true)
-    button.dispatchEvent(focusEvent);
-    expect(log).toEqual('aa');
+    focusEvent.initEvent('focus', true, true);
 
-    button.removeEventListener('click', logFunction);
+    var interceptorZone = testZone.fork({
+      addEventListener: function (delegate, target) {
+        expect(target).toBe(button);
+        return function addEventListener (name, listener) {
+            delegate('focus', function() {
+              count++;
+              return listener.apply(this, arguments);
+          });
+        };
+      }
+    });
+
+    interceptorZone.run(function() {
+      button.addEventListener('click', function (event) {
+        expect(zone).toBeDirectChildOf(interceptorZone);
+        expect(event).toBe(focusEvent);
+      });
+    });
+
+    button.dispatchEvent(focusEvent);
+    button.dispatchEvent(focusEvent);
+
+    expect(count).toBe(2);
+  });
+
+  it('should respect removeEventListener when called with a function listener', function () {
+    var listener = jasmine.createSpy();
+
+    button.addEventListener('click', listener);
+    button.removeEventListener('click', listener);
+
     button.click();
-    expect(log).toEqual('aa');
+
+    expect(listener).not.toHaveBeenCalled();
   });
 
   it('should respect removeEventListener with an EventListener-implementing listener', function () {
@@ -84,6 +105,29 @@ describe('element', function () {
     expect(eventListener.handleEvent).not.toHaveBeenCalled();
   });
 
+  it('should respect removeEventListener when invoked in a zone with a removeEventListener interceptor', function () {
+    var count = 0;
+    var listener = jasmine.createSpy();
+    var interceptorZone = testZone.fork({
+      removeEventListener: function(delegate, target) {
+        expect(target).toBe(button);
+        return function removeEventListener(name, listener) {
+          count++;
+          delegate('click', listener);
+        }
+      }
+    })
+
+    interceptorZone.run(function() {
+      button.addEventListener('click', listener);
+      button.removeEventListener('focus', listener);
+    });
+
+    button.click();
+
+    expect(count).toBe(1);
+    expect(listener).not.toHaveBeenCalled();
+  });
 
   describe('onclick', function() {
 
