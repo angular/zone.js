@@ -3,7 +3,7 @@
 'use strict';
 
 var core = require('../core');
-var browserPatch = require('../patch/browser');
+var webWorkersPatch = require('../patch/web-workers');
 
 if (global.Zone) {
   console.warn('Zone already exported on window the object!');
@@ -12,10 +12,10 @@ if (global.Zone) {
 global.Zone = core.Zone;
 global.zone = new global.Zone();
 
-browserPatch.apply();
+webWorkersPatch.apply();
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../core":2,"../patch/browser":3}],2:[function(require,module,exports){
+},{"../core":2,"../patch/web-workers":7}],2:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -151,60 +151,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./patch/promise":9}],3:[function(require,module,exports){
-(function (global){
-'use strict';
-
-var fnPatch = require('./functions');
-var promisePatch = require('./promise');
-var mutationObserverPatch = require('./mutation-observer');
-var definePropertyPatch = require('./define-property');
-var registerElementPatch = require('./register-element');
-var webSocketPatch = require('./websocket');
-var eventTargetPatch = require('./event-target');
-var propertyDescriptorPatch = require('./property-descriptor');
-var geolocationPatch = require('./geolocation');
-
-function apply() {
-  fnPatch.patchSetClearFunction(global, [
-    'timeout',
-    'interval',
-    'immediate'
-  ]);
-
-  fnPatch.patchSetFunction(global, [
-    'requestAnimationFrame',
-    'mozRequestAnimationFrame',
-    'webkitRequestAnimationFrame'
-  ]);
-
-  fnPatch.patchFunction(global, [
-    'alert',
-    'prompt'
-  ]);
-
-  eventTargetPatch.apply();
-
-  propertyDescriptorPatch.apply();
-
-  promisePatch.apply();
-
-  mutationObserverPatch.patchClass('MutationObserver');
-  mutationObserverPatch.patchClass('WebKitMutationObserver');
-
-  definePropertyPatch.apply();
-
-  registerElementPatch.apply();
-
-  geolocationPatch.apply();
-}
-
-module.exports = {
-  apply: apply
-};
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./define-property":4,"./event-target":5,"./functions":6,"./geolocation":7,"./mutation-observer":8,"./promise":9,"./property-descriptor":10,"./register-element":11,"./websocket":12}],4:[function(require,module,exports){
+},{"./patch/promise":6}],3:[function(require,module,exports){
 'use strict';
 
 // might need similar for object.freeze
@@ -277,7 +224,7 @@ module.exports = {
 
 
 
-},{}],5:[function(require,module,exports){
+},{}],4:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -324,7 +271,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13}],6:[function(require,module,exports){
+},{"../utils":9}],5:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -418,94 +365,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13}],7:[function(require,module,exports){
-(function (global){
-'use strict';
-
-var utils = require('../utils');
-
-function apply() {
-  if (global.navigator && global.navigator.geolocation) {
-    utils.patchPrototype(global.navigator.geolocation, [
-      'getCurrentPosition',
-      'watchPosition'
-    ]);
-  }
-}
-
-module.exports = {
-  apply: apply
-}
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13}],8:[function(require,module,exports){
-(function (global){
-'use strict';
-
-// wrap some native API on `window`
-function patchClass(className) {
-  var OriginalClass = global[className];
-  if (!OriginalClass) return;
-
-  global[className] = function (fn) {
-    this._o = new OriginalClass(global.zone.bind(fn, true));
-    // Remember where the class was instantiate to execute the enqueueTask and dequeueTask hooks
-    this._creationZone = global.zone;
-  };
-
-  var instance = new OriginalClass(function () {});
-
-  global[className].prototype.disconnect = function () {
-    var result = this._o.disconnect.apply(this._o, arguments);
-    if (this._active) {
-      this._creationZone.dequeueTask();
-      this._active = false;
-    }
-    return result;
-  };
-
-  global[className].prototype.observe = function () {
-    if (!this._active) {
-      this._creationZone.enqueueTask();
-      this._active = true;
-    }
-    return this._o.observe.apply(this._o, arguments);
-  };
-
-  var prop;
-  for (prop in instance) {
-    (function (prop) {
-      if (typeof global[className].prototype !== undefined) {
-        return;
-      }
-      if (typeof instance[prop] === 'function') {
-        global[className].prototype[prop] = function () {
-          return this._o[prop].apply(this._o, arguments);
-        };
-      } else {
-        Object.defineProperty(global[className].prototype, prop, {
-          set: function (fn) {
-            if (typeof fn === 'function') {
-              this._o[prop] = global.zone.bind(fn);
-            } else {
-              this._o[prop] = fn;
-            }
-          },
-          get: function () {
-            return this._o[prop];
-          }
-        });
-      }
-    }(prop));
-  }
-};
-
-module.exports = {
-  patchClass: patchClass
-};
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],9:[function(require,module,exports){
+},{"../utils":9}],6:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -624,116 +484,28 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13}],10:[function(require,module,exports){
+},{"../utils":9}],7:[function(require,module,exports){
 (function (global){
 'use strict';
 
+var fnPatch = require('./functions');
+var promisePatch = require('./promise');
+var definePropertyPatch = require('./define-property');
 var webSocketPatch = require('./websocket');
-var utils = require('../utils');
-
-var eventNames = 'copy cut paste abort blur focus canplay canplaythrough change click contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop durationchange emptied ended input invalid keydown keypress keyup load loadeddata loadedmetadata loadstart message mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup pause play playing progress ratechange reset scroll seeked seeking select show stalled submit suspend timeupdate volumechange waiting mozfullscreenchange mozfullscreenerror mozpointerlockchange mozpointerlockerror error webglcontextrestored webglcontextlost webglcontextcreationerror'.split(' ');
+var eventTargetPatch = require('./event-target');
 
 function apply() {
-  if (canPatchViaPropertyDescriptor()) {
-    // for browsers that we can patch the descriptor:  Chrome & Firefox
-    var onEventNames = eventNames.map(function (property) {
-      return 'on' + property;
-    });
-    utils.patchProperties(HTMLElement.prototype, onEventNames);
-    utils.patchProperties(XMLHttpRequest.prototype);
-    if (typeof WebSocket !== 'undefined') {
-      utils.patchProperties(WebSocket.prototype);
-    }
-  } else {
-    // Safari
-    patchViaCapturingAllTheEvents();
-    utils.patchClass('XMLHttpRequest');
-    webSocketPatch.apply();
-  }
-}
+  fnPatch.patchSetClearFunction(global, [
+    'timeout',
+    'interval',
+    'immediate'
+  ]);
 
-function canPatchViaPropertyDescriptor() {
-  if (!Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'onclick') && typeof Element !== 'undefined') {
-    // WebKit https://bugs.webkit.org/show_bug.cgi?id=134364
-    // IDL interface attributes are not configurable
-    var desc = Object.getOwnPropertyDescriptor(Element.prototype, 'onclick');
-    if (desc && !desc.configurable) return false;
-  }
+  eventTargetPatch.apply();
 
-  Object.defineProperty(HTMLElement.prototype, 'onclick', {
-    get: function () {
-      return true;
-    }
-  });
-  var elt = document.createElement('div');
-  var result = !!elt.onclick;
-  Object.defineProperty(HTMLElement.prototype, 'onclick', {});
-  return result;
-};
+  promisePatch.apply();
 
-// Whenever any event fires, we check the event target and all parents
-// for `onwhatever` properties and replace them with zone-bound functions
-// - Chrome (for now)
-function patchViaCapturingAllTheEvents() {
-  eventNames.forEach(function (property) {
-    var onproperty = 'on' + property;
-    document.addEventListener(property, function (event) {
-      var elt = event.target, bound;
-      while (elt) {
-        if (elt[onproperty] && !elt[onproperty]._unbound) {
-          bound = global.zone.bind(elt[onproperty]);
-          bound._unbound = elt[onproperty];
-          elt[onproperty] = bound;
-        }
-        elt = elt.parentElement;
-      }
-    }, true);
-  });
-};
-
-module.exports = {
-  apply: apply
-};
-
-}).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13,"./websocket":12}],11:[function(require,module,exports){
-(function (global){
-'use strict';
-
-var _redefineProperty = require('./define-property')._redefineProperty;
-
-function apply() {
-  if (!('registerElement' in global.document)) {
-    return;
-  }
-
-  var _registerElement = document.registerElement;
-  var callbacks = [
-    'createdCallback',
-    'attachedCallback',
-    'detachedCallback',
-    'attributeChangedCallback'
-  ];
-
-  document.registerElement = function (name, opts) {
-    if (opts && opts.prototype) {
-      callbacks.forEach(function (callback) {
-        if (opts.prototype.hasOwnProperty(callback)) {
-          var descriptor = Object.getOwnPropertyDescriptor(opts.prototype, callback);
-          if (descriptor.value) {
-            descriptor.value = global.zone.bind(descriptor.value);
-            _redefineProperty(opts.prototype, callback, descriptor);
-          } else {
-            opts.prototype[callback] = global.zone.bind(opts.prototype[callback]);
-          }
-        } else if (opts.prototype[callback]) {
-          opts.prototype[callback] = global.zone.bind(opts.prototype[callback]);
-        }
-      });
-    }
-
-    return _registerElement.apply(document, [name, opts]);
-  };
+  definePropertyPatch.apply();
 }
 
 module.exports = {
@@ -741,7 +513,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./define-property":4}],12:[function(require,module,exports){
+},{"./define-property":3,"./event-target":4,"./functions":5,"./promise":6,"./websocket":8}],8:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -780,7 +552,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13}],13:[function(require,module,exports){
+},{"../utils":9}],9:[function(require,module,exports){
 (function (global){
 'use strict';
 

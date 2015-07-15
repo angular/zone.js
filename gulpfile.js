@@ -45,12 +45,19 @@ gulp.task('build/long-stack-trace-zone.js', function() {
   return generateBrowserScript('./lib/browser/long-stack-trace-zone.js', 'long-stack-trace-zone.js');
 });
 
+gulp.task("build/zone-web-workers.js", function(){
+  return generateBrowserScript("./lib/web-workers/zone.js", 'zone-web-workers.js');
+});
+
+gulp.task("build/zone-microtask-web-workers.js", function(){
+  return generateBrowserScript("./lib/web-workers/zone-microtask.js", 'zone-microtask-web-workers.js');
+});
+
 gulp.task('build', [
   'build/zone.js',
   'build/zone-microtask.js',
   'build/jasmine-patch.js',
-  'build/long-stack-trace-zone.js'
+  'build/long-stack-trace-zone.js',
+  'build/zone-web-workers.js',
+  'build/zone-microtask-web-workers.js'
 ]);
-
-
-
