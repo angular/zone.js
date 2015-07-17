@@ -3,63 +3,41 @@
 describe('requestAnimationFrame', function () {
   var testZone = zone.fork();
 
-  describe('requestAnimationFrame', function () {
-    it('should run the passed callback in a zone', function (done) {
-      testZone.run(function() {
-        if (typeof requestAnimationFrame === 'undefined') {
-          console.log('WARNING: skipping requestAnimationFrame test (missing this API)');
-          return done();
-        }
+  var functions = [
+    'requestAnimationFrame',
+    'webkitRequestAnimationFrame',
+    'mozRequestAnimationFrame'
+  ];
 
-        // Some browsers (especially Safari) do not fire requestAnimationFrame
-        // if they are offscreen. We can disable this test for those browsers and
-        // assume the patch works if setTimeout works, since they are mechanically
-        // the same
-        requestAnimationFrame(function () {
-          expect(zone).toBeDirectChildOf(testZone);
+  functions.forEach(function (fnName) {
+    describe(fnName, ifEnvSupports(fnName, function () {
+      var rAF = window[fnName];
+
+      it('should be tolerant of invalid arguments', function (done) {
+        testZone.run(function () {
+          // rAF throws an error on invalid arguments, so expect that.
+          expect(function () {
+            rAF(null);
+          }).toThrow();
           done();
         });
       });
-    });
-  });
 
-  describe('mozRequestAnimationFrame', function () {
-    it('should run the passed callback in a zone', function (done) {
-      testZone.run(function() {
-        if (typeof mozRequestAnimationFrame === 'undefined') {
-          console.log('WARNING: skipping mozRequestAnimationFrame test (missing this API)');
-          return done();
-        }
+      it('should bind to same zone when called recursively', function (done) {
+        testZone.run(function () {
+          var frames = 0;
 
-        // Some browsers (especially Safari) do not fire mozRequestAnimationFrame
-        // if they are offscreen. We can disable this test for those browsers and
-        // assume the patch works if setTimeout works, since they are mechanically
-        // the same
-        mozRequestAnimationFrame(function () {
-          expect(zone).toBeDirectChildOf(testZone);
-          done();
+          function frameCallback() {
+            expect(zone === testZone).toBe(true);
+            if (frames++ > 15) {
+              return done();
+            }
+            rAF(frameCallback);
+          }
+
+          rAF(frameCallback);
         });
       });
-    });
-  });
-
-  describe('webkitRequestAnimationFrame', function () {
-    it('should run the passed callback in a zone', function (done) {
-      testZone.run(function() {
-        if (typeof webkitRequestAnimationFrame === 'undefined') {
-          console.log('WARNING: skipping webkitRequestAnimationFrame test (missing this API)');
-          return done();
-        }
-
-        // Some browsers (especially Safari) do not fire webkitRequestAnimationFrame
-        // if they are offscreen. We can disable this test for those browsers and
-        // assume the patch works if setTimeout works, since they are mechanically
-        // the same
-        webkitRequestAnimationFrame(function () {
-          expect(zone).toBeDirectChildOf(testZone);
-          done();
-        });
-      });
-    });
+    }));
   });
 });
