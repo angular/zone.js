@@ -179,7 +179,7 @@ Transforms a function to run within the given zone.
 ### `zone.fork`
 
 ```javascript
-zone.fork({
+var myZone = zone.fork({
   onZoneCreated: function () {},
   beforeTask: function () {},
   afterTask: function () {},
@@ -190,7 +190,8 @@ zone.fork({
   setInterval: function () {},
   alert: function () {},
   prompt: function () {},
-  addEventListener: function () {}
+  addEventListener: function () {},
+  removeEventListener: function () {}
 });
 myZone.run(function () {
   // woo!
@@ -236,6 +237,31 @@ While in this zone, calls to `window.setTimeout` will redirect to `zone.setTimeo
 
 This hook allows you to intercept calls to `EventTarget.addEventListener`.
 
+```javascript
+var myZone = zone.fork({
+  addEventListener: function(delegate) {
+    return function addEventListener(name, listener) {
+      if (name === 'click') clickListeners++;
+      delegate.apply(this, arguments);
+    }
+  }
+});
+```
+
+### `zone.removeEventListener`
+
+This hook allows you to intercept calls to `EventTarget.removeEventListener`.
+
+```javascript
+var myZone = zone.fork({
+  removeEventListener: function(delegate) {
+    return function removeEventListener(name, listener) {
+      if (name === 'click') clickListeners--;
+      delegate.apply(this, arguments);
+    }
+  }
+});
+```
 
 ## Status
 
