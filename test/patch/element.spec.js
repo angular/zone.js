@@ -50,6 +50,34 @@ describe('element', function () {
     button.dispatchEvent(clickEvent);
   });
 
+  it('should call listener zone enqueueTask/dequeueTask', function () {
+    var clickEvent = document.createEvent('Event');
+    clickEvent.initEvent('click', true, true);
+
+    var enqueueSpy = jasmine.createSpy('equeueTask')
+    var dequeueSpy = jasmine.createSpy('dequeueTask')
+    var listenerZone = testZone.fork({
+        '+enqueueTask': enqueueSpy,
+        '-dequeueTask': dequeueSpy
+    });
+
+    listenerZone.run(function() {
+      button.addEventListener('click', function (event) {
+        expect(zone).toBeDirectChildOf(listenerZone);
+        expect(event).toBe(clickEvent)
+      });
+    });
+
+    testZone.run(function() {
+        button.dispatchEvent(clickEvent);
+    });
+
+    expect(enqueueSpy).toHaveBeenCalled();
+    expect(dequeueSpy).toHaveBeenCalled();
+    expect(enqueueSpy.calls.count()).toBe(1);
+    expect(dequeueSpy.calls.count()).toBe(1);
+  });
+
   it('should respect removeEventListener when called with a function listener', function () {
     var log = '';
     var logFunction = function logFunction () {
