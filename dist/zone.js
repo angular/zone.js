@@ -634,6 +634,12 @@ var utils = require('../utils');
 var eventNames = 'copy cut paste abort blur focus canplay canplaythrough change click contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop durationchange emptied ended input invalid keydown keypress keyup load loadeddata loadedmetadata loadstart message mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup pause play playing progress ratechange reset scroll seeked seeking select show stalled submit suspend timeupdate volumechange waiting mozfullscreenchange mozfullscreenerror mozpointerlockchange mozpointerlockerror error webglcontextrestored webglcontextlost webglcontextcreationerror'.split(' ');
 
 function apply() {
+  if (utils.isWebWorker()){
+    // on WebWorker so don't apply patch
+    return;
+  }
+
+  var supportsWebSocket = typeof WebSocket !== 'undefined';
   if (canPatchViaPropertyDescriptor()) {
     // for browsers that we can patch the descriptor:  Chrome & Firefox
     var onEventNames = eventNames.map(function (property) {
@@ -641,14 +647,16 @@ function apply() {
     });
     utils.patchProperties(HTMLElement.prototype, onEventNames);
     utils.patchProperties(XMLHttpRequest.prototype);
-    if (typeof WebSocket !== 'undefined') {
+    if (supportsWebSocket) {
       utils.patchProperties(WebSocket.prototype);
     }
   } else {
-    // Safari
+    // Safari, Android browsers (Jelly Bean)
     patchViaCapturingAllTheEvents();
     utils.patchClass('XMLHttpRequest');
-    webSocketPatch.apply();
+    if (supportsWebSocket) {
+      webSocketPatch.apply();
+    }
   }
 }
 
@@ -701,9 +709,10 @@ module.exports = {
 'use strict';
 
 var _redefineProperty = require('./define-property')._redefineProperty;
+var utils = require("../utils");
 
 function apply() {
-  if (!('registerElement' in global.document)) {
+  if (utils.isWebWorker() || !('registerElement' in global.document)) {
     return;
   }
 
@@ -741,7 +750,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./define-property":4}],12:[function(require,module,exports){
+},{"../utils":13,"./define-property":4}],12:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -813,6 +822,10 @@ function patchPrototype(obj, fnNames) {
   });
 };
 
+function isWebWorker() {
+  return (typeof document === "undefined");
+}
+
 function patchProperty(obj, prop) {
   var desc = Object.getOwnPropertyDescriptor(obj, prop) || {
     enumerable: true,
@@ -870,21 +883,39 @@ function patchProperties(obj, properties) {
 
 function patchEventTargetMethods(obj) {
   var addDelegate = obj.addEventListener;
-  obj.addEventListener = function (eventName, fn) {
-    fn._bound = fn._bound || {};
-    arguments[1] = fn._bound[eventName] = zone.bind(fn);
+  obj.addEventListener = function (eventName, handler) {
+    var fn;
+    //Ignore special listeners of IE11 & Edge dev tools, see https://github.com/angular/zone.js/issues/150
+    if (handler.toString() !== "[object FunctionWrapper]") {
+      if (handler.handleEvent) {
+        // Have to pass in 'handler' reference as an argument here, otherwise it gets clobbered in
+        // IE9 by the arguments[1] assignment at end of this function.
+        fn = (function(handler) {
+          return function() {
+            handler.handleEvent.apply(handler, arguments);
+          };
+        })(handler);
+      } else {
+        fn = handler;
+      }
+
+      handler._fn = fn;
+      handler._bound = handler._bound || {};
+      arguments[1] = handler._bound[eventName] = zone.bind(fn);
+    }
     return addDelegate.apply(this, arguments);
   };
 
   var removeDelegate = obj.removeEventListener;
-  obj.removeEventListener = function (eventName, fn) {
-    if(arguments[1]._bound && arguments[1]._bound[eventName]) {
-      var _bound = arguments[1]._bound;
+  obj.removeEventListener = function (eventName, handler) {
+    if(handler._bound && handler._bound[eventName]) {
+      var _bound = handler._bound;
+      
       arguments[1] = _bound[eventName];
       delete _bound[eventName];
     }
     var result = removeDelegate.apply(this, arguments);
-    global.zone.dequeueTask(fn);
+    global.zone.dequeueTask(handler._fn);
     return result;
   };
 };
@@ -946,7 +977,8 @@ module.exports = {
   patchProperty: patchProperty,
   patchProperties: patchProperties,
   patchEventTargetMethods: patchEventTargetMethods,
-  patchClass: patchClass
+  patchClass: patchClass,
+  isWebWorker: isWebWorker
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
