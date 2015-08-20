@@ -49,6 +49,12 @@ module.exports = function (config) {
       browserName: 'internet explorer',
       platform: 'Windows 8.1',
       version: '11'
+    },
+    'SL_ANDROID4.3': {
+      base: 'SauceLabs',
+      browserName: 'android',
+      platform: 'Linux',
+      version: '4.3'
     }
   };
 

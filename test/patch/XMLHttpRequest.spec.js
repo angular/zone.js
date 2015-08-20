@@ -48,8 +48,13 @@ describe('XMLHttpRequest', function () {
     var req = new XMLHttpRequest();
     req.open('get', '/', true);
     req.send();
-    req.responseType = 'document';
-    expect(req.responseType).toBe('document');
+    try {
+      req.responseType = 'document';
+      expect(req.responseType).toBe('document');
+    } catch (e) {
+      //Android browser: using this setter throws, this should be preserved
+      expect(e.message).toBe('INVALID_STATE_ERR: DOM Exception 11');
+    }
   });
 
   it('should preserve static constants', function() {
