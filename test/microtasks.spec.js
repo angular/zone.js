@@ -37,7 +37,7 @@ describe('Microtasks', function () {
 
     setTimeout(function() {
       log.push('mat2');
-    }, 20);
+    }, 30);
 
     setTimeout(function() {
       expect(log).toEqual([
@@ -45,7 +45,7 @@ describe('Microtasks', function () {
         '+mat1', '-mat1', 'mat1.mit',
         'mat2']);
       done();
-    }, 30);
+    }, 40);
 
     log.push('-root');
   });
