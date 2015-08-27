@@ -232,6 +232,12 @@ For instance `clearTimeout` and `removeEventListener`.
 These hooks allow you to change the behavior of `window.setTimeout`, `window.setInterval`, etc.
 While in this zone, calls to `window.setTimeout` will redirect to `zone.setTimeout`.
 
+### `zone.requestAnimationFrame`, `zone.webkitRequestAnimationFrame`, `zone.mozRequestAnimationFrame`
+
+By default `requestAnimationFrame()` does not fork the zone, but you may customize this behavior 
+by using this hook. 
+
+
 ### `zone.addEventListener`
 
 This hook allows you to intercept calls to `EventTarget.addEventListener`.
