@@ -228,7 +228,7 @@ function apply() {
     'immediate'
   ]);
 
-  fnPatch.patchSetFunction(global, [
+  fnPatch.patchRequestAnimationFrame(global, [
     'requestAnimationFrame',
     'mozRequestAnimationFrame',
     'webkitRequestAnimationFrame'
@@ -432,6 +432,33 @@ function patchSetClearFunction(obj, fnNames) {
   });
 };
 
+
+/**
+ * requestAnimationFrame is typically recursively called from within the callback function
+ * that it executes.  To handle this case, only fork a zone if this is executed
+ * within the root zone.
+ */
+function patchRequestAnimationFrame(obj, fnNames) {
+  fnNames.forEach(function (name) {
+    var delegate = obj[name];
+    if (delegate) {
+      global.zone[name] = function (fn) {
+        var callZone = global.zone.isRootZone() ? global.zone.fork() : global.zone;
+        if (fn) {
+          arguments[0] = function () {
+            return callZone.run(fn, arguments);
+          };
+        }
+        return delegate.apply(obj, arguments);
+      };
+
+      obj[name] = function () {
+        return global.zone[name].apply(this, arguments);
+      };
+    }
+  });
+};
+
 function patchSetFunction(obj, fnNames) {
   fnNames.forEach(function (name) {
     var delegate = obj[name];
@@ -470,6 +497,7 @@ function patchFunction(obj, fnNames) {
 module.exports = {
   patchSetClearFunction: patchSetClearFunction,
   patchSetFunction: patchSetFunction,
+  patchRequestAnimationFrame: patchRequestAnimationFrame,
   patchFunction: patchFunction
 };
 
@@ -785,7 +813,7 @@ function apply() {
       callbacks.forEach(function (callback) {
         if (opts.prototype.hasOwnProperty(callback)) {
           var descriptor = Object.getOwnPropertyDescriptor(opts.prototype, callback);
-          if (descriptor.value) {
+          if (descriptor && descriptor.value) {
             descriptor.value = global.zone.bind(descriptor.value);
             _redefineProperty(opts.prototype, callback, descriptor);
           } else {
