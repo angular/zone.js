@@ -84,6 +84,32 @@ describe('element', function () {
     expect(eventListener.handleEvent).not.toHaveBeenCalled();
   });
 
+
+  it('should only add a listener once for a given set of arguments', function() {
+    var log = [];
+    var clickEvent = document.createEvent('Event');
+
+    function listener() {
+      log.push('listener');
+    }
+
+    clickEvent.initEvent('click', true, true);
+
+    button.addEventListener('click', listener);
+    button.addEventListener('click', listener);
+    button.addEventListener('click', listener);
+
+    button.dispatchEvent(clickEvent);
+
+    button.removeEventListener('click', listener);
+
+    button.dispatchEvent(clickEvent);
+
+    expect(log).toEqual([
+        'listener'
+    ]);
+  });
+
   it('should correctly handle capturing versus nonCapturing eventListeners', function () {
     var log = [];
     var clickEvent = document.createEvent('Event');
