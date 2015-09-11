@@ -84,6 +84,56 @@ describe('element', function () {
     expect(eventListener.handleEvent).not.toHaveBeenCalled();
   });
 
+  it('should correctly handle capturing versus nonCapturing eventListeners', function () {
+    var log = [];
+    var clickEvent = document.createEvent('Event');
+
+    function capturingListener () {
+      log.push('capturingListener');
+    }
+
+    function bubblingListener () {
+      log.push('bubblingListener');
+    }
+
+    clickEvent.initEvent('click', true, true);
+
+    document.body.addEventListener('click', capturingListener, true);
+    document.body.addEventListener('click', bubblingListener);
+
+    button.dispatchEvent(clickEvent);
+
+    expect(log).toEqual([
+      'capturingListener',
+      'bubblingListener'
+    ]);
+  });
+
+  it('should correctly handle a listener that is both capturing and nonCapturing', function () {
+    var log = [];
+    var clickEvent = document.createEvent('Event');
+
+    function listener () {
+      log.push('listener');
+    }
+
+    clickEvent.initEvent('click', true, true);
+
+    document.body.addEventListener('click', listener, true);
+    document.body.addEventListener('click', listener);
+
+    button.dispatchEvent(clickEvent);
+
+    document.body.removeEventListener('click', listener, true);
+    document.body.removeEventListener('click', listener);
+
+    button.dispatchEvent(clickEvent);
+
+    expect(log).toEqual([
+      'listener',
+      'listener'
+    ]);
+  });
 
   describe('onclick', function() {
 
