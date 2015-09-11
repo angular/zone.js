@@ -9,14 +9,17 @@ describe('Zone in CommonJS environment', function () {
   var commonJSExports;
 
   beforeEach(function () {
-    commonJSExports = require('../lib/zone.js');
+    commonJSExports = require('../lib/zone');
   });
 
-  it('defines proper exports properties in CommonJS environment', function () {
-    expect(commonJSExports.zone).toBeDefined();
+  it('should have the correct exports', function () {
+    expect(commonJSExports.rootZone.isRootZone()).toBe(true);
+    expect(commonJSExports.Zone).toBeDefined();
+    expect(commonJSExports.Zone.bindPromiseFn).toBeDefined();
+    expect(commonJSExports.Zone.longStackTraceZone).toBeDefined();
   });
 
   it('does not set global Zone constructor when required in CommonJS environment', function () {
-    expect(window.Zone).not.toBeDefined();
+    expect(global.Zone).not.toBeDefined();
   });
 });

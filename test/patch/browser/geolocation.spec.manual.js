@@ -1,11 +1,13 @@
 'use strict';
 
+var util = require('../../util');
+
 function supportsGeolocation() {
   return 'geolocation' in navigator;
 }
 supportsGeolocation.message = 'Geolocation';
 
-describe('Geolocation', ifEnvSupports(supportsGeolocation, function () {
+describe('Geolocation', util.ifEnvSupports(supportsGeolocation, function () {
   var testZone = zone.fork();
 
   it('should work for getCurrentPosition', function(done) {

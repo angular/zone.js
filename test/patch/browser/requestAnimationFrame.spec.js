@@ -1,5 +1,7 @@
 'use strict';
 
+var util = require('../../util');
+
 describe('requestAnimationFrame', function () {
   var testZone = zone.fork();
 
@@ -10,7 +12,7 @@ describe('requestAnimationFrame', function () {
   ];
 
   functions.forEach(function (fnName) {
-    describe(fnName, ifEnvSupports(fnName, function () {
+    describe(fnName, util.ifEnvSupports(fnName, function () {
       var rAF = window[fnName];
 
       it('should be tolerant of invalid arguments', function (done) {

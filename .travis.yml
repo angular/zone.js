@@ -1,7 +1,7 @@
 language: node_js
 sudo: false
 node_js:
-  - 0.10
+  - 0.12
 env:
   global:
     - BROWSER_PROVIDER_READY_FILE=/tmp/sauce-connect-ready
@@ -19,4 +19,5 @@ script:
   - karma start karma-sauce.conf.js
   - karma start karma-browserify-sauce.conf.js
   - karma start karma-microtasks-sauce.conf.js
+  - npm run test.node
 

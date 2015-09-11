@@ -5,12 +5,14 @@
 
 'use strict';
 
+var util = require('../../util');
+
 function registerElement() {
   return ('registerElement' in document);
 }
 registerElement.message = 'document.registerElement';
 
-describe('document.registerElement', ifEnvSupports(registerElement, function () {
+describe('document.registerElement', util.ifEnvSupports(registerElement, function () {
 
   // register a custom element for each callback
   var callbackNames = [

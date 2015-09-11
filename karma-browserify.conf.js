@@ -13,7 +13,7 @@ module.exports = function (config) {
     reporters: ['progress'],
 
     preprocessors: {
-      'test/commonjs.spec.js': [ 'browserify' ]
+      'test/**/*.js': [ 'browserify' ]
     },
 
     //port: 9876,

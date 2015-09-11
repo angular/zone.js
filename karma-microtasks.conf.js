@@ -5,9 +5,11 @@ module.exports = function (config) {
     basePath: '',
     files: [
       'test/util.js',
-      'test/setup-microtask.js',
+      'test/setup/browser-microtask.js',
       'examples/js/*.js',
-      'test/**/*.spec.js',
+      'test/*.spec.js',
+      'test/patch/*.spec.js',
+      'test/patch/browser/**/*.spec.js', 
       {pattern: 'test/assets/**/*.*', watched: true, served: true, included: false},
       {pattern: 'lib/**/*.js', watched: true, served: false, included: false}
     ],
@@ -17,7 +19,11 @@ module.exports = function (config) {
     ],
 
     preprocessors: {
-      'test/setup-microtask.js': [ 'browserify' ]
+      'test/**/*.js': [ 'browserify' ]
+    },
+
+    browserify: {
+      debug: true
     },
 
     reporters: ['progress'],

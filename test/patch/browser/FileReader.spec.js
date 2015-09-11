@@ -1,6 +1,8 @@
 'use strict';
 
-describe('FileReader', ifEnvSupports('FileReader', function () {
+var util = require('../../util');
+
+describe('FileReader', util.ifEnvSupports('FileReader', function () {
   var fileReader;
   var blob;
   var data = 'Hello, World!';
@@ -26,7 +28,7 @@ describe('FileReader', ifEnvSupports('FileReader', function () {
     }
   });
 
-  describe('EventTarget methods', ifEnvSupports(supportsEventTargetFns, function () {
+  describe('EventTarget methods', util.ifEnvSupports(supportsEventTargetFns, function () {
     it('should bind addEventListener listeners', function (done) {
       testZone.run(function () {
         fileReader.addEventListener('load', function () {
