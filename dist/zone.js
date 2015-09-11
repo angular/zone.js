@@ -15,9 +15,11 @@ global.zone = new global.Zone();
 browserPatch.apply();
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../core":2,"../patch/browser":3}],2:[function(require,module,exports){
+},{"../core":2,"../patch/browser":4}],2:[function(require,module,exports){
 (function (global){
 'use strict';
+
+var keys = require('./keys');
 
 function Zone(parentZone, data) {
   var zone = (arguments.length) ? Object.create(parentZone) : this;
@@ -138,7 +140,13 @@ Zone.prototype = {
   onZoneCreated: function () {},
   afterTask: function () {},
   enqueueTask: function () {},
-  dequeueTask: function () {}
+  dequeueTask: function () {},
+  addEventListener: function () {
+    return this[keys.common.addEventListener].apply(this, arguments);
+  },
+  removeEventListener: function () {
+    return this[keys.common.removeEventListener].apply(this, arguments);
+  }
 };
 
 // Root zone ID === 1
@@ -151,7 +159,31 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./patch/promise":9}],3:[function(require,module,exports){
+},{"./keys":3,"./patch/promise":11}],3:[function(require,module,exports){
+/**
+ * Creates keys for `private` properties on exposed objects to minimize interactions with other codebases.
+ * The key will be a Symbol if the host supports it; otherwise a prefixed string.
+ */
+if (typeof Symbol !== 'undefined') {
+  function create(name) {
+    return Symbol(name);
+  } 
+} else {
+  function create(name) {
+    return '_zone$' + name;
+  }
+}
+
+var commonKeys = {
+  addEventListener: create('addEventListener'),
+  removeEventListener: create('removeEventListener')
+};
+
+module.exports = {
+  create: create,
+  common: commonKeys
+};
+},{}],4:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -164,6 +196,7 @@ var webSocketPatch = require('./websocket');
 var eventTargetPatch = require('./event-target');
 var propertyDescriptorPatch = require('./property-descriptor');
 var geolocationPatch = require('./geolocation');
+var fileReaderPatch = require('./file-reader');
 
 function apply() {
   fnPatch.patchSetClearFunction(global, [
@@ -197,6 +230,8 @@ function apply() {
   registerElementPatch.apply();
 
   geolocationPatch.apply();
+
+  fileReaderPatch.apply();
 }
 
 module.exports = {
@@ -204,8 +239,10 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"./define-property":4,"./event-target":5,"./functions":6,"./geolocation":7,"./mutation-observer":8,"./promise":9,"./property-descriptor":10,"./register-element":11,"./websocket":12}],4:[function(require,module,exports){
+},{"./define-property":5,"./event-target":6,"./file-reader":7,"./functions":8,"./geolocation":9,"./mutation-observer":10,"./promise":11,"./property-descriptor":12,"./register-element":13,"./websocket":14}],5:[function(require,module,exports){
 'use strict';
+
+var keys = require('../keys');
 
 // might need similar for object.freeze
 // i regret nothing
@@ -213,6 +250,7 @@ module.exports = {
 var _defineProperty = Object.defineProperty;
 var _getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 var _create = Object.create;
+var unconfigurablesKey = keys.create('unconfigurables');
 
 function apply() {
   Object.defineProperty = function (obj, prop, desc) {
@@ -256,16 +294,16 @@ function _redefineProperty(obj, prop, desc) {
 };
 
 function isUnconfigurable (obj, prop) {
-  return obj && obj.__unconfigurables && obj.__unconfigurables[prop];
+  return obj && obj[unconfigurablesKey] && obj[unconfigurablesKey][prop];
 }
 
 function rewriteDescriptor (obj, prop, desc) {
   desc.configurable = true;
   if (!desc.configurable) {
-    if (!obj.__unconfigurables) {
-      _defineProperty(obj, '__unconfigurables', { writable: true, value: {} });
+    if (!obj[unconfigurablesKey]) {
+      _defineProperty(obj, unconfigurablesKey, { writable: true, value: {} });
     }
-    obj.__unconfigurables[prop] = true;
+    obj[unconfigurablesKey][prop] = true;
   }
   return desc;
 }
@@ -277,7 +315,7 @@ module.exports = {
 
 
 
-},{}],5:[function(require,module,exports){
+},{"../keys":3}],6:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -291,7 +329,8 @@ function apply() {
   // Note: EventTarget is not available in all browsers,
   // if it's not available, we instead patch the APIs in the IDL that inherit from EventTarget
   } else {
-    var apis = [ 'ApplicationCache',
+    var apis = [ 
+      'ApplicationCache',
       'EventSource',
       'FileReader',
       'InputMethodContext',
@@ -314,7 +353,14 @@ function apply() {
     ];
 
     apis.forEach(function(thing) {
-      global[thing] && utils.patchEventTargetMethods(global[thing].prototype);
+      var obj = global[thing] && global[thing].prototype;
+
+      // Some browsers e.g. Android 4.3's don't actually implement
+      // the EventTarget methods for all of these e.g. FileReader.
+      // In this case, there is nothing to patch. 
+      if (obj && obj.addEventListener) {
+        utils.patchEventTargetMethods(obj);
+      }
     });
   }
 }
@@ -324,7 +370,19 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13}],6:[function(require,module,exports){
+},{"../utils":15}],7:[function(require,module,exports){
+'use strict';
+
+var utils = require('../utils');
+
+function apply() {
+  utils.patchClass('FileReader');
+}
+
+module.exports = {
+  apply: apply
+};
+},{"../utils":15}],8:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -446,7 +504,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13}],7:[function(require,module,exports){
+},{"../utils":15}],9:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -466,9 +524,15 @@ module.exports = {
 }
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13}],8:[function(require,module,exports){
+},{"../utils":15}],10:[function(require,module,exports){
 (function (global){
 'use strict';
+
+var keys = require('../keys');
+
+var originalInstanceKey = keys.create('originalInstance');
+var creationZoneKey = keys.create('creationZone');
+var isActiveKey = keys.create('isActive');
 
 // wrap some native API on `window`
 function patchClass(className) {
@@ -476,28 +540,28 @@ function patchClass(className) {
   if (!OriginalClass) return;
 
   global[className] = function (fn) {
-    this._o = new OriginalClass(global.zone.bind(fn, true));
+    this[originalInstanceKey] = new OriginalClass(global.zone.bind(fn, true));
     // Remember where the class was instantiate to execute the enqueueTask and dequeueTask hooks
-    this._creationZone = global.zone;
+    this[creationZoneKey] = global.zone;
   };
 
   var instance = new OriginalClass(function () {});
 
   global[className].prototype.disconnect = function () {
-    var result = this._o.disconnect.apply(this._o, arguments);
-    if (this._active) {
-      this._creationZone.dequeueTask();
-      this._active = false;
+    var result = this[originalInstanceKey].disconnect.apply(this[originalInstanceKey], arguments);
+    if (this[isActiveKey]) {
+      this[creationZoneKey].dequeueTask();
+      this[isActiveKey] = false;
     }
     return result;
   };
 
   global[className].prototype.observe = function () {
-    if (!this._active) {
-      this._creationZone.enqueueTask();
-      this._active = true;
+    if (!this[isActiveKey]) {
+      this[creationZoneKey].enqueueTask();
+      this[isActiveKey] = true;
     }
-    return this._o.observe.apply(this._o, arguments);
+    return this[originalInstanceKey].observe.apply(this[originalInstanceKey], arguments);
   };
 
   var prop;
@@ -508,19 +572,19 @@ function patchClass(className) {
       }
       if (typeof instance[prop] === 'function') {
         global[className].prototype[prop] = function () {
-          return this._o[prop].apply(this._o, arguments);
+          return this[originalInstanceKey][prop].apply(this[originalInstanceKey], arguments);
         };
       } else {
         Object.defineProperty(global[className].prototype, prop, {
           set: function (fn) {
             if (typeof fn === 'function') {
-              this._o[prop] = global.zone.bind(fn);
+              this[originalInstanceKey][prop] = global.zone.bind(fn);
             } else {
-              this._o[prop] = fn;
+              this[originalInstanceKey][prop] = fn;
             }
           },
           get: function () {
-            return this._o[prop];
+            return this[originalInstanceKey][prop];
           }
         });
       }
@@ -533,7 +597,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}],9:[function(require,module,exports){
+},{"../keys":3}],11:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -652,12 +716,13 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13}],10:[function(require,module,exports){
+},{"../utils":15}],12:[function(require,module,exports){
 (function (global){
 'use strict';
 
 var webSocketPatch = require('./websocket');
 var utils = require('../utils');
+var keys = require('../keys');
 
 var eventNames = 'copy cut paste abort blur focus canplay canplaythrough change click contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop durationchange emptied ended input invalid keydown keypress keyup load loadeddata loadedmetadata loadstart message mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup pause play playing progress ratechange reset scroll seeked seeking select show stalled submit suspend timeupdate volumechange waiting mozfullscreenchange mozfullscreenerror mozpointerlockchange mozpointerlockerror error webglcontextrestored webglcontextlost webglcontextcreationerror'.split(' ');
 
@@ -707,6 +772,8 @@ function canPatchViaPropertyDescriptor() {
   return result;
 };
 
+var unboundKey = keys.create('unbound');
+
 // Whenever any event fires, we check the event target and all parents
 // for `onwhatever` properties and replace them with zone-bound functions
 // - Chrome (for now)
@@ -716,9 +783,9 @@ function patchViaCapturingAllTheEvents() {
     document.addEventListener(property, function (event) {
       var elt = event.target, bound;
       while (elt) {
-        if (elt[onproperty] && !elt[onproperty]._unbound) {
+        if (elt[onproperty] && !elt[onproperty][unboundKey]) {
           bound = global.zone.bind(elt[onproperty]);
-          bound._unbound = elt[onproperty];
+          bound[unboundKey] = elt[onproperty];
           elt[onproperty] = bound;
         }
         elt = elt.parentElement;
@@ -732,7 +799,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13,"./websocket":12}],11:[function(require,module,exports){
+},{"../keys":3,"../utils":15,"./websocket":14}],13:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -778,7 +845,7 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13,"./define-property":4}],12:[function(require,module,exports){
+},{"../utils":15,"./define-property":5}],14:[function(require,module,exports){
 (function (global){
 'use strict';
 
@@ -817,9 +884,11 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{"../utils":13}],13:[function(require,module,exports){
+},{"../utils":15}],15:[function(require,module,exports){
 (function (global){
 'use strict';
+
+var keys = require('./keys');
 
 function bindArguments(args) {
   for (var i = args.length - 1; i >= 0; i--) {
@@ -893,7 +962,6 @@ function patchProperty(obj, prop) {
 };
 
 function patchProperties(obj, properties) {
-
   (properties || (function () {
       var props = [];
       for (var prop in obj) {
@@ -909,9 +977,14 @@ function patchProperties(obj, properties) {
     });
 };
 
+var originalFnKey = keys.create('originalFn');
+var boundFnsKey = keys.create('boundFns');
+
 function patchEventTargetMethods(obj) {
-  var addDelegate = obj.addEventListener;
-  obj.addEventListener = function (eventName, handler) {
+  // This is required for the addEventListener hook on the root zone.
+  obj[keys.common.addEventListener] = obj.addEventListener;
+  obj.addEventListener = function (eventName, handler, useCapturing) {
+    var eventType = eventName + (useCapturing ? '$capturing' : '$bubbling');
     var fn;
     //Ignore special listeners of IE11 & Edge dev tools, see https://github.com/angular/zone.js/issues/150
     if (handler.toString() !== "[object FunctionWrapper]") {
@@ -925,28 +998,34 @@ function patchEventTargetMethods(obj) {
         })(handler);
       } else {
         fn = handler;
-      }
+      } 
 
-      handler._fn = fn;
-      handler._bound = handler._bound || {};
-      arguments[1] = handler._bound[eventName] = zone.bind(fn);
+      handler[originalFnKey] = fn;
+      handler[boundFnsKey] = handler[boundFnsKey] || {};
+      handler[boundFnsKey][eventType] = handler[boundFnsKey][eventType] || zone.bind(fn);
+      arguments[1] = handler[boundFnsKey][eventType];
     }
-    return addDelegate.apply(this, arguments);
+
+    return global.zone.addEventListener.apply(this, arguments);
   };
 
-  var removeDelegate = obj.removeEventListener;
-  obj.removeEventListener = function (eventName, handler) {
-    if(handler._bound && handler._bound[eventName]) {
-      var _bound = handler._bound;
+  // This is required for the removeEventListener hook on the root zone.
+  obj[keys.common.removeEventListener] = obj.removeEventListener;
+  obj.removeEventListener = function (eventName, handler, useCapturing) {
+    var eventType = eventName + (useCapturing ? '$capturing' : '$bubbling');
+    if (handler[boundFnsKey] && handler[boundFnsKey][eventType]) {
+      var _bound = handler[boundFnsKey];
       
-      arguments[1] = _bound[eventName];
-      delete _bound[eventName];
+      arguments[1] = _bound[eventType];
+      delete _bound[eventType];
     }
-    var result = removeDelegate.apply(this, arguments);
-    global.zone.dequeueTask(handler._fn);
+    var result = global.zone.removeEventListener.apply(this, arguments);
+    global.zone.dequeueTask(handler[originalFnKey]);
     return result;
   };
 };
+
+var originalInstanceKey = keys.create('originalInstance');
 
 // wrap some native API on `window`
 function patchClass(className) {
@@ -956,11 +1035,11 @@ function patchClass(className) {
   global[className] = function () {
     var a = bindArguments(arguments);
     switch (a.length) {
-      case 0: this._o = new OriginalClass(); break;
-      case 1: this._o = new OriginalClass(a[0]); break;
-      case 2: this._o = new OriginalClass(a[0], a[1]); break;
-      case 3: this._o = new OriginalClass(a[0], a[1], a[2]); break;
-      case 4: this._o = new OriginalClass(a[0], a[1], a[2], a[3]); break;
+      case 0: this[originalInstanceKey] = new OriginalClass(); break;
+      case 1: this[originalInstanceKey] = new OriginalClass(a[0]); break;
+      case 2: this[originalInstanceKey] = new OriginalClass(a[0], a[1]); break;
+      case 3: this[originalInstanceKey] = new OriginalClass(a[0], a[1], a[2]); break;
+      case 4: this[originalInstanceKey] = new OriginalClass(a[0], a[1], a[2], a[3]); break;
       default: throw new Error('what are you even doing?');
     }
   };
@@ -972,19 +1051,19 @@ function patchClass(className) {
     (function (prop) {
       if (typeof instance[prop] === 'function') {
         global[className].prototype[prop] = function () {
-          return this._o[prop].apply(this._o, arguments);
+          return this[originalInstanceKey][prop].apply(this[originalInstanceKey], arguments);
         };
       } else {
         Object.defineProperty(global[className].prototype, prop, {
           set: function (fn) {
             if (typeof fn === 'function') {
-              this._o[prop] = global.zone.bind(fn);
+              this[originalInstanceKey][prop] = global.zone.bind(fn);
             } else {
-              this._o[prop] = fn;
+              this[originalInstanceKey][prop] = fn;
             }
           },
           get: function () {
-            return this._o[prop];
+            return this[originalInstanceKey][prop];
           }
         });
       }
@@ -1010,4 +1089,4 @@ module.exports = {
 };
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})
-},{}]},{},[1]);
+},{"./keys":3}]},{},[1]);

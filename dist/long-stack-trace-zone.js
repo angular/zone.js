@@ -82,7 +82,7 @@ module.exports = {
   },
 
   stackFramesFilter: function (line) {
-    return /zone(-microtask)?(\.min)?\.js/.test(line);
+    return !/zone(-microtask)?(\.min)?\.js/.test(line);
   },
 
   onError: function (exception) {
