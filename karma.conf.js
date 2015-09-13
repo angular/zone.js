@@ -4,8 +4,8 @@ module.exports = function (config) {
   config.set({
     basePath: '',
     files: [
-      'test/util.js',
       'test/setup/browser.js',
+      'test/util.js',
       'examples/js/*.js',
       //'test/lib/brick.js',
       'test/*.spec.js',

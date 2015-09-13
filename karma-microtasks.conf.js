@@ -4,8 +4,8 @@ module.exports = function (config) {
   config.set({
     basePath: '',
     files: [
-      'test/util.js',
       'test/setup/browser-microtask.js',
+      'test/util.js',
       'examples/js/*.js',
       'test/*.spec.js',
       'test/patch/*.spec.js',

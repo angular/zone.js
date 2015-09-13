@@ -1,4 +1,3 @@
-
 /*
  * usage:
 
@@ -110,5 +109,5 @@ module.exports = {
   ifEnvSupports: ifEnvSupports,
   
   // useful for testing mocks
-  setTimeout: global.setTimeout.bind(global)
+  setTimeout: global.setTimeout
 };
