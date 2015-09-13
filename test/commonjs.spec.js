@@ -9,7 +9,7 @@ describe('Zone in CommonJS environment', function () {
   var commonJSExports;
 
   beforeEach(function () {
-    commonJSExports = require('../lib/zone');
+    commonJSExports = require('../lib/node/zone');
   });
 
   it('should have the correct exports', function () {
