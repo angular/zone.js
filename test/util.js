@@ -109,5 +109,5 @@ module.exports = {
   ifEnvSupports: ifEnvSupports,
   
   // useful for testing mocks
-  setTimeout: global.setTimeout
+  setTimeout: global.zone.bind(global.setTimeout.bind(global))
 };
