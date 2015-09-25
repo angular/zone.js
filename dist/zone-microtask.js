@@ -1062,7 +1062,9 @@ function patchEventTargetMethods(obj) {
       arguments[1] = handler[boundFnsKey][eventType];
     }
 
-    return global.zone.addEventListener.apply(this, arguments);
+    var target = isWebWorker() && !this ? self : this;
+
+    return global.zone.addEventListener.apply(target, arguments);
   };
 
   // This is required for the removeEventListener hook on the root zone.
@@ -1075,7 +1077,8 @@ function patchEventTargetMethods(obj) {
       arguments[1] = _bound[eventType];
       delete _bound[eventType];
     }
-    var result = global.zone.removeEventListener.apply(this, arguments);
+    var target = isWebWorker() && !this ? self : this;
+    var result = global.zone.removeEventListener.apply(target, arguments);
     global.zone.dequeueTask(handler[originalFnKey]);
     return result;
   };
