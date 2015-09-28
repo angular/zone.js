@@ -1,26 +1,32 @@
-// Karma configuration
+// Karma configuration for browser tests
 
 module.exports = function (config) {
   config.set({
     basePath: '',
     files: [
+      'test/setup/browser.js',
       'test/util.js',
-      'test/setup.js',
       'examples/js/*.js',
       //'test/lib/brick.js',
-      'test/**/*.spec.js',
+      'test/*.spec.js',
+      'test/patch/*.spec.js',
+      'test/patch/browser/**/*.spec.js',
       {pattern: 'test/assets/**/*.*', watched: true, served: true, included: false},
       {pattern: 'lib/**/*.js', watched: true, served: false, included: false}
     ],
 
     preprocessors: {
-      'test/setup.js': [ 'browserify' ]
+      'test/**/*.js': [ 'browserify' ]
     },
 
     exclude: [
       'test/commonjs.spec.js',
       'test/microtasks.spec.js'
     ],
+
+    browserify: {
+      debug: true
+    },
 
     reporters: ['progress'],
 

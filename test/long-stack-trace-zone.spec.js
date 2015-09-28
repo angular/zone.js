@@ -1,9 +1,11 @@
 'use strict';
 
+var zone = require('../lib/zone');
+
 describe('longStackTraceZone', function () {
   var log;
 
-  var lstz = zone.fork(Zone.longStackTraceZone).fork({
+  var lstz = global.zone.fork(zone.Zone.longStackTraceZone).fork({
     reporter: function reporter (trace) {
       log.push(trace);
     }
@@ -60,11 +62,11 @@ describe('longStackTraceZone', function () {
   });
 
   it('should honor parent\'s fork()', function () {
-    zone
+    global.zone
       .fork({
         '+fork': function() { log.push('fork'); }
       })
-      .fork(Zone.longStackTraceZone)
+      .fork(zone.Zone.longStackTraceZone)
       .fork();
 
     expect(log).toEqual(['fork', 'fork']);

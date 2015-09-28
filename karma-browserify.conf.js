@@ -4,7 +4,6 @@ module.exports = function (config) {
   config.set({
     basePath: '',
     files: [
-      'test/util.js',
       'test/commonjs.spec.js',
       {pattern: 'test/assets/**/*.*', watched: true, served: true, included: false},
       {pattern: 'lib/**/*.js', watched: true, served: false, included: false}
@@ -13,7 +12,7 @@ module.exports = function (config) {
     reporters: ['progress'],
 
     preprocessors: {
-      'test/commonjs.spec.js': [ 'browserify' ]
+      'test/**/*.js': [ 'browserify' ]
     },
 
     //port: 9876,

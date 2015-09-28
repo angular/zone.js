@@ -1,5 +1,7 @@
 'use strict';
 
+var util = require('../../util');
+
 describe('XMLHttpRequest', function () {
   var testZone = zone.fork();
 
@@ -26,7 +28,7 @@ describe('XMLHttpRequest', function () {
   }
   supportsOnProgress.message = "XMLHttpRequest.onprogress";
 
-  describe('onprogress', ifEnvSupports(supportsOnProgress, function () {
+  describe('onprogress', util.ifEnvSupports(supportsOnProgress, function () {
     it('should work with onprogress', function (done) {
       var req;
       testZone.run(function() {

@@ -1,6 +1,8 @@
 'use strict';
 
-describe('Promise', ifEnvSupports('Promise', function () {
+var util = require('../../util');
+
+describe('Promise', util.ifEnvSupports('Promise', function () {
   var testZone = zone.fork();
 
   describe('Promise API', function () {
@@ -35,7 +37,7 @@ describe('Promise', ifEnvSupports('Promise', function () {
     });
   });
 
-  describe('fetch', ifEnvSupports('fetch', function () {
+  describe('fetch', util.ifEnvSupports('fetch', function () {
     it('should work for text response', function(done) {
       testZone.run(function() {
         fetch('/base/test/assets/sample.json').then(function(response) {

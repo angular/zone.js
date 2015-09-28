@@ -1,21 +1,24 @@
 'use strict';
 
+var util = require('./util');
+var zone = require('../lib/zone');
+
 describe('Zone', function () {
-  var rootZone = zone;
+  var rootZone = global.zone;
 
   it('should have an id', function () {
-    expect(zone.$id).toBeDefined();
+    expect(rootZone.$id).toBeDefined();
   });
 
   it('forked zones should have a greater id than their parent', function () {
-    expect(zone.fork().$id).toBeGreaterThan(zone.$id);
+    expect(rootZone.fork().$id).toBeGreaterThan(rootZone.$id);
   });
 
-  describe('hooks', function () {
+  describe('core hooks', function () {
 
     it('should fire beforeTask before a zone runs a function', function () {
       var enterSpy = jasmine.createSpy();
-      var myZone = zone.fork({
+      var myZone = rootZone.fork({
         beforeTask: enterSpy
       });
 
@@ -29,7 +32,7 @@ describe('Zone', function () {
 
     it('should fire afterTask after a zone runs a function', function () {
       var leaveSpy = jasmine.createSpy();
-      var myZone = zone.fork({
+      var myZone = rootZone.fork({
         afterTask: leaveSpy
       });
 
@@ -44,7 +47,7 @@ describe('Zone', function () {
     it('should fire onZoneCreated when a zone is forked', function (done) {
       var createdSpy = jasmine.createSpy();
       var counter = 0;
-      var myZone = zone.fork({
+      var myZone = rootZone.fork({
         onZoneCreated: function () {
           counter += 1;
         },
@@ -72,14 +75,14 @@ describe('Zone', function () {
 
     it('should throw if onError is not defined', function () {
       expect(function () {
-        zone.run(throwError);
+        rootZone.run(throwError);
       }).toThrow();
     });
 
 
     it('should fire onError if a function run by a zone throws', function () {
       var errorSpy = jasmine.createSpy();
-      var myZone = zone.fork({
+      var myZone = rootZone.fork({
         onError: errorSpy
       });
 
@@ -95,7 +98,7 @@ describe('Zone', function () {
 
     it('should allow you to override alert', function () {
       var spy = jasmine.createSpy();
-      var myZone = zone.fork({
+      var myZone = rootZone.fork({
         alert: spy
       });
 
@@ -105,99 +108,36 @@ describe('Zone', function () {
 
       expect(spy).toHaveBeenCalled();
     });
-
-    describe('eventListener hooks', function () {
-      var button;
-      var clickEvent;
-
-      beforeEach(function () {
-        button = document.createElement('button');
-        clickEvent = document.createEvent('Event');
-        clickEvent.initEvent('click', true, true);
-        document.body.appendChild(button);
-      });
-
-      afterEach(function () {
-        document.body.removeChild(button);
-      });
-
-      it('should support addEventListener', function () {
-        var hookSpy = jasmine.createSpy();
-        var eventListenerSpy = jasmine.createSpy();
-        var zone = rootZone.fork({
-          $addEventListener: function(parentAddEventListener) {
-            return function (type, listener) {
-              return parentAddEventListener.call(this, type, function() {
-                hookSpy();
-                listener.apply(this, arguments);
-              });
-            }
-          }
-        });
-
-        zone.run(function() {
-          button.addEventListener('click', eventListenerSpy);
-        });
-        
-        button.dispatchEvent(clickEvent);
-
-        expect(hookSpy).toHaveBeenCalled();
-        expect(eventListenerSpy).toHaveBeenCalled();
-      });
-
-      it('should support removeEventListener', function () {
-        var hookSpy = jasmine.createSpy();
-        var eventListenerSpy = jasmine.createSpy();
-        var zone = rootZone.fork({
-          $removeEventListener: function(parentRemoveEventListener) {
-            return function (type, listener) {
-              hookSpy();
-              return parentRemoveEventListener.call(this, type, listener);
-            }
-          }
-        });
-
-        zone.run(function() {
-          button.addEventListener('click', eventListenerSpy);
-          button.removeEventListener('click', eventListenerSpy);
-        });
-
-        button.dispatchEvent(clickEvent);
-
-        expect(hookSpy).toHaveBeenCalled();
-        expect(eventListenerSpy).not.toHaveBeenCalled();
-      });
-    });
   });
 
 
   it('should allow zones to be run from within another zone', function () {
-    var zoneA = zone.fork();
-    var zoneB = zone.fork();
+    var zoneA = rootZone.fork();
+    var zoneB = rootZone.fork();
 
     zoneA.run(function () {
       zoneB.run(function () {
-        expect(zone).toBe(zoneB);
+        expect(global.zone).toBe(zoneB);
       });
-      expect(zone).toBe(zoneA);
+      expect(global.zone).toBe(zoneA);
     });
-    expect(zone).toBe(rootZone);
+    expect(global.zone).toBe(rootZone);
   });
 
 
   describe('isRootZone', function() {
 
     it('should return true for root zone', function() {
-      expect(zone.isRootZone()).toBe(true);
+      expect(rootZone.isRootZone()).toBe(true);
     });
 
 
     it('should return false for non-root zone', function() {
       var executed = false;
 
-      zone.fork().run(function() {
+      rootZone.fork().run(function() {
         executed = true;
-        expect(zone.isRootZone()).toBe(false);
+        expect(global.zone.isRootZone()).toBe(false);
       });
 
       expect(executed).toBe(true);
@@ -210,7 +150,7 @@ describe('Zone', function () {
     it('should execute all callbacks from root zone without forking zones', function(done) {
       // using setTimeout for the test which relies on patching via bind
       setTimeout(function() {
-        expect(zone.isRootZone()).toBe(true);
+        expect(global.zone.isRootZone()).toBe(true);
         done();
       });
     });
@@ -218,10 +158,10 @@ describe('Zone', function () {
 
     it('should fork a zone for non-root zone', function(done) {
       // using setTimeout for the test which relies on patching via bind
-      var childZone = zone.fork();
+      var childZone = rootZone.fork();
       childZone.run(function() {
         setTimeout(function() {
-          expect(zone).toBeDirectChildOf(childZone);
+          expect(global.zone).toBeDirectChildOf(childZone);
           done();
         });
       });
@@ -230,7 +170,7 @@ describe('Zone', function () {
 
     it('should throw if argument is not a function', function () {
       expect(function () {
-        zone.bind(11);
+        global.zone.bind(11);
       }).toThrowError('Expecting function got: 11');
     });
   });
@@ -239,8 +179,8 @@ describe('Zone', function () {
   describe('fork', function () {
     it('should fork deep copy', function () {
       var protoZone = { too: { deep: true } };
-      var zoneA = zone.fork(protoZone);
-      var zoneB = zone.fork(protoZone);
+      var zoneA = rootZone.fork(protoZone);
+      var zoneB = rootZone.fork(protoZone);
 
       expect(zoneA.too).not.toBe(zoneB.too);
       expect(zoneA.too).toEqual(zoneB.too);
@@ -251,24 +191,24 @@ describe('Zone', function () {
     var mockPromise = function() {
       return {
         then: function (a, b) {
-          window.__setTimeout(a, 0);
+          util.setTimeout(a, 0);
           return mockPromise();
         }
       };
     };
 
     it('should return a method that returns promises that run in the correct zone', function (done) {
-      var zoneA = zone.fork();
+      var zoneA = rootZone.fork();
 
       zoneA.run(function () {
-        var patched = Zone.bindPromiseFn(function() {
+        var patched = zone.Zone.bindPromiseFn(function() {
           return mockPromise();
         });
 
         patched().then(function () {
-          expect(zone).toBeDirectChildOf(zoneA);
+          expect(global.zone).toBeDirectChildOf(zoneA);
         }).then(function () {
-          expect(zone).toBeDirectChildOf(zoneA);
+          expect(global.zone).toBeDirectChildOf(zoneA);
           done();
         });
       });

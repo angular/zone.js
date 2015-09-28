@@ -1,6 +1,8 @@
 'use strict';
 
-describe('WebSocket', ifEnvSupports('WebSocket', function () {
+var util = require('../../util');
+
+describe('WebSocket', util.ifEnvSupports('WebSocket', function () {
   var socket;
   var TEST_SERVER_URL = 'ws://localhost:8001';
   var flag;

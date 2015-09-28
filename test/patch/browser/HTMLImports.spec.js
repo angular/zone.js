@@ -1,11 +1,13 @@
 'use strict';
 
+var util = require('../../util');
+
 function supportsImports() {
   return 'import' in document.createElement('link');
 }
 supportsImports.message = 'HTML Imports';
 
-describe('HTML Imports', ifEnvSupports(supportsImports, function () {
+describe('HTML Imports', util.ifEnvSupports(supportsImports, function () {
   var testZone = zone.fork();
 
   it('should work with addEventListener', function (done) {
@@ -33,7 +35,7 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function () {
   supportsOnEvents.message = 'Supports HTMLLinkElement#onxxx patching';
 
 
-  ifEnvSupports(supportsOnEvents, function() {
+  util.ifEnvSupports(supportsOnEvents, function() {
     it('should work with onerror', function (done) {
       var link;
 

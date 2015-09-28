@@ -1,5 +1,7 @@
 'use strict';
 
+var util = require('../../util');
+
 describe('element', function () {
 
   var button;
@@ -173,7 +175,7 @@ describe('element', function () {
     supportsOnClick.message = 'Supports Element#onclick patching';
 
 
-    ifEnvSupports(supportsOnClick, function() {
+    util.ifEnvSupports(supportsOnClick, function() {
       it('should spawn new child zones', function () {
         testZone.run(function() {
           button.onclick = function () {
@@ -211,5 +213,68 @@ describe('element', function () {
       expect(log).toEqual('');
     });
   });
+
+  describe('eventListener hooks', function () {
+      var button;
+      var clickEvent;
+
+      beforeEach(function () {
+        button = document.createElement('button');
+        clickEvent = document.createEvent('Event');
+        clickEvent.initEvent('click', true, true);
+        document.body.appendChild(button);
+      });
+
+      afterEach(function () {
+        document.body.removeChild(button);
+      });
+
+      it('should support addEventListener', function () {
+        var hookSpy = jasmine.createSpy();
+        var eventListenerSpy = jasmine.createSpy();
+        var myZone = testZone.fork({
+          $addEventListener: function(parentAddEventListener) {
+            return function (type, listener) {
+              return parentAddEventListener.call(this, type, function() {
+                hookSpy();
+                listener.apply(this, arguments);
+              });
+            }
+          }
+        });
+
+        myZone.run(function() {
+          button.addEventListener('click', eventListenerSpy);
+        });
+        
+        button.dispatchEvent(clickEvent);
+
+        expect(hookSpy).toHaveBeenCalled();
+        expect(eventListenerSpy).toHaveBeenCalled();
+      });
+
+      it('should support removeEventListener', function () {
+        var hookSpy = jasmine.createSpy();
+        var eventListenerSpy = jasmine.createSpy();
+        var myZone = testZone.fork({
+          $removeEventListener: function(parentRemoveEventListener) {
+            return function (type, listener) {
+              hookSpy();
+              return parentRemoveEventListener.call(this, type, listener);
+            }
+          }
+        });
+
+        myZone.run(function() {
+          button.addEventListener('click', eventListenerSpy);
+          button.removeEventListener('click', eventListenerSpy);
+        });
+
+        button.dispatchEvent(clickEvent);
+
+        expect(hookSpy).toHaveBeenCalled();
+        expect(eventListenerSpy).not.toHaveBeenCalled();
+      });
+    });
 
 });

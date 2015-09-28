@@ -1,4 +1,3 @@
-
 /*
  * usage:
 
@@ -12,7 +11,7 @@ describe('whatever', run(function () {
 function ifEnvSupports(test, block) {
   return function () {
     var message = (test.message || test.name || test);
-    if (typeof test === 'string' ? !!window[test] : test()) {
+    if (typeof test === 'string' ? !!global[test] : test()) {
       block();
     } else {
       it('should skip the test if the API does not exist', function () {
@@ -62,12 +61,53 @@ var customMatchers = {
         };
       }
     }
+  },
+
+  // Provide our own `toThrowError` matcher as a short-term solution because jasmine-node's breaks
+  toThrowError: function() {
+    return {
+      compare: function(fn, expectedErrorMessage) {
+        var actualError;
+        var fnName = fn.name || 'fn';
+
+        try {
+          fn()
+        } catch (e) {
+          actualError = e;
+        }
+
+        if (actualError) {
+          if (actualError.message === expectedErrorMessage) {
+            return {
+              pass: true,
+              message: fnName + ' threw Error with message "' + expectedErrorMessage + '"'
+            };
+          } else {
+            return {
+              pass: false,
+              message: 'Expected ' + fnName + ' to throw Error with message "' + expectedErrorMessage +
+                       '" but it actually threw error with message "' + actualError.message + '"'
+            };
+          }
+        } else {
+          return {
+              pass: false,
+              message: 'Expected ' + fnName + ' to throw Error with message "' + expectedErrorMessage +
+                       '" but it did not throw'
+            };
+        }
+      }
+    }
   }
 }
 
 beforeEach(function() {
-  jasmine.addMatchers(customMatchers);
+  global.jasmine.addMatchers(customMatchers);
 });
 
-// useful for testing mocks
-window.__setTimeout = setTimeout;
+module.exports = {
+  ifEnvSupports: ifEnvSupports,
+  
+  // useful for testing mocks
+  setTimeout: global.zone.bind(global.setTimeout.bind(global))
+};

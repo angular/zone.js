@@ -1,6 +1,8 @@
 'use strict';
 
-describe('MutationObserver', ifEnvSupports('MutationObserver', function () {
+var util = require('../../util');
+
+describe('MutationObserver', util.ifEnvSupports('MutationObserver', function () {
   var elt;
   var testZone = zone.fork();
 
@@ -81,7 +83,7 @@ describe('MutationObserver', ifEnvSupports('MutationObserver', function () {
   });
 }));
 
-describe('WebKitMutationObserver', ifEnvSupports('WebKitMutationObserver', function () {
+describe('WebKitMutationObserver', util.ifEnvSupports('WebKitMutationObserver', function () {
   var testZone = zone.fork();
 
   it('should run observers within the zone', function (done) {
