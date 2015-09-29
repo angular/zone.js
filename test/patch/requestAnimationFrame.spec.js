@@ -26,9 +26,16 @@ describe('requestAnimationFrame', function () {
       it('should bind to same zone when called recursively', function (done) {
         testZone.run(function () {
           var frames = 0;
+          var previousTimeStamp = 0;
 
-          function frameCallback() {
-            expect(zone === testZone).toBe(true);
+          function frameCallback(timestamp) {
+            expect(zone).toBe(testZone);
+
+            expect(timestamp).toMatch(/^[\d.]+$/);
+            // expect previous <= current
+            expect(previousTimeStamp).not.toBeGreaterThan(timestamp);
+            previousTimeStamp = timestamp;
+
             if (frames++ > 15) {
               return done();
             }
