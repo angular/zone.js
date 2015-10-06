@@ -329,7 +329,7 @@ function apply() {
   // Note: EventTarget is not available in all browsers,
   // if it's not available, we instead patch the APIs in the IDL that inherit from EventTarget
   } else {
-    var apis = [ 
+    var apis = [
       'ApplicationCache',
       'EventSource',
       'FileReader',
@@ -344,7 +344,6 @@ function apply() {
       'TextTrackCue',
       'TextTrackList',
       'WebKitNamedFlow',
-      'Window',
       'Worker',
       'WorkerGlobalScope',
       'XMLHttpRequest',
@@ -352,16 +351,22 @@ function apply() {
       'XMLHttpRequestUpload'
     ];
 
-    apis.forEach(function(thing) {
-      var obj = global[thing] && global[thing].prototype;
+    apis.forEach(function(api) {
+      var proto = global[api] && global[api].prototype;
 
       // Some browsers e.g. Android 4.3's don't actually implement
       // the EventTarget methods for all of these e.g. FileReader.
-      // In this case, there is nothing to patch. 
-      if (obj && obj.addEventListener) {
-        utils.patchEventTargetMethods(obj);
+      // In this case, there is nothing to patch.
+      if (proto && proto.addEventListener) {
+        utils.patchEventTargetMethods(proto);
       }
     });
+
+    // Patch the methods on `window` instead of `Window.prototype`
+    // `Window` is not accessible on Android 4.3
+    if (typeof(window) !== 'undefined') {
+      utils.patchEventTargetMethods(window);
+    }
   }
 }
 
@@ -997,7 +1002,7 @@ function patchEventTargetMethods(obj) {
         })(handler);
       } else {
         fn = handler;
-      } 
+      }
 
       handler[originalFnKey] = fn;
       handler[boundFnsKey] = handler[boundFnsKey] || {};
@@ -1005,7 +1010,10 @@ function patchEventTargetMethods(obj) {
       arguments[1] = handler[boundFnsKey][eventType];
     }
 
-    var target = isWebWorker() && !this ? self : this;
+    // - Inside a Web Worker, `this` is undefined, the context is `global` (= `self`)
+    // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
+    // see https://github.com/angular/zone.js/issues/190
+    var target = this || global;
 
     return global.zone.addEventListener.apply(target, arguments);
   };
@@ -1016,11 +1024,15 @@ function patchEventTargetMethods(obj) {
     var eventType = eventName + (useCapturing ? '$capturing' : '$bubbling');
     if (handler[boundFnsKey] && handler[boundFnsKey][eventType]) {
       var _bound = handler[boundFnsKey];
-      
       arguments[1] = _bound[eventType];
       delete _bound[eventType];
     }
-    var target = isWebWorker() && !this ? self : this;
+
+    // - Inside a Web Worker, `this` is undefined, the context is `global`
+    // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
+    // see https://github.com/angular/zone.js/issues/190
+    var target = this || global;
+
     var result = global.zone.removeEventListener.apply(target, arguments);
     global.zone.dequeueTask(handler[originalFnKey]);
     return result;
