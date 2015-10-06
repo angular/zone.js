@@ -14,6 +14,35 @@ describe('element', function () {
     document.body.removeChild(button);
   });
 
+  // https://github.com/angular/zone.js/issues/190
+  it('should work when addEventListener / removeEventListener are called in the global context', function () {
+    var clickEvent = document.createEvent('Event');
+    var callCount = 0;
+
+    clickEvent.initEvent('click', true, true);
+
+    var listener = function (event) {
+      callCount++;
+      expect(zone).toBeDirectChildOf(testZone);
+      expect(event).toBe(clickEvent)
+    };
+
+    testZone.run(function() {
+      // `this` would be null inside the method when `addEventListener` is called from strict mode
+      // it would be `window`:
+      // - when called from non strict-mode,
+      // - when `window.addEventListener` is called explicitely.
+      addEventListener('click', listener);
+    });
+
+    button.dispatchEvent(clickEvent);
+    expect(callCount).toEqual(1);
+
+    removeEventListener('click', listener);
+    button.dispatchEvent(clickEvent);
+    expect(callCount).toEqual(1);
+  });
+
   it('should work with addEventListener when called with a function listener', function () {
     var clickEvent = document.createEvent('Event');
     clickEvent.initEvent('click', true, true);
