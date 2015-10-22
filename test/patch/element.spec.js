@@ -113,6 +113,20 @@ describe('element', function () {
     expect(eventListener.handleEvent).not.toHaveBeenCalled();
   });
 
+  it('should have no effect while calling addEventListener without listener', function () {
+    expect(function() {
+      button.addEventListener('click', null);
+      button.addEventListener('click', undefined);
+    }).not.toThrowError();
+  });
+
+  it('should have no effect while calling removeEventListener without listener', function () {
+    expect(function() {
+      button.removeEventListener('click', null);
+      button.removeEventListener('click', undefined);
+    }).not.toThrowError();
+  });
+
 
   it('should only add a listener once for a given set of arguments', function() {
     var log = [];
