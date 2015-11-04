@@ -114,17 +114,31 @@ describe('element', function () {
   });
 
   it('should have no effect while calling addEventListener without listener', function () {
+    var eventListenerZone = zone.fork({
+      addEventListener: jasmine.createSpy('addEventListener')
+    });
     expect(function() {
-      button.addEventListener('click', null);
-      button.addEventListener('click', undefined);
+      eventListenerZone.run(function() {
+        button.addEventListener('click', null);
+        button.addEventListener('click', undefined);
+      });
     }).not.toThrowError();
+    expect(eventListenerZone.addEventListener).toHaveBeenCalledWith('click', null);
+    expect(eventListenerZone.addEventListener).toHaveBeenCalledWith('click', undefined);
   });
 
   it('should have no effect while calling removeEventListener without listener', function () {
+    var eventListenerZone = zone.fork({
+      removeEventListener: jasmine.createSpy('removeEventListener')
+    });
     expect(function() {
-      button.removeEventListener('click', null);
-      button.removeEventListener('click', undefined);
+      eventListenerZone.run(function() {
+        button.removeEventListener('click', null);
+        button.removeEventListener('click', undefined);
+      });
     }).not.toThrowError();
+    expect(eventListenerZone.removeEventListener).toHaveBeenCalledWith('click', null);
+    expect(eventListenerZone.removeEventListener).toHaveBeenCalledWith('click', undefined);
   });
 
 
