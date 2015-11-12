@@ -15,6 +15,14 @@ export function propertyDescriptorPatch(_global) {
       patchOnProperties(HTMLElement.prototype, eventNames);
     }
     patchOnProperties(XMLHttpRequest.prototype, null);
+    if (typeof IDBIndex !== 'undefined') {
+      patchOnProperties(IDBIndex.prototype, null);
+      patchOnProperties(IDBRequest.prototype, null);
+      patchOnProperties(IDBOpenDBRequest.prototype, null);
+      patchOnProperties(IDBDatabase.prototype, null);
+      patchOnProperties(IDBTransaction.prototype, null);
+      patchOnProperties(IDBCursor.prototype, null);
+    }
     if (supportsWebSocket) {
       patchOnProperties(WebSocket.prototype, null);
     }
