@@ -14,7 +14,7 @@ if (global.Zone) {
 global.Zone = microtask.addMicrotaskSupport(core.Zone);
 global.zone = new global.Zone();
 
-// Monkey path ẗhe Promise implementation to add support for microtasks
+// Monkey patch the Promise implementation to add support for microtasks
 global.Promise = es6Promise.Promise;
 
 browserPatch.apply();
