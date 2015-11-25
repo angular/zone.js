@@ -20,6 +20,7 @@ describe('WebSocket', ifEnvSupports('WebSocket', function () {
   afterEach(function (done) {
     socket.addEventListener('close', done);
     socket.close();
+    done();
   });
 
 
@@ -102,6 +103,6 @@ describe('WebSocket', ifEnvSupports('WebSocket', function () {
     setTimeout(function() {
       expect(log).toEqual('');
       done();
-    }, 500);
+    }, 100);
   });
 }));
