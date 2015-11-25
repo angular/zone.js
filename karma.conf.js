@@ -5,6 +5,7 @@ module.exports = function (config) {
     basePath: '',
     files: [
       'test/util.js',
+      'test/wtf_mock.js',
       'test/setup.js',
       'example/js/*.js',
       //'test/lib/brick.js',

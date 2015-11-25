@@ -4,15 +4,36 @@ describe('setTimeout', function () {
 
   it('should work with setTimeout', function (done) {
 
-    var testZone = zone.fork();
+    var testZone = zone.fork({
+      addTask: function(fn) { wtfMock.log.push('addTask ' + fn.id ); },
+      removeTask: function(fn) { wtfMock.log.push('removeTask ' + fn.id); },
+      addRepeatingTask: function(fn) { wtfMock.log.push('addRepeatingTask ' + fn.id); },
+      removeRepeatingTask: function(fn) { wtfMock.log.push('removeRepeatingTask ' + fn.id); },
+    });
 
+    var zId;
+    var cancelId = '?';
     testZone.run(function() {
-
-      setTimeout(function() {
+      zId = zone.$id;
+      var timeoutFn = function () {
+        var zCallbackId = zone.$id;
         // creates implied zone in all callbacks.
         expect(zone).toBeDirectChildOf(testZone);
-        done();
-      }, 0);
+        zone.setTimeoutUnpatched(function() {
+          expect(wtfMock.log).toEqual([
+            'addTask abc',
+            '# Zone#setTimeout(' + zId + ', ' + cancelId + ', 3)',
+            '> Zone#cb:Timeout(' + zCallbackId + ', ' + cancelId + ', 3)',
+            'removeTask abc',
+            '< Zone#cb:Timeout'
+          ]);
+          done();
+        });
+      };
+      timeoutFn.id = 'abc';
+      cancelId = setTimeout(timeoutFn, 3);
+      expect(wtfMock.log[0]).toEqual('addTask abc');
+      expect(wtfMock.log[1]).toEqual('# Zone#setTimeout(' + zId + ', ' + cancelId + ', 3)');
     });
   });
 

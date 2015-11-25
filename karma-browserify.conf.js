@@ -5,6 +5,7 @@ module.exports = function (config) {
     basePath: '',
     files: [
       'test/util.js',
+      'test/wtf_mock.js',
       'test/commonjs.spec.js',
       {pattern: 'test/assets/**/*.*', watched: true, served: true, included: false},
       {pattern: 'lib/**/*.js', watched: true, served: false, included: false}

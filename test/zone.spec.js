@@ -41,15 +41,12 @@ describe('Zone', function () {
     });
 
 
-    it('should fire onZoneCreated when a zone is forked', function (done) {
+    it('should fire onZoneCreated when a zone is forked', function () {
       var createdSpy = jasmine.createSpy();
       var counter = 0;
       var myZone = zone.fork({
         onZoneCreated: function () {
           counter += 1;
-        },
-        afterTask: function () {
-          counter -= 1;
         }
       });
 
@@ -57,15 +54,9 @@ describe('Zone', function () {
 
         expect(counter).toBe(0);
 
-        setTimeout(function () {}, 0);
-        expect(counter).toBe(1);
+        myZone.fork();
 
-        setTimeout(function () {
-          expect(counter).toBe(0);
-          setTimeout(done, 5);
-          expect(counter).toBe(1);
-        }, 0);
-        expect(counter).toBe(2);
+        expect(counter).toBe(1);
       });
     });
 
@@ -209,6 +200,7 @@ describe('Zone', function () {
 
     it('should execute all callbacks from root zone without forking zones', function(done) {
       // using setTimeout for the test which relies on patching via bind
+      expect(zone.isRootZone()).toBe(true);
       setTimeout(function() {
         expect(zone.isRootZone()).toBe(true);
         done();
