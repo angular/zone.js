@@ -24,10 +24,10 @@ describe('setInterval', function () {
           expect(wtfMock.log).toEqual([
             'addRepeatingTask abc',
             '# Zone#setInterval(' + zId + ', ' + cancelId + ', 10)',
-            '> Zone#cb:Interval(' + zCallbackId + ', ' + cancelId + ', 10)',
+            '> Zone#cb:setInterval(' + zCallbackId + ', ' + cancelId + ', 10)',
             '# Zone#clearInterval(' + zCallbackId + ', ' + cancelId + ')',
             'removeRepeatingTask abc',
-            '< Zone#cb:Interval'
+            '< Zone#cb:setInterval'
           ]);
           done();
         });
