@@ -23,9 +23,9 @@ describe('setTimeout', function () {
           expect(wtfMock.log).toEqual([
             'addTask abc',
             '# Zone#setTimeout(' + zId + ', ' + cancelId + ', 3)',
-            '> Zone#cb:Timeout(' + zCallbackId + ', ' + cancelId + ', 3)',
+            '> Zone#cb:setTimeout(' + zCallbackId + ', ' + cancelId + ', 3)',
             'removeTask abc',
-            '< Zone#cb:Timeout'
+            '< Zone#cb:setTimeout'
           ]);
           done();
         });
