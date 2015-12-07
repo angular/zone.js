@@ -1833,8 +1833,8 @@ if (typeof WeakMap === "undefined") {
     var LEFT_MOUSE_BTN = 0;
     var GET_DEFAULT_LABELS = function() {
         return {
-            prev: "←",
-            next: "→",
+            prev: "<-",
+            next: "->",
             months: [ "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December" ],
             weekdays: [ "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat" ]
         };
