@@ -1,6 +1,6 @@
 {
   "name": "zone.js",
-  "version": "0.5.8",
+  "version": "0.5.9",
   "description": "Zones for JavaScript",
   "main": "lib/zone.js",
   "files": [
@@ -20,7 +20,7 @@
     "url": "git://github.com/angular/zone.js.git"
   },
   "author": "Brian Ford",
-  "license": "Apache 2.0",
+  "license": "Apache-2.0",
   "bugs": {
     "url": "https://github.com/angular/zone.js/issues"
   },

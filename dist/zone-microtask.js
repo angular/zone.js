@@ -169,12 +169,14 @@ module.exports = {
  * Creates keys for `private` properties on exposed objects to minimize interactions with other codebases.
  * The key will be a Symbol if the host supports it; otherwise a prefixed string.
  */
-if (typeof Symbol !== 'undefined') {
-  function create(name) {
+var create;
+
+if (typeof Symbol === 'function') {
+  create = function (name) {
     return Symbol(name);
-  } 
+  }
 } else {
-  function create(name) {
+  create = function (name) {
     return '_zone$' + name;
   }
 }
@@ -188,6 +190,7 @@ module.exports = {
   create: create,
   common: commonKeys
 };
+
 },{}],4:[function(require,module,exports){
 (function (global){
 'use strict';
@@ -627,7 +630,7 @@ function patchClass(className) {
   var prop;
   for (prop in instance) {
     (function (prop) {
-      if (typeof global[className].prototype !== undefined) {
+      if (typeof global[className].prototype !== 'undefined') {
         return;
       }
       if (typeof instance[prop] === 'function') {
@@ -1044,10 +1047,10 @@ function patchEventTargetMethods(obj) {
   // This is required for the addEventListener hook on the root zone.
   obj[keys.common.addEventListener] = obj.addEventListener;
   obj.addEventListener = function (eventName, handler, useCapturing) {
-    var eventType = eventName + (useCapturing ? '$capturing' : '$bubbling');
-    var fn;
     //Ignore special listeners of IE11 & Edge dev tools, see https://github.com/angular/zone.js/issues/150
-    if (handler.toString() !== "[object FunctionWrapper]") {
+    if (handler && handler.toString() !== "[object FunctionWrapper]") {
+      var eventType = eventName + (useCapturing ? '$capturing' : '$bubbling');
+      var fn;
       if (handler.handleEvent) {
         // Have to pass in 'handler' reference as an argument here, otherwise it gets clobbered in
         // IE9 by the arguments[1] assignment at end of this function.
@@ -1070,7 +1073,6 @@ function patchEventTargetMethods(obj) {
     // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
     // see https://github.com/angular/zone.js/issues/190
     var target = this || global;
-
     return global.zone.addEventListener.apply(target, arguments);
   };
 
@@ -1078,19 +1080,18 @@ function patchEventTargetMethods(obj) {
   obj[keys.common.removeEventListener] = obj.removeEventListener;
   obj.removeEventListener = function (eventName, handler, useCapturing) {
     var eventType = eventName + (useCapturing ? '$capturing' : '$bubbling');
-    if (handler[boundFnsKey] && handler[boundFnsKey][eventType]) {
+    if (handler && handler[boundFnsKey] && handler[boundFnsKey][eventType]) {
       var _bound = handler[boundFnsKey];
       arguments[1] = _bound[eventType];
       delete _bound[eventType];
+      global.zone.dequeueTask(handler[originalFnKey]);
     }
 
     // - Inside a Web Worker, `this` is undefined, the context is `global`
     // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
     // see https://github.com/angular/zone.js/issues/190
     var target = this || global;
-
     var result = global.zone.removeEventListener.apply(target, arguments);
-    global.zone.dequeueTask(handler[originalFnKey]);
     return result;
   };
 };
