@@ -167,18 +167,11 @@ module.exports = {
 },{"./keys":3,"./patch/promise":12}],3:[function(require,module,exports){
 /**
  * Creates keys for `private` properties on exposed objects to minimize interactions with other codebases.
- * The key will be a Symbol if the host supports it; otherwise a prefixed string.
  */
-var create;
 
-if (typeof Symbol === 'function') {
-  create = function (name) {
-    return Symbol(name);
-  }
-} else {
-  create = function (name) {
-    return '_zone$' + name;
-  }
+function create(name) {
+  // `Symbol` implementation is broken in Chrome 39.0.2171, do not use them even if they are available
+  return '_zone$' + name;
 }
 
 var commonKeys = {
@@ -195,7 +188,35 @@ module.exports = {
 (function (global){
 'use strict';
 
+// TODO(vicb): Create a benchmark for the different methods & the usage of the queue
+// see https://github.com/angular/zone.js/issues/97
+
+// It is required to initialize hasNativePromise before requiring es6-promise otherwise es6-promise would
+// overwrite the native Promise implementation on v8 and the check would always return false.
+// see https://github.com/jakearchibald/es6-promise/issues/140
+var hasNativePromise = typeof Promise !== "undefined" &&
+    Promise.toString().indexOf("[native code]") !== -1;
+
+var isFirefox = global.navigator &&
+    global.navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
+
+var resolvedPromise;
+
+// TODO(vicb): remove '!isFirefox' when the bug gets fixed:
+// https://bugzilla.mozilla.org/show_bug.cgi?id=1162013
+if (hasNativePromise && !isFirefox) {
+  // When available use a native Promise to schedule microtasks.
+  // When not available, es6-promise fallback will be used
+  resolvedPromise = Promise.resolve();
+}
+
 var es6Promise = require('es6-promise').Promise;
+
+if (resolvedPromise) {
+  es6Promise._setScheduler(function(fn) {
+    resolvedPromise.then(fn);
+  });
+}
 
 // es6-promise asap should schedule microtasks via zone.scheduleMicrotask so that any
 // user defined hooks are triggered
@@ -220,25 +241,7 @@ module.exports = {
   addMicrotaskSupport: addMicrotaskSupport
 };
 
-// TODO(vicb): Create a benchmark for the different methods & the usage of the queue
-// see https://github.com/angular/zone.js/issues/97
 
-var hasNativePromise = typeof Promise !== "undefined" &&
-                       Promise.toString().indexOf("[native code]") !== -1;
-
-var isFirefox = global.navigator &&
-                global.navigator.userAgent.toLowerCase().indexOf('firefox') > -1;
-
-// TODO(vicb): remove '!isFirefox' when the bug gets fixed:
-// https://bugzilla.mozilla.org/show_bug.cgi?id=1162013
-if (hasNativePromise && !isFirefox) {
-  // When available use a native Promise to schedule microtasks.
-  // When not available, es6-promise fallback will be used
-  var resolvedPromise = Promise.resolve();
-  es6Promise._setScheduler(function(fn) {
-    resolvedPromise.then(fn);
-  });
-}
 
 
 }).call(this,typeof global !== "undefined" ? global : typeof self !== "undefined" ? self : typeof window !== "undefined" ? window : {})

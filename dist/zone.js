@@ -162,18 +162,11 @@ module.exports = {
 },{"./keys":3,"./patch/promise":11}],3:[function(require,module,exports){
 /**
  * Creates keys for `private` properties on exposed objects to minimize interactions with other codebases.
- * The key will be a Symbol if the host supports it; otherwise a prefixed string.
  */
-var create;
 
-if (typeof Symbol === 'function') {
-  create = function (name) {
-    return Symbol(name);
-  }
-} else {
-  create = function (name) {
-    return '_zone$' + name;
-  }
+function create(name) {
+  // `Symbol` implementation is broken in Chrome 39.0.2171, do not use them even if they are available
+  return '_zone$' + name;
 }
 
 var commonKeys = {
