@@ -40,6 +40,8 @@ if [ ! -z "$BROWSER_PROVIDER_READY_FILE" ]; then
   ARGS="$ARGS --readyfile $BROWSER_PROVIDER_READY_FILE"
 fi
 
+# Request a version of Sauce Connect that know how websockets do
+ARGS="$ARGS --vm-version dev-varnish"
 
 echo "Starting Sauce Connect in the background, logging into:"
 echo "  $CONNECT_LOG"

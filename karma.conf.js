@@ -1,4 +1,5 @@
 // Karma configuration
+var os = require('os')
 
 module.exports = function (config) {
   config.set({
@@ -15,7 +16,15 @@ module.exports = function (config) {
     ],
 
     preprocessors: {
-      'test/setup.js': [ 'browserify' ]
+      'test/setup.js': [ 'browserify' ],
+      // See browserify block for why WebSocket.spec is needed
+      'test/patch/WebSocket.spec.js': [ 'browserify']
+    },
+
+    browserify: {
+      // 'Hilareously', Safari/Sauce/Localhost make Websockets not work, so we
+      // have to give an explicit hostname
+      transform: [ ['envify', {'WEBSOCKET_HOST': os.hostname()}]]
     },
 
     exclude: [
