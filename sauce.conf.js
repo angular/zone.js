@@ -2,7 +2,7 @@
 
 module.exports = function (config) {
   // The WS server is not available with Sauce
-  config.exclude.push('test/**/WebSocket.spec.js');
+  config.exclude.push('test/**/WebSocket.spec.ts');
 
   var customLaunchers = {
     'SL_Chrome': {
@@ -93,9 +93,5 @@ module.exports = function (config) {
     config.sauceLabs.tunnelIdentifier = process.env.TRAVIS_JOB_NUMBER;
 
     process.env.SAUCE_ACCESS_KEY = process.env.SAUCE_ACCESS_KEY.split('').reverse().join('');
-
-    // TODO(vojta): remove once SauceLabs supports websockets.
-    // This speeds up the capturing a bit, as browsers don't even try to use websocket.
-    config.transports = ['xhr-polling'];
   }
 };
