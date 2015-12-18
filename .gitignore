@@ -1,5 +1,7 @@
+build/
 blink-core/
 blink-idl/
+typings/
 parsed-idl/
 /node_modules
 .idea

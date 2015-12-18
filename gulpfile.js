@@ -1,7 +1,8 @@
 'use strict';
 
 var gulp = require('gulp');
-var browserify = require('browserify');
+var gutil = require("gulp-util");
+var webpack = require('webpack');
 var source = require('vinyl-source-stream');
 var rename = require('gulp-rename');
 var uglify = require('gulp-uglify');
@@ -9,47 +10,79 @@ var buffer = require('vinyl-buffer');
 
 var distFolder = './dist';
 
-function generateBrowserScript(inFile, outFile) {
-  var b = browserify({
-    entries: inFile,
-    // es6-promise references process for use in node context, but we don't want to include the
-    // browser version from browserify
-    insertGlobalVars: {'process': function() { return '{}'; } },
-    debug: false
+function generateBrowserScript(inFile, outFile, minify, callback) {
+  var plugins = [];
+  if (minify) {
+    plugins.push(new webpack.optimize.UglifyJsPlugin({
+      mangle: {
+        except: ['$super', '$', 'exports', 'require']
+      }
+    }));
+  }
+  webpack({
+    entry: inFile,
+    plugins: plugins,
+    output: {
+      filename: 'dist/' + outFile
+    },
+    resolve: {
+      extensions: ['', '.webpack.js', '.web.js', '.ts', '.js']
+    },
+    module: {
+      loaders: [
+        {test: /\.ts$/, loader: 'ts-loader', exclude: /node_modules/}
+      ]
+    }
+  }, function(err, stats) {
+    if(err) throw new gutil.PluginError("webpack", err);
+    gutil.log("[webpack]", stats.toString({
+      // output options
+    }));
+    callback();
   });
-
-  return b
-    .bundle()
-    .pipe(source(outFile))
-    .pipe(buffer())
-    .pipe(gulp.dest(distFolder))
-    .pipe(uglify())
-    .pipe(rename({ extname: '.min.js' }))
-    .pipe(gulp.dest(distFolder));
-  ;
 }
 
-gulp.task('build/zone.js', function() {
-  return generateBrowserScript('./lib/browser/zone.js', 'zone.js');
+gulp.task('build/zone.js', function(cb) {
+  return generateBrowserScript('./lib/browser/zone.ts', 'zone.js', false, cb);
 });
 
-gulp.task('build/zone-microtask.js', function() {
-  return generateBrowserScript('./lib/browser/zone-microtask.js', 'zone-microtask.js');
+gulp.task('build/zone.min.js', function(cb) {
+  return generateBrowserScript('./lib/browser/zone.ts', 'zone.min.js', true, cb);
 });
 
-gulp.task('build/jasmine-patch.js', function() {
-  return generateBrowserScript('./lib/browser/jasmine-patch.js', 'jasmine-patch.js');
+gulp.task('build/zone-microtask.js', function(cb) {
+  return generateBrowserScript('./lib/browser/zone-microtask.ts', 'zone-microtask.js', false, cb);
 });
 
-gulp.task('build/long-stack-trace-zone.js', function() {
-  return generateBrowserScript('./lib/browser/long-stack-trace-zone.js', 'long-stack-trace-zone.js');
+gulp.task('build/zone-microtask.min.js', function(cb) {
+  return generateBrowserScript('./lib/browser/zone-microtask.ts', 'zone-microtask.min.js', true, cb);
+});
+
+gulp.task('build/jasmine-patch.js', function(cb) {
+  return generateBrowserScript('./lib/browser/jasmine-patch.ts', 'jasmine-patch.js', false, cb);
+});
+
+gulp.task('build/jasmine-patch.min.js', function(cb) {
+  return generateBrowserScript('./lib/browser/jasmine-patch.ts', 'jasmine-patch.min.js', true, cb);
+});
+
+gulp.task('build/long-stack-trace-zone.js', function(cb) {
+  return generateBrowserScript('./lib/browser/long-stack-trace-zone.ts', 'long-stack-trace-zone.js', false, cb);
+});
+
+gulp.task('build/long-stack-trace-zone.min.js', function(cb) {
+  return generateBrowserScript('./lib/browser/long-stack-trace-zone.ts', 'long-stack-trace-zone.min.js', true, cb);
 });
 
 gulp.task('build', [
   'build/zone.js',
+  'build/zone.min.js',
   'build/zone-microtask.js',
+  'build/zone-microtask.min.js',
   'build/jasmine-patch.js',
-  'build/long-stack-trace-zone.js'
+  'build/jasmine-patch.min.js',
+  'build/long-stack-trace-zone.js',
+  'build/long-stack-trace-zone.min.js'
 ]);
 
 

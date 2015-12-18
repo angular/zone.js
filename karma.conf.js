@@ -4,23 +4,44 @@ module.exports = function (config) {
   config.set({
     basePath: '',
     files: [
-      'test/util.js',
-      'test/wtf_mock.js',
-      'test/setup.js',
-      'example/js/*.js',
-      //'test/lib/brick.js',
-      'test/**/*.spec.js',
+      'test/browser_entry_point.ts',
+      'test/**/*.spec.ts',
       {pattern: 'test/assets/**/*.*', watched: true, served: true, included: false},
-      {pattern: 'lib/**/*.js', watched: true, served: false, included: false}
+      // Autowatcch all files to trigger rerun
+      {pattern: 'lib/**/*.ts', watched: true, served: false, included: false},
+      {pattern: 'test/**/*.ts', watched: true, served: false, included: false}
     ],
 
+    /*
+    plugins: [
+      require('karma-chrome-launcher'),
+      require('karma-jasmine'),
+      require('karma-sourcemap-loader'),
+      require('karma-webpack')
+    ],
+    */
+
     preprocessors: {
-      'test/setup.js': [ 'browserify' ]
+      'test/browser_entry_point.ts': [ 'webpack', 'sourcemap' ],
+      'test/**/*.spec.ts': [ 'webpack', 'sourcemap' ],
+    },
+    webpack: {
+      devtool: 'source-map',
+      module: {
+        loaders: [
+          {test: /\.ts/, loaders: ['ts-loader'], exclude: /node_modules/}
+        ]
+      },
+      resolve: {
+        extensions: ["", ".js", ".ts"]
+      }
+    },
+    webpackServer: {
+      noInfo: true
     },
 
     exclude: [
-      'test/commonjs.spec.js',
-      'test/microtasks.spec.js'
+      'test/microtasks.spec.ts'
     ],
 
     reporters: ['progress'],
@@ -31,7 +52,7 @@ module.exports = function (config) {
     logLevel: config.LOG_INFO,
 
     browsers: ['Firefox'],
-    frameworks: ['jasmine', 'browserify'],
+    frameworks: ['jasmine'],
 
     captureTimeout: 60000,
 

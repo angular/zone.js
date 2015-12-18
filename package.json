@@ -12,6 +12,9 @@
     "test": "test"
   },
   "scripts": {
+    "postinstall": "tsd install",
+    "tsc": "tsc",
+    "tsc:w": "tsc -w",
     "test": "karma start karma.conf.js",
     "serve": "python -m SimpleHTTPServer 8000"
   },
@@ -28,18 +31,23 @@
     "es6-promise": "^3.0.2"
   },
   "devDependencies": {
-    "browserify": "^9.0.8",
     "gulp": "^3.8.11",
+    "gulp-util": "^3.0.7",
     "gulp-rename": "^1.2.2",
     "gulp-uglify": "^1.2.0",
     "jasmine-core": "^2.2.0",
-    "karma": "^0.12.31",
-    "karma-browserify": "^4.1.2",
-    "karma-chrome-launcher": "^0.1.7",
     "karma-firefox-launcher": "^0.1.4",
-    "karma-jasmine": "^0.3.5",
     "karma-safari-launcher": "^0.1.1",
     "karma-sauce-launcher": "^0.2.10",
+    "karma": "^0.13.14",
+    "karma-chrome-launcher": "^0.2.1",
+    "karma-jasmine": "^0.3.6",
+    "karma-sourcemap-loader": "^0.3.6",
+    "karma-webpack": "^1.7.0",
+    "ts-loader": "^0.6.0",
+    "tsd": "^0.6.5",
+    "typescript": "^1.7.3",
+    "webpack": "^1.12.2",
     "nodejs-websocket": "^1.2.0",
     "vinyl-buffer": "^1.0.0",
     "vinyl-source-stream": "^1.1.0"
