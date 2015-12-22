@@ -246,14 +246,14 @@ This hook allows you to intercept calls to `EventTarget#addEventListener`.
 ````javascript
 var clickListenerCount = 0;
 
-zone.fork(
+zone.fork({
   $addEventListener: function(parentAddEventListener) {
     return function (type, listener) {
       if (type === 'click') clickListenerCount++;
       return parentAddEventListener.apply(this, arguments);
     };
   }
-);
+});
 
 zone.run(function() {
   myElement.addEventListener('click', listener);
@@ -270,14 +270,14 @@ This hook allows you to intercept calls to `EventTarget#removeEventListener`.
 ````javascript
 var clickListenerCount = 0;
 
-zone.fork(
+zone.fork({
   $removeEventListener: function(parentRemoveEventListener) {
     return function (type, listener) {
       if (type === 'click') clickListenerCount--;
       return parentRemoveEventListener.apply(this, arguments);
     };
   }
-);
+});
 
 zone.run(function() {
   myElement.addEventListener('click', listener);
