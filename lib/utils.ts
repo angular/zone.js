@@ -62,20 +62,21 @@ export function patchProperty(obj, prop) {
   Object.defineProperty(obj, prop, desc);
 };
 
-export function patchProperties(obj, properties?) {
-  (properties || (function () {
-      var props = [];
-      for (var prop in obj) {
-        props.push(prop);
-      }
-      return props;
-    }()).
-    filter(function (propertyName) {
-      return propertyName.substr(0,2) === 'on';
-    })).
-    forEach(function (eventName) {
-      patchProperty(obj, eventName);
-    });
+export function patchOnProperties(obj: any, properties: string[]) {
+  var onProperties = [];
+  for (var prop in obj) {
+    if (prop.substr(0, 2) == 'on') {
+      onProperties.push(prop);
+    }
+  }
+  for(var j = 0; j < onProperties.length; j++) {
+    patchProperty(obj, onProperties[j]);
+  }
+  if (properties) {
+    for(var i = 0; i < properties.length; i++) {
+      patchProperty(obj, 'on' + properties[i]);
+    }
+  }
 };
 
 var originalFnKey = keys.create('originalFn');

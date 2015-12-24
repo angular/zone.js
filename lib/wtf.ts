@@ -35,7 +35,7 @@ export const createEvent: (signature: string, action?: string) => WtfEventFn = w
 } : function (s, f) {
   return noop;
 };
-export const leaveScope = wtfEnabled ? function (scope:WtfScopeFn, returnValue:any):any {
+export const leaveScope = wtfEnabled ? function (scope:WtfScopeFn, returnValue?:any):any {
   wtfTrace.leaveScope(scope, returnValue);
   return returnValue;
 } : function (s, v) {

@@ -1,3 +1,6 @@
+import {createScope, leaveScope} from '../wtf';
+var scope = createScope('Zone#patch()')();
+
 import * as core from '../core';
 import * as browserPatch from '../patch/browser';
 
@@ -11,3 +14,5 @@ if (global.Zone) {
 }
 
 export const Zone = global.Zone;
+
+leaveScope(scope);

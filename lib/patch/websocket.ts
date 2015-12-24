@@ -22,7 +22,7 @@ export function apply() {
       proxySocket = socket;
     }
 
-    utils.patchProperties(proxySocket, ['onclose', 'onerror', 'onmessage', 'onopen']);
+    utils.patchOnProperties(proxySocket, ['close', 'error', 'message', 'open']);
 
     return proxySocket;
   };
