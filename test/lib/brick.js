@@ -3747,7 +3747,7 @@ if (typeof WeakMap === "undefined") {
             },
             targetEvent: {
                 attribute: {
-                    name: "target-event"
+                    name: "target-eventListener"
                 },
                 get: function() {
                     return this.xtag.overallEventToFire;
@@ -3822,7 +3822,7 @@ if (typeof WeakMap === "undefined") {
             },
             targetEvent: {
                 attribute: {
-                    name: "target-event"
+                    name: "target-eventListener"
                 },
                 get: function() {
                     if (this.xtag.targetEvent) {
@@ -3830,7 +3830,7 @@ if (typeof WeakMap === "undefined") {
                     } else if (this.parentNode.nodeName.toLowerCase() === "x-tabbar") {
                         return this.parentNode.targetEvent;
                     } else {
-                        throw "tabbar-tab is missing event to fire";
+                        throw "tabbar-tab is missing eventListener to fire";
                     }
                 },
                 set: function(newEvent) {
@@ -3921,7 +3921,7 @@ if (typeof WeakMap === "undefined") {
             var input = this.xtag.input;
             if (input.type == "radio" ? !this.checked : true) {
                 input.checked = !input.checked;
-                var change = document.createEvent("Event");
+                var change = document.createEvent("EventSubscription");
                 change.initEvent("change", true, false);
                 input.dispatchEvent(change);
             }

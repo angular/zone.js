@@ -1,18 +1,14 @@
-'use strict';
-
 describe('Microtasks', function () {
+  if (!global.Promise) return;
+
+  function scheduleFn(task: Task) { Promise.resolve().then(<any>task.invoke); }
+
   it('should execute microtasks enqueued in the root zone', function(done) {
     var log = [];
 
-    global.zone.scheduleMicrotask(function() {
-      log.push(1);
-    });
-    global.zone.scheduleMicrotask(function() {
-      log.push(2);
-    });
-    global.zone.scheduleMicrotask(function() {
-      log.push(3);
-    });
+    Zone.current.scheduleMicroTask('test', () => log.push(1), null, scheduleFn);
+    Zone.current.scheduleMicroTask('test', () => log.push(2), null, scheduleFn);
+    Zone.current.scheduleMicroTask('test', () => log.push(3), null, scheduleFn);
 
     setTimeout(function() {
       expect(log).toEqual([1, 2, 3]);
@@ -20,18 +16,14 @@ describe('Microtasks', function () {
     }, 10);
   });
 
-  it('should correctly schedule microtasks vs macrotasks', function(done) {
+  it('should correctly scheduleMacroTask microtasks vs macrotasks', function(done) {
     var log = ['+root'];
 
-    global.zone.scheduleMicrotask(function() {
-      log.push('root.mit');
-    });
+    Zone.current.scheduleMicroTask('test', () => log.push('root.mit'), null, scheduleFn);
 
     setTimeout(function() {
       log.push('+mat1');
-      global.zone.scheduleMicrotask(function() {
-        log.push('mat1.mit');
-      });
+      Zone.current.scheduleMicroTask('test', () => log.push('mat1.mit'), null, scheduleFn);
       log.push('-mat1');
     }, 10);
 
@@ -50,48 +42,51 @@ describe('Microtasks', function () {
     log.push('-root');
   });
 
-  it('should execute Promise callback in the zone where they are scheduled', function(done) {
+  it('should execute Promise wrapCallback in the zone where they are scheduled', function(done) {
     var resolvedPromise = Promise.resolve(null);
 
-    var testZone = global.zone.fork();
+    var testZone = Zone.current.fork({name: ''});
 
     testZone.run(function() {
       resolvedPromise.then(function() {
-        expect(global.zone).toBeDirectChildOf(testZone);
+        expect(Zone.current).toBe(testZone);
         done();
       });
     });
   });
 
-  it('should execute Promise callback in the zone where they are scheduled', function(done) {
+  it('should execute Promise wrapCallback in the zone where they are scheduled even if resolved ' +
+      'in different zone.', function(done)
+  {
     var resolve;
     var promise = new Promise(function (rs) {
       resolve = rs;
     });
 
-    var testZone = global.zone.fork();
+    var testZone = Zone.current.fork({name: 'test'});
 
     testZone.run(function() {
       promise.then(function() {
-        expect(global.zone).toBeDirectChildOf(testZone);
+        expect(Zone.current).toBe(testZone);
         done();
       });
     });
 
-    global.zone.fork().run(function() {
+    Zone.current.fork({name: 'test'}).run(function() {
       resolve(null);
     });
   });
 
   describe('Promise', function() {
-    it('should go through scheduleMicrotask', function(done) {
+    it('should go through scheduleTask', function(done) {
       var called = false;
-      var testZone = global.zone.fork({
-        '$scheduleMicrotask': function (parentScheduleMicrotask) {
-          return function(microtask) {
-            called = true;
-            parentScheduleMicrotask.call(this, microtask);
-          }
+      var testZone = Zone.current.fork({
+        name: 'test',
+        onScheduleTask: function(delegate: ZoneDelegate, current: Zone, target: Zone,
+                                 task: Task): Task {
+          called = true;
+          delegate.scheduleTask(target, task);
+          return task;
         }
       });
 
@@ -104,3 +99,4 @@ describe('Microtasks', function () {
     });
   });
 });
+export var __something__;

@@ -1,100 +1,70 @@
 import './test-env-setup';
-import {Zone} from '../lib/browser/zone';
+import {zoneSymbol} from '../lib/browser/utils';
 
 describe('Zone', function () {
-  var rootZone = global.zone;
+  var rootZone = Zone.current;
 
-  it('should have an id', function () {
-    expect(global.zone.$id).toBeDefined();
-  });
-
-  it('forked zones should have a greater id than their parent', function () {
-    expect(global.zone.fork().$id).toBeGreaterThan(global.zone.$id);
+  it('should have a name', function () {
+    expect(Zone.current.name).toBeDefined();
   });
 
   describe('hooks', function () {
 
-    it('should fire beforeTask before a zone runs a function', function () {
-      var enterSpy = jasmine.createSpy('enter');
-      var myZone = global.zone.fork({
-        beforeTask: enterSpy
-      });
-
-      expect(enterSpy).not.toHaveBeenCalled();
-
-      myZone.run(function () {
-        expect(enterSpy).toHaveBeenCalled();
-      });
-    });
-
-
-    it('should fire afterTask after a zone runs a function', function () {
-      var leaveSpy = jasmine.createSpy('leave');
-      var myZone = global.zone.fork({
-        afterTask: leaveSpy
-      });
-
-      myZone.run(function () {
-        expect(leaveSpy).not.toHaveBeenCalled();
-      });
-
-      expect(leaveSpy).toHaveBeenCalled();
-    });
-
-
-    it('should fire onZoneCreated when a zone is forked', function () {
-      var counter = 0;
-      var myZone = global.zone.fork({
-        onZoneCreated: function () {
-          counter += 1;
-        }
-      });
-
-      myZone.run(function () {
-
-        expect(counter).toBe(0);
-
-        myZone.fork();
-
-        expect(counter).toBe(1);
-      });
-    });
-
-
     it('should throw if onError is not defined', function () {
       expect(function () {
-        global.zone.run(throwError);
+        Zone.current.run(throwError);
       }).toThrow();
     });
 
 
     it('should fire onError if a function run by a zone throws', function () {
       var errorSpy = jasmine.createSpy('error');
-      var myZone = global.zone.fork({
-        onError: errorSpy
+      var myZone = Zone.current.fork({
+        name: 'spy',
+        onHandleError: errorSpy
       });
 
       expect(errorSpy).not.toHaveBeenCalled();
 
       expect(function () {
-        myZone.run(throwError);
+        myZone.runGuarded(throwError);
       }).not.toThrow();
 
       expect(errorSpy).toHaveBeenCalled();
     });
 
 
-    it('should allow you to override alert', function () {
-      var spy = jasmine.createSpy('alert');
-      var myZone = global.zone.fork({
-        alert: spy
+    it('should allow you to override alert/prompt/confirm', function () {
+      var alertSpy = jasmine.createSpy('alert');
+      var promptSpy = jasmine.createSpy('prompt');
+      var confirmSpy = jasmine.createSpy('confirm');
+      var spies = {
+        'alert': alertSpy,
+        'prompt': promptSpy,
+        'confirm': confirmSpy
+      };
+      var myZone = Zone.current.fork({
+        name: 'spy',
+        onInvoke: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                   callback: Function, applyThis: any, applyArgs: any[], source: string): any =>
+        {
+          if (source) {
+            spies[source].apply(null, applyArgs);
+          } else {
+            return parentZoneDelegate.invoke(targetZone, callback, applyThis, applyArgs, source);
+          }
+        }
       });
 
       myZone.run(function () {
-        alert('foo');
+        alert('alertMsg');
+        prompt('promptMsg', 'default');
+        confirm('confirmMsg');
       });
 
-      expect(spy).toHaveBeenCalled();
+      expect(alertSpy).toHaveBeenCalledWith('alertMsg');
+      expect(promptSpy).toHaveBeenCalledWith('promptMsg', 'default');
+      expect(confirmSpy).toHaveBeenCalledWith('confirmMsg');
     });
 
     describe('eventListener hooks', function () {
@@ -116,13 +86,11 @@ describe('Zone', function () {
         var hookSpy = jasmine.createSpy('hook');
         var eventListenerSpy = jasmine.createSpy('eventListener');
         var zone = rootZone.fork({
-          $addEventListener: function(parentAddEventListener) {
-            return function (type, listener) {
-              return parentAddEventListener.call(this, type, function() {
-                hookSpy();
-                listener.apply(this, arguments);
-              });
-            }
+          name: 'spy',
+          onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                                task: Task): any => {
+            hookSpy();
+            return parentZoneDelegate.scheduleTask(targetZone, task);
           }
         });
 
@@ -140,11 +108,11 @@ describe('Zone', function () {
         var hookSpy = jasmine.createSpy('hook');
         var eventListenerSpy = jasmine.createSpy('eventListener');
         var zone = rootZone.fork({
-          $removeEventListener: function(parentRemoveEventListener) {
-            return function (type, listener) {
-              hookSpy();
-              return parentRemoveEventListener.call(this, type, listener);
-            }
+          name: 'spy',
+          onCancelTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+            hookSpy();
+            return parentZoneDelegate.cancelTask(targetZone, task);
           }
         });
 
@@ -163,110 +131,118 @@ describe('Zone', function () {
 
 
   it('should allow zones to be run from within another zone', function () {
-    var zoneA = global.zone.fork();
-    var zoneB = global.zone.fork();
+    var zoneA = Zone.current.fork({ name: 'A' });
+    var zoneB = Zone.current.fork({ name: 'B' });
 
     zoneA.run(function () {
       zoneB.run(function () {
-        expect(global.zone).toBe(zoneB);
+        expect(Zone.current).toBe(zoneB);
       });
-      expect(global.zone).toBe(zoneA);
+      expect(Zone.current).toBe(zoneA);
     });
-    expect(global.zone).toBe(rootZone);
+    expect(Zone.current).toBe(rootZone);
   });
 
 
-  describe('isRootZone', function() {
-
-    it('should return true for root zone', function() {
-      expect(global.zone.isRootZone()).toBe(true);
-    });
-
-
-    it('should return false for non-root zone', function() {
-      var executed = false;
-
-      global.zone.fork().run(function() {
-        executed = true;
-        expect(global.zone.isRootZone()).toBe(false);
-      });
-
-      expect(executed).toBe(true);
-    });
-  });
-
-
-  describe('bind', function() {
-
-    it('should execute all callbacks from root zone without forking zones', function(done) {
-      // using setTimeout for the test which relies on patching via bind
-      expect(global.zone.isRootZone()).toBe(true);
-      setTimeout(function() {
-        expect(global.zone.isRootZone()).toBe(true);
-        done();
-      });
-    });
-
-
-    it('should fork a zone for non-root zone', function(done) {
-      // using setTimeout for the test which relies on patching via bind
-      var childZone = global.zone.fork();
-      childZone.run(function() {
-        setTimeout(function() {
-          expect(global.zone).toBeDirectChildOf(childZone);
-          done();
-        });
-      });
-    });
-
-
+  describe('wrap', function() {
     it('should throw if argument is not a function', function () {
       expect(function () {
-        (<Function>global.zone.bind)(11);
+        (<Function>Zone.current.wrap)(11);
       }).toThrowError('Expecting function got: 11');
     });
   });
 
 
-  describe('fork', function () {
-    it('should fork deep copy', function () {
-      var protoZone = { too: { deep: true } };
-      var zoneA = global.zone.fork(protoZone);
-      var zoneB = global.zone.fork(protoZone);
-
-      expect(zoneA['too']).not.toBe(zoneB['too']);
-      expect(zoneA['too']).toEqual(zoneB['too']);
+  describe('get', function () {
+    it('should store properties', function () {
+      var testZone = Zone.current.fork({name: 'A', properties: { key: 'value' }});
+      expect(testZone.get('key')).toEqual('value');
+      var childZone = testZone.fork({name: 'B', properties: { key: 'override' }});
+      expect(testZone.get('key')).toEqual('value');
+      expect(childZone.get('key')).toEqual('override');
     });
   });
 
-  describe('bindPromiseFn', function () {
-    var mockPromise = function() {
-      return {
-        then: function (a, b) {
-          (<any>global).zone.setTimeoutUnpatched(a, 0);
-          return mockPromise();
-        }
-      };
-    };
+  describe('task', () => {
+    function noop() {}
+    var log;
+    var zone: Zone = Zone.current.fork({
+      name: 'parent',
+      onHasTask: (delegate: ZoneDelegate, current: Zone, target: Zone,
+                  hasTaskState: HasTaskState): void => {
+        hasTaskState['zone'] = target.name;
+        log.push(hasTaskState);
+      },
+      onScheduleTask: (delegate: ZoneDelegate, current: Zone, target: Zone, task: Task) => {
+        // Do nothing to prevent tasks from being run on VM turn;
+        // Tests run task explicitly.
+        return task;
+      }
+    });
 
-    it('should return a method that returns promises that run in the correct zone', function (done) {
-      var zoneA = global.zone.fork();
+    beforeEach(() => {
+      log = [];
+    });
 
-      zoneA.run(function () {
-        var patched = Zone.bindPromiseFn(function() {
-          return mockPromise();
-        });
+    it('should prevent double cancellation', () => {
+      var task = zone.scheduleMacroTask('test', () => log.push('macroTask'), null, noop, noop);
+      zone.cancelTask(task);
+      try {
+        zone.cancelTask(task);
+      } catch (e) {
+        expect(e.message).toContain('already canceled');
+      }
+    });
 
-        patched().then(function () {
-          expect(global.zone).toBeDirectChildOf(zoneA);
-        }).then(function () {
-          expect(global.zone).toBeDirectChildOf(zoneA);
-          done();
-        });
+    it('should not decrement counters on periodic tasks', () => {
+      zone.run(() => {
+        var task = zone.scheduleMacroTask('test', () => log.push('macroTask'), {
+          isPeriodic: true
+        }, noop, noop);
+        zone.runTask(task);
+        zone.runTask(task);
+        zone.cancelTask(task);
       });
+      expect(log).toEqual([
+        { microTask: false, macroTask: true, eventTask: false, change: 'macroTask', zone: 'parent' },
+        'macroTask',
+        'macroTask',
+        { microTask: false, macroTask: false, eventTask: false, change: 'macroTask', zone: 'parent' }
+      ]);
+    });
+
+    it('should notify of queue status change', () => {
+      zone.run(() => {
+        var z = Zone.current;
+        z.runTask(z.scheduleMicroTask('test', () => log.push('microTask')));
+        z.cancelTask(z.scheduleMacroTask('test', () => log.push('macroTask'), null, noop, noop));
+        z.cancelTask(z.scheduleEventTask('test', () => log.push('eventTask'), null, noop, noop));
+      });
+      expect(log).toEqual([
+        { microTask: true, macroTask: false, eventTask: false, change: 'microTask', zone: 'parent' },
+        'microTask',
+        { microTask: false, macroTask: false, eventTask: false, change: 'microTask', zone: 'parent' },
+        { microTask: false, macroTask: true, eventTask: false, change: 'macroTask', zone: 'parent' },
+        { microTask: false, macroTask: false, eventTask: false, change: 'macroTask', zone: 'parent' },
+        { microTask: false, macroTask: false, eventTask: true, change: 'eventTask', zone: 'parent' },
+        { microTask: false, macroTask: false, eventTask: false, change: 'eventTask', zone: 'parent' }
+      ]);
+    });
+
+    it('should notify of queue status change on parent task', () => {
+      zone.fork({name: 'child'}).run(() => {
+        var z = Zone.current;
+        z.runTask(z.scheduleMicroTask('test', () => log.push('microTask')));
+      });
+      expect(log).toEqual([
+        { microTask: true, macroTask: false, eventTask: false, change: 'microTask', zone: 'child' },
+        { microTask: true, macroTask: false, eventTask: false, change: 'microTask', zone: 'parent' },
+        'microTask',
+        { microTask: false, macroTask: false, eventTask: false, change: 'microTask', zone: 'child' },
+        { microTask: false, macroTask: false, eventTask: false, change: 'microTask', zone: 'parent' },
+      ]);
     });
   });
-
 });
 
 function throwError () {

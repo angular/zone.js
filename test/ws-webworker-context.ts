@@ -1,12 +1,10 @@
-declare var zone;
 importScripts('/base/test/zone_worker_entry_point.ts');
 
-zone.fork().run(() => {
+Zone.current.fork({name: 'webworker'}).run(() => {
   var websocket = new WebSocket('ws://localhost:8001');
   websocket.addEventListener('open', () => {
-    var outerZone = (<any>self).zone;
     websocket.onmessage = () => {
-      if((<any>self).zone.parent === outerZone) {
+      if((<any>self).Zone.current.name === 'webworker') {
         (<any>self).postMessage('pass');
       } else {
         (<any>self).postMessage('fail');
@@ -15,3 +13,4 @@ zone.fork().run(() => {
     websocket.send('text');
   });
 });
+

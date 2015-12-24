@@ -5,3 +5,4 @@ typings/
 parsed-idl/
 /node_modules
 .idea
+.vscode
