@@ -1,3 +1,4 @@
+import {createScope, leaveScope} from '../wtf';
 import * as fnPatch from './functions';
 import * as promisePatch from './promise';
 import * as mutationObserverPatch from './mutation-observer';
@@ -10,35 +11,44 @@ import * as geolocationPatch from './geolocation';
 import * as fileReaderPatch from './file-reader';
 
 export function apply() {
-  fnPatch.patchSetClearFunction(global, global.Zone, [
+  measure(mark('SetClearFn'), fnPatch.patchSetClearFunction(global, global.Zone, [
     ['setTimeout', 'clearTimeout', false, false],
     ['setInterval', 'clearInterval', true, false],
     ['setImmediate', 'clearImmediate', false, false],
     ['requestAnimationFrame', 'cancelAnimationFrame', false, true],
     ['mozRequestAnimationFrame', 'mozCancelAnimationFrame', false, true],
     ['webkitRequestAnimationFrame', 'webkitCancelAnimationFrame', false, true]
-  ]);
+  ]));
 
-  fnPatch.patchFunction(global, [
+  measure(mark('BlockingFn'), fnPatch.patchFunction(global, [
     'alert',
     'prompt'
-  ]);
+  ]));
 
-  eventTargetPatch.apply();
+  measure(mark('EventTarget'), eventTargetPatch.apply());
 
-  propertyDescriptorPatch.apply();
+  measure(mark('PropDesc'), propertyDescriptorPatch.apply());
 
-  promisePatch.apply();
+  measure(mark('Promise'), promisePatch.apply());
 
-  mutationObserverPatch.patchClass('MutationObserver');
-  mutationObserverPatch.patchClass('WebKitMutationObserver');
+  measure(
+    mark('MutationObserver'),
+    mutationObserverPatch.patchClass('MutationObserver'),
+    mutationObserverPatch.patchClass('WebKitMutationObserver'));
 
-  definePropertyPatch.apply();
+  measure(mark('DefineProp'), definePropertyPatch.apply());
 
-  registerElementPatch.apply();
+  measure(mark('RegisterElement'), registerElementPatch.apply());
 
-  geolocationPatch.apply();
+  measure(mark('Geo'), geolocationPatch.apply());
 
-  fileReaderPatch.apply();
+  measure(mark('FileReader'), fileReaderPatch.apply());
 }
 
+function mark(name: string): any {
+  return createScope('Zone#patch' + name)();
+}
+
+function measure(scope: any, ...args): void {
+  leaveScope(scope);
+}

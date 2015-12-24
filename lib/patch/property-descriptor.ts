@@ -13,13 +13,10 @@ export function apply() {
   var supportsWebSocket = typeof WebSocket !== 'undefined';
   if (canPatchViaPropertyDescriptor()) {
     // for browsers that we can patch the descriptor:  Chrome & Firefox
-    var onEventNames = eventNames.map(function (property) {
-      return 'on' + property;
-    });
-    utils.patchProperties(HTMLElement.prototype, onEventNames);
-    utils.patchProperties(XMLHttpRequest.prototype);
+    utils.patchOnProperties(HTMLElement.prototype, eventNames);
+    utils.patchOnProperties(XMLHttpRequest.prototype, null);
     if (supportsWebSocket) {
-      utils.patchProperties(WebSocket.prototype);
+      utils.patchOnProperties(WebSocket.prototype, null);
     }
   } else {
     // Safari, Android browsers (Jelly Bean)
@@ -56,7 +53,8 @@ var unboundKey = keys.create('unbound');
 // for `onwhatever` properties and replace them with zone-bound functions
 // - Chrome (for now)
 function patchViaCapturingAllTheEvents() {
-  eventNames.forEach(function (property) {
+  for(var i = 0; i < eventNames.length; i++) {
+    var property = eventNames[i];
     var onproperty = 'on' + property;
     document.addEventListener(property, function (event) {
       var elt = <Node>event.target, bound;
@@ -69,5 +67,5 @@ function patchViaCapturingAllTheEvents() {
         elt = elt.parentElement;
       }
     }, true);
-  });
+  };
 };
