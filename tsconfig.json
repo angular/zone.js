@@ -4,12 +4,17 @@
     "target": "es5",
     "noImplicitAny": false,
     "outDir": "build",
-    "inlineSourceMap": true,
-    "inlineSources": true,
+    "inlineSourceMap": false,
+    "inlineSources": false,
     "declaration": true,
-    "noEmitOnError": false
+    "noEmitOnError": false,
+    "stripInternal": true
   },
   "exclude": [
-    "node_modules"
+    "node_modules",
+    "typings/main",
+    "typings/main.d.ts",
+    "build",
+    "dist"
   ]
 }

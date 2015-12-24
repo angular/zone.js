@@ -1,11 +1,13 @@
-'use strict';
-
 describe('longStackTraceZone', function () {
   var log;
 
-  var lstz = global.zone.fork(global.Zone.longStackTraceZone).fork({
-    reporter: function reporter (trace) {
-      log.push(trace);
+  var lstz = Zone.current.fork(Zone['longStackTraceZoneSpec']).fork({
+    name: 'long-stack-trace-zone-test',
+    onHandleError: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                   error: any): boolean => {
+      parentZoneDelegate.handleError(targetZone, error);
+      log.push(error.stack);
+      return false;
     }
   });
 
@@ -18,56 +20,18 @@ describe('longStackTraceZone', function () {
       setTimeout(function () {
         setTimeout(function () {
           setTimeout(function () {
-            expect(log[0]).toBe('Error: hello');
-
-            expect(log[1].split('--- ').length).toBe(4);
-            done();
+            try {
+              expect(log[0].split('Elapsed: ').length).toBe(3);
+              done();
+            } catch (e) {
+              expect(e).toBe(null);
+            }
           }, 0);
-          throw new Error('hello');
+          throw new Error('Hello');
         }, 0);
       }, 0);
     });
   });
-
-  it('should filter out zone.js frames with default stackFramesFilter impl', function () {
-    var zoneFrame = 'at Zone.bind (http://localhost:8080/node_modules/zone.js/dist/zone.js:84:48)';
-    var nonZoneFrame = 'at a (http://localhost:8080/index.js:7:3)';
-
-    expect(lstz.stackFramesFilter(zoneFrame)).toBe(false);
-    expect(lstz.stackFramesFilter(nonZoneFrame)).toBe(true);
-  });
-
-  it('should filter based on stackFramesFilter', function (done) {
-    lstz.fork({
-      stackFramesFilter: function (line) {
-        return line.indexOf('jasmine.js') === -1;
-      }
-    }).run(function () {
-      setTimeout(function () {
-        setTimeout(function () {
-          setTimeout(function () {
-            expect(log[1]).not.toContain('jasmine.js');
-            done();
-          }, 0);
-          throw new Error('hello');
-        }, 0);
-      }, 0);
-    });
-  });
-
-  it('should expose LST via getLogStackTrace', function () {
-    expect(lstz.getLongStacktrace()).toBeDefined();
-  });
-
-  it('should honor parent\'s fork()', function () {
-    global.zone
-      .fork({
-        '+fork': function() { log.push('fork'); }
-      })
-      .fork(global.Zone.longStackTraceZone)
-      .fork();
-
-    expect(log).toEqual(['fork', 'fork']);
-  });
-
 });
+
+export var __something__;

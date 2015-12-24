@@ -46,7 +46,7 @@
    * Bootstrap the app
    */
   //main();
-  zone.fork(Zone.longStackTraceZone).run(main);
+  Zone.current.fork(Zone.longStackTraceZoneSpec).run(main);
 
   </script>
 </body>

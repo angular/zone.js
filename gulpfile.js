@@ -7,6 +7,8 @@ var source = require('vinyl-source-stream');
 var rename = require('gulp-rename');
 var uglify = require('gulp-uglify');
 var buffer = require('vinyl-buffer');
+var typescript = require('gulp-tsc');
+
 
 var distFolder = './dist';
 
@@ -37,55 +39,76 @@ function generateBrowserScript(inFile, outFile, minify, callback) {
       process: false
     }
   }, function(err, stats) {
-    if(err) throw new gutil.PluginError("webpack", err);
-    gutil.log("[webpack]", stats.toString({
-      // output options
-    }));
-    callback();
+    if(err) {
+      callback(err);
+    } else {
+      gutil.log("[webpack]", stats.toString({
+        // output meta
+      }));
+      callback();
+    }
   });
 }
 
+gulp.task('compile', function(){
+  gulp.src([
+    'typings/browser/ambient/node/node.d.ts',
+    'typings/browser/ambient/es6-promise/es6-promise.d.ts',
+    'lib/zone.ts',
+  ]).pipe(typescript({ target: 'es5', "declaration": true })).pipe(gulp.dest('./build/'))
+});
+
+gulp.task('build/zone.js.d.ts', ['compile'], function() {
+  return gulp.src('./build/lib/zone.d.ts').pipe(rename('zone.js.d.ts')).pipe(gulp.dest('./dist'));
+});
+
+gulp.task('build/zone-node.js', function(cb) {
+  return generateBrowserScript('./lib/zone.ts', 'zone-node.js', false, cb);
+});
+
 gulp.task('build/zone.js', function(cb) {
-  return generateBrowserScript('./lib/browser/zone.ts', 'zone.js', false, cb);
+  return generateBrowserScript('./lib/browser/browser.ts', 'zone.js', false, cb);
 });
 
 gulp.task('build/zone.min.js', function(cb) {
-  return generateBrowserScript('./lib/browser/zone.ts', 'zone.min.js', true, cb);
-});
-
-gulp.task('build/zone-microtask.js', function(cb) {
-  return generateBrowserScript('./lib/browser/zone-microtask.ts', 'zone-microtask.js', false, cb);
-});
-
-gulp.task('build/zone-microtask.min.js', function(cb) {
-  return generateBrowserScript('./lib/browser/zone-microtask.ts', 'zone-microtask.min.js', true, cb);
+  return generateBrowserScript('./lib/browser/browser.ts', 'zone.min.js', true, cb);
 });
 
 gulp.task('build/jasmine-patch.js', function(cb) {
-  return generateBrowserScript('./lib/browser/jasmine-patch.ts', 'jasmine-patch.js', false, cb);
+  return generateBrowserScript('./lib/jasmine/jasmine.ts', 'jasmine-patch.js', false, cb);
 });
 
 gulp.task('build/jasmine-patch.min.js', function(cb) {
-  return generateBrowserScript('./lib/browser/jasmine-patch.ts', 'jasmine-patch.min.js', true, cb);
+  return generateBrowserScript('./lib/jasmine/jasmine.ts', 'jasmine-patch.min.js', true, cb);
 });
 
 gulp.task('build/long-stack-trace-zone.js', function(cb) {
-  return generateBrowserScript('./lib/browser/long-stack-trace-zone.ts', 'long-stack-trace-zone.js', false, cb);
+  return generateBrowserScript('./lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.js', false, cb);
 });
 
 gulp.task('build/long-stack-trace-zone.min.js', function(cb) {
-  return generateBrowserScript('./lib/browser/long-stack-trace-zone.ts', 'long-stack-trace-zone.min.js', true, cb);
+  return generateBrowserScript('./lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.min.js', true, cb);
+});
+
+gulp.task('build/wtf.js', function(cb) {
+  return generateBrowserScript('./lib/zone-spec/wtf.ts', 'wtf.js', false, cb);
+});
+
+gulp.task('build/wtf.min.js', function(cb) {
+  return generateBrowserScript('./lib/zone-spec/wtf.ts', 'wtf.min.js', true, cb);
 });
 
 gulp.task('build', [
   'build/zone.js',
+  'build/zone.js.d.ts',
   'build/zone.min.js',
-  'build/zone-microtask.js',
-  'build/zone-microtask.min.js',
+  'build/zone-node.js',
   'build/jasmine-patch.js',
   'build/jasmine-patch.min.js',
   'build/long-stack-trace-zone.js',
-  'build/long-stack-trace-zone.min.js'
+  'build/long-stack-trace-zone.min.js',
+  'build/wtf.js',
+  'build/wtf.min.js'
 ]);
 
 

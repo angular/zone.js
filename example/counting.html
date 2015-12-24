@@ -26,22 +26,21 @@
     /*
      * Zone that counts pending async tasks
      */
-    var myCountingZone = zone.fork(Zone.countingZone).fork({
-      '+onZoneCreated': function () {
-        this.data.start || (this.data.start = Date.now());
-        this.print();
+    var myCountingZone = Zone.current.fork({
+      onScheduleTask(parent, current, target, task) {
+        parent.scheduleTask(target, task);
+        console.log('Scheduled ' + task.source + ' => ' + task.data.handleId);
       },
-      '-afterTask': function (delegate) {
-        this.print();
+      onInvokeTask(parent, current, target, task) {
+        console.log('Invoking ' + task.source + ' => ' + task.data.handleId);
+        parent.invokeTask(target, task);
       },
-      '+reset': function (delegate) {
-        this.data.start = 0;
-      },
-      print: function () {
-        counter = this.counter();
-        output.innerHTML = counter ?
-            'pending task count: ' + counter :
-            ' DONE! ' + (Date.now() - this.data.start)/1000 + 's';
+      onHasTask(parent, current, target, hasTask) {
+        if (hasTask.macroTask) {
+          console.log("There are outstanding MacroTasks.");
+        } else {
+          console.log("All MacroTasks have been completed.");
+        }
       }
     });
 
@@ -61,7 +60,6 @@
      */
 
     function main () {
-      zone.reset();
       for (var i = 0; i < 10; i++) {
         recur(i, 800);
       }

@@ -4,6 +4,11 @@
 
 Implements _Zones_ for JavaScript, inspired by [Dart](https://www.dartlang.org/articles/zones/).
 
+# NEW Zone.js POST-v0.6.0
+
+See the new API [here](./dist/zone.js.d.ts).
+
+# DEPRECATED Zone.js PRE-v0.5.15
 
 ## What's a Zone?
 
@@ -236,7 +241,7 @@ While in this zone, calls to `window.setTimeout` will redirect to `zone.setTimeo
 These hooks allow you to change the behavior of `window.requestAnimationFrame()`, 
 `window.webkitRequestAnimationFrame`, and `window.mozRequestAnimationFrame`.
 
-By default the callback is executed in the zone where those methods have been called to avoid 
+By default the wrapCallback is executed in the zone where those methods have been called to avoid 
 growing the stack size on each recursive call.
 
 ### `zone.addEventListener`

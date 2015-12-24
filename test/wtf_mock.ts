@@ -33,7 +33,7 @@ var wtfMock = {
           for(var i = arguments.length - 1; i >= 0; i--) {
             var arg = arguments[i];
             if (arg !== undefined) {
-              args.unshift(arg);
+              args.unshift(__stringify(arg));
             }
           }
           log.push('> ' + name + '(' + args.join(', ') + ')');
@@ -53,7 +53,7 @@ var wtfMock = {
           for(var i = arguments.length - 1; i >= 0; i--) {
             var arg = arguments[i];
             if (arg !== undefined) {
-              args.unshift(arg);
+              args.unshift(__stringify(arg));
             }
           }
           log.push('# ' + name + '(' + args.join(', ') + ')');
@@ -61,7 +61,17 @@ var wtfMock = {
         };
       }
     }
-  },
+  }
+};
+
+function __stringify(obj) {
+  var str = typeof obj == 'string'  || !obj ? JSON.stringify(obj) : obj.toString();
+  if (str == "[object Arguments]") {
+    str =  JSON.stringify(Array.prototype.slice.call(obj));
+  } else if (str == "[object Object]") {
+    str = JSON.stringify(obj);
+  }
+  return str;
 }
 
 beforeEach(function() {

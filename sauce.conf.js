@@ -2,7 +2,7 @@
 
 module.exports = function (config) {
   // The WS server is not available with Sauce
-  config.exclude.push('test/**/WebSocket.spec.ts');
+  config.files.unshift('test/saucelabs.js');
 
   var customLaunchers = {
     'SL_Chrome': {
@@ -10,11 +10,11 @@ module.exports = function (config) {
       browserName: 'chrome',
       version: '42'
     },
-    'SL_ChromeBeta': {
+    /*'SL_ChromeBeta': {
       base: 'SauceLabs',
       browserName: 'chrome',
       version: 'beta'
-    },
+    },*/
     'SL_Firefox': {
       base: 'SauceLabs',
       browserName: 'firefox',
