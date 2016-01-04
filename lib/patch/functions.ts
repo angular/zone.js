@@ -66,7 +66,7 @@ export function patchSetClearFunction(window, Zone, fnNames) {
 
       // Set up zone processing for the clear function.
       Zone.prototype[clearName] = function (id) {
-        var scope = wtfClearEventFn(this.$id, id);
+        wtfClearEventFn(this.$id, id);
         if (ids.hasOwnProperty(id)) {
           var callbackFn = ids[id];
           delete ids[id];

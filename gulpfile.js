@@ -32,6 +32,9 @@ function generateBrowserScript(inFile, outFile, minify, callback) {
       loaders: [
         {test: /\.ts$/, loader: 'ts-loader', exclude: /node_modules/}
       ]
+    },
+    node: {
+      process: false
     }
   }, function(err, stats) {
     if(err) throw new gutil.PluginError("webpack", err);
