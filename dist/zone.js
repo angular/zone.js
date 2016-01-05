@@ -406,7 +406,7 @@ function patchSetClearFunction(obj, fnNames) {
         var id, fnRef = fn;
         arguments[0] = function () {
           delete ids[id];
-          return fnRef.apply(this, arguments);
+          return fnRef instanceof Function ? fnRef.apply(this, arguments) : eval.call(global, fnRef);  
         };
         var args = bindArgs(arguments);
         id = delegate.apply(obj, args);
