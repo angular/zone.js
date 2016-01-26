@@ -3,7 +3,11 @@ import * as utils from '../utils';
 // we have to patch the instance since the proto is non-configurable
 export function apply() {
   var WS = (<any>global).WebSocket;
-  utils.patchEventTargetMethods(WS.prototype);
+  // On Safari window.EventTarget doesn't exist so need to patch WS add/removeEventListener
+  // On older Chrome, no need since EventTarget was already patched
+  if (!(<any>global).EventTarget) {
+    utils.patchEventTargetMethods(WS.prototype);
+  }
   (<any>global).WebSocket = function(a, b) {
     var socket = arguments.length > 1 ? new WS(a, b) : new WS(a);
     var proxySocket;
