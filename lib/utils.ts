@@ -158,7 +158,13 @@ export function patchClass(className) {
   var prop;
   for (prop in instance) {
     (function (prop) {
-      if (typeof instance[prop] === 'function') {
+      var property;
+      try {
+        property = instance[prop];
+      } catch (error) {
+        console.warn(error);
+      }
+      if (typeof property === 'function') {
         global[className].prototype[prop] = function () {
           return this[originalInstanceKey][prop].apply(this[originalInstanceKey], arguments);
         };
