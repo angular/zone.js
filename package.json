@@ -2,7 +2,8 @@
   "name": "zone.js",
   "version": "0.5.11",
   "description": "Zones for JavaScript",
-  "main": "lib/zone.js",
+  "main": "build/lib/zone.js",
+  "typings": "build/lib/core.d.ts",
   "files": [
     "lib",
     "dist"
@@ -13,6 +14,7 @@
   },
   "scripts": {
     "postinstall": "tsd install",
+    "prepublish": "tsc && gulp build",
     "tsc": "tsc",
     "tsc:w": "tsc -w",
     "test": "karma start karma.conf.js",
