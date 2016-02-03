@@ -14,7 +14,6 @@
     "test": "test"
   },
   "scripts": {
-    "postinstall": "tsd install",
     "prepublish": "tsc && gulp build",
     "tsc": "tsc",
     "tsc:w": "tsc -w",
