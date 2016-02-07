@@ -14,8 +14,7 @@
     "test": "test"
   },
   "scripts": {
-    "postinstall": "tsd install",
-    "prepublish": "tsc && gulp build",
+    "prepublish": "tsd install && tsc && gulp build",
     "tsc": "tsc",
     "tsc:w": "tsc -w",
     "test": "karma start karma.conf.js",
