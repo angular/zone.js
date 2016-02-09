@@ -1,4 +1,6 @@
 import * as keys from './keys';
+// Hack since TypeScript isn't compiling this for a worker.
+declare var WorkerGlobalScope;
 
 export function bindArguments(args) {
   for (var i = args.length - 1; i >= 0; i--) {
@@ -21,7 +23,11 @@ export function patchPrototype(obj, fnNames) {
 };
 
 export function isWebWorker() {
-  return (typeof document === "undefined");
+  return (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope);
+}
+
+export function isNode() {
+  return (typeof process !== 'undefined' && {}.toString.call(process) === '[object process]');
 }
 
 export function patchProperty(obj, prop) {

@@ -2,7 +2,7 @@ import {_redefineProperty} from './define-property';
 import * as utils from '../utils';
 
 export function apply() {
-  if (utils.isWebWorker() || !('registerElement' in (<any>global).document)) {
+  if (utils.isWebWorker() || utils.isNode() || !('registerElement' in (<any>global).document)) {
     return;
   }
 
