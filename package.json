@@ -15,7 +15,7 @@
   },
   "scripts": {
     "tsd": "tsd install",
-    "prepublish": "tsc && gulp build",
+    "prepublish": "npm install tsd@^0.6.5 && tsd reinstall --overwrite && tsc && gulp build",
     "tsc": "tsc",
     "tsc:w": "tsc -w",
     "test": "karma start karma.conf.js",
