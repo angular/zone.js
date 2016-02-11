@@ -3,7 +3,6 @@
   "version": "0.5.14",
   "description": "Zones for JavaScript",
   "main": "build/lib/zone.js",
-  "typings": "build/lib/core.d.ts",
   "files": [
     "lib",
     "build",
@@ -14,8 +13,8 @@
     "test": "test"
   },
   "scripts": {
-    "tsd": "tsd install",
-    "prepublish": "npm install tsd@^0.6.5 && tsd reinstall --overwrite && tsc && gulp build",
+    "typings": "typings install",
+    "prepublish": "npm run typings && tsc && gulp build",
     "tsc": "tsc",
     "tsc:w": "tsc -w",
     "test": "karma start karma.conf.js",
@@ -35,24 +34,24 @@
   },
   "devDependencies": {
     "gulp": "^3.8.11",
-    "gulp-util": "^3.0.7",
     "gulp-rename": "^1.2.2",
     "gulp-uglify": "^1.2.0",
+    "gulp-util": "^3.0.7",
     "jasmine-core": "^2.2.0",
-    "karma-firefox-launcher": "^0.1.4",
-    "karma-safari-launcher": "^0.1.1",
-    "karma-sauce-launcher": "^0.2.10",
     "karma": "^0.13.14",
     "karma-chrome-launcher": "^0.2.1",
+    "karma-firefox-launcher": "^0.1.4",
     "karma-jasmine": "^0.3.6",
+    "karma-safari-launcher": "^0.1.1",
+    "karma-sauce-launcher": "^0.2.10",
     "karma-sourcemap-loader": "^0.3.6",
     "karma-webpack": "^1.7.0",
-    "ts-loader": "^0.6.0",
-    "tsd": "^0.6.5",
-    "typescript": "^1.7.3",
-    "webpack": "^1.12.2",
     "nodejs-websocket": "^1.2.0",
+    "ts-loader": "^0.6.0",
+    "typescript": "^1.7.3",
+    "typings": "^0.6.7",
     "vinyl-buffer": "^1.0.0",
-    "vinyl-source-stream": "^1.1.0"
+    "vinyl-source-stream": "^1.1.0",
+    "webpack": "^1.12.2"
   }
 }

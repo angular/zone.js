@@ -1,0 +1,8 @@
+{
+  "name": "zone.js",
+  "ambientDependencies": {
+    "jasmine": "github:DefinitelyTyped/DefinitelyTyped/jasmine/jasmine.d.ts#11322524f8db9cdb921427cad84cd22fe2d4f965",
+    "node": "github:DefinitelyTyped/DefinitelyTyped/node/node.d.ts#11322524f8db9cdb921427cad84cd22fe2d4f965",
+    "es6-promise": "github:DefinitelyTyped/DefinitelyTyped/es6-promise/es6-promise.d.ts#40c60850ad6c8175a62d5ab48c4e016ea5b3dffe"
+  }
+}
