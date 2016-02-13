@@ -24,6 +24,15 @@ describe('WebSocket', ifEnvSupports('WebSocket', function () {
   });
 
 
+  it('should be patched in a Web Worker', done => {
+    var worker = new Worker('/base/test/ws-webworker-context.ts');
+    worker.onmessage = (e:MessageEvent) => {
+      expect(e.data).toBe('pass');
+      done();
+    }
+  });
+
+
   it('should work with addEventListener', function (done) {
     testZone.run(function() {
       socket.addEventListener('message', function (event) {
