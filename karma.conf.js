@@ -5,15 +5,11 @@ module.exports = function (config) {
     basePath: '',
     files: [
       'test/browser_entry_point.ts',
-      'test/zone_worker_entry_point.ts',
       'test/**/*.spec.ts',
       {pattern: 'test/assets/**/*.*', watched: true, served: true, included: false},
       // Autowatcch all files to trigger rerun
       {pattern: 'lib/**/*.ts', watched: true, served: false, included: false},
-      {pattern: 'test/**/*.ts', watched: true, served: false, included: false},
-      {pattern: 'test/ws-webworker-context.ts', watched: true, served: true, included: false},
-
-      {pattern: 'dist/**/*.js', watched: true, served: true, included: false}
+      {pattern: 'test/**/*.ts', watched: true, served: false, included: false}
     ],
 
     /*
@@ -27,9 +23,7 @@ module.exports = function (config) {
 
     preprocessors: {
       'test/browser_entry_point.ts': [ 'webpack', 'sourcemap' ],
-      'test/zone_worker_entry_point.ts': [ 'webpack', 'sourcemap' ],
       'test/**/*.spec.ts': [ 'webpack', 'sourcemap' ],
-      'test/ws-webworker-context.ts': ['webpack', 'sourcemap']
     },
     webpack: {
       devtool: 'source-map',
