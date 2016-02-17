@@ -1,6 +1,6 @@
 {
   "name": "zone.js",
-  "version": "0.5.14",
+  "version": "0.5.15",
   "description": "Zones for JavaScript",
   "main": "build/lib/zone.js",
   "typings": "build/lib/core.d.ts",
