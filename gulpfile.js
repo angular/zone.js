@@ -3,10 +3,6 @@
 var gulp = require('gulp');
 var gutil = require("gulp-util");
 var webpack = require('webpack');
-var source = require('vinyl-source-stream');
-var rename = require('gulp-rename');
-var uglify = require('gulp-uglify');
-var buffer = require('vinyl-buffer');
 
 var distFolder = './dist';
 
@@ -87,6 +83,3 @@ gulp.task('build', [
   'build/long-stack-trace-zone.js',
   'build/long-stack-trace-zone.min.js'
 ]);
-
-
-
