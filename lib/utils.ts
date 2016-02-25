@@ -54,8 +54,17 @@ export function patchProperty(obj, prop) {
     }
 
     if (typeof fn === 'function') {
-      this[_prop] = fn;
-      this.addEventListener(eventName, fn, false);
+      
+      function wrapFn(event) {
+        var result;
+        result = fn.apply(this, arguments);
+        
+        if (result != undefined && !result)  
+          event.preventDefault();
+      };
+
+      this[_prop] = wrapFn;
+      this.addEventListener(eventName, wrapFn, false);
     } else {
       this[_prop] = null;
     }

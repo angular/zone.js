@@ -269,4 +269,33 @@ describe('element', function () {
     });
   });
 
+  describe('onEvent default behavior', function() {
+    var checkbox;
+    beforeEach(function () {
+      checkbox = document.createElement('input');
+      checkbox.type = "checkbox";
+      document.body.appendChild(checkbox);
+    });
+
+    afterEach(function () {
+      document.body.removeChild(checkbox);
+    });
+    
+    it('should be possible to prevent default behavior by returning false', function() {
+      checkbox.onclick = function() {
+        return false;
+      };
+
+      checkbox.click();
+      expect(checkbox.checked).toBe(false);
+    });
+
+    it('should have no effect on default behavior when not returning anything', function() {
+      checkbox.onclick = function() {};
+
+      checkbox.click();
+      expect(checkbox.checked).toBe(true);
+    });
+  });
+
 });
