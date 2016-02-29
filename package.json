@@ -14,7 +14,7 @@
   },
   "scripts": {
     "prepublish": "./node_modules/.bin/tsc && gulp build",
-    "postinstall": "./node_modules/.bin/typings install",
+    "typings": "./node_modules/.bin/typings install",
     "tsc": "./node_modules/.bin/tsc",
     "tsc:w": "./node_modules/.bin/tsc -w",
     "test": "karma start karma.conf.js",
@@ -30,9 +30,9 @@
     "url": "https://github.com/angular/zone.js/issues"
   },
   "dependencies": {
-    "es6-promise": "^3.0.2"
   },
   "devDependencies": {
+    "es6-promise": "^3.0.2",
     "gulp": "^3.8.11",
     "gulp-rename": "^1.2.2",
     "gulp-tsc": "^1.1.4",
