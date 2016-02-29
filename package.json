@@ -1,6 +1,6 @@
 {
   "name": "zone.js",
-  "version": "0.6.0",
+  "version": "0.6.1",
   "description": "Zones for JavaScript",
   "main": "dist/zone.js",
   "typings": "dist/zone.js.d.ts",
@@ -29,8 +29,7 @@
   "bugs": {
     "url": "https://github.com/angular/zone.js/issues"
   },
-  "dependencies": {
-  },
+  "dependencies": {},
   "devDependencies": {
     "es6-promise": "^3.0.2",
     "gulp": "^3.8.11",
