@@ -83,7 +83,7 @@
    */
 
   //bootstrap();
-  zone.fork(Zone.longStackTraceZone).run(bootstrap);
+  Zone.current.fork(Zone.longStackTraceZoneSpec).run(bootstrap);
 
   </script>
 

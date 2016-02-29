@@ -23,5 +23,4 @@ before_script:
 
 script:
   - node_modules/.bin/karma start karma-sauce.conf.js
-  - node_modules/.bin/karma start karma-microtasks-sauce.conf.js
 

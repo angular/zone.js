@@ -24,10 +24,10 @@
    * algorithm when a button is pressed.
    */
   function sortAndPrintArray (unsortedArray) {
-    zone.reset();
+    profilingZoneSpec.reset();
     asyncBogosort(unsortedArray, function (sortedArray) {
       console.log(sortedArray);
-      console.log('sorting took ' + zone.time() + ' of CPU time');
+      console.log('sorting took ' + profilingZoneSpec.time() + ' of CPU time');
     });
   }
 
@@ -36,7 +36,7 @@
    * This is a really efficient algorithm.
    *
    * First, check if the array is sorted.
-   * - If it is, call the callback
+   * - If it is, call the wrapCallback
    * - If it isn't, randomize the array and recur
    *
    * This implementation is async because JavaScript
@@ -77,7 +77,7 @@
 
 
   /*
-   * This zone starts a timer at the start of each task,
+   * This zone starts a timer at the start of each taskEnv,
    * and stops it at the end. It accumulates the total run
    * time internally, exposing it via `zone.time()`
    *
@@ -85,17 +85,16 @@
    * bogosort, as opposed to the time from the start
    * of the algorithm until it's completion.
    */
-  var profilingZone = (function () {
+  var profilingZoneSpec = (function () {
     var time = 0,
         // use the high-res timer if available
         timer = performance ?
                     performance.now.bind(performance) :
                     Date.now.bind(Date);
     return {
-      beforeTask: function () {
+      onInvokeTask: function (delegate, current, target, task, applyThis, applyArgs) {
         this.start = timer();
-      },
-      afterTask: function () {
+        delegate.invokeTask(target, task, applyThis, applyArgs);
         time += timer() - this.start;
       },
       time: function () {
@@ -111,7 +110,7 @@
   /*
    * Bootstrap the app
    */
-  zone.fork(profilingZone).run(main);
+  Zone.current.fork(profilingZoneSpec).run(main);
 
   </script>
 

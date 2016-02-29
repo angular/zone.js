@@ -1,0 +1,11 @@
+{
+  "dependencies": {},
+  "devDependencies": {},
+  "ambientDevDependencies": {
+    "jasmine": "github:DefinitelyTyped/DefinitelyTyped/jasmine/jasmine.d.ts#26c98c8a9530c44f8c801ccc3b2057e2101187ee"
+  },
+  "ambientDependencies": {
+    "es6-promise": "github:DefinitelyTyped/DefinitelyTyped/es6-promise/es6-promise.d.ts#5bff5f871a0ea58be885fb52146cb67b86bcc1ae",
+    "node": "github:DefinitelyTyped/DefinitelyTyped/node/node.d.ts#1c56e368e17bb28ca57577250624ca5bd561aa81"
+  }
+}
