@@ -333,8 +333,9 @@
 	    var _microTaskQueue = [];
 	    var _isDrainingMicrotaskQueue = false;
 	    var _uncaughtPromiseErrors = [];
-	    function scheduleMicroTask(task) {
-	        if (!_currentTask && _microTaskQueue.length == 0) {
+	    var _drainScheduled = false;
+	    function scheduleQueueDrain() {
+	        if (!_drainScheduled && !_currentTask && _microTaskQueue.length == 0) {
 	            // We are not running in Task, so we need to kickstart the microtask queue.
 	            if (global[symbolPromise]) {
 	                global[symbolPromise].resolve(0)[symbolThen](drainMicroTaskQueue);
@@ -343,7 +344,17 @@
 	                global[symbolSetTimeout](drainMicroTaskQueue, 0);
 	            }
 	        }
+	    }
+	    function scheduleMicroTask(task) {
+	        scheduleQueueDrain();
 	        _microTaskQueue.push(task);
+	    }
+	    function consoleError(e) {
+	        var rejection = e && e.rejection;
+	        if (rejection) {
+	            console.error('Unhandled Promise rejection:', rejection instanceof Error ? rejection.message : rejection, '; Zone:', e.zone.name, '; Task:', e.task && e.task.source, '; Value:', rejection);
+	        }
+	        console.error(e);
 	    }
 	    function drainMicroTaskQueue() {
 	        if (!_isDrainingMicrotaskQueue) {
@@ -357,7 +368,7 @@
 	                        task.zone.runTask(task, null, null);
 	                    }
 	                    catch (e) {
-	                        console.error(e, e instanceof Error ? e.stack : undefined);
+	                        consoleError(e);
 	                    }
 	                }
 	            }
@@ -370,11 +381,12 @@
 	                        uncaughtPromiseError.zone.runGuarded(function () { throw uncaughtPromiseError; });
 	                    }
 	                    catch (e) {
-	                        console.error(e, e instanceof Error ? e.stack : undefined);
+	                        consoleError(e);
 	                    }
 	                }
 	            }
 	            _isDrainingMicrotaskQueue = false;
+	            _drainScheduled = false;
 	        }
 	    }
 	    function isThenable(value) {
@@ -423,6 +435,7 @@
 	                        error.zone = Zone.current;
 	                        error.task = Zone.currentTask;
 	                        _uncaughtPromiseErrors.push(error);
+	                        scheduleQueueDrain();
 	                    }
 	                }
 	            }

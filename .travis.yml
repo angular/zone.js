@@ -18,6 +18,7 @@ env:
 
 before_script:
   - mkdir -p $LOGS_DIR
+  - npm run typings
   - ./scripts/sauce/sauce_connect_setup.sh
   - ./scripts/sauce/sauce_connect_block.sh
 

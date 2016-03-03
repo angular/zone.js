@@ -212,6 +212,8 @@ describe('Promise', ifEnvSupports('Promise', function () {
 
       it('should notify Zone.onError if no one catches promise', (done) => {
         var promiseError: Error = null;
+        var zone: Zone = null;
+        var task: Task = null;
         queueZone.fork({
           name: 'promise-error',
           onHandleError: (delegate: ZoneDelegate, current: Zone, target: Zone,
@@ -221,12 +223,17 @@ describe('Promise', ifEnvSupports('Promise', function () {
             return false;
           }
         }).run(() => {
+          zone = Zone.current;
+          task = Zone.currentTask;
           Promise.reject('rejectedErrorShouldBeHandled');
           expect(promiseError).toBe(null);
         });
         setTimeout(() => null);
         setTimeout(() => {
           expect(promiseError.message).toBe('Uncaught (in promise): rejectedErrorShouldBeHandled');
+          expect(promiseError['rejection']).toBe('rejectedErrorShouldBeHandled');
+          expect(promiseError['zone']).toBe(zone);
+          expect(promiseError['task']).toBe(task);
           done();
         });
       });

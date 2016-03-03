@@ -831,9 +831,10 @@ var Zone: ZoneType = (function(global) {
   var _microTaskQueue: Task[] = [];
   var _isDrainingMicrotaskQueue: boolean = false;
   var _uncaughtPromiseErrors: UncaughtPromiseError[] = [];
+  var _drainScheduled: boolean = false;
 
-  function scheduleMicroTask(task: MicroTask) {
-    if (!_currentTask && _microTaskQueue.length == 0) {
+  function scheduleQueueDrain() {
+    if (!_drainScheduled && !_currentTask && _microTaskQueue.length == 0) {
       // We are not running in Task, so we need to kickstart the microtask queue.
       if (global[symbolPromise]) {
         global[symbolPromise].resolve(0)[symbolThen](drainMicroTaskQueue);
@@ -841,7 +842,24 @@ var Zone: ZoneType = (function(global) {
         global[symbolSetTimeout](drainMicroTaskQueue, 0);
       }
     }
+  }
+
+  function scheduleMicroTask(task: MicroTask) {
+    scheduleQueueDrain();
     _microTaskQueue.push(task);
+  }
+
+  function consoleError(e:any) {
+    var rejection = e && e.rejection;
+    if (rejection) {
+      console.error(
+          'Unhandled Promise rejection:', rejection instanceof Error ? rejection.message : rejection,
+          '; Zone:', (<Zone>e.zone).name,
+          '; Task:', e.task && (<Task>e.task).source,
+          '; Value:', rejection
+      );
+    }
+    console.error(e);
   }
 
   function drainMicroTaskQueue() {
@@ -855,7 +873,7 @@ var Zone: ZoneType = (function(global) {
           try {
             task.zone.runTask(task, null, null);
           } catch (e) {
-            console.error(e, e instanceof Error ? e.stack : undefined);
+            consoleError(e);
           }
         }
       }
@@ -867,11 +885,12 @@ var Zone: ZoneType = (function(global) {
           try {
             uncaughtPromiseError.zone.runGuarded(() => { throw uncaughtPromiseError; });
           } catch (e) {
-            console.error(e, e instanceof Error ? e.stack : undefined);
+            consoleError(e);
           }
         }
       }
       _isDrainingMicrotaskQueue = false;
+      _drainScheduled = false;
     }
   }
 
@@ -925,6 +944,7 @@ var Zone: ZoneType = (function(global) {
             error.zone = Zone.current;
             error.task = Zone.currentTask;
             _uncaughtPromiseErrors.push(error);
+            scheduleQueueDrain();
           }
         }
       }

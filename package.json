@@ -13,7 +13,7 @@
     "test": "test"
   },
   "scripts": {
-    "prepublish": "./node_modules/.bin/tsc && gulp build",
+    "prepublish": "./node_modules/.bin/typings install && ./node_modules/.bin/tsc && gulp build",
     "typings": "./node_modules/.bin/typings install",
     "tsc": "./node_modules/.bin/tsc",
     "tsc:w": "./node_modules/.bin/tsc -w",
