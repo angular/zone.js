@@ -30,4 +30,5 @@ export function apply() {
 
     return proxySocket;
   };
+  (<any>global).WebSocket.prototype = Object.create(WS.prototype, {constructor:{value: WebSocket}});
 }
