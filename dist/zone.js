@@ -54,30 +54,31 @@
 	var set = 'set';
 	var clear = 'clear';
 	var blockingMethods = ['alert', 'prompt', 'confirm'];
-	patchTimer(global, set, clear, 'Timeout');
-	patchTimer(global, set, clear, 'Interval');
-	patchTimer(global, set, clear, 'Immediate');
-	patchTimer(global, 'request', 'cancelMacroTask', 'AnimationFrame');
-	patchTimer(global, 'mozRequest', 'mozCancel', 'AnimationFrame');
-	patchTimer(global, 'webkitRequest', 'webkitCancel', 'AnimationFrame');
+	var _global = typeof window == 'undefined' ? global : window;
+	patchTimer(_global, set, clear, 'Timeout');
+	patchTimer(_global, set, clear, 'Interval');
+	patchTimer(_global, set, clear, 'Immediate');
+	patchTimer(_global, 'request', 'cancelMacroTask', 'AnimationFrame');
+	patchTimer(_global, 'mozRequest', 'mozCancel', 'AnimationFrame');
+	patchTimer(_global, 'webkitRequest', 'webkitCancel', 'AnimationFrame');
 	for (var i = 0; i < blockingMethods.length; i++) {
 	    var name = blockingMethods[i];
-	    utils_1.patchMethod(global, name, function (delegate, symbol, name) {
+	    utils_1.patchMethod(_global, name, function (delegate, symbol, name) {
 	        return function (s, args) {
-	            return Zone.current.run(delegate, global, args, name);
+	            return Zone.current.run(delegate, _global, args, name);
 	        };
 	    });
 	}
-	event_target_1.eventTargetPatch();
-	property_descriptor_1.propertyDescriptorPatch();
+	event_target_1.eventTargetPatch(_global);
+	property_descriptor_1.propertyDescriptorPatch(_global);
 	utils_1.patchClass('MutationObserver');
 	utils_1.patchClass('WebKitMutationObserver');
 	utils_1.patchClass('FileReader');
 	define_property_1.propertyPatch();
-	register_element_1.registerElementPatch();
+	register_element_1.registerElementPatch(_global);
 	/// GEO_LOCATION
-	if (global['navigator'] && global['navigator'].geolocation) {
-	    utils_1.patchPrototype(global['navigator'].geolocation, [
+	if (_global['navigator'] && _global['navigator'].geolocation) {
+	    utils_1.patchPrototype(_global['navigator'].geolocation, [
 	        'getCurrentPosition',
 	        'watchPosition'
 	    ]);
@@ -633,12 +634,7 @@
 	        };
 	    }
 	    return global.Zone = Zone;
-	})((function () { try {
-	    return window;
-	}
-	catch (e) {
-	    return global;
-	} })());
+	})(typeof window == 'undefined' ? global : window);
 
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
@@ -646,19 +642,19 @@
 /* 2 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {"use strict";
+	"use strict";
 	var utils_1 = __webpack_require__(3);
 	var WTF_ISSUE_555 = 'Anchor,Area,Audio,BR,Base,BaseFont,Body,Button,Canvas,Content,DList,Directory,Div,Embed,FieldSet,Font,Form,Frame,FrameSet,HR,Head,Heading,Html,IFrame,Image,Input,Keygen,LI,Label,Legend,Link,Map,Marquee,Media,Menu,Meta,Meter,Mod,OList,Object,OptGroup,Option,Output,Paragraph,Pre,Progress,Quote,Script,Select,Source,Span,Style,TableCaption,TableCell,TableCol,Table,TableRow,TableSection,TextArea,Title,Track,UList,Unknown,Video';
 	var NO_EVENT_TARGET = 'ApplicationCache,EventSource,FileReader,InputMethodContext,MediaController,MessagePort,Node,Performance,SVGElementInstance,SharedWorker,TextTrack,TextTrackCue,TextTrackList,WebKitNamedFlow,Worker,WorkerGlobalScope,XMLHttpRequest,XMLHttpRequestEventTarget,XMLHttpRequestUpload'.split(',');
 	var EVENT_TARGET = 'EventTarget';
-	function eventTargetPatch() {
+	function eventTargetPatch(_global) {
 	    var apis = [];
-	    var isWtf = global['wtf'];
+	    var isWtf = _global['wtf'];
 	    if (isWtf) {
 	        // Workaround for: https://github.com/google/tracing-framework/issues/555
 	        apis = WTF_ISSUE_555.split(',').map(function (v) { return 'HTML' + v + 'Element'; }).concat(NO_EVENT_TARGET);
 	    }
-	    else if (global[EVENT_TARGET]) {
+	    else if (_global[EVENT_TARGET]) {
 	        apis.push(EVENT_TARGET);
 	    }
 	    else {
@@ -667,13 +663,12 @@
 	        apis = NO_EVENT_TARGET;
 	    }
 	    for (var i = 0; i < apis.length; i++) {
-	        var type = global[apis[i]];
+	        var type = _global[apis[i]];
 	        utils_1.patchEventTargetMethods(type && type.prototype);
 	    }
 	}
 	exports.eventTargetPatch = eventTargetPatch;
 
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
 /* 3 */
@@ -681,6 +676,7 @@
 
 	/* WEBPACK VAR INJECTION */(function(global) {"use strict";
 	exports.zoneSymbol = Zone['__symbol__'];
+	var _global = typeof window == 'undefined' ? global : window;
 	function bindArguments(args, source) {
 	    for (var i = args.length - 1; i >= 0; i--) {
 	        if (typeof args[i] === 'function') {
@@ -809,7 +805,7 @@
 	    // - Inside a Web Worker, `this` is undefined, the context is `global`
 	    // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
 	    // see https://github.com/angular/zone.js/issues/190
-	    var target = self || global;
+	    var target = self || _global;
 	    var delegate = null;
 	    if (typeof handler == 'function') {
 	        delegate = handler;
@@ -844,7 +840,7 @@
 	    // - Inside a Web Worker, `this` is undefined, the context is `global`
 	    // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
 	    // see https://github.com/angular/zone.js/issues/190
-	    var target = self || global;
+	    var target = self || _global;
 	    var eventTask = findExistingRegisteredTask(target, handler, eventName, useCapturing, false);
 	    if (eventTask) {
 	        eventTask.zone.cancelTask(eventTask);
@@ -868,10 +864,10 @@
 	var originalInstanceKey = exports.zoneSymbol('originalInstance');
 	// wrap some native API on `window`
 	function patchClass(className) {
-	    var OriginalClass = global[className];
+	    var OriginalClass = _global[className];
 	    if (!OriginalClass)
 	        return;
-	    global[className] = function () {
+	    _global[className] = function () {
 	        var a = bindArguments(arguments, className);
 	        switch (a.length) {
 	            case 0:
@@ -897,12 +893,12 @@
 	    for (prop in instance) {
 	        (function (prop) {
 	            if (typeof instance[prop] === 'function') {
-	                global[className].prototype[prop] = function () {
+	                _global[className].prototype[prop] = function () {
 	                    return this[originalInstanceKey][prop].apply(this[originalInstanceKey], arguments);
 	                };
 	            }
 	            else {
-	                Object.defineProperty(global[className].prototype, prop, {
+	                Object.defineProperty(_global[className].prototype, prop, {
 	                    set: function (fn) {
 	                        if (typeof fn === 'function') {
 	                            this[originalInstanceKey][prop] = Zone.current.wrap(fn, className + '.' + prop);
@@ -920,7 +916,7 @@
 	    }
 	    for (prop in OriginalClass) {
 	        if (prop !== 'prototype' && OriginalClass.hasOwnProperty(prop)) {
-	            global[className][prop] = OriginalClass[prop];
+	            _global[className][prop] = OriginalClass[prop];
 	        }
 	    }
 	}
@@ -1030,11 +1026,11 @@
 /* 5 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {"use strict";
+	"use strict";
 	var define_property_1 = __webpack_require__(4);
 	var utils_1 = __webpack_require__(3);
-	function registerElementPatch() {
-	    if (!utils_1.isBrowser || !('registerElement' in global.document)) {
+	function registerElementPatch(_global) {
+	    if (!utils_1.isBrowser || !('registerElement' in _global.document)) {
 	        return;
 	    }
 	    var _registerElement = document.registerElement;
@@ -1068,7 +1064,6 @@
 	}
 	exports.registerElementPatch = registerElementPatch;
 
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ },
 /* 6 */
@@ -1078,7 +1073,7 @@
 	var webSocketPatch = __webpack_require__(7);
 	var utils_1 = __webpack_require__(3);
 	var eventNames = 'copy cut paste abort blur focus canplay canplaythrough change click contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop durationchange emptied ended input invalid keydown keypress keyup load loadeddata loadedmetadata loadstart message mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup pause play playing progress ratechange reset scroll seeked seeking select show stalled submit suspend timeupdate volumechange waiting mozfullscreenchange mozfullscreenerror mozpointerlockchange mozpointerlockerror error webglcontextrestored webglcontextlost webglcontextcreationerror'.split(' ');
-	function propertyDescriptorPatch() {
+	function propertyDescriptorPatch(_global) {
 	    if (utils_1.isNode) {
 	        return;
 	    }
@@ -1098,7 +1093,7 @@
 	        patchViaCapturingAllTheEvents();
 	        utils_1.patchClass('XMLHttpRequest');
 	        if (supportsWebSocket) {
-	            webSocketPatch.apply();
+	            webSocketPatch.apply(_global);
 	        }
 	    }
 	}
@@ -1153,17 +1148,17 @@
 /* 7 */
 /***/ function(module, exports, __webpack_require__) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {"use strict";
+	"use strict";
 	var utils_1 = __webpack_require__(3);
 	// we have to patch the instance since the proto is non-configurable
-	function apply() {
-	    var WS = global.WebSocket;
+	function apply(_global) {
+	    var WS = _global.WebSocket;
 	    // On Safari window.EventTarget doesn't exist so need to patch WS add/removeEventListener
 	    // On older Chrome, no need since EventTarget was already patched
-	    if (!global.EventTarget) {
+	    if (!_global.EventTarget) {
 	        utils_1.patchEventTargetMethods(WS.prototype);
 	    }
-	    global.WebSocket = function (a, b) {
+	    _global.WebSocket = function (a, b) {
 	        var socket = arguments.length > 1 ? new WS(a, b) : new WS(a);
 	        var proxySocket;
 	        // Safari 7.0 has non-configurable own 'onmessage' and friends properties on the socket instance
@@ -1186,7 +1181,6 @@
 	}
 	exports.apply = apply;
 
-	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
 /***/ }
 /******/ ]);

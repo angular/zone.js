@@ -555,12 +555,7 @@
 	        };
 	    }
 	    return global.Zone = Zone;
-	})((function () { try {
-	    return window;
-	}
-	catch (e) {
-	    return global;
-	} })());
+	})(typeof window == 'undefined' ? global : window);
 
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 
