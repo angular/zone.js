@@ -6,6 +6,8 @@ if (!Zone) {
 }
 
 var SET_TIMEOUT = '__zone_symbol__setTimeout';
+const _global = typeof window == 'undefined' ? global : window;
+
 
 // When you have in async test (test with `done` argument) jasmine will
 // execute the next test synchronously in the done handler. This makes sense
@@ -18,7 +20,7 @@ var SET_TIMEOUT = '__zone_symbol__setTimeout';
   // Subclass the `QueueRunner` and override the `clearStack` method.
 
   function alwaysClearStack(fn) {
-    global[SET_TIMEOUT](fn, 0);
+    _global[SET_TIMEOUT](fn, 0);
   }
 
   function QueueRunner(options) {

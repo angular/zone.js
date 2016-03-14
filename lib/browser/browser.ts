@@ -8,34 +8,35 @@ import {patchMethod, patchPrototype, patchClass} from "./utils";
 const set = 'set';
 const clear = 'clear';
 const blockingMethods = ['alert', 'prompt', 'confirm'];
+const _global = typeof window == 'undefined' ? global : window;
 
-patchTimer(global, set, clear, 'Timeout');
-patchTimer(global, set, clear, 'Interval');
-patchTimer(global, set, clear, 'Immediate');
-patchTimer(global, 'request', 'cancelMacroTask', 'AnimationFrame');
-patchTimer(global, 'mozRequest', 'mozCancel', 'AnimationFrame');
-patchTimer(global, 'webkitRequest', 'webkitCancel', 'AnimationFrame')
+patchTimer(_global, set, clear, 'Timeout');
+patchTimer(_global, set, clear, 'Interval');
+patchTimer(_global, set, clear, 'Immediate');
+patchTimer(_global, 'request', 'cancelMacroTask', 'AnimationFrame');
+patchTimer(_global, 'mozRequest', 'mozCancel', 'AnimationFrame');
+patchTimer(_global, 'webkitRequest', 'webkitCancel', 'AnimationFrame')
 
 for (var i = 0; i < blockingMethods.length; i++) {
   var name = blockingMethods[i];
-  patchMethod(global, name, (delegate, symbol, name) => {
+  patchMethod(_global, name, (delegate, symbol, name) => {
     return function (s:any, args: any[]) {
-      return Zone.current.run(delegate, global, args, name)
+      return Zone.current.run(delegate, _global, args, name)
     }
   });
 }
 
-eventTargetPatch();
-propertyDescriptorPatch();
+eventTargetPatch(_global);
+propertyDescriptorPatch(_global);
 patchClass('MutationObserver');
 patchClass('WebKitMutationObserver');
 patchClass('FileReader');
 propertyPatch();
-registerElementPatch();
+registerElementPatch(_global);
 
 /// GEO_LOCATION
-if (global['navigator'] && global['navigator'].geolocation) {
-  patchPrototype(global['navigator'].geolocation, [
+if (_global['navigator'] && _global['navigator'].geolocation) {
+  patchPrototype(_global['navigator'].geolocation, [
     'getCurrentPosition',
     'watchPosition'
   ]);

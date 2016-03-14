@@ -1,6 +1,7 @@
 // Hack since TypeScript isn't compiling this for a worker.
 declare var WorkerGlobalScope;
 export var zoneSymbol: (name: string) => string = Zone['__symbol__'];
+const _global = typeof window == 'undefined' ? global : window;
 
 export function bindArguments(args: any[], source: string): any[] {
   for (var i = args.length - 1; i >= 0; i--) {
@@ -157,7 +158,7 @@ function zoneAwareAddEventListener(self: any, args: any[]) {
   // - Inside a Web Worker, `this` is undefined, the context is `global`
   // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
   // see https://github.com/angular/zone.js/issues/190
-  var target = self || global;
+  var target = self || _global;
   var delegate: EventListener = null;
   if (typeof handler == 'function') {
     delegate = <EventListener>handler;
@@ -193,7 +194,7 @@ function zoneAwareRemoveEventListener(self: any, args: any[]) {
   // - Inside a Web Worker, `this` is undefined, the context is `global`
   // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
   // see https://github.com/angular/zone.js/issues/190
-  var target = self || global;
+  var target = self || _global;
   var eventTask = findExistingRegisteredTask(target, handler, eventName, useCapturing, false);
   if (eventTask) {
     eventTask.zone.cancelTask(eventTask);
@@ -216,10 +217,10 @@ var originalInstanceKey = zoneSymbol('originalInstance');
 
 // wrap some native API on `window`
 export function patchClass(className) {
-  var OriginalClass = global[className];
+  var OriginalClass = _global[className];
   if (!OriginalClass) return;
 
-  global[className] = function () {
+  _global[className] = function () {
     var a = bindArguments(<any>arguments, className);
     switch (a.length) {
       case 0: this[originalInstanceKey] = new OriginalClass(); break;
@@ -237,11 +238,11 @@ export function patchClass(className) {
   for (prop in instance) {
     (function (prop) {
       if (typeof instance[prop] === 'function') {
-        global[className].prototype[prop] = function () {
+        _global[className].prototype[prop] = function () {
           return this[originalInstanceKey][prop].apply(this[originalInstanceKey], arguments);
         };
       } else {
-        Object.defineProperty(global[className].prototype, prop, {
+        Object.defineProperty(_global[className].prototype, prop, {
           set: function (fn) {
             if (typeof fn === 'function') {
               this[originalInstanceKey][prop] = Zone.current.wrap(fn, className + '.' + prop);
@@ -259,7 +260,7 @@ export function patchClass(className) {
 
   for (prop in OriginalClass) {
     if (prop !== 'prototype' && OriginalClass.hasOwnProperty(prop)) {
-      global[className][prop] = OriginalClass[prop];
+      _global[className][prop] = OriginalClass[prop];
     }
   }
 };

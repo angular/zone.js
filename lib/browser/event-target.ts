@@ -4,13 +4,13 @@ const WTF_ISSUE_555 = 'Anchor,Area,Audio,BR,Base,BaseFont,Body,Button,Canvas,Con
 const NO_EVENT_TARGET = 'ApplicationCache,EventSource,FileReader,InputMethodContext,MediaController,MessagePort,Node,Performance,SVGElementInstance,SharedWorker,TextTrack,TextTrackCue,TextTrackList,WebKitNamedFlow,Worker,WorkerGlobalScope,XMLHttpRequest,XMLHttpRequestEventTarget,XMLHttpRequestUpload'.split(',');
 const EVENT_TARGET = 'EventTarget';
 
-export function eventTargetPatch() {
+export function eventTargetPatch(_global) {
   var apis = [];
-  var isWtf = global['wtf'];
+  var isWtf = _global['wtf'];
   if (isWtf) {
     // Workaround for: https://github.com/google/tracing-framework/issues/555
     apis = WTF_ISSUE_555.split(',').map((v) => 'HTML' + v + 'Element').concat(NO_EVENT_TARGET);
-  } else if (global[EVENT_TARGET]) {
+  } else if (_global[EVENT_TARGET]) {
     apis.push(EVENT_TARGET);
   } else {
     // Note: EventTarget is not available in all browsers,
@@ -19,7 +19,7 @@ export function eventTargetPatch() {
   }
 
   for (var i = 0; i < apis.length; i++) {
-    var type = global[apis[i]];
+    var type = _global[apis[i]];
     patchEventTargetMethods(type && type.prototype);
   }
 }
