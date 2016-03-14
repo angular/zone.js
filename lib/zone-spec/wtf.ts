@@ -1,4 +1,4 @@
-(function() {
+(function(global) {
   interface Wtf { trace: WtfTrace; }
   interface WtfScope {};
   interface WtfRange {};
@@ -137,4 +137,4 @@
   }
 
   Zone['wtfZoneSpec'] = !wtfEnabled ? null : new WtfZoneSpec();
-})();
+})(typeof window == 'undefined' ? global : window);

@@ -1079,4 +1079,4 @@ var Zone: ZoneType = (function(global) {
   }
 
   return global.Zone = Zone;
-})((function(): any { try { return window; } catch(e) { return global; }})());
+})(typeof window == 'undefined' ? global : window);

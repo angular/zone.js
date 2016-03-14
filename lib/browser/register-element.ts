@@ -1,8 +1,8 @@
 import {_redefineProperty} from './define-property';
 import {isBrowser} from './utils';
 
-export function registerElementPatch() {
-  if (!isBrowser || !('registerElement' in (<any>global).document)) {
+export function registerElementPatch(_global: any) {
+  if (!isBrowser || !('registerElement' in (<any>_global).document)) {
     return;
   }
 
