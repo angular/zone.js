@@ -44,7 +44,7 @@
 /* 0 */
 /***/ function(module, exports) {
 
-	/* WEBPACK VAR INJECTION */(function(global) {(function () {
+	/* WEBPACK VAR INJECTION */(function(global) {(function (global) {
 	    ;
 	    ;
 	    // Detect and setup WTF.
@@ -151,7 +151,7 @@
 	        return name;
 	    }
 	    Zone['wtfZoneSpec'] = !wtfEnabled ? null : new WtfZoneSpec();
-	})();
+	})(typeof window == 'undefined' ? global : window);
 
 	/* WEBPACK VAR INJECTION */}.call(exports, (function() { return this; }())))
 

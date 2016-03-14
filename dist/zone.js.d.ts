@@ -438,8 +438,4 @@ interface MacroTask extends Task {
 }
 interface EventTask extends Task {
 }
-/** @internal */
-declare type AmbientZone = Zone;
-/** @internal */
-declare type AmbientZoneDelegate = ZoneDelegate;
 declare var Zone: ZoneType;
