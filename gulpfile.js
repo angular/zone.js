@@ -98,6 +98,10 @@ gulp.task('build/wtf.min.js', function(cb) {
   return generateBrowserScript('./lib/zone-spec/wtf.ts', 'wtf.min.js', true, cb);
 });
 
+gulp.task('build/async-test.js', function(cb) {
+  return generateBrowserScript('./lib/zone-spec/async-test.ts', 'async-test.js', false, cb);
+});
+
 gulp.task('build', [
   'build/zone.js',
   'build/zone.js.d.ts',
@@ -108,7 +112,8 @@ gulp.task('build', [
   'build/long-stack-trace-zone.js',
   'build/long-stack-trace-zone.min.js',
   'build/wtf.js',
-  'build/wtf.min.js'
+  'build/wtf.min.js',
+  'build/async-test.js'
 ]);
 
 
