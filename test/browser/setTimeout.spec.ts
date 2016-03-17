@@ -40,4 +40,9 @@ describe('setTimeout', function () {
     });
   });
 
+  it('should pass invalid values through', function () {
+    clearTimeout(null);
+    clearTimeout(<any>{});
+  });
+
 });
