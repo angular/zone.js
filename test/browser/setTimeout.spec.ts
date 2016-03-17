@@ -40,4 +40,11 @@ describe('setTimeout', function () {
     });
   });
 
+  it('should allow canceling undefined timeout ids', function () {
+    var clearUndefined = function() {
+      clearTimeout(undefined);
+    };
+    expect(clearUndefined).not.toThrow();
+  });
+
 });
