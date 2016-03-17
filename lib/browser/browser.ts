@@ -66,7 +66,7 @@ function patchTimer(
     return clearNative((<TimerOptions>task.data).handleId);
   }
 
-  var setNative = patchMethod(window, setName, () => function(self: any, args: any[]) {
+  var setNative = patchMethod(window, setName, (delegate: Function) => function(self: any, args: any[]) {
     if (typeof args[0] === 'function') {
       var zone = Zone.current;
       var options:TimerOptions = {
@@ -78,13 +78,17 @@ function patchTimer(
       return zone.scheduleMacroTask(setName, args[0], options, scheduleTask, clearTask);
     } else {
       // cause an error by calling it directly.
-      return setNative.apply(window, args);
+      return delegate.apply(window, args);
     }
   });
 
-  var clearNative = patchMethod(window, cancelName, () => function(self: any, args: any[]) {
+  var clearNative = patchMethod(window, cancelName, (delegate: Function) => function(self: any, args: any[]) {
     var task: Task = args[0];
-    task.zone.cancelTask(task);
+    if (typeof args[0] === 'function') {
+      task.zone.cancelTask(task);
+    } else {
+      delegate.apply(window, args);
+    }
   });
 }
 
