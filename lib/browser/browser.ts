@@ -84,7 +84,8 @@ function patchTimer(
 
   var clearNative = patchMethod(window, cancelName, () => function(self: any, args: any[]) {
     var task: Task = args[0];
-    task.zone.cancelTask(task);
+    if (task != null) {
+      task.zone.cancelTask(task);
+    }
   });
 }
-
