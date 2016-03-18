@@ -94,13 +94,14 @@
           var value = descriptor.value;
           descriptor = {
             get: function() {
-              return renderLongStackTrace(parentTask.data[creationTrace],
+              return renderLongStackTrace(parentTask.data && parentTask.data[creationTrace],
                   delegateGet ? delegateGet.apply(this): value);
             }
           };
           Object.defineProperty(error, 'stack', descriptor);
         } else {
-          error.stack = renderLongStackTrace(parentTask.data[creationTrace], error.stack);
+          error.stack = renderLongStackTrace(parentTask.data && parentTask.data[creationTrace],
+              error.stack);
         }
       }
       return parentZoneDelegate.handleError(targetZone, error);
