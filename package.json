@@ -2,7 +2,8 @@
   "name": "zone.js",
   "version": "0.6.3",
   "description": "Zones for JavaScript",
-  "main": "dist/zone.js",
+  "main": "dist/zone-node.js",
+  "browser": "dist/zone.js",
   "typings": "dist/zone.js.d.ts",
   "files": [
     "lib",
