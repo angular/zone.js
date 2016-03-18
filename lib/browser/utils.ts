@@ -195,7 +195,7 @@ function zoneAwareRemoveEventListener(self: any, args: any[]) {
   // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
   // see https://github.com/angular/zone.js/issues/190
   var target = self || _global;
-  var eventTask = findExistingRegisteredTask(target, handler, eventName, useCapturing, false);
+  var eventTask = findExistingRegisteredTask(target, handler, eventName, useCapturing, true);
   if (eventTask) {
     eventTask.zone.cancelTask(eventTask);
   } else {

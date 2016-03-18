@@ -257,6 +257,13 @@ describe('element', function () {
       button.click();
       expect(log).toEqual('');
     });
+
+    it('should be able to deregister the same event twice', function() {
+      var listener = (event) => {};
+      document.body.addEventListener('click', listener, false);
+      document.body.removeEventListener('click', listener, false);
+      document.body.removeEventListener('click', listener, false);
+    });
   });
 
 });
