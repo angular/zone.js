@@ -308,4 +308,4 @@ zone.run(function() {
 
 
 ## License
-Apache 2.0
+MIT
