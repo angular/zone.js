@@ -318,7 +318,7 @@ interface ZoneSpec {
 
   /**
    * Notifies of changes to the task queue empty status.
-   * 
+   *
    * @param parentZoneDelegate Dalegate which performs the parent [ZoneSpec] operation.
    * @param currentZone The current [Zone] where the current interceptor has beed declared.
    * @param targetZone The [Zone] which originally received the request.
@@ -761,7 +761,6 @@ var Zone: ZoneType = (function(global) {
       var prev = counts[type];
       var next = counts[type] = prev + count;
       if (next < 0) {
-        debugger;
         throw new Error('More tasks executed then were scheduled.');
       }
       if (prev == 0 || next == 0) {
