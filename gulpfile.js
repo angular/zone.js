@@ -63,7 +63,7 @@ gulp.task('build/zone.js.d.ts', ['compile'], function() {
 });
 
 gulp.task('build/zone-node.js', function(cb) {
-  return generateBrowserScript('./lib/zone.ts', 'zone-node.js', false, cb);
+  return generateBrowserScript('./lib/node/node.ts', 'zone-node.js', false, cb);
 });
 
 gulp.task('build/zone.js', function(cb) {
