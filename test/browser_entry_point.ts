@@ -13,6 +13,7 @@ import './test-env-setup';
 // List all tests here:
 import './long-stack-trace-zone.spec';
 import './async-test.spec';
+import './sync-test.spec';
 import './microtasks.spec';
 import './zone.spec';
 import './integration/brick.spec';
