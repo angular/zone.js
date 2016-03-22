@@ -1,7 +1,7 @@
 /**
- * Suppress closure compiler errors about unknown 'process' constiable
+ * Suppress closure compiler errors about unknown 'process' variable
  * @fileoverview
- * @suppress {undefinedconsts}
+ * @suppress {undefinedVars}
  */
 
 // Hack since TypeScript isn't compiling this for a worker.
