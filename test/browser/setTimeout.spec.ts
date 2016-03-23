@@ -40,6 +40,18 @@ describe('setTimeout', function () {
     });
   });
 
+  it('should allow double cancelation of fns registered with setTimeout', function (done) {
+    var spy = jasmine.createSpy('spy');
+    var cancelId = setTimeout(spy, 0);
+    setTimeout(function () {
+      expect(spy).toHaveBeenCalled();
+      setTimeout(function () {
+        clearTimeout(cancelId);
+        done();
+      });
+    });
+  });
+
   it('should pass invalid values through', function () {
     clearTimeout(null);
     clearTimeout(<any>{});

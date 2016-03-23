@@ -581,11 +581,11 @@ var Zone: ZoneType = (function(global) {
           }
         }
       } finally {
+        if (task.type == 'macroTask' && task.data && !task.data.isPeriodic) {
+          task.cancelFn = null;
+        }
         _currentZone = oldZone;
         _currentTask = previousTask;
-        if (task.type == 'microTask') {
-
-        }
       }
     }
 
@@ -761,7 +761,6 @@ var Zone: ZoneType = (function(global) {
       var prev = counts[type];
       var next = counts[type] = prev + count;
       if (next < 0) {
-        debugger;
         throw new Error('More tasks executed then were scheduled.');
       }
       if (prev == 0 || next == 0) {
