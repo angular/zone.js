@@ -16,28 +16,13 @@
     _finishCallbackIfDone() {
       if (!(this._pendingMicroTasks || this._pendingMacroTasks)) {
         // We do this because we would like to catch unhandled rejected promises.
-        // To do this quickly when there are native promises, we must run using an unwrapped
-        // promise implementation.
-        var symbol = (<any>Zone).__symbol__;
-        var NativePromise: typeof Promise = <any>window[symbol('Promise')];
-        if (NativePromise) {
-          NativePromise.resolve(true)[symbol('then')](() => {
-            if (!this._alreadyErrored) {
-              this.runZone.run(this._finishCallback);
+        this.runZone.run(() => {
+          setTimeout(() => {
+            if (!this._alreadyErrored && !(this._pendingMicroTasks || this._pendingMacroTasks)) {
+              this._finishCallback();
             }
-          });
-        } else {
-          // For implementations which do not have nativePromise, use setTimeout(0). This is slower,
-          // but it also works because Zones will handle errors when rejected promises have no
-          // listeners after one macrotask.
-          this.runZone.run(() => {
-            setTimeout(() => {
-              if (!this._alreadyErrored) {
-                this._finishCallback();
-              }
-            }, 0);
-          });
-        }
+          }, 0);
+        });
       }
     }
 
@@ -79,7 +64,6 @@
 
     onHasTask(delegate: ZoneDelegate, current: Zone, target: Zone, hasTaskState: HasTaskState) {
       delegate.hasTask(target, hasTaskState);
-
       if (hasTaskState.change == 'microTask') {
         this._pendingMicroTasks = hasTaskState.microTask;
         this._finishCallbackIfDone();
