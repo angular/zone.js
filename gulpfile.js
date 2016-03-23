@@ -109,6 +109,10 @@ gulp.task('build/async-test.js', function(cb) {
   return generateBrowserScript('./lib/zone-spec/async-test.ts', 'async-test.js', false, cb);
 });
 
+gulp.task('build/fake-async-test.js', function(cb) {
+  return generateBrowserScript('./lib/zone-spec/fake-async-test.ts', 'fake-async-test.js', false, cb);
+});
+
 gulp.task('build/sync-test.js', function(cb) {
   return generateBrowserScript('./lib/zone-spec/sync-test.ts', 'sync-test.js', false, cb);
 });
@@ -125,6 +129,7 @@ gulp.task('build', [
   'build/wtf.js',
   'build/wtf.min.js',
   'build/async-test.js',
+  'build/fake-async-test.js',
   'build/sync-test.js'
 ]);
 

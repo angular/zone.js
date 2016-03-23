@@ -7,3 +7,4 @@ import './common/setTimeout.spec';
 import './zone-spec/long-stack-trace-zone.spec';
 import './zone-spec/async-test.spec';
 import './zone-spec/sync-test.spec';
+import './zone-spec/fake-async-test.spec';
