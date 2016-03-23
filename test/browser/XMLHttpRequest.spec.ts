@@ -3,6 +3,34 @@ import {ifEnvSupports} from '../util';
 describe('XMLHttpRequest', function () {
   var testZone = Zone.current.fork({name: 'test'});
 
+  it('should intercept XHRs and treat them as MacroTasks', function(done) {
+    var req: any;
+    var testZoneWithWtf = Zone.current.fork(Zone['wtfZoneSpec']).fork({ name: 'TestZone' });
+    testZoneWithWtf.run(() => {
+      req = new XMLHttpRequest();
+      req.onload = () => {
+        // The last entry in the log should be the invocation for the current onload,
+        // which will vary depending on browser environment. The prior entries
+        // should be the invocation of the send macrotask.
+        expect(wtfMock.log[wtfMock.log.length - 5]).toMatch(
+          /\> Zone\:invokeTask.*addEventListener\:readystatechange/);
+        expect(wtfMock.log[wtfMock.log.length - 4]).toEqual(
+          '> Zone:invokeTask:XMLHttpRequest.send("<root>::WTF::TestZone")');
+        expect(wtfMock.log[wtfMock.log.length - 3]).toEqual(
+          '< Zone:invokeTask:XMLHttpRequest.send');
+        expect(wtfMock.log[wtfMock.log.length - 2]).toMatch(
+          /\< Zone\:invokeTask.*addEventListener\:readystatechange/);
+        done();
+      };
+
+      req.open('get', '/', true);
+      req.send();
+
+      var lastScheduled = wtfMock.log[wtfMock.log.length - 1];
+      expect(lastScheduled).toMatch('# Zone:schedule:macroTask:XMLHttpRequest.send');
+    }, null, null, 'unit-test');
+  });
+
   it('should work with onreadystatechange', function (done) {
     var req;
 
@@ -41,6 +69,43 @@ describe('XMLHttpRequest', function () {
       });
 
       req.send();
+    });
+
+    it('should allow canceling of an XMLHttpRequest', function(done) {
+      var spy = jasmine.createSpy('spy');
+      var req;
+      var pending = false;
+
+      var trackingTestZone = Zone.current.fork({
+        name: 'tracking test zone',
+        onHasTask: (delegate: ZoneDelegate, current: Zone, target: Zone, hasTaskState: HasTaskState) => {
+          if (hasTaskState.change == 'macroTask') {
+            pending = hasTaskState.macroTask;
+          }
+          delegate.hasTask(target, hasTaskState);
+        }
+      });
+
+      trackingTestZone.run(function() {
+        req = new XMLHttpRequest();
+        req.onreadystatechange = function() {
+          if (req.readyState === XMLHttpRequest.DONE) {
+            if (req.status !== 0) {
+              spy();
+            }
+          }
+        };
+        req.open('get', '/', true);
+
+        req.send();
+        req.abort();
+      });
+
+      setTimeout(function() {
+        expect(spy).not.toHaveBeenCalled();
+        expect(pending).toEqual(false);
+        done();
+      }, 0);
     });
   }));
 
