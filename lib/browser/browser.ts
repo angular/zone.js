@@ -86,7 +86,10 @@ function patchTimer(
   var clearNative = patchMethod(window, cancelName, (delegate: Function) => function(self: any, args: any[]) {
     var task: Task = args[0];
     if (task && typeof task.type == 'string') {
-      task.zone.cancelTask(task);
+      if (task.cancelFn) {
+        // Do not cancel already canceled functions
+        task.zone.cancelTask(task);
+      }
     } else {
       // cause an error by calling it directly.
       delegate.apply(window, args);
