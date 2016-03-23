@@ -173,6 +173,33 @@ describe('AsyncTestZoneSpec', function() {
     });
   });
 
+  it('should wait for XHRs to complete', function(done) {
+    var req;
+    var finished = false;
+
+    var testZoneSpec = new AsyncTestZoneSpec(() => {
+      expect(finished).toBe(true);
+      done();
+    }, (err) => {
+      done.fail('async zone called failCallback unexpectedly');
+    }, 'name');
+
+    var atz = Zone.current.fork(testZoneSpec);
+
+    atz.run(function() {
+      req = new XMLHttpRequest();
+
+      req.onreadystatechange = () => {
+        if (req.readyState === XMLHttpRequest.DONE) {
+          finished = true;
+        }
+      };
+
+      req.open('get', '/', true);
+      req.send();
+    });
+  });
+
   it('should fail if setInterval is used', (done) => {
     var finished = false;
 
@@ -226,6 +253,30 @@ describe('AsyncTestZoneSpec', function() {
       Promise.reject('my reason');
     });
 
+  });
+
+  it('should fail if an xhr fails', function(done) {
+    var req;
+
+    var testZoneSpec = new AsyncTestZoneSpec(() => {
+      done.fail('expected failCallback to be called');
+    }, (err) => {
+      expect(err).toEqual('bad url failure');
+      done();
+    }, 'name');
+
+    var atz = Zone.current.fork(testZoneSpec);
+
+    atz.run(function() {
+      req = new XMLHttpRequest();
+      req.onload = () => {
+        if (req.status != 200) {
+          throw new Error('bad url failure');
+        }
+      }
+      req.open('get', '/bad-url', true);
+      req.send();
+    });
   });
 });
 
