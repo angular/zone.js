@@ -1,3 +1,4 @@
+import { Zone } from '../zone';
 import {_redefineProperty} from './define-property';
 import {isBrowser} from './utils';
 

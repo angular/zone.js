@@ -1,4 +1,5 @@
 import {ifEnvSupports} from '../util';
+import { Zone } from '../../lib/zone';
 
 describe('FileReader', ifEnvSupports('FileReader', function () {
   var fileReader;
@@ -6,7 +7,7 @@ describe('FileReader', ifEnvSupports('FileReader', function () {
   var data = 'Hello, World!';
   var testZone = Zone.current.fork({ name: 'TestZone' });
 
-  // Android 4.3's native browser doesn't implement add/RemoveEventListener for FileReader 
+  // Android 4.3's native browser doesn't implement add/RemoveEventListener for FileReader
   function supportsEventTargetFns () {
     return FileReader.prototype.addEventListener && FileReader.prototype.removeEventListener;
   }

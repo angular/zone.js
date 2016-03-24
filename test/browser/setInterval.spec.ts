@@ -1,5 +1,6 @@
 'use strict';
 import {zoneSymbol} from "../../lib/browser/utils";
+import { Zone, MacroTask } from '../../lib/zone';
 
 describe('setInterval', function () {
 

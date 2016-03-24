@@ -1,3 +1,4 @@
+import { Zone, TaskData, Task } from '../zone';
 /**
  * Suppress closure compiler errors about unknown 'process' variable
  * @fileoverview
@@ -317,4 +318,3 @@ export function patchMethod(target: any, name: string,
   }
   return delegate;
 }
-

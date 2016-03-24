@@ -1,3 +1,4 @@
+import { Zone, ZoneDelegate, Task, ZoneSpec } from '../zone';
 'use strict';
 (function() {
   const NEWLINE = '\n';

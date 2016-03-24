@@ -4,6 +4,7 @@
  */
 
 import {ifEnvSupports} from '../util';
+import { Zone } from '../../lib/zone';
 
 function registerElement() {
   return ('registerElement' in document);

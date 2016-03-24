@@ -1,4 +1,5 @@
 import {ifEnvSupports} from '../util';
+import { Zone, } from '../../lib/zone';
 
 describe('requestAnimationFrame', function () {
   var functions = [

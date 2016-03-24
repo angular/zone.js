@@ -1,4 +1,5 @@
 import {ifEnvSupports} from '../util';
+import { Zone } from '../../lib/zone';
 
 describe('XMLHttpRequest', function () {
   var testZone = Zone.current.fork({name: 'test'});
@@ -65,4 +66,3 @@ describe('XMLHttpRequest', function () {
     expect(XMLHttpRequest.DONE).toEqual(4);
   });
 });
-

@@ -1,4 +1,5 @@
 import {ifEnvSupports} from '../util';
+import { Zone, ZoneSpec, Task, ZoneDelegate, MicroTask } from '../../lib/zone';
 
 class MicroTaskQueueZoneSpec implements ZoneSpec {
   name: string = 'MicroTaskQueue';
@@ -138,7 +139,7 @@ describe('Promise', ifEnvSupports('Promise', function () {
         });
       });
 
-      
+
       expect(reject()).toBe(undefined);
     });
 

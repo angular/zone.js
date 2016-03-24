@@ -1,4 +1,4 @@
-'use strict';
+import { Zone, ZoneSpec, Task, ZoneDelegate, MicroTask } from '../../lib/zone';
 // Patch jasmine's it and fit functions so that the `done` wrapCallback always resets the zone
 // to the jasmine zone, which should be the root zone. (angular/zone.js#91)
 if (!Zone) {
@@ -30,4 +30,3 @@ const _global = typeof window == 'undefined' ? global : window;
   QueueRunner.prototype = SuperQueueRunner.prototype;
   return QueueRunner;
 })((<any>jasmine).QueueRunner);
-

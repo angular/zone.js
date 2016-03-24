@@ -1,3 +1,5 @@
+import { Zone, ZoneSpec, Task, ZoneDelegate, MicroTask } from '../zone';
+
 (function() {
   class SyncTestZoneSpec implements ZoneSpec {
     runZone = Zone.current;

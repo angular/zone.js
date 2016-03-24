@@ -1,3 +1,4 @@
+import { Zone } from '../../lib/zone';
 import {ifEnvSupports} from '../util';
 
 describe('MutationObserver', ifEnvSupports('MutationObserver', function () {

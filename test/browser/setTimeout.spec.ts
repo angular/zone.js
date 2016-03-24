@@ -1,4 +1,5 @@
 import {zoneSymbol} from '../../lib/browser/utils';
+import { Zone, MacroTask } from '../../lib/zone';
 
 describe('setTimeout', function () {
   it('should intercept setTimeout', function (done) {

@@ -1,4 +1,4 @@
-import '../zone';
+import { TaskData, Zone, Task } from '../zone';
 import {eventTargetPatch} from './event-target';
 import {propertyPatch} from './define-property';
 import {registerElementPatch} from './register-element';
@@ -96,4 +96,3 @@ function patchTimer(
     }
   });
 }
-

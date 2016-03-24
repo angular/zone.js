@@ -1,4 +1,5 @@
 import '../lib/zone-spec/async-test';
+import { Zone, ZoneSpec, Task, ZoneDelegate, HasTaskState } from '../lib/zone';
 
 describe('AsyncTestZoneSpec', function() {
   var log;
