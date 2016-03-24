@@ -118,5 +118,12 @@ if (!window['soucelabs']) {
         done();
       }, 100);
     }, TIMEOUT);
+
+    it('should have constants', function () {
+      expect(Object.keys(WebSocket)).toContain('CONNECTING');
+      expect(Object.keys(WebSocket)).toContain('OPEN');
+      expect(Object.keys(WebSocket)).toContain('CLOSING');
+      expect(Object.keys(WebSocket)).toContain('CLOSED');
+    });
   }));
 }
