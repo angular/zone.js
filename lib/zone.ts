@@ -579,6 +579,9 @@ const Zone: ZoneType = (function(global) {
       const oldZone = _currentZone;
       _currentZone = this;
       try {
+        if (task.type == 'macroTask' && task.data && !task.data.isPeriodic) {
+          task.cancelFn = null;
+        }
         try {
           return this._zoneDelegate.invokeTask(this, task, applyThis, applyArgs);
         } catch (error) {
@@ -587,9 +590,6 @@ const Zone: ZoneType = (function(global) {
           }
         }
       } finally {
-        if (task.type == 'macroTask' && task.data && !task.data.isPeriodic) {
-          task.cancelFn = null;
-        }
         _currentZone = oldZone;
         _currentTask = previousTask;
       }

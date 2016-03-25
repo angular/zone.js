@@ -31,23 +31,29 @@ describe('setTimeout', function () {
   });
 
   it('should allow canceling of fns registered with setTimeout', function (done) {
-    var spy = jasmine.createSpy('spy');
-    var cancelId = setTimeout(spy, 0);
-    clearTimeout(cancelId);
-    setTimeout(function () {
-      expect(spy).not.toHaveBeenCalled();
-      done();
+    var testZone = Zone.current.fork(Zone['wtfZoneSpec']).fork({ name: 'TestZone' });
+    testZone.run(() => {
+      var spy = jasmine.createSpy('spy');
+      var cancelId = setTimeout(spy, 0);
+      clearTimeout(cancelId);
+      setTimeout(function () {
+        expect(spy).not.toHaveBeenCalled();
+        done();
+      });
     });
   });
 
-  it('should allow double cancelation of fns registered with setTimeout', function (done) {
-    var spy = jasmine.createSpy('spy');
-    var cancelId = setTimeout(spy, 0);
-    setTimeout(function () {
-      expect(spy).toHaveBeenCalled();
+  it('should allow cancelation of fns registered with setTimeout after invocation', function (done) {
+    var testZone = Zone.current.fork(Zone['wtfZoneSpec']).fork({ name: 'TestZone' });
+    testZone.run(() => {
+      var spy = jasmine.createSpy('spy');
+      var cancelId = setTimeout(spy, 0);
       setTimeout(function () {
-        clearTimeout(cancelId);
-        done();
+        expect(spy).toHaveBeenCalled();
+        setTimeout(function () {
+          clearTimeout(cancelId);
+          done();
+        });
       });
     });
   });
@@ -57,6 +63,16 @@ describe('setTimeout', function () {
       clearTimeout(cancelId);
       done();
     }, 0);
+  });
+
+  it('should allow cancelation of fns registered with setTimeout during invocation', function (done) {
+    var testZone = Zone.current.fork(Zone['wtfZoneSpec']).fork({ name: 'TestZone' });
+    testZone.run(() => {
+      var cancelId = setTimeout(function() {
+        clearTimeout(cancelId);
+        done();       
+      }, 0);
+    });
   });
 
   it('should pass invalid values through', function () {
