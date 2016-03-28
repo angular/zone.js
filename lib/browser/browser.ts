@@ -86,7 +86,7 @@ function patchTimer(
   var clearNative = patchMethod(window, cancelName, (delegate: Function) => function(self: any, args: any[]) {
     var task: Task = args[0];
     if (task && typeof task.type == 'string') {
-      if (task.cancelFn) {
+      if (task.cancelFn && task.data.isPeriodic || task.runCount == 0) {
         // Do not cancel already canceled functions
         task.zone.cancelTask(task);
       }

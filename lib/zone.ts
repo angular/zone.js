@@ -462,6 +462,11 @@ interface Task {
    * at the time of Task creation.
    */
   zone: Zone;
+
+  /**
+   * Number of times the task has been executed, or -1 if canceled.
+   */
+  runCount: number;
 }
 
 interface MicroTask extends Task {
@@ -565,6 +570,7 @@ var Zone: ZoneType = (function(global) {
 
 
     runTask(task: Task, applyThis?: any, applyArgs?: any) {
+      task.runCount++;
       if (task.zone != this)
         throw new Error('A task can only be run in the zone which created it! (Creation: ' +
             task.zone.name + '; Execution: ' + this.name + ')');
@@ -612,6 +618,7 @@ var Zone: ZoneType = (function(global) {
 
     cancelTask(task: Task): any {
       var value = this._zoneDelegate.cancelTask(this, task);
+      task.runCount = -1;
       task.cancelFn = null;
       return value;
     }
@@ -791,6 +798,7 @@ var Zone: ZoneType = (function(global) {
     public scheduleFn: (task: Task) => void;
     public cancelFn: (task: Task) => void;
     public zone: Zone;
+    public runCount: number = 0;
 
     constructor(type: TaskType, zone: Zone, source: string, callback: Function, options: TaskData,
                 scheduleFn: (task: Task) => void, cancelFn:(task: Task) => void)
