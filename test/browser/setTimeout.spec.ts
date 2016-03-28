@@ -52,6 +52,13 @@ describe('setTimeout', function () {
     });
   });
 
+  it('should allow cancelation of fns while the task is being executed', function (done) {var spy = jasmine.createSpy('spy');
+    var cancelId = setTimeout(() => {
+      clearTimeout(cancelId);
+      done();
+    }, 0);
+  });
+
   it('should pass invalid values through', function () {
     clearTimeout(null);
     clearTimeout(<any>{});
