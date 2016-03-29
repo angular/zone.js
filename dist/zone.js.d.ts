@@ -431,6 +431,10 @@ interface Task {
      * at the time of Task creation.
      */
     zone: Zone;
+    /**
+     * Number of times the task has been executed, or -1 if canceled.
+     */
+    runCount: number;
 }
 interface MicroTask extends Task {
 }
