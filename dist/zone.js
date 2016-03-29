@@ -114,7 +114,7 @@
 	    var clearNative = utils_1.patchMethod(window, cancelName, function (delegate) { return function (self, args) {
 	        var task = args[0];
 	        if (task && typeof task.type == 'string') {
-	            if (task.cancelFn) {
+	            if (task.cancelFn && task.data.isPeriodic || task.runCount == 0) {
 	                // Do not cancel already canceled functions
 	                task.zone.cancelTask(task);
 	            }
@@ -225,6 +225,7 @@
 	            }
 	        };
 	        Zone.prototype.runTask = function (task, applyThis, applyArgs) {
+	            task.runCount++;
 	            if (task.zone != this)
 	                throw new Error('A task can only be run in the zone which created it! (Creation: ' +
 	                    task.zone.name + '; Execution: ' + this.name + ')');
@@ -261,6 +262,7 @@
 	        };
 	        Zone.prototype.cancelTask = function (task) {
 	            var value = this._zoneDelegate.cancelTask(this, task);
+	            task.runCount = -1;
 	            task.cancelFn = null;
 	            return value;
 	        };
@@ -392,6 +394,7 @@
 	    }());
 	    var ZoneTask = (function () {
 	        function ZoneTask(type, zone, source, callback, options, scheduleFn, cancelFn) {
+	            this.runCount = 0;
 	            this.type = type;
 	            this.zone = zone;
 	            this.source = source;
