@@ -113,11 +113,11 @@ const SYMBOL_ADD_EVENT_LISTENER = zoneSymbol(ADD_EVENT_LISTENER);
 const SYMBOL_REMOVE_EVENT_LISTENER = zoneSymbol(REMOVE_EVENT_LISTENER);
 
 interface ListenerTaskMeta extends TaskData {
-  useCapturing: boolean,
-  eventName: string,
-  handler: any,
-  target: any,
-  name: any
+  useCapturing: boolean;
+  eventName: string;
+  handler: any;
+  target: any;
+  name: an;
 }
 
 function findExistingRegisteredTask(target: any, handler: any, name: string, capture: boolean,
