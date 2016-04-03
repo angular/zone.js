@@ -372,10 +372,10 @@ interface ZoneDelegate {
 }
 
 type HasTaskState = {
-  microTask: boolean,
-  macroTask: boolean,
-  eventTask: boolean,
-  change: TaskType
+  microTask: boolean;
+  macroTask: boolean;
+  eventTask: boolean;
+  change: TaskType;
 };
 
 /**
@@ -486,7 +486,7 @@ type AmbientZone = Zone;
 /** @internal */
 type AmbientZoneDelegate = ZoneDelegate;
 
-var Zone: ZoneType = (function(global) {
+const Zone: ZoneType = (function(global) {
   class Zone implements AmbientZone {
     static __symbol__: (name: string) => string = __symbol__;
 
@@ -512,7 +512,7 @@ var Zone: ZoneType = (function(global) {
     }
 
     public get(key: string): any {
-      var current: Zone = this;
+      let current: Zone = this;
       while (current) {
         if (current._properties.hasOwnProperty(key)) {
           return current._properties[key];
@@ -528,20 +528,20 @@ var Zone: ZoneType = (function(global) {
 
     public wrap(callback: Function, source: string): Function
     {
-      if (typeof callback != 'function') {
+      if (typeof callback !== 'function') {
         throw new Error('Expecting function got: ' + callback);
       }
-      var callback = this._zoneDelegate.intercept(this, callback, source);
-      var zone: Zone = this;
+      const _callback = this._zoneDelegate.intercept(this, callback, source);
+      const zone: Zone = this;
       return function() {
-        return zone.runGuarded(callback, this, <any>arguments, source);
+        return zone.runGuarded(_callback, this, <any>arguments, source);
       }
     }
 
     public run(callback: Function, applyThis: any = null, applyArgs: any[] = null,
                source: string = null)
     {
-      var oldZone = _currentZone;
+      const oldZone = _currentZone;
       _currentZone = this;
       try {
         return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
@@ -553,7 +553,7 @@ var Zone: ZoneType = (function(global) {
     public runGuarded(callback: Function, applyThis: any = null, applyArgs: any[] = null,
                       source: string = null)
     {
-      var oldZone = _currentZone;
+      const oldZone = _currentZone;
       _currentZone = this;
       try {
         try {
@@ -574,9 +574,9 @@ var Zone: ZoneType = (function(global) {
       if (task.zone != this)
         throw new Error('A task can only be run in the zone which created it! (Creation: ' +
             task.zone.name + '; Execution: ' + this.name + ')');
-      var previousTask = _currentTask;
+      const previousTask = _currentTask;
       _currentTask = task;
-      var oldZone = _currentZone;
+      const oldZone = _currentZone;
       _currentZone = this;
       try {
         try {
@@ -617,7 +617,7 @@ var Zone: ZoneType = (function(global) {
     }
 
     cancelTask(task: Task): any {
-      var value = this._zoneDelegate.cancelTask(this, task);
+      const value = this._zoneDelegate.cancelTask(this, task);
       task.runCount = -1;
       task.cancelFn = null;
       return value;
@@ -743,7 +743,7 @@ var Zone: ZoneType = (function(global) {
     }
 
     cancelTask(targetZone: Zone, task: Task): any {
-      var value;
+      let value;
       if (this._cancelTaskZS) {
         value =  this._cancelTaskZS.onCancelTask(this._cancelTaskDlgt, this.zone, targetZone, task);
       } else  if (!task.cancelFn) {
@@ -764,14 +764,14 @@ var Zone: ZoneType = (function(global) {
     }
 
     private _updateTaskCount(type: TaskType, count: number) {
-      var counts = this._taskCounts;
-      var prev = counts[type];
-      var next = counts[type] = prev + count;
+      const counts = this._taskCounts;
+      const prev = counts[type];
+      const next = counts[type] = prev + count;
       if (next < 0) {
         throw new Error('More tasks executed then were scheduled.');
       }
       if (prev == 0 || next == 0) {
-        var isEmpty: HasTaskState = {
+        const isEmpty: HasTaskState = {
           microTask: counts.microTask > 0,
           macroTask: counts.macroTask > 0,
           eventTask: counts.eventTask > 0,
@@ -810,7 +810,7 @@ var Zone: ZoneType = (function(global) {
       this.scheduleFn = scheduleFn;
       this.cancelFn = cancelFn;
       this.callback = callback;
-      var self = this;
+      const self = this;
       this.invoke = function () {
         try {
           return zone.runTask(self, this, <any>arguments);
@@ -833,12 +833,12 @@ var Zone: ZoneType = (function(global) {
   const symbolPromise = __symbol__('Promise');
   const symbolThen = __symbol__('then');
 
-  var _currentZone: Zone = new Zone(null, null);
-  var _currentTask: Task = null;
-  var _microTaskQueue: Task[] = [];
-  var _isDrainingMicrotaskQueue: boolean = false;
-  var _uncaughtPromiseErrors: UncaughtPromiseError[] = [];
-  var _drainScheduled: boolean = false;
+  let _currentZone: Zone = new Zone(null, null);
+  let _currentTask: Task = null;
+  let _microTaskQueue: Task[] = [];
+  let _isDrainingMicrotaskQueue: boolean = false;
+  let _uncaughtPromiseErrors: UncaughtPromiseError[] = [];
+  let _drainScheduled: boolean = false;
 
   function scheduleQueueDrain() {
     if (!_drainScheduled && !_currentTask && _microTaskQueue.length == 0) {
@@ -857,7 +857,7 @@ var Zone: ZoneType = (function(global) {
   }
 
   function consoleError(e:any) {
-    var rejection = e && e.rejection;
+    const rejection = e && e.rejection;
     if (rejection) {
       console.error(
           'Unhandled Promise rejection:', rejection instanceof Error ? rejection.message : rejection,
@@ -873,10 +873,10 @@ var Zone: ZoneType = (function(global) {
     if (!_isDrainingMicrotaskQueue) {
       _isDrainingMicrotaskQueue = true;
       while(_microTaskQueue.length) {
-        var queue = _microTaskQueue;
+        const queue = _microTaskQueue;
         _microTaskQueue = [];
-        for (var i = 0; i < queue.length; i++) {
-          var task = queue[i];
+        for (let i = 0; i < queue.length; i++) {
+          const task = queue[i];
           try {
             task.zone.runTask(task, null, null);
           } catch (e) {
@@ -885,10 +885,10 @@ var Zone: ZoneType = (function(global) {
         }
       }
       while(_uncaughtPromiseErrors.length) {
-        var uncaughtPromiseErrors = _uncaughtPromiseErrors;
+        const uncaughtPromiseErrors = _uncaughtPromiseErrors;
         _uncaughtPromiseErrors = [];
-        for (var i = 0; i < uncaughtPromiseErrors.length; i++) {
-          var uncaughtPromiseError: UncaughtPromiseError = uncaughtPromiseErrors[i];
+        for (let i = 0; i < uncaughtPromiseErrors.length; i++) {
+          const uncaughtPromiseError: UncaughtPromiseError = uncaughtPromiseErrors[i];
           try {
             uncaughtPromiseError.zone.runGuarded(() => { throw uncaughtPromiseError; });
           } catch (e) {
@@ -934,10 +934,10 @@ var Zone: ZoneType = (function(global) {
         value.then(makeResolver(promise, state), makeResolver(promise, false));
       } else {
         promise[symbolState] = state;
-        var queue = promise[symbolValue];
+        const queue = promise[symbolValue];
         promise[symbolValue] = value;
 
-        for (var i = 0; i < queue.length;) {
+        for (let i = 0; i < queue.length;) {
           scheduleResolveOrReject(promise, queue[i++], queue[i++], queue[i++], queue[i++]);
         }
         if (queue.length == 0 && state == REJECTED) {
@@ -945,7 +945,7 @@ var Zone: ZoneType = (function(global) {
           try {
             throw new Error("Uncaught (in promise): " +  value);
           } catch (e) {
-            var error: UncaughtPromiseError = e;
+            const error: UncaughtPromiseError = e;
             error.rejection = value;
             error.promise = promise;
             error.zone = Zone.current;
@@ -963,7 +963,7 @@ var Zone: ZoneType = (function(global) {
   function clearRejectedNoCatch(promise: ZoneAwarePromise<any>): void {
     if (promise[symbolState] === REJECTED_NO_CATCH) {
       promise[symbolState] = REJECTED;
-      for (var i = 0; i < _uncaughtPromiseErrors.length; i++) {
+      for (let i = 0; i < _uncaughtPromiseErrors.length; i++) {
         if (promise === _uncaughtPromiseErrors[i].promise) {
           _uncaughtPromiseErrors.splice(i, 1);
           break;
@@ -980,7 +980,7 @@ var Zone: ZoneType = (function(global) {
                                          onRejected?: (error: any) => U): void
   {
     clearRejectedNoCatch(promise);
-    var delegate = promise[symbolState] ? onFulfilled || forwardResolution: onRejected || forwardRejection;
+    const delegate = promise[symbolState] ? onFulfilled || forwardResolution: onRejected || forwardRejection;
     zone.scheduleMicroTask(source, () => {
       try {
         resolvePromise(chainPromise, true, zone.run(delegate, null, [promise[symbolValue]]));
@@ -1000,13 +1000,13 @@ var Zone: ZoneType = (function(global) {
     }
 
     static race<R>(values: Thenable<any>[]): Promise<R> {
-      var resolve: (v: any) => void;
-      var reject: (v: any) => void;
-      var promise: any = new this((res, rej) => {resolve = res; reject = rej});
+      let resolve: (v: any) => void;
+      let reject: (v: any) => void;
+      let promise: any = new this((res, rej) => {resolve = res; reject = rej});
       function onResolve(value) { promise && (promise = null || resolve(value)) }
       function onReject(error) { promise && (promise = null || reject(error)) }
 
-      for(var value of values) {
+      for(let value of values) {
         if (!isThenable(value)) {
           value = this.resolve(value);
         }
@@ -1016,14 +1016,14 @@ var Zone: ZoneType = (function(global) {
     }
 
     static all<R>(values): Promise<R> {
-      var resolve: (v: any) => void;
-      var reject: (v: any) => void;
-      var promise = new this((res, rej) => {resolve = res; reject = rej;});
-      var resolvedValues = [];
-      var count = 0;
+      let resolve: (v: any) => void;
+      let reject: (v: any) => void;
+      let promise = new this((res, rej) => {resolve = res; reject = rej;});
+      let count = 0;
+      const resolvedValues = [];
       function onReject(error) { promise && reject(error); promise = null; }
 
-      for(var value of values) {
+      for(let value of values) {
         if (!isThenable(value)) {
           value = this.resolve(value);
         }
@@ -1043,7 +1043,7 @@ var Zone: ZoneType = (function(global) {
 
     constructor(executor: (resolve : (value?: R | Thenable<R>) => void,
                            reject: (error?: any) => void) => void) {
-      var promise: ZoneAwarePromise<R> = this;
+      const promise: ZoneAwarePromise<R> = this;
       promise[symbolState] = UNRESOLVED;
       promise[symbolValue] = []; // queue;
       try {
@@ -1056,8 +1056,8 @@ var Zone: ZoneType = (function(global) {
     then<R, U>(onFulfilled?: (value: R) => U | Thenable<U>,
                onRejected?: (error: any) => U | Thenable<U>): Promise<R>
     {
-      var chainPromise: Promise<R> = new ZoneAwarePromise(null);
-      var zone = Zone.current;
+      const chainPromise: Promise<R> = new ZoneAwarePromise(null);
+      const zone = Zone.current;
       if (this[symbolState] == UNRESOLVED ) {
         (<any[]>this[symbolValue]).push(zone, chainPromise, onFulfilled, onRejected);
       } else {
@@ -1071,14 +1071,14 @@ var Zone: ZoneType = (function(global) {
     }
   }
 
-  var NativePromise = global[__symbol__('Promise')] = global.Promise;
+  const NativePromise = global[__symbol__('Promise')] = global.Promise;
   global.Promise = ZoneAwarePromise;
   if (NativePromise) {
-    var NativePromiseProtototype = NativePromise.prototype;
-    var NativePromiseThen = NativePromiseProtototype[__symbol__('then')]
+    const NativePromiseProtototype = NativePromise.prototype;
+    const NativePromiseThen = NativePromiseProtototype[__symbol__('then')]
         = NativePromiseProtototype.then;
     NativePromiseProtototype.then = function(onResolve, onReject) {
-      var nativePromise = this;
+      const nativePromise = this;
       return new ZoneAwarePromise((resolve, reject) => {
         NativePromiseThen.call(nativePromise, resolve, reject);
       }).then(onResolve, onReject);
@@ -1086,4 +1086,4 @@ var Zone: ZoneType = (function(global) {
   }
 
   return global.Zone = Zone;
-})(typeof window == 'undefined' ? global : window);
+})(typeof window === 'undefined' ? global : window);

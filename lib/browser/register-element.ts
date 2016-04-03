@@ -6,8 +6,8 @@ export function registerElementPatch(_global: any) {
     return;
   }
 
-  var _registerElement = (<any>document).registerElement;
-  var callbacks = [
+  const _registerElement = (<any>document).registerElement;
+  const callbacks = [
     'createdCallback',
     'attachedCallback',
     'detachedCallback',
@@ -17,9 +17,9 @@ export function registerElementPatch(_global: any) {
   (<any>document).registerElement = function (name, opts) {
     if (opts && opts.prototype) {
       callbacks.forEach(function (callback) {
-        var source = 'Document.registerElement::' + callback;
+        const source = 'Document.registerElement::' + callback;
         if (opts.prototype.hasOwnProperty(callback)) {
-          var descriptor = Object.getOwnPropertyDescriptor(opts.prototype, callback);
+          const descriptor = Object.getOwnPropertyDescriptor(opts.prototype, callback);
           if (descriptor && descriptor.value) {
             descriptor.value = Zone.current.wrap(descriptor.value, source);
             _redefineProperty(opts.prototype, callback, descriptor);
