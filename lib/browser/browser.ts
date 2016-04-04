@@ -96,9 +96,8 @@ function patchXHR(window: any) {
     var task: Task = findPendingTask(self);
     if (task && typeof task.type == 'string') {
       task.zone.cancelTask(task);
-    } else {
-      throw new Error('tried to abort an XHR which has not yet been sent');
     }
+    // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no task to cancel. Do nothing.
   });
 }
 
