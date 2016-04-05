@@ -174,13 +174,26 @@ function zoneAwareAddEventListener(self: any, args: any[]) {
   // see https://github.com/angular/zone.js/issues/190
   var target = self || _global;
   var delegate: EventListener = null;
-  if (typeof handler == 'function') {
-    delegate = <EventListener>handler;
-  } else if (handler && (<EventListenerObject>handler).handleEvent) {
-    delegate = (event) => (<EventListenerObject>handler).handleEvent(event);
+  var validZoneHandler = false;
+
+  try {
+    if (typeof handler == 'function') {
+      delegate = <EventListener>handler;
+    } else if (handler && (<EventListenerObject>handler).handleEvent) {
+      delegate = (event) => (<EventListenerObject>handler).handleEvent(event);
+    }
+
+    // In cross site contexts (such as WebDriver frameworks like Selenium),
+    // accessing the handler object here will cause an exception to be thrown which
+    // will fail tests prematurely.
+    validZoneHandler = handler && handler.toString() === "[object FunctionWrapper]";
+  } catch(e) {
+    // Returning nothing here is fine, because objects in a cross-site context are unusable
+    return;
   }
+
   // Ignore special listeners of IE11 & Edge dev tools, see https://github.com/angular/zone.js/issues/150
-  if (!delegate || handler && handler.toString() === "[object FunctionWrapper]") {
+  if (!delegate || validZoneHandler) {
     return target[SYMBOL_ADD_EVENT_LISTENER](eventName, handler, useCapturing);
   }
   var eventTask: Task
