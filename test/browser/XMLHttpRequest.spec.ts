@@ -107,6 +107,27 @@ describe('XMLHttpRequest', function () {
         done();
       }, 0);
     });
+
+    it('should allow aborting an XMLHttpRequest after its completed', function(done) {
+      var req;
+
+      testZone.run(function() {
+        req = new XMLHttpRequest();
+        req.onreadystatechange = function() {
+          if (req.readyState === XMLHttpRequest.DONE) {
+            if (req.status !== 0) {
+              setTimeout(function() {
+                req.abort();
+                done();
+              }, 0);
+            }
+          }
+        };
+        req.open('get', '/', true);
+
+        req.send();
+      });
+    });
   }));
 
   it('should preserve other setters', function () {

@@ -95,6 +95,10 @@ function patchXHR(window: any) {
   var clearNative = patchMethod(window.XMLHttpRequest.prototype, 'abort', (delegate: Function) => function(self: any, args: any[]) {
     var task: Task = findPendingTask(self);
     if (task && typeof task.type == 'string') {
+      // If the XHR has already completed, do nothing.
+      if (task.cancelFn == null) {
+        return;
+      }
       task.zone.cancelTask(task);
     }
     // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no task to cancel. Do nothing.
