@@ -1,4 +1,4 @@
-import {zoneSymbol} from "./utils";
+import {zoneSymbol} from "../utils";
 
 // might need similar for object.freeze
 // i regret nothing
@@ -63,5 +63,3 @@ function rewriteDescriptor (obj, prop, desc) {
   }
   return desc;
 }
-
-
