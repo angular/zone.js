@@ -45,7 +45,7 @@
     onHandleError(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
       error: any): boolean {
       // Let the parent try to handle the error.
-      var result = parentZoneDelegate.handleError(targetZone, error);
+      const result = parentZoneDelegate.handleError(targetZone, error);
       if (result) {
         this._failCallback(error.message ? error.message : 'unknown error');
         this._alreadyErrored = true;

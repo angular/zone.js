@@ -1,16 +1,16 @@
 /**
- * Suppress closure compiler errors about unknown 'process' variable
+ * Suppress closure compiler errors about unknown 'process' constiable
  * @fileoverview
- * @suppress {undefinedVars}
+ * @suppress {undefinedconsts}
  */
 
 // Hack since TypeScript isn't compiling this for a worker.
-declare var WorkerGlobalScope;
-export var zoneSymbol: (name: string) => string = Zone['__symbol__'];
+declare const WorkerGlobalScope;
+export const zoneSymbol: (name: string) => string = Zone['__symbol__'];
 const _global = typeof window == 'undefined' ? global : window;
 
 export function bindArguments(args: any[], source: string): any[] {
-  for (var i = args.length - 1; i >= 0; i--) {
+  for (let i = args.length - 1; i >= 0; i--) {
     if (typeof args[i] === 'function') {
       args[i] = Zone.current.wrap(args[i], source + '_' + i);
     }
@@ -19,10 +19,10 @@ export function bindArguments(args: any[], source: string): any[] {
 };
 
 export function patchPrototype(prototype, fnNames) {
-  var source = prototype.constructor['name'];
-  for (var i = 0; i < fnNames.length; i++) {
-    var name = fnNames[i];
-    var delegate = prototype[name];
+  const source = prototype.constructor['name'];
+  for (let i = 0; i < fnNames.length; i++) {
+    const name = fnNames[i];
+    const delegate = prototype[name];
     if (delegate) {
       prototype[name] = ((delegate: Function) => {
         return function() {
@@ -33,18 +33,18 @@ export function patchPrototype(prototype, fnNames) {
   }
 };
 
-export var isWebWorker: boolean =
+export const isWebWorker: boolean =
     (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope);
 
-export var isNode: boolean =
+export const isNode: boolean =
   (typeof process !== 'undefined' && {}.toString.call(process) === '[object process]');
 
-export var isBrowser: boolean =
+export const isBrowser: boolean =
     !isNode && !isWebWorker && !!(window && window['HTMLElement']);
 
 
 export function patchProperty(obj, prop) {
-  var desc = Object.getOwnPropertyDescriptor(obj, prop) || {
+  const desc = Object.getOwnPropertyDescriptor(obj, prop) || {
     enumerable: true,
     configurable: true
   };
@@ -58,8 +58,8 @@ export function patchProperty(obj, prop) {
   delete desc.value;
 
   // substr(2) cuz 'onclick' -> 'click', etc
-  var eventName = prop.substr(2);
-  var _prop = '_' + prop;
+  const eventName = prop.substr(2);
+  const _prop = '_' + prop;
 
   desc.set = function (fn) {
     if (this[_prop]) {
@@ -67,8 +67,8 @@ export function patchProperty(obj, prop) {
     }
 
     if (typeof fn === 'function') {
-      var wrapFn = function (event) {
-        var result;
+      const wrapFn = function (event) {
+        let result;
         result = fn.apply(this, arguments);
 
         if (result != undefined && !result)
@@ -90,17 +90,17 @@ export function patchProperty(obj, prop) {
 };
 
 export function patchOnProperties(obj: any, properties: string[]) {
-  var onProperties = [];
-  for (var prop in obj) {
+  const onProperties = [];
+  for (const prop in obj) {
     if (prop.substr(0, 2) == 'on') {
       onProperties.push(prop);
     }
   }
-  for(var j = 0; j < onProperties.length; j++) {
+  for(let j = 0; j < onProperties.length; j++) {
     patchProperty(obj, onProperties[j]);
   }
   if (properties) {
-    for(var i = 0; i < properties.length; i++) {
+    for(let i = 0; i < properties.length; i++) {
       patchProperty(obj, 'on' + properties[i]);
     }
   }
@@ -115,18 +115,18 @@ const SYMBOL_REMOVE_EVENT_LISTENER = zoneSymbol(REMOVE_EVENT_LISTENER);
 interface ListenerTaskMeta extends TaskData {
   useCapturing: boolean;
   eventName: string;
-  handler: any;
+  handler: EventListenerOrEventListenerObject;
   target: any;
-  name: any;
+  name: string;
 }
 
 function findExistingRegisteredTask(target: any, handler: any, name: string, capture: boolean,
                                     remove: boolean): Task {
-  var eventTasks: Task[] = target[EVENT_TASKS];
+  const eventTasks: Task[] = target[EVENT_TASKS];
   if (eventTasks) {
-    for (var i = 0; i < eventTasks.length; i++) {
-      var eventTask = eventTasks[i];
-      var data = <ListenerTaskMeta>eventTask.data;
+    for (let i = 0; i < eventTasks.length; i++) {
+      const eventTask = eventTasks[i];
+      const data = <ListenerTaskMeta>eventTask.data;
       if (data.handler === handler
           && data.useCapturing === capture
           && data.eventName === name)
@@ -143,7 +143,7 @@ function findExistingRegisteredTask(target: any, handler: any, name: string, cap
 
 
 function attachRegisteredEvent(target: any, eventTask: Task): void {
-  var eventTasks: Task[] = target[EVENT_TASKS];
+  let eventTasks: Task[] = target[EVENT_TASKS];
   if (!eventTasks) {
     eventTasks = target[EVENT_TASKS] = [];
   }
@@ -151,14 +151,14 @@ function attachRegisteredEvent(target: any, eventTask: Task): void {
 }
 
 function scheduleEventListener(eventTask: Task): any {
-  var meta = <ListenerTaskMeta>eventTask.data;
+  const meta = <ListenerTaskMeta>eventTask.data;
   attachRegisteredEvent(meta.target, eventTask);
   return meta.target[SYMBOL_ADD_EVENT_LISTENER](meta.eventName, eventTask.invoke,
       meta.useCapturing);
 }
 
 function cancelEventListener(eventTask: Task): void {
-  var meta = <ListenerTaskMeta>eventTask.data;
+  const meta = <ListenerTaskMeta>eventTask.data;
   findExistingRegisteredTask(meta.target, eventTask.invoke, meta.eventName,
       meta.useCapturing, true);
   meta.target[SYMBOL_REMOVE_EVENT_LISTENER](meta.eventName, eventTask.invoke,
@@ -166,14 +166,14 @@ function cancelEventListener(eventTask: Task): void {
 }
 
 function zoneAwareAddEventListener(self: any, args: any[]) {
-  var eventName: string = args[0];
-  var handler: EventListenerOrEventListenerObject = args[1];
-  var useCapturing: boolean = args[2] || false;
+  const eventName: string = args[0];
+  const handler: EventListenerOrEventListenerObject = args[1];
+  const useCapturing: boolean = args[2] || false;
   // - Inside a Web Worker, `this` is undefined, the context is `global`
   // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
   // see https://github.com/angular/zone.js/issues/190
-  var target = self || _global;
-  var delegate: EventListener = null;
+  const target = self || _global;
+  let delegate: EventListener = null;
   if (typeof handler == 'function') {
     delegate = <EventListener>handler;
   } else if (handler && (<EventListenerObject>handler).handleEvent) {
@@ -193,15 +193,15 @@ function zoneAwareAddEventListener(self: any, args: any[]) {
   if (!delegate || validZoneHandler) {
     return target[SYMBOL_ADD_EVENT_LISTENER](eventName, handler, useCapturing);
   }
-  var eventTask: Task
+  const eventTask: Task
       = findExistingRegisteredTask(target, handler, eventName, useCapturing, false);
   if (eventTask) {
     // we already registered, so this will have noop.
     return target[SYMBOL_ADD_EVENT_LISTENER](eventName, eventTask.invoke, useCapturing);
   }
-  var zone: Zone = Zone.current;
-  var source = target.constructor['name'] + '.addEventListener:' + eventName;
-  var data: ListenerTaskMeta = {
+  const zone: Zone = Zone.current;
+  const source = target.constructor['name'] + '.addEventListener:' + eventName;
+  const data: ListenerTaskMeta = {
     target: target,
     eventName: eventName,
     name: eventName,
@@ -212,14 +212,14 @@ function zoneAwareAddEventListener(self: any, args: any[]) {
 }
 
 function zoneAwareRemoveEventListener(self: any, args: any[]) {
-  var eventName: string = args[0];
-  var handler: EventListenerOrEventListenerObject = args[1];
-  var useCapturing: boolean = args[2] || false;
+  const eventName: string = args[0];
+  const handler: EventListenerOrEventListenerObject = args[1];
+  const useCapturing: boolean = args[2] || false;
   // - Inside a Web Worker, `this` is undefined, the context is `global`
   // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
   // see https://github.com/angular/zone.js/issues/190
-  var target = self || _global;
-  var eventTask = findExistingRegisteredTask(target, handler, eventName, useCapturing, true);
+  const target = self || _global;
+  const eventTask = findExistingRegisteredTask(target, handler, eventName, useCapturing, true);
   if (eventTask) {
     eventTask.zone.cancelTask(eventTask);
   } else {
@@ -237,15 +237,15 @@ export function patchEventTargetMethods(obj: any): boolean {
   }
 };
 
-var originalInstanceKey = zoneSymbol('originalInstance');
+const originalInstanceKey = zoneSymbol('originalInstance');
 
 // wrap some native API on `window`
 export function patchClass(className) {
-  var OriginalClass = _global[className];
+  const OriginalClass = _global[className];
   if (!OriginalClass) return;
 
   _global[className] = function () {
-    var a = bindArguments(<any>arguments, className);
+    const a = bindArguments(<any>arguments, className);
     switch (a.length) {
       case 0: this[originalInstanceKey] = new OriginalClass(); break;
       case 1: this[originalInstanceKey] = new OriginalClass(a[0]); break;
@@ -256,9 +256,9 @@ export function patchClass(className) {
     }
   };
 
-  var instance = new OriginalClass(function () {});
+  const instance = new OriginalClass(function () {});
 
-  var prop;
+  let prop;
   for (prop in instance) {
     (function (prop) {
       if (typeof instance[prop] === 'function') {
@@ -311,7 +311,7 @@ export function patchMethod(target: any, name: string,
                                       delegateName: string,
                                       name: string) => (self: any, args: any[]) => any): Function
 {
-  var proto = target;
+  let proto = target;
   while (proto && !proto.hasOwnProperty(name)) {
     proto = Object.getPrototypeOf(proto);
   }
@@ -319,8 +319,8 @@ export function patchMethod(target: any, name: string,
     // somehow we did not find it, but we can see it. This happens on IE for Window properties.
     proto = target;
   }
-  var delegateName = zoneSymbol(name);
-  var delegate: Function;
+  const delegateName = zoneSymbol(name);
+  let delegate: Function;
   if (proto && ! (delegate = proto[delegateName])) {
     delegate = proto[delegateName] = proto[name];
     proto[name] = createNamedFn(name, patchFn(delegate, delegateName, name));

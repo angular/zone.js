@@ -40,9 +40,9 @@ patchXHR(_global);
 const XHR_TASK = zoneSymbol('xhrTask');
 
 interface XHROptions extends TaskData {
-  target: any,
-  args: any[],
-  aborted: boolean
+  target: any;
+  args: any[];
+  aborted: boolean;
 }
 
 function patchXHR(window: any) {
@@ -114,8 +114,8 @@ if (_global['navigator'] && _global['navigator'].geolocation) {
 }
 
 interface TimerOptions extends TaskData {
-  handleId: number,
-  args: any[]
+  handleId: number;
+  args: any[];
 }
 
 function patchTimer(
