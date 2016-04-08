@@ -1,4 +1,4 @@
-import {patchEventTargetMethods, patchOnProperties} from './utils';
+import {patchEventTargetMethods, patchOnProperties} from '../utils';
 
 // we have to patch the instance since the proto is non-configurable
 export function apply(_global: any) {
