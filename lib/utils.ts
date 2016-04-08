@@ -7,7 +7,7 @@
 // Hack since TypeScript isn't compiling this for a worker.
 declare const WorkerGlobalScope;
 export const zoneSymbol: (name: string) => string = Zone['__symbol__'];
-const _global = typeof window == 'undefined' ? global : window;
+const _global = typeof window === 'undefined' ? global : window;
 
 export function bindArguments(args: any[], source: string): any[] {
   for (let i = args.length - 1; i >= 0; i--) {
@@ -327,4 +327,3 @@ export function patchMethod(target: any, name: string,
   }
   return delegate;
 }
-
