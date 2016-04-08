@@ -1,4 +1,4 @@
-import {patchMethod, zoneSymbol} from '../../lib/browser/utils';
+import {patchMethod, zoneSymbol} from '../../lib/utils';
 
 describe('utils', function () {
 
@@ -22,7 +22,7 @@ describe('utils', function () {
         delegateSymbol = symbol;
         return function (self, args) {
           return delegate.apply(self, ['patch', args[0]]);
-        }
+        };
       })).toBe(delegateMethod);
 
       expect(instance.method('a0')).toEqual('OK');
@@ -37,21 +37,21 @@ describe('utils', function () {
       var Type = function() {};
       var method = Type.prototype.method = function () {};
       patchMethod(Type.prototype, 'method', (delegate) => {
-        return function (self, args) { return delegate.apply(self, ['patch', ...args]); }
+        return function (self, args) { return delegate.apply(self, ['patch', ...args]); };
       });
       var pMethod = Type.prototype.method;
       expect(pMethod).not.toBe(method);
       patchMethod(Type.prototype, 'method', (delegate) => {
-        return function (self, args) { return delegate.apply(self, ['patch', ...args]); }
+        return function (self, args) { return delegate.apply(self, ['patch', ...args]); };
       });
       expect(pMethod).toBe(Type.prototype.method);
     });
 
     it('should have a method name in the stacktrace', () => {
       var fn = function someOtherName() { throw new Error('MyError'); };
-      var target = { mySpecialMethodName: fn }
+      var target = { mySpecialMethodName: fn };
       patchMethod(target, 'mySpecialMethodName', (delegate: Function) => {
-        return function(self, args) { return delegate() };
+        return function(self, args) { return delegate(); };
       });
       try {
         target.mySpecialMethodName();
