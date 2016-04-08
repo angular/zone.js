@@ -61,10 +61,12 @@ gulp.task('build/zone.js.d.ts', ['compile'], function() {
   return gulp.src('./build/lib/zone.d.ts').pipe(rename('zone.js.d.ts')).pipe(gulp.dest('./dist'));
 });
 
+// Zone for Node.js environment.
 gulp.task('build/zone-node.js', function(cb) {
   return generateBrowserScript('./lib/node/node.ts', 'zone-node.js', false, cb);
 });
 
+// Zone for the browser.
 gulp.task('build/zone.js', function(cb) {
   return generateBrowserScript('./lib/browser/browser.ts', 'zone.js', false, cb);
 });
