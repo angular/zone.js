@@ -3,7 +3,7 @@ import {eventTargetPatch} from './event-target';
 import {propertyPatch} from './define-property';
 import {registerElementPatch} from './register-element';
 import {propertyDescriptorPatch} from './property-descriptor';
-import {patchMethod, patchPrototype, patchClass, zoneSymbol} from "./utils";
+import {patchMethod, patchPrototype, patchClass, zoneSymbol} from "../utils";
 
 const set = 'set';
 const clear = 'clear';
@@ -167,4 +167,3 @@ function patchTimer(
     }
   });
 }
-

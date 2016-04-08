@@ -1,5 +1,5 @@
 import './test-env-setup';
-import {zoneSymbol} from '../lib/browser/utils';
+import {zoneSymbol} from '../lib/utils';
 
 describe('Zone', function () {
   var rootZone = Zone.current;
@@ -97,7 +97,7 @@ describe('Zone', function () {
         zone.run(function() {
           button.addEventListener('click', eventListenerSpy);
         });
-        
+
         button.dispatchEvent(clickEvent);
 
         expect(hookSpy).toHaveBeenCalled();

@@ -1,5 +1,5 @@
 'use strict';
-import {zoneSymbol} from "../../lib/browser/utils";
+import {zoneSymbol} from "../../lib/utils";
 
 describe('setInterval', function () {
 
