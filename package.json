@@ -51,7 +51,7 @@
     "nodejs-websocket": "^1.2.0",
     "ts-loader": "^0.6.0",
     "typescript": "^1.8.0",
-    "typings": "^0.6.6",
+    "typings": "^0.7.12",
     "webpack": "^1.12.2"
   }
 }
