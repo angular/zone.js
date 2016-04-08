@@ -16,6 +16,7 @@
   "scripts": {
     "prepublish": "./node_modules/.bin/typings install && ./node_modules/.bin/tsc && gulp build",
     "typings": "./node_modules/.bin/typings install",
+    "ws-server": "node ./test/ws-server.js",
     "tsc": "./node_modules/.bin/tsc",
     "tsc:w": "./node_modules/.bin/tsc -w",
     "test": "karma start karma.conf.js",

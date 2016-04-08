@@ -14,7 +14,7 @@ Make sure your environment is set up with:
 
 In a separate process, run the WebSockets server:
 
-`node ./test/ws-server.ts`
+`npm run ws-server`
 
 Run the tests using Karma:
 
