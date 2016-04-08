@@ -119,7 +119,7 @@
  * zones are children of the root zone.
  *
  */
-interface Zone {
+export interface Zone {
   /**
    *
    * @returns {Zone} The parent Zone.
@@ -212,7 +212,7 @@ interface Zone {
   cancelTask(task: Task): any;
 }
 
-interface ZoneType {
+export interface ZoneType {
   /**
    * @returns {Zone} Returns the current [Zone]. Returns the current zone. The only way to change
    * the current zone is by invoking a run() method, which will update the current zone for the
@@ -230,7 +230,7 @@ interface ZoneType {
  *
  * Only the `name` property is required (all other are optional).
  */
-interface ZoneSpec {
+export interface ZoneSpec {
   /**
    * The name of the zone. Usefull when debugging Zones.
    */
@@ -359,7 +359,7 @@ interface ZoneSpec {
  *  Note: The ZoneDelegate treats ZoneSpec as class. This allows the ZoneSpec to use its `this` to
  *  store internal state.
  */
-interface ZoneDelegate {
+export interface ZoneDelegate {
   zone: Zone;
   fork(targetZone: Zone, zoneSpec: ZoneSpec): Zone;
   intercept(targetZone: Zone, callback: Function, source: string): Function;
@@ -371,7 +371,7 @@ interface ZoneDelegate {
   hasTask(targetZone: Zone, isEmpty: HasTaskState): void;
 }
 
-type HasTaskState = {
+export type HasTaskState = {
   microTask: boolean,
   macroTask: boolean,
   eventTask: boolean,
@@ -381,11 +381,11 @@ type HasTaskState = {
 /**
  * Task type: `microTask`, `macroTask`, `eventTask`.
  */
-type TaskType = string; /* TS v1.8 => "microTask" | "macroTask" | "eventTask" */;
+export type TaskType = string; /* TS v1.8 => "microTask" | "macroTask" | "eventTask" */;
 
 /**
  */
-interface TaskData {
+export interface TaskData {
   /**
    * A periodic [MacroTask] is such which get automatically rescheduled after it is executed.
    */
@@ -414,7 +414,7 @@ interface TaskData {
  *   queue. This happens when the event fires.
  *
  */
-interface Task {
+export interface Task {
   /**
    * Task type: `microTask`, `macroTask`, `eventTask`.
    */
@@ -469,15 +469,15 @@ interface Task {
   runCount: number;
 }
 
-interface MicroTask extends Task {
+export interface MicroTask extends Task {
   /* TS v1.8 => type: 'microTask'; */
 }
 
-interface MacroTask extends Task {
+export interface MacroTask extends Task {
   /* TS v1.8 => type: 'macroTask'; */
 }
 
-interface EventTask extends Task {
+export  interface EventTask extends Task {
   /* TS v1.8 => type: 'eventTask'; */
 }
 
@@ -486,7 +486,7 @@ type AmbientZone = Zone;
 /** @internal */
 type AmbientZoneDelegate = ZoneDelegate;
 
-var Zone: ZoneType = (function(global) {
+export var Zone: ZoneType = (function(global) {
   class Zone implements AmbientZone {
     static __symbol__: (name: string) => string = __symbol__;
 

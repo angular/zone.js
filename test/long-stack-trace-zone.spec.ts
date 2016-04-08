@@ -1,3 +1,5 @@
+import { Zone, ZoneDelegate } from '../lib/zone';
+
 describe('longStackTraceZone', function () {
   var log;
 

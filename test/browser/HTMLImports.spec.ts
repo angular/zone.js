@@ -1,4 +1,5 @@
 import {ifEnvSupports} from '../util';
+import { Zone } from '../../lib/zone';
 
 function supportsImports() {
   return 'import' in document.createElement('link');

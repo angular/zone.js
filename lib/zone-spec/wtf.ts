@@ -1,3 +1,5 @@
+import { Zone, ZoneSpec, Task, ZoneDelegate } from '../zone';
+
 (function(global) {
   interface Wtf { trace: WtfTrace; }
   interface WtfScope {};

@@ -1,4 +1,5 @@
 import {ifEnvSupports} from '../util';
+import { Zone } from '../../lib/zone';
 
 function supportsGeolocation() {
   return 'geolocation' in navigator;

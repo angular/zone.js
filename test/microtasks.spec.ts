@@ -1,3 +1,5 @@
+import { Zone, ZoneDelegate, Task } from '../lib/zone';
+
 describe('Microtasks', function () {
   if (!global.Promise) return;
 

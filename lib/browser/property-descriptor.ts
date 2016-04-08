@@ -1,3 +1,4 @@
+import { Zone } from '../zone';
 import * as webSocketPatch from './websocket';
 import {zoneSymbol, patchOnProperties, patchClass, isBrowser, isNode} from './utils';
 
@@ -7,7 +8,7 @@ export function propertyDescriptorPatch(_global) {
   if (isNode){
     return;
   }
-  
+
   var supportsWebSocket = typeof WebSocket !== 'undefined';
   if (canPatchViaPropertyDescriptor()) {
     // for browsers that we can patch the descriptor:  Chrome & Firefox

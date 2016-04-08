@@ -1,4 +1,5 @@
 import {ifEnvSupports} from '../util';
+import { Zone } from '../../lib/zone';
 
 describe('element', function () {
 
@@ -106,7 +107,7 @@ describe('element', function () {
   it('should have no effect while calling addEventListener without listener', function () {
     var onAddEventListenerSpy = jasmine.createSpy('addEventListener')
     var eventListenerZone = Zone.current.fork({
-      name: 'eventListenerZone', 
+      name: 'eventListenerZone',
       onScheduleTask: onAddEventListenerSpy
     });
     expect(function() {
@@ -120,8 +121,8 @@ describe('element', function () {
 
   it('should have no effect while calling removeEventListener without listener', function () {
     var onAddEventListenerSpy =  jasmine.createSpy('removeEventListener');
-    var eventListenerZone = Zone.current.fork({ 
-      name: 'eventListenerZone', 
+    var eventListenerZone = Zone.current.fork({
+      name: 'eventListenerZone',
       onScheduleTask: onAddEventListenerSpy
      });
     expect(function() {
@@ -277,7 +278,7 @@ describe('element', function () {
     afterEach(function () {
       document.body.removeChild(checkbox);
     });
-    
+
     it('should be possible to prevent default behavior by returning false', function() {
       checkbox.onclick = function() {
         return false;

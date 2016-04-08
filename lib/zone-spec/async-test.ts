@@ -1,3 +1,5 @@
+import { Zone, ZoneSpec, Task, ZoneDelegate, HasTaskState } from '../zone';
+
 (function() {
   class AsyncTestZoneSpec implements ZoneSpec {
     _finishCallback: Function;
