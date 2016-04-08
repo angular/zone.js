@@ -52,8 +52,9 @@ function generateBrowserScript(inFile, outFile, minify, callback) {
 
 gulp.task('compile', function(){
   gulp.src([
-    'typings/browser/ambient/node/node.d.ts',
-    'typings/browser/ambient/es6-promise/es6-promise.d.ts',
+    'typings/browser/ambient/node/index.d.ts',
+    'typings/browser/ambient/es6-promise/index.d.ts',
+    'lib/utils.ts',
     'lib/zone.ts',
   ]).pipe(typescript({ target: 'es5', "declaration": true })).pipe(gulp.dest('./build/'))
 });
@@ -63,7 +64,7 @@ gulp.task('build/zone.js.d.ts', ['compile'], function() {
 });
 
 gulp.task('build/zone-node.js', function(cb) {
-  return generateBrowserScript('./lib/zone.ts', 'zone-node.js', false, cb);
+  return generateBrowserScript('./lib/node/node.ts', 'zone-node.js', false, cb);
 });
 
 gulp.task('build/zone.js', function(cb) {
@@ -120,6 +121,3 @@ gulp.task('build', [
   'build/async-test.js',
   'build/sync-test.js'
 ]);
-
-
-
