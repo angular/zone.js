@@ -129,8 +129,8 @@
 	                var value = obj[key];
 	                switch (typeof value) {
 	                    case 'object':
-	                        var name = value && value.constructor && value.constructor.name;
-	                        value = name == Object.name ? shallowObj(value, depth - 1) : name;
+	                        var name_1 = value && value.constructor && value.constructor.name;
+	                        value = name_1 == Object.name ? shallowObj(value, depth - 1) : name_1;
 	                        break;
 	                    case 'function':
 	                        value = value.name || undefined;

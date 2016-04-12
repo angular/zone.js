@@ -442,4 +442,4 @@ interface MacroTask extends Task {
 }
 interface EventTask extends Task {
 }
-declare var Zone: ZoneType;
+declare const Zone: ZoneType;
