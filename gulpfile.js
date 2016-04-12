@@ -48,13 +48,19 @@ function generateBrowserScript(inFile, outFile, minify, callback) {
   });
 }
 
-gulp.task('compile', function(){
-  gulp.src([
-    'typings/browser/ambient/node/index.d.ts',
-    'typings/browser/ambient/es6-promise/index.d.ts',
-    'lib/utils.ts',
-    'lib/zone.ts',
-  ]).pipe(typescript({ target: 'es5', "declaration": true })).pipe(gulp.dest('./build/'))
+// This is equivalent to `npm run tsc`.
+gulp.task('compile', function(cb) {
+  var spawn = require('child_process').spawn;
+  spawn('./node_modules/.bin/tsc', {stdio: 'inherit'}).on('close', function(exitCode) {
+    if (exitCode) {
+      var err = new Error('TypeScript compiler failed');
+      // The stack is not useful in this context.
+      err.showStack = false;
+      cb(err);
+    } else {
+      cb();
+    }
+  });
 });
 
 gulp.task('build/zone.js.d.ts', ['compile'], function() {
@@ -121,3 +127,27 @@ gulp.task('build', [
   'build/async-test.js',
   'build/sync-test.js'
 ]);
+
+gulp.task('test/node', ['compile'], function(cb) {
+  var JasmineRunner = require('jasmine');
+  var jrunner = new JasmineRunner();
+
+  var specFiles = ['build/test/node_entry_point.js'];
+
+  jrunner.configureDefaultReporter({showColors: true});
+
+  jrunner.onComplete(function(passed) {
+    if (!passed) {
+      var err = new Error('Jasmine node tests failed.');
+      // The stack is not useful in this context.
+      err.showStack = false;
+      cb(err);
+    } else {
+      cb();
+    }
+  });
+  jrunner.projectBaseDir = __dirname;
+  jrunner.specDir = '';
+  jrunner.addSpecFiles(specFiles);
+  jrunner.execute();
+});

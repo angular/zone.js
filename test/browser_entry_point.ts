@@ -11,9 +11,8 @@ import '../lib/zone-spec/wtf';
 import './test-env-setup';
 
 // List all tests here:
-import './common/microtasks.spec';
-import './common/zone.spec';
-import './common/util.spec';
+import './common_tests';
+import './browser/browser.spec';
 import './browser/element.spec';
 import './browser/FileReader.spec';
 import './browser/HTMLImports.spec';
