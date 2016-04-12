@@ -16,6 +16,10 @@ In a separate process, run the WebSockets server:
 
 `npm run ws-server`
 
-Run the tests using Karma:
+Run the browser tests using Karma:
 
 `npm test`
+
+Run the node.js tests:
+
+`npm run test-node`

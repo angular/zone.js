@@ -14,6 +14,7 @@ import './test-env-setup';
 import './common/microtasks.spec';
 import './common/zone.spec';
 import './common/util.spec';
+import './browser/browser.spec';
 import './browser/element.spec';
 import './browser/FileReader.spec';
 import './browser/HTMLImports.spec';
