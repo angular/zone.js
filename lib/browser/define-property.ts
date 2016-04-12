@@ -1,7 +1,8 @@
 import {zoneSymbol} from "../common/utils";
-// TODO(julie): does this belong in common?
-// might need similar for object.freeze
-// i regret nothing
+/*
+ * This is necessary for Chrome and Chrome mobile, to enable
+ * things like redefining `createdCallback` on an element.
+ */
 
 const _defineProperty = Object.defineProperty;
 const _getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
