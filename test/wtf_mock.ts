@@ -78,5 +78,5 @@ beforeEach(function() {
   wtfMock.reset();
 });
 
-(<any>window).wtfMock = wtfMock;
-(<any>window).wtf = wtfMock;
+(<any>global).wtfMock = wtfMock;
+(<any>global).wtf = wtfMock;

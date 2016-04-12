@@ -1,4 +1,5 @@
 import '../../lib/zone-spec/async-test';
+import {ifEnvSupports} from '../test-util';
 
 describe('AsyncTestZoneSpec', function() {
   var log;
@@ -112,7 +113,7 @@ describe('AsyncTestZoneSpec', function() {
     });
   });
 
-  describe('event tasks', () => {
+  describe('event tasks', ifEnvSupports('document', () => {
     var button;
     beforeEach(function() {
       button = document.createElement('button');
@@ -171,34 +172,60 @@ describe('AsyncTestZoneSpec', function() {
         button.dispatchEvent(clickEvent);
       });
     });
-  });
+  }));
 
-  it('should wait for XHRs to complete', function(done) {
-    var req;
-    var finished = false;
+  describe('XHRs', ifEnvSupports('XMLHttpRequest', () => {
+    it('should wait for XHRs to complete', function(done) {
+      var req;
+      var finished = false;
 
-    var testZoneSpec = new AsyncTestZoneSpec(() => {
-      expect(finished).toBe(true);
-      done();
-    }, (err) => {
-      done.fail('async zone called failCallback unexpectedly');
-    }, 'name');
+      var testZoneSpec = new AsyncTestZoneSpec(() => {
+        expect(finished).toBe(true);
+        done();
+      }, (err) => {
+        done.fail('async zone called failCallback unexpectedly');
+      }, 'name');
 
-    var atz = Zone.current.fork(testZoneSpec);
+      var atz = Zone.current.fork(testZoneSpec);
 
-    atz.run(function() {
-      req = new XMLHttpRequest();
+      atz.run(function() {
+        req = new XMLHttpRequest();
 
-      req.onreadystatechange = () => {
-        if (req.readyState === XMLHttpRequest.DONE) {
-          finished = true;
-        }
-      };
+        req.onreadystatechange = () => {
+          if (req.readyState === XMLHttpRequest.DONE) {
+            finished = true;
+          }
+        };
 
-      req.open('get', '/', true);
-      req.send();
+        req.open('get', '/', true);
+        req.send();
+      });
     });
-  });
+
+    it('should fail if an xhr fails', function(done) {
+      var req;
+
+      var testZoneSpec = new AsyncTestZoneSpec(() => {
+        done.fail('expected failCallback to be called');
+      }, (err) => {
+        expect(err).toEqual('bad url failure');
+        done();
+      }, 'name');
+
+      var atz = Zone.current.fork(testZoneSpec);
+
+      atz.run(function() {
+        req = new XMLHttpRequest();
+        req.onload = () => {
+          if (req.status != 200) {
+            throw new Error('bad url failure');
+          }
+        }
+        req.open('get', '/bad-url', true);
+        req.send();
+      });
+    });
+  }));
 
   it('should fail if setInterval is used', (done) => {
     var finished = false;
@@ -253,30 +280,6 @@ describe('AsyncTestZoneSpec', function() {
       Promise.reject('my reason');
     });
 
-  });
-
-  it('should fail if an xhr fails', function(done) {
-    var req;
-
-    var testZoneSpec = new AsyncTestZoneSpec(() => {
-      done.fail('expected failCallback to be called');
-    }, (err) => {
-      expect(err).toEqual('bad url failure');
-      done();
-    }, 'name');
-
-    var atz = Zone.current.fork(testZoneSpec);
-
-    atz.run(function() {
-      req = new XMLHttpRequest();
-      req.onload = () => {
-        if (req.status != 200) {
-          throw new Error('bad url failure');
-        }
-      }
-      req.open('get', '/bad-url', true);
-      req.send();
-    });
   });
 });
 

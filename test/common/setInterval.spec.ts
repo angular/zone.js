@@ -7,6 +7,7 @@ describe('setInterval', function () {
     var cancelId: any;
     var testZone = Zone.current.fork(Zone['wtfZoneSpec']).fork({ name: 'TestZone' });
     testZone.run(() => {
+      var id;
       var intervalFn = function () {
         expect(Zone.current.name).toEqual(('TestZone'));
         global[zoneSymbol('setTimeout')](function() {
@@ -24,7 +25,16 @@ describe('setInterval', function () {
       };
       expect(Zone.current.name).toEqual(('TestZone'));
       cancelId = setInterval(intervalFn, 10);
-      var id = JSON.stringify((<MacroTask>cancelId).data);
+
+      // This icky replacer is to deal with Timers in node.js. The data.handleId contains timers in
+      // node.js. They do not stringify properly since they contain circular references.
+      id = JSON.stringify((<MacroTask>cancelId).data, function replaceTimer(key, value) {
+        if (value._idleNext) {
+          return '';
+        } else {
+          return value;
+        }
+      });
       expect(wtfMock.log).toEqual([
         '# Zone:fork("<root>::WTF", "TestZone")',
         '> Zone:invoke:unit-test("<root>::WTF::TestZone")',
