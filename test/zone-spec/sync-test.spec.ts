@@ -1,4 +1,4 @@
-import '../lib/zone-spec/sync-test';
+import '../../lib/zone-spec/sync-test';
 
 describe('SyncTestZoneSpec', () => {
   var SyncTestZoneSpec = Zone['SyncTestZoneSpec'];

@@ -1,4 +1,4 @@
-import {ifEnvSupports} from '../util';
+import {ifEnvSupports} from '../test-util';
 
 describe('element', function () {
 

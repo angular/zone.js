@@ -1,5 +1,4 @@
-import './test-env-setup';
-import {zoneSymbol} from '../lib/browser/utils';
+import {zoneSymbol} from '../../lib/common/utils';
 
 describe('Zone', function () {
   var rootZone = Zone.current;

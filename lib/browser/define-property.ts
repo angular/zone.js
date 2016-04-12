@@ -1,5 +1,5 @@
-import {zoneSymbol} from "./utils";
-
+import {zoneSymbol} from "../common/utils";
+// TODO(julie): does this belong in common?
 // might need similar for object.freeze
 // i regret nothing
 

@@ -1,5 +1,5 @@
 import * as webSocketPatch from './websocket';
-import {zoneSymbol, patchOnProperties, patchClass, isBrowser, isNode} from './utils';
+import {zoneSymbol, patchOnProperties, patchClass, isBrowser, isNode} from '../common/utils';
 
 const eventNames = 'copy cut paste abort blur focus canplay canplaythrough change click contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop durationchange emptied ended input invalid keydown keypress keyup load loadeddata loadedmetadata loadstart message mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup pause play playing progress ratechange reset scroll seeked seeking select show stalled submit suspend timeupdate volumechange waiting mozfullscreenchange mozfullscreenerror mozpointerlockchange mozpointerlockerror error webglcontextrestored webglcontextlost webglcontextcreationerror'.split(' ');
 

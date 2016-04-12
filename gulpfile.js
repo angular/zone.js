@@ -3,10 +3,8 @@
 var gulp = require('gulp');
 var gutil = require("gulp-util");
 var webpack = require('webpack');
-var source = require('vinyl-source-stream');
 var rename = require('gulp-rename');
 var uglify = require('gulp-uglify');
-var buffer = require('vinyl-buffer');
 var typescript = require('gulp-tsc');
 
 
@@ -63,6 +61,7 @@ gulp.task('build/zone.js.d.ts', ['compile'], function() {
 });
 
 gulp.task('build/zone-node.js', function(cb) {
+  // TODO(julie): Add actual zone wrappers, not just the scaffolding.
   return generateBrowserScript('./lib/zone.ts', 'zone-node.js', false, cb);
 });
 

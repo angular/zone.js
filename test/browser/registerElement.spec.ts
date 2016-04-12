@@ -3,7 +3,7 @@
  * is properly patched
  */
 
-import {ifEnvSupports} from '../util';
+import {ifEnvSupports} from '../test-util';
 
 function registerElement() {
   return ('registerElement' in document);

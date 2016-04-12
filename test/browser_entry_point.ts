@@ -11,13 +11,9 @@ import '../lib/zone-spec/wtf';
 import './test-env-setup';
 
 // List all tests here:
-import './long-stack-trace-zone.spec';
-import './async-test.spec';
-import './sync-test.spec';
-import './microtasks.spec';
-import './zone.spec';
-import './integration/brick.spec';
-import './browser/util.spec';
+import './common/microtasks.spec';
+import './common/zone.spec';
+import './common/util.spec';
 import './browser/element.spec';
 import './browser/FileReader.spec';
 import './browser/HTMLImports.spec';
@@ -28,4 +24,7 @@ import './browser/setInterval.spec';
 import './browser/setTimeout.spec';
 import './browser/WebSocket.spec';
 import './browser/XMLHttpRequest.spec';
+import './zone-spec/long-stack-trace-zone.spec';
+import './zone-spec/async-test.spec';
+import './zone-spec/sync-test.spec';
 //import './browser/geolocation.spec.manual';

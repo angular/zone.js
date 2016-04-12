@@ -52,8 +52,6 @@
     "ts-loader": "^0.6.0",
     "typescript": "^1.8.0",
     "typings": "^0.6.6",
-    "vinyl-buffer": "^1.0.0",
-    "vinyl-source-stream": "^1.1.0",
     "webpack": "^1.12.2"
   }
 }

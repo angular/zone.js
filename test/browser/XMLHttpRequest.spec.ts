@@ -1,4 +1,4 @@
-import {ifEnvSupports} from '../util';
+import {ifEnvSupports} from '../test-util';
 
 describe('XMLHttpRequest', function () {
   var testZone = Zone.current.fork({name: 'test'});

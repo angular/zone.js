@@ -1,4 +1,4 @@
-import {zoneSymbol} from '../../lib/browser/utils';
+import {zoneSymbol} from '../../lib/common/utils';
 
 describe('setTimeout', function () {
   it('should intercept setTimeout', function (done) {

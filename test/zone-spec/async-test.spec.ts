@@ -1,4 +1,4 @@
-import '../lib/zone-spec/async-test';
+import '../../lib/zone-spec/async-test';
 
 describe('AsyncTestZoneSpec', function() {
   var log;

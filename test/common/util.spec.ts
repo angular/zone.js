@@ -1,4 +1,4 @@
-import {patchMethod, zoneSymbol} from '../../lib/browser/utils';
+import {patchMethod, zoneSymbol} from '../../lib/common/utils';
 
 describe('utils', function () {
 
