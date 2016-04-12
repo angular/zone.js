@@ -20,6 +20,7 @@
     "tsc": "./node_modules/.bin/tsc",
     "tsc:w": "./node_modules/.bin/tsc -w",
     "test": "karma start karma.conf.js",
+    "test-node": "./node_modules/.bin/gulp test/node",
     "serve": "python -m SimpleHTTPServer 8000"
   },
   "repository": {
@@ -39,6 +40,7 @@
     "gulp-tsc": "^1.1.4",
     "gulp-uglify": "^1.2.0",
     "gulp-util": "^3.0.7",
+    "jasmine": "^2.4.1",
     "jasmine-core": "^2.2.0",
     "karma": "^0.13.14",
     "karma-chrome-launcher": "^0.2.1",
