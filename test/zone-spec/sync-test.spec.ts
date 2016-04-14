@@ -1,4 +1,5 @@
 import '../../lib/zone-spec/sync-test';
+import {ifEnvSupports} from '../test-util';
 
 describe('SyncTestZoneSpec', () => {
   var SyncTestZoneSpec = Zone['SyncTestZoneSpec'];
@@ -24,24 +25,26 @@ describe('SyncTestZoneSpec', () => {
     });
   });
 
-  it('should work with event tasks', () => {
-    syncTestZone.run(() => {
-      var button = document.createElement('button');
-      document.body.appendChild(button);
-      var x = 1;
-      try {
-        button.addEventListener('click', () => { x++; });
+  describe('event tasks', ifEnvSupports('document', () => {
+    it('should work with event tasks', () => {
+      syncTestZone.run(() => {
+        var button = document.createElement('button');
+        document.body.appendChild(button);
+        var x = 1;
+        try {
+          button.addEventListener('click', () => { x++; });
 
-        button.click();
-        expect(x).toEqual(2);
+          button.click();
+          expect(x).toEqual(2);
 
-        button.click();
-        expect(x).toEqual(3);
-      } finally {
-        document.body.removeChild(button);
-      }
+          button.click();
+          expect(x).toEqual(3);
+        } finally {
+          document.body.removeChild(button);
+        }
+      });
     });
-  });
+  }));
 });
 
 export var __something__;
