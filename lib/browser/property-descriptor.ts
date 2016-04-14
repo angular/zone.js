@@ -66,8 +66,12 @@ function patchViaCapturingAllTheEvents() {
     const property = eventNames[i];
     const onproperty = 'on' + property;
     document.addEventListener(property, function (event) {
-      let elt = <Node>event.target, bound;
-      const source = elt.constructor['name'] + '.' + onproperty;
+      let elt = <Node>event.target, bound, source;
+      if (elt) {
+        source = elt.constructor['name'] + '.' + onproperty;
+      } else {
+        source = 'unknown.' + onproperty;
+      }
       while (elt) {
         if (elt[onproperty] && !elt[onproperty][unboundKey]) {
           bound = Zone.current.wrap(elt[onproperty], source);
