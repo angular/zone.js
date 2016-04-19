@@ -1192,8 +1192,13 @@
 	        var property = eventNames[i];
 	        var onproperty = 'on' + property;
 	        document.addEventListener(property, function (event) {
-	            var elt = event.target, bound;
-	            var source = elt.constructor['name'] + '.' + onproperty;
+	            var elt = event.target, bound, source;
+	            if (elt) {
+	                source = elt.constructor['name'] + '.' + onproperty;
+	            }
+	            else {
+	                source = 'unknown.' + onproperty;
+	            }
 	            while (elt) {
 	                if (elt[onproperty] && !elt[onproperty][unboundKey]) {
 	                    bound = Zone.current.wrap(elt[onproperty], source);

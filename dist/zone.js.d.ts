@@ -243,7 +243,7 @@ interface ZoneSpec {
      *
      * When the zone is being forked, the request is forwarded to this method for interception.
      *
-     * @param parentZoneDelegate Dalegate which performs the parent [ZoneSpec] operation.
+     * @param parentZoneDelegate Delegate which performs the parent [ZoneSpec] operation.
      * @param currentZone The current [Zone] where the current interceptor has beed declared.
      * @param targetZone The [Zone] which originally received the request.
      * @param zoneSpec The argument passed into the `fork` method.
@@ -252,7 +252,7 @@ interface ZoneSpec {
     /**
      * Allows interception of the wrapping of the callback.
      *
-     * @param parentZoneDelegate Dalegate which performs the parent [ZoneSpec] operation.
+     * @param parentZoneDelegate Delegate which performs the parent [ZoneSpec] operation.
      * @param currentZone The current [Zone] where the current interceptor has beed declared.
      * @param targetZone The [Zone] which originally received the request.
      * @param delegate The argument passed into the `warp` method.
@@ -262,7 +262,7 @@ interface ZoneSpec {
     /**
      * Allows interception of the callback invocation.
      *
-     * @param parentZoneDelegate Dalegate which performs the parent [ZoneSpec] operation.
+     * @param parentZoneDelegate Delegate which performs the parent [ZoneSpec] operation.
      * @param currentZone The current [Zone] where the current interceptor has beed declared.
      * @param targetZone The [Zone] which originally received the request.
      * @param delegate The argument passed into the `run` method.
@@ -274,7 +274,7 @@ interface ZoneSpec {
     /**
      * Allows interception of the error handling.
      *
-     * @param parentZoneDelegate Dalegate which performs the parent [ZoneSpec] operation.
+     * @param parentZoneDelegate Delegate which performs the parent [ZoneSpec] operation.
      * @param currentZone The current [Zone] where the current interceptor has beed declared.
      * @param targetZone The [Zone] which originally received the request.
      * @param error The argument passed into the `handleError` method.
@@ -283,7 +283,7 @@ interface ZoneSpec {
     /**
      * Allows interception of task scheduling.
      *
-     * @param parentZoneDelegate Dalegate which performs the parent [ZoneSpec] operation.
+     * @param parentZoneDelegate Delegate which performs the parent [ZoneSpec] operation.
      * @param currentZone The current [Zone] where the current interceptor has beed declared.
      * @param targetZone The [Zone] which originally received the request.
      * @param task The argument passed into the `scheduleTask` method.
@@ -291,9 +291,9 @@ interface ZoneSpec {
     onScheduleTask?: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task) => Task;
     onInvokeTask?: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task, applyThis: any, applyArgs: any) => any;
     /**
-     * Allows interception of task cancalation.
+     * Allows interception of task cancelation.
      *
-     * @param parentZoneDelegate Dalegate which performs the parent [ZoneSpec] operation.
+     * @param parentZoneDelegate Delegate which performs the parent [ZoneSpec] operation.
      * @param currentZone The current [Zone] where the current interceptor has beed declared.
      * @param targetZone The [Zone] which originally received the request.
      * @param task The argument passed into the `cancelTask` method.
@@ -302,7 +302,7 @@ interface ZoneSpec {
     /**
      * Notifies of changes to the task queue empty status.
      *
-     * @param parentZoneDelegate Dalegate which performs the parent [ZoneSpec] operation.
+     * @param parentZoneDelegate Delegate which performs the parent [ZoneSpec] operation.
      * @param currentZone The current [Zone] where the current interceptor has beed declared.
      * @param targetZone The [Zone] which originally received the request.
      * @param isEmpty
@@ -386,7 +386,7 @@ interface TaskData {
  *   before VM yield and the next [MacroTask] is executed.
  * - [MacroTask] queue represents a set of tasks which are executed one at a time after each VM
  *   yield. The queue is order by time, and insertions can happen in any location.
- * - [EventTask] is a set of tasks which can at any time be inserted to the head of the [MacroTask]
+ * - [EventTask] is a set of tasks which can at any time be inserted to the end of the [MacroTask]
  *   queue. This happens when the event fires.
  *
  */
