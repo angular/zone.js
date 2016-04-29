@@ -1,4 +1,4 @@
-import {zoneSymbol} from '../../lib/common/utils';
+import {isNode, zoneSymbol} from '../../lib/common/utils';
 
 describe('setTimeout', function () {
   it('should intercept setTimeout', function (done) {
@@ -22,6 +22,10 @@ describe('setTimeout', function () {
       };
       expect(Zone.current.name).toEqual(('TestZone'));
       cancelId = setTimeout(timeoutFn, 3);
+      if (isNode) {
+        expect(typeof cancelId.ref).toEqual(('function'));
+        expect(typeof cancelId.unref).toEqual(('function'));
+      }
       // This icky replacer is to deal with Timers in node.js. The data.handleId contains timers in
       // node.js. They do not stringify properly since they contain circular references.
       id = JSON.stringify((<MacroTask>cancelId).data, function replaceTimer(key, value) {
