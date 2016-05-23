@@ -89,7 +89,7 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
       var proto = Object.create(HTMLElement.prototype);
 
       Object.defineProperty(proto, 'createdCallback', <any>{
-        writeable: false,
+        writable: false,
         configurable: false,
         value: checkZone
       });
@@ -112,7 +112,7 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
 
       Object.defineProperties(proto, {
         createdCallback: <any>{
-          writeable: false,
+          writable: false,
           configurable: false,
           value: checkZone
         }
@@ -127,6 +127,26 @@ describe('document.registerElement', ifEnvSupports(registerElement, function () 
     });
 
     var elt = document.createElement('x-props-desc');
+  });
+
+  it('should not throw with frozen prototypes ', function () {
+    testZone.run(function() {
+
+      var proto = Object.create(HTMLElement.prototype, Object.freeze(<PropertyDescriptorMap>{createdCallback: <PropertyDescriptor>{
+        value: () => {},
+        writable: true,
+        configurable: true
+      }}));
+
+      Object.defineProperty(proto, 'createdCallback', <any>{
+        writable: false,
+        configurable: false
+      });
+
+      expect(function() {
+        (<any>document).registerElement('x-frozen-desc', { prototype: proto });
+      }).not.toThrow();
+    });
   });
 
 
