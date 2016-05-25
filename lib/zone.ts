@@ -486,7 +486,7 @@ type AmbientZone = Zone;
 /** @internal */
 type AmbientZoneDelegate = ZoneDelegate;
 
-const Zone: ZoneType = (function(global) {
+const Zone: ZoneType = (function(global: any) {
   class Zone implements AmbientZone {
     static __symbol__: (name: string) => string = __symbol__;
 
