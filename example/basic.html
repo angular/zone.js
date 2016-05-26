@@ -46,7 +46,13 @@
    * Bootstrap the app
    */
   //main();
-  Zone.current.fork(Zone.longStackTraceZoneSpec).run(main);
+  Zone.current.fork(
+          {
+              onHandleError: function (parentZoneDelegate, currentZone, targetZone, error) {
+                  console.log(error.stack);
+              }
+          }
+  ).fork(Zone.longStackTraceZoneSpec).run(main);
 
   </script>
 </body>
