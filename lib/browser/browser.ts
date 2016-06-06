@@ -14,7 +14,7 @@ const _global = typeof window == 'undefined' ? global : window;
 patchTimer(_global, set, clear, 'Timeout');
 patchTimer(_global, set, clear, 'Interval');
 patchTimer(_global, set, clear, 'Immediate');
-patchTimer(_global, 'request', 'cancelMacroTask', 'AnimationFrame');
+patchTimer(_global, 'request', 'cancel', 'AnimationFrame');
 patchTimer(_global, 'mozRequest', 'mozCancel', 'AnimationFrame');
 patchTimer(_global, 'webkitRequest', 'webkitCancel', 'AnimationFrame');
 
