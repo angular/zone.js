@@ -1,3 +1,9 @@
+import {ifEnvSupports} from '../test-util';
+
+function windowPrototype() {
+  return !!(global['Window'] && global['Window'].prototype);
+}
+
 describe('Zone', function () {
   var rootZone = Zone.current;
 
@@ -71,6 +77,28 @@ describe('Zone', function () {
         expect(hookSpy).toHaveBeenCalled();
         expect(eventListenerSpy).toHaveBeenCalled();
       });
+
+      it('should support addEventListener on window', ifEnvSupports(windowPrototype, function () {
+        var hookSpy = jasmine.createSpy('hook');
+        var eventListenerSpy = jasmine.createSpy('eventListener');
+        var zone = rootZone.fork({
+          name: 'spy',
+          onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                                task: Task): any => {
+            hookSpy();
+            return parentZoneDelegate.scheduleTask(targetZone, task);
+          }
+        });
+
+        zone.run(function() {
+          window.addEventListener('click', eventListenerSpy);
+        });
+        
+        window.dispatchEvent(clickEvent);
+
+        expect(hookSpy).toHaveBeenCalled();
+        expect(eventListenerSpy).toHaveBeenCalled();
+      }));
 
       it('should support removeEventListener', function () {
         var hookSpy = jasmine.createSpy('hook');
