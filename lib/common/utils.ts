@@ -260,6 +260,8 @@ export function patchClass(className) {
 
   let prop;
   for (prop in instance) {
+    // https://bugs.webkit.org/show_bug.cgi?id=44721
+    if (className === 'XMLHttpRequest' && prop === 'responseBlob') continue;
     (function (prop) {
       if (typeof instance[prop] === 'function') {
         _global[className].prototype[prop] = function () {
