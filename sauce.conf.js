@@ -51,12 +51,13 @@ module.exports = function (config) {
       platform: 'OS X 10.10',
       version: '9.2'
     },*/
-    'SL_IE9': {
+    /* Dissabled do to: https://travis-ci.org/angular/zone.js/builds/141228742#L744
+     'SL_IE9': {
       base: 'SauceLabs',
       browserName: 'internet explorer',
       platform: 'Windows 2008',
       version: '9'
-    },
+    },*/
     'SL_IE10': {
       base: 'SauceLabs',
       browserName: 'internet explorer',
