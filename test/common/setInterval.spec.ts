@@ -1,5 +1,5 @@
 'use strict';
-import {zoneSymbol} from "../../lib/common/utils";
+import {isNode, zoneSymbol} from "../../lib/common/utils";
 
 describe('setInterval', function () {
 
@@ -25,6 +25,10 @@ describe('setInterval', function () {
       };
       expect(Zone.current.name).toEqual(('TestZone'));
       cancelId = setInterval(intervalFn, 10);
+      if (isNode) {
+        expect(typeof cancelId.ref).toEqual(('function'));
+        expect(typeof cancelId.unref).toEqual(('function'));
+      }
 
       // This icky replacer is to deal with Timers in node.js. The data.handleId contains timers in
       // node.js. They do not stringify properly since they contain circular references.

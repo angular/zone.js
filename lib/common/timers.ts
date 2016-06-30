@@ -36,7 +36,17 @@ export function patchTimer(
         delay: (nameSuffix === 'Timeout' || nameSuffix === 'Interval') ? args[1] || 0 : null,
         args: args
       };
-      return zone.scheduleMacroTask(setName, args[0], options, scheduleTask, clearTask);
+      var task = zone.scheduleMacroTask(setName, args[0], options, scheduleTask, clearTask) ;
+      if (!task) {
+        return task;
+      }
+      // Node.js must additionally support the ref and unref functions.
+      var handle = (<TimerOptions>task.data).handleId;
+      if ((<any>handle).ref && (<any>handle).unref) {
+        (<any>task).ref = (<any>handle).ref.bind(handle);
+        (<any>task).unref = (<any>handle).unref.bind(handle);
+      }
+      return task;
     } else {
       // cause an error by calling it directly.
       return delegate.apply(window, args);
