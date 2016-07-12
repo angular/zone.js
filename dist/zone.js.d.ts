@@ -372,6 +372,10 @@ interface TaskData {
      * Delay in milliseconds when the Task will run.
      */
     delay?: number;
+    /**
+     * identifier returned by the native setTimeout.
+     */
+    handleId?: number;
 }
 /**
  * Represents work which is executed with a clean stack.

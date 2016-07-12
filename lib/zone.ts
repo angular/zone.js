@@ -395,6 +395,11 @@ interface TaskData {
    * Delay in milliseconds when the Task will run.
    */
   delay?: number;
+
+  /**
+   * identifier returned by the native setTimeout. 
+   */
+  handleId?: number;
 }
 
 /**
@@ -818,6 +823,14 @@ const Zone: ZoneType = (function(global: any) {
           drainMicroTaskQueue();
         }
       };
+    }
+
+  public toString() {
+      if (this.data && typeof this.data.handleId !== 'undefined') {
+        return this.data.handleId;
+      } else {
+        return this.toString();
+      }
     }
   }
 

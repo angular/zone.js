@@ -88,6 +88,12 @@ describe('setTimeout', function () {
     });
   });
 
+  it('should return the timeout Id through toString', function () {
+    var cancelId = setTimeout(() => {
+    }, 0);
+    expect(typeof (cancelId.toString())).toBe('number');
+  })
+
   it('should pass invalid values through', function () {
     clearTimeout(null);
     clearTimeout(<any>{});
