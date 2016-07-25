@@ -208,7 +208,7 @@ describe('AsyncTestZoneSpec', function() {
       var testZoneSpec = new AsyncTestZoneSpec(() => {
         done.fail('expected failCallback to be called');
       }, (err) => {
-        expect(err).toEqual('bad url failure');
+        expect(err.message).toEqual('bad url failure');
         done();
       }, 'name');
 
@@ -251,7 +251,7 @@ describe('AsyncTestZoneSpec', function() {
     var testZoneSpec = new AsyncTestZoneSpec(() => {
       done.fail('expected failCallback to be called');
     }, (err) => {
-      expect(err).toEqual('my error');
+      expect(err.message).toEqual('my error');
       done();
     }, 'name');
 
@@ -270,7 +270,7 @@ describe('AsyncTestZoneSpec', function() {
     var testZoneSpec = new AsyncTestZoneSpec(() => {
       done.fail('expected failCallback to be called');
     }, (err) => {
-      expect(err).toEqual('Uncaught (in promise): my reason');
+      expect(err.message).toEqual('Uncaught (in promise): my reason');
       done();
     }, 'name');
 
