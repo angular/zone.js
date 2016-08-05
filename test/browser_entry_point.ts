@@ -6,6 +6,7 @@ import '../lib/zone';
 import '../lib/browser/browser.ts';
 import '../lib/zone-spec/long-stack-trace';
 import '../lib/zone-spec/wtf';
+import '../lib/zone-spec/proxy';
 
 // Setup test environment
 import './test-env-setup';

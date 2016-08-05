@@ -97,6 +97,14 @@ gulp.task('build/long-stack-trace-zone.min.js', function(cb) {
   return generateBrowserScript('./lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.min.js', true, cb);
 });
 
+gulp.task('build/proxy-zone.js', function(cb) {
+  return generateBrowserScript('./lib/zone-spec/proxy.ts', 'proxy-zone.js', false, cb);
+});
+
+gulp.task('build/proxy-zone.min.js', function(cb) {
+  return generateBrowserScript('./lib/zone-spec/proxy.ts', 'proxy-zone.min.js', true, cb);
+});
+
 gulp.task('build/wtf.js', function(cb) {
   return generateBrowserScript('./lib/zone-spec/wtf.ts', 'wtf.js', false, cb);
 });
@@ -126,6 +134,8 @@ gulp.task('build', [
   'build/jasmine-patch.min.js',
   'build/long-stack-trace-zone.js',
   'build/long-stack-trace-zone.min.js',
+  'build/proxy-zone.js',
+  'build/proxy-zone.min.js',
   'build/wtf.js',
   'build/wtf.min.js',
   'build/async-test.js',
