@@ -13,6 +13,7 @@ import './test-env-setup';
 // List all tests here:
 import './common_tests';
 import './browser/browser.spec';
+import './browser/define-property.spec';
 import './browser/element.spec';
 import './browser/FileReader.spec';
 import './browser/HTMLImports.spec';
