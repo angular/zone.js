@@ -55,7 +55,7 @@ function patchXHR(window: any) {
   function scheduleTask(task: Task) {
     var data = <XHROptions>task.data;
     data.target.addEventListener('readystatechange', () => {
-      if (data.target.readyState === XMLHttpRequest.DONE) {
+      if (data.target.readyState === data.target.DONE) {
         if (!data.aborted) {
           task.invoke();
         }
