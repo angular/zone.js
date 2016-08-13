@@ -492,6 +492,9 @@ type AmbientZone = Zone;
 type AmbientZoneDelegate = ZoneDelegate;
 
 const Zone: ZoneType = (function(global: any) {
+  if (global.Zone) {
+    throw new Error('Zone already loaded.');
+  }
   class Zone implements AmbientZone {
     static __symbol__: (name: string) => string = __symbol__;
 
