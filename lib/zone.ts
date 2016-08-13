@@ -134,7 +134,7 @@ interface Zone {
    * Returns a value associated with the `key`.
    *
    * If the current zone does not have a key, the request is delegated to the parent zone. Use
-   * [ZoneSpec.properties] to configure the set of properties asseciated with the current zone.
+   * [ZoneSpec.properties] to configure the set of properties associated with the current zone.
    *
    * @param key The key to retrieve.
    * @returns {any} Tha value for the key, or `undefined` if not found.
