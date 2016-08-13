@@ -45,7 +45,22 @@ describe('Promise', ifEnvSupports('Promise', function () {
   it ('should make sure that new Promise is instance of Promise', () => {
     expect(Promise.resolve(123) instanceof Promise).toBe(true);
     expect(new Promise(() => null) instanceof Promise).toBe(true);
-  })
+  });
+
+  it('should ensure that Promise this is instanceof Promise', () => {
+      expect(() => {
+        Promise.call({}, null);
+      }).toThrowError('Must be an instanceof Promise.');
+  });
+
+  it('should allow subclassing', () => {
+    class MyPromise extends Promise<any> {
+      constructor(fn: any) {
+        super(fn);
+      }
+    }
+    expect(new MyPromise(null).then(() => null) instanceof MyPromise).toBe(true);
+  });
 
   it('should intercept scheduling of resolution and then', (done) => {
     pZone.run(() => {

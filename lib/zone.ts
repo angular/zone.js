@@ -1060,6 +1060,9 @@ const Zone: ZoneType = (function(global: any) {
     constructor(executor: (resolve : (value?: R | Thenable<R>) => void,
                            reject: (error?: any) => void) => void) {
       const promise: ZoneAwarePromise<R> = this;
+      if (!(promise instanceof ZoneAwarePromise)) {
+        throw new Error('Must be an instanceof Promise.');
+      }
       promise[symbolState] = UNRESOLVED;
       promise[symbolValue] = []; // queue;
       try {
@@ -1072,7 +1075,7 @@ const Zone: ZoneType = (function(global: any) {
     then<R, U>(onFulfilled?: (value: R) => U | Thenable<U>,
                onRejected?: (error: any) => U | Thenable<U>): Promise<R>
     {
-      const chainPromise: Promise<R> = new ZoneAwarePromise(null);
+      const chainPromise: Promise<R> = new (this.constructor as typeof ZoneAwarePromise)(null);
       const zone = Zone.current;
       if (this[symbolState] == UNRESOLVED ) {
         (<any[]>this[symbolValue]).push(zone, chainPromise, onFulfilled, onRejected);
