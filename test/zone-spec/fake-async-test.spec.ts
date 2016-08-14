@@ -30,6 +30,15 @@ describe('FakeAsyncTestZoneSpec', () => {
         fakeAsyncTestZone.run(() => { throw new Error('sync'); });
       }).toThrowError('sync');
     });
+
+    it('should throw error on Rejected promise', () => {
+      expect(() => {
+        fakeAsyncTestZone.run(() => { 
+          Promise.reject('myError')
+          testZoneSpec.flushMicrotasks(); 
+        });
+      }).toThrowError('Uncaught (in promise): myError');
+    });
   });
 
   describe('asynchronous code', () => {
