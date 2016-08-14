@@ -4,11 +4,6 @@
 if (!Zone) {
   throw new Error('zone.js does not seem to be installed');
 }
-
-const SET_TIMEOUT = '__zone_symbol__setTimeout';
-const _global = typeof window == 'undefined' ? global : window;
-
-
 // When you have in async test (test with `done` argument) jasmine will
 // execute the next test synchronously in the done handler. This makes sense
 // for most tests, but now with zones. With zones running next test
@@ -17,10 +12,14 @@ const _global = typeof window == 'undefined' ? global : window;
 // it. We override the `clearStack` method which forces jasmine to always
 // drain the stack before next test gets executed.
 (<any>jasmine).QueueRunner = (function (SuperQueueRunner) {
+  const originalZone = Zone.current;
   // Subclass the `QueueRunner` and override the `clearStack` method.
 
   function alwaysClearStack(fn) {
-    _global[SET_TIMEOUT](fn, 0);
+    const zone: Zone = Zone.current.getZoneWith('JasmineClearStackZone')
+        || Zone.current.getZoneWith('ProxyZoneSpec')
+        || originalZone;
+    zone.scheduleMicroTask('jasmineCleanStack', fn);
   }
 
   function QueueRunner(options) {
