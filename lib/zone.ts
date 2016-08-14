@@ -137,9 +137,18 @@ interface Zone {
    * [ZoneSpec.properties] to configure the set of properties associated with the current zone.
    *
    * @param key The key to retrieve.
-   * @returns {any} Tha value for the key, or `undefined` if not found.
+   * @returns {any} The value for the key, or `undefined` if not found.
    */
   get(key: string): any;
+  /**
+   * Returns a Zone which defines a `key`.
+   *
+   * Recursively search the parent Zone until a Zone which has a property `key` is found.
+   *
+   * @param key The key to use for identification of the returned zone.
+   * @returns {Zone} The Zone which defines the `key`, `null` if not found.
+   */
+  getZoneWith(key: string): Zone;
   /**
    * Used to create a child zone.
    *
@@ -520,13 +529,19 @@ const Zone: ZoneType = (function(global: any) {
     }
 
     public get(key: string): any {
+      const zone: Zone = this.getZoneWith(key) as Zone;
+      if (zone) return zone._properties[key];
+    }
+
+    public getZoneWith(key: string): AmbientZone {
       let current: Zone = this;
       while (current) {
         if (current._properties.hasOwnProperty(key)) {
-          return current._properties[key];
+          return current;
         }
         current = current._parent;
       }
+      return null;
     }
 
     public fork(zoneSpec: ZoneSpec): AmbientZone {
