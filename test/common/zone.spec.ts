@@ -60,9 +60,12 @@ describe('Zone', function () {
     it('should store properties', function () {
       var testZone = Zone.current.fork({name: 'A', properties: { key: 'value' }});
       expect(testZone.get('key')).toEqual('value');
+      expect(testZone.getZoneWith('key')).toEqual(testZone);
       var childZone = testZone.fork({name: 'B', properties: { key: 'override' }});
       expect(testZone.get('key')).toEqual('value');
+      expect(testZone.getZoneWith('key')).toEqual(testZone);
       expect(childZone.get('key')).toEqual('override');
+      expect(childZone.getZoneWith('key')).toEqual(childZone);
     });
   });
 
