@@ -868,7 +868,7 @@ const Zone: ZoneType = (function(global: any) {
   let _currentTask: Task = null;
   let _microTaskQueue: Task[] = [];
   let _isDrainingMicrotaskQueue: boolean = false;
-  let _uncaughtPromiseErrors: UncaughtPromiseError[] = [];
+  const _uncaughtPromiseErrors: UncaughtPromiseError[] = [];
   let _drainScheduled: boolean = false;
 
   function scheduleQueueDrain() {
@@ -894,7 +894,8 @@ const Zone: ZoneType = (function(global: any) {
           'Unhandled Promise rejection:', rejection instanceof Error ? rejection.message : rejection,
           '; Zone:', (<Zone>e.zone).name,
           '; Task:', e.task && (<Task>e.task).source,
-          '; Value:', rejection
+          '; Value:', rejection, 
+          rejection instanceof Error ? rejection.stack : undefined
       );
     }
     console.error(e);
@@ -916,10 +917,8 @@ const Zone: ZoneType = (function(global: any) {
         }
       }
       while(_uncaughtPromiseErrors.length) {
-        const uncaughtPromiseErrors = _uncaughtPromiseErrors;
-        _uncaughtPromiseErrors = [];
-        for (let i = 0; i < uncaughtPromiseErrors.length; i++) {
-          const uncaughtPromiseError: UncaughtPromiseError = uncaughtPromiseErrors[i];
+        while(_uncaughtPromiseErrors.length) {
+          const uncaughtPromiseError: UncaughtPromiseError = _uncaughtPromiseErrors.shift();
           try {
             uncaughtPromiseError.zone.runGuarded(() => { throw uncaughtPromiseError; });
           } catch (e) {
@@ -1119,5 +1118,7 @@ const Zone: ZoneType = (function(global: any) {
     }
   }
 
+  // This is not part of public API, but it is usefull for tests, so we expose it.
+  Promise[Zone.__symbol__('uncaughtPromiseErrors')] = _uncaughtPromiseErrors;
   return global.Zone = Zone;
 })(typeof window === 'undefined' ? global : window);

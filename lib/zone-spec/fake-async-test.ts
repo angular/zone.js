@@ -80,6 +80,7 @@
     private _scheduler: Scheduler = new Scheduler();
     private _microtasks: Function[] = [];
     private _lastError: Error = null;
+    private _uncaughtPromiseErrors: {rejection: any}[] = Promise[Zone['__symbol__']('uncaughtPromiseErrors')];
         
     pendingPeriodicTimers: number[] = [];
     pendingTimers: number[] = [];
@@ -172,7 +173,8 @@
     }
 
     private _resetLastErrorAndThrow(): void {
-      let error = this._lastError;
+      let error = this._lastError || this._uncaughtPromiseErrors[0];
+      this._uncaughtPromiseErrors.length = 0;
       this._lastError = null;
       throw error;
     }
@@ -188,14 +190,17 @@
 
     flushMicrotasks(): void {
       FakeAsyncTestZoneSpec.assertInZone();
-      while (this._microtasks.length > 0) {
-        let microtask = this._microtasks.shift();
-        microtask();
-        if (this._lastError !== null) {
+      const flushErrors = () => {
+        if (this._lastError !== null || this._uncaughtPromiseErrors.length) {
           // If there is an error stop processing the microtask queue and rethrow the error.
           this._resetLastErrorAndThrow();
         }
       }
+      while (this._microtasks.length > 0) {
+        let microtask = this._microtasks.shift();
+        microtask();
+      }
+      flushErrors();
     }
 
     // ZoneSpec implementation below.
