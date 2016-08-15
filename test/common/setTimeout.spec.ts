@@ -29,11 +29,8 @@ describe('setTimeout', function () {
       // This icky replacer is to deal with Timers in node.js. The data.handleId contains timers in
       // node.js. They do not stringify properly since they contain circular references.
       id = JSON.stringify((<MacroTask>cancelId).data, function replaceTimer(key, value) {
-        if (value._idleNext) {
-          return '';
-        } else {
-          return value;
-        }
+        if (key == 'handleId' && typeof value == 'object') return value.constructor.name;
+        return value;
       });
       expect(wtfMock.log).toEqual([
         '# Zone:fork("<root>::WTF", "TestZone")',
@@ -89,6 +86,8 @@ describe('setTimeout', function () {
   });
 
   it('should return the timeout Id through toString', function () {
+    // Node returns complex object from setTimeout, ignore this test.
+    if (isNode) return;
     var cancelId = setTimeout(() => {
     }, 0);
     expect(typeof (cancelId.toString())).toBe('number');
