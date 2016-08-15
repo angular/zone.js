@@ -108,6 +108,9 @@
 	/* WEBPACK VAR INJECTION */(function(global) {;
 	;
 	var Zone = (function (global) {
+	    if (global.Zone) {
+	        throw new Error('Zone already loaded.');
+	    }
 	    var Zone = (function () {
 	        function Zone(parent, zoneSpec) {
 	            this._properties = null;
@@ -141,13 +144,19 @@
 	        });
 	        ;
 	        Zone.prototype.get = function (key) {
+	            var zone = this.getZoneWith(key);
+	            if (zone)
+	                return zone._properties[key];
+	        };
+	        Zone.prototype.getZoneWith = function (key) {
 	            var current = this;
 	            while (current) {
 	                if (current._properties.hasOwnProperty(key)) {
-	                    return current._properties[key];
+	                    return current;
 	                }
 	                current = current._parent;
 	            }
+	            return null;
 	        };
 	        Zone.prototype.fork = function (zoneSpec) {
 	            if (!zoneSpec)
@@ -385,6 +394,14 @@
 	                }
 	            };
 	        }
+	        ZoneTask.prototype.toString = function () {
+	            if (this.data && typeof this.data.handleId !== 'undefined') {
+	                return this.data.handleId;
+	            }
+	            else {
+	                return this.toString();
+	            }
+	        };
 	        return ZoneTask;
 	    }());
 	    function __symbol__(name) { return '__zone_symbol__' + name; }
@@ -416,7 +433,7 @@
 	    function consoleError(e) {
 	        var rejection = e && e.rejection;
 	        if (rejection) {
-	            console.error('Unhandled Promise rejection:', rejection instanceof Error ? rejection.message : rejection, '; Zone:', e.zone.name, '; Task:', e.task && e.task.source, '; Value:', rejection);
+	            console.error('Unhandled Promise rejection:', rejection instanceof Error ? rejection.message : rejection, '; Zone:', e.zone.name, '; Task:', e.task && e.task.source, '; Value:', rejection, rejection instanceof Error ? rejection.stack : undefined);
 	        }
 	        console.error(e);
 	    }
@@ -437,10 +454,8 @@
 	                }
 	            }
 	            while (_uncaughtPromiseErrors.length) {
-	                var uncaughtPromiseErrors = _uncaughtPromiseErrors;
-	                _uncaughtPromiseErrors = [];
-	                var _loop_1 = function(i) {
-	                    var uncaughtPromiseError = uncaughtPromiseErrors[i];
+	                var _loop_1 = function() {
+	                    var uncaughtPromiseError = _uncaughtPromiseErrors.shift();
 	                    try {
 	                        uncaughtPromiseError.zone.runGuarded(function () { throw uncaughtPromiseError; });
 	                    }
@@ -448,8 +463,8 @@
 	                        consoleError(e);
 	                    }
 	                };
-	                for (var i = 0; i < uncaughtPromiseErrors.length; i++) {
-	                    _loop_1(i);
+	                while (_uncaughtPromiseErrors.length) {
+	                    _loop_1();
 	                }
 	            }
 	            _isDrainingMicrotaskQueue = false;
@@ -536,6 +551,9 @@
 	    var ZoneAwarePromise = (function () {
 	        function ZoneAwarePromise(executor) {
 	            var promise = this;
+	            if (!(promise instanceof ZoneAwarePromise)) {
+	                throw new Error('Must be an instanceof Promise.');
+	            }
 	            promise[symbolState] = UNRESOLVED;
 	            promise[symbolValue] = []; // queue;
 	            try {
@@ -593,7 +611,7 @@
 	            return promise;
 	        };
 	        ZoneAwarePromise.prototype.then = function (onFulfilled, onRejected) {
-	            var chainPromise = new ZoneAwarePromise(null);
+	            var chainPromise = new this.constructor(null);
 	            var zone = Zone.current;
 	            if (this[symbolState] == UNRESOLVED) {
 	                this[symbolValue].push(zone, chainPromise, onFulfilled, onRejected);
@@ -621,6 +639,8 @@
 	            }).then(onResolve, onReject);
 	        };
 	    }
+	    // This is not part of public API, but it is usefull for tests, so we expose it.
+	    Promise[Zone.__symbol__('uncaughtPromiseErrors')] = _uncaughtPromiseErrors;
 	    return global.Zone = Zone;
 	})(typeof window === 'undefined' ? global : window);
 
@@ -655,7 +675,17 @@
 	                delay: (nameSuffix === 'Timeout' || nameSuffix === 'Interval') ? args[1] || 0 : null,
 	                args: args
 	            };
-	            return zone.scheduleMacroTask(setName, args[0], options, scheduleTask, clearTask);
+	            var task = zone.scheduleMacroTask(setName, args[0], options, scheduleTask, clearTask);
+	            if (!task) {
+	                return task;
+	            }
+	            // Node.js must additionally support the ref and unref functions.
+	            var handle = task.data.handleId;
+	            if (handle.ref && handle.unref) {
+	                task.ref = handle.ref.bind(handle);
+	                task.unref = handle.unref.bind(handle);
+	            }
+	            return task;
 	        }
 	        else {
 	            // cause an error by calling it directly.
@@ -925,6 +955,9 @@
 	    var instance = new OriginalClass(function () { });
 	    var prop;
 	    for (prop in instance) {
+	        // https://bugs.webkit.org/show_bug.cgi?id=44721
+	        if (className === 'XMLHttpRequest' && prop === 'responseBlob')
+	            continue;
 	        (function (prop) {
 	            if (typeof instance[prop] === 'function') {
 	                _global[className].prototype[prop] = function () {
@@ -1076,14 +1109,83 @@
 /***/ function(module, exports) {
 
 	// shim for using process in browser
-
 	var process = module.exports = {};
+
+	// cached from whatever global is present so that test runners that stub it
+	// don't break things.  But we need to wrap it in a try catch in case it is
+	// wrapped in strict mode code which doesn't define any globals.  It's inside a
+	// function because try/catches deoptimize in certain engines.
+
+	var cachedSetTimeout;
+	var cachedClearTimeout;
+
+	(function () {
+	    try {
+	        cachedSetTimeout = setTimeout;
+	    } catch (e) {
+	        cachedSetTimeout = function () {
+	            throw new Error('setTimeout is not defined');
+	        }
+	    }
+	    try {
+	        cachedClearTimeout = clearTimeout;
+	    } catch (e) {
+	        cachedClearTimeout = function () {
+	            throw new Error('clearTimeout is not defined');
+	        }
+	    }
+	} ())
+	function runTimeout(fun) {
+	    if (cachedSetTimeout === setTimeout) {
+	        //normal enviroments in sane situations
+	        return setTimeout(fun, 0);
+	    }
+	    try {
+	        // when when somebody has screwed with setTimeout but no I.E. maddness
+	        return cachedSetTimeout(fun, 0);
+	    } catch(e){
+	        try {
+	            // When we are in I.E. but the script has been evaled so I.E. doesn't trust the global object when called normally
+	            return cachedSetTimeout.call(null, fun, 0);
+	        } catch(e){
+	            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error
+	            return cachedSetTimeout.call(this, fun, 0);
+	        }
+	    }
+
+
+	}
+	function runClearTimeout(marker) {
+	    if (cachedClearTimeout === clearTimeout) {
+	        //normal enviroments in sane situations
+	        return clearTimeout(marker);
+	    }
+	    try {
+	        // when when somebody has screwed with setTimeout but no I.E. maddness
+	        return cachedClearTimeout(marker);
+	    } catch (e){
+	        try {
+	            // When we are in I.E. but the script has been evaled so I.E. doesn't  trust the global object when called normally
+	            return cachedClearTimeout.call(null, marker);
+	        } catch (e){
+	            // same as above but when it's a version of I.E. that must have the global object for 'this', hopfully our context correct otherwise it will throw a global error.
+	            // Some versions of I.E. have different rules for clearTimeout vs setTimeout
+	            return cachedClearTimeout.call(this, marker);
+	        }
+	    }
+
+
+
+	}
 	var queue = [];
 	var draining = false;
 	var currentQueue;
 	var queueIndex = -1;
 
 	function cleanUpNextTick() {
+	    if (!draining || !currentQueue) {
+	        return;
+	    }
 	    draining = false;
 	    if (currentQueue.length) {
 	        queue = currentQueue.concat(queue);
@@ -1099,7 +1201,7 @@
 	    if (draining) {
 	        return;
 	    }
-	    var timeout = setTimeout(cleanUpNextTick);
+	    var timeout = runTimeout(cleanUpNextTick);
 	    draining = true;
 
 	    var len = queue.length;
@@ -1116,7 +1218,7 @@
 	    }
 	    currentQueue = null;
 	    draining = false;
-	    clearTimeout(timeout);
+	    runClearTimeout(timeout);
 	}
 
 	process.nextTick = function (fun) {
@@ -1128,7 +1230,7 @@
 	    }
 	    queue.push(new Item(fun, args));
 	    if (queue.length === 1 && !draining) {
-	        setTimeout(drainQueue, 0);
+	        runTimeout(drainQueue);
 	    }
 	};
 

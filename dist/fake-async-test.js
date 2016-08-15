@@ -112,6 +112,7 @@
 	            this._scheduler = new Scheduler();
 	            this._microtasks = [];
 	            this._lastError = null;
+	            this._uncaughtPromiseErrors = Promise[Zone['__symbol__']('uncaughtPromiseErrors')];
 	            this.pendingPeriodicTimers = [];
 	            this.pendingTimers = [];
 	            this.properties = { 'FakeAsyncTestZoneSpec': this };
@@ -205,7 +206,8 @@
 	            this._scheduler.removeScheduledFunctionWithId(id);
 	        };
 	        FakeAsyncTestZoneSpec.prototype._resetLastErrorAndThrow = function () {
-	            var error = this._lastError;
+	            var error = this._lastError || this._uncaughtPromiseErrors[0];
+	            this._uncaughtPromiseErrors.length = 0;
 	            this._lastError = null;
 	            throw error;
 	        };
@@ -219,15 +221,19 @@
 	            }
 	        };
 	        FakeAsyncTestZoneSpec.prototype.flushMicrotasks = function () {
+	            var _this = this;
 	            FakeAsyncTestZoneSpec.assertInZone();
+	            var flushErrors = function () {
+	                if (_this._lastError !== null || _this._uncaughtPromiseErrors.length) {
+	                    // If there is an error stop processing the microtask queue and rethrow the error.
+	                    _this._resetLastErrorAndThrow();
+	                }
+	            };
 	            while (this._microtasks.length > 0) {
 	                var microtask = this._microtasks.shift();
 	                microtask();
-	                if (this._lastError !== null) {
-	                    // If there is an error stop processing the microtask queue and rethrow the error.
-	                    this._resetLastErrorAndThrow();
-	                }
 	            }
+	            flushErrors();
 	        };
 	        FakeAsyncTestZoneSpec.prototype.onScheduleTask = function (delegate, current, target, task) {
 	            switch (task.type) {

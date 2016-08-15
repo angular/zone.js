@@ -83,7 +83,7 @@
 	            // Let the parent try to handle the error.
 	            var result = parentZoneDelegate.handleError(targetZone, error);
 	            if (result) {
-	                this._failCallback(error.message ? error.message : 'unknown error');
+	                this._failCallback(error);
 	                this._alreadyErrored = true;
 	            }
 	            return false;

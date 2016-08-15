@@ -59,7 +59,7 @@
 	timers_1.patchTimer(_global, set, clear, 'Timeout');
 	timers_1.patchTimer(_global, set, clear, 'Interval');
 	timers_1.patchTimer(_global, set, clear, 'Immediate');
-	timers_1.patchTimer(_global, 'request', 'cancelMacroTask', 'AnimationFrame');
+	timers_1.patchTimer(_global, 'request', 'cancel', 'AnimationFrame');
 	timers_1.patchTimer(_global, 'mozRequest', 'mozCancel', 'AnimationFrame');
 	timers_1.patchTimer(_global, 'webkitRequest', 'webkitCancel', 'AnimationFrame');
 	for (var i = 0; i < blockingMethods.length; i++) {
@@ -150,6 +150,9 @@
 	/* WEBPACK VAR INJECTION */(function(global) {;
 	;
 	var Zone = (function (global) {
+	    if (global.Zone) {
+	        throw new Error('Zone already loaded.');
+	    }
 	    var Zone = (function () {
 	        function Zone(parent, zoneSpec) {
 	            this._properties = null;
@@ -183,13 +186,19 @@
 	        });
 	        ;
 	        Zone.prototype.get = function (key) {
+	            var zone = this.getZoneWith(key);
+	            if (zone)
+	                return zone._properties[key];
+	        };
+	        Zone.prototype.getZoneWith = function (key) {
 	            var current = this;
 	            while (current) {
 	                if (current._properties.hasOwnProperty(key)) {
-	                    return current._properties[key];
+	                    return current;
 	                }
 	                current = current._parent;
 	            }
+	            return null;
 	        };
 	        Zone.prototype.fork = function (zoneSpec) {
 	            if (!zoneSpec)
@@ -427,6 +436,14 @@
 	                }
 	            };
 	        }
+	        ZoneTask.prototype.toString = function () {
+	            if (this.data && typeof this.data.handleId !== 'undefined') {
+	                return this.data.handleId;
+	            }
+	            else {
+	                return this.toString();
+	            }
+	        };
 	        return ZoneTask;
 	    }());
 	    function __symbol__(name) { return '__zone_symbol__' + name; }
@@ -458,7 +475,7 @@
 	    function consoleError(e) {
 	        var rejection = e && e.rejection;
 	        if (rejection) {
-	            console.error('Unhandled Promise rejection:', rejection instanceof Error ? rejection.message : rejection, '; Zone:', e.zone.name, '; Task:', e.task && e.task.source, '; Value:', rejection);
+	            console.error('Unhandled Promise rejection:', rejection instanceof Error ? rejection.message : rejection, '; Zone:', e.zone.name, '; Task:', e.task && e.task.source, '; Value:', rejection, rejection instanceof Error ? rejection.stack : undefined);
 	        }
 	        console.error(e);
 	    }
@@ -479,10 +496,8 @@
 	                }
 	            }
 	            while (_uncaughtPromiseErrors.length) {
-	                var uncaughtPromiseErrors = _uncaughtPromiseErrors;
-	                _uncaughtPromiseErrors = [];
-	                var _loop_1 = function(i) {
-	                    var uncaughtPromiseError = uncaughtPromiseErrors[i];
+	                var _loop_1 = function() {
+	                    var uncaughtPromiseError = _uncaughtPromiseErrors.shift();
 	                    try {
 	                        uncaughtPromiseError.zone.runGuarded(function () { throw uncaughtPromiseError; });
 	                    }
@@ -490,8 +505,8 @@
 	                        consoleError(e);
 	                    }
 	                };
-	                for (var i = 0; i < uncaughtPromiseErrors.length; i++) {
-	                    _loop_1(i);
+	                while (_uncaughtPromiseErrors.length) {
+	                    _loop_1();
 	                }
 	            }
 	            _isDrainingMicrotaskQueue = false;
@@ -578,6 +593,9 @@
 	    var ZoneAwarePromise = (function () {
 	        function ZoneAwarePromise(executor) {
 	            var promise = this;
+	            if (!(promise instanceof ZoneAwarePromise)) {
+	                throw new Error('Must be an instanceof Promise.');
+	            }
 	            promise[symbolState] = UNRESOLVED;
 	            promise[symbolValue] = []; // queue;
 	            try {
@@ -635,7 +653,7 @@
 	            return promise;
 	        };
 	        ZoneAwarePromise.prototype.then = function (onFulfilled, onRejected) {
-	            var chainPromise = new ZoneAwarePromise(null);
+	            var chainPromise = new this.constructor(null);
 	            var zone = Zone.current;
 	            if (this[symbolState] == UNRESOLVED) {
 	                this[symbolValue].push(zone, chainPromise, onFulfilled, onRejected);
@@ -663,6 +681,8 @@
 	            }).then(onResolve, onReject);
 	        };
 	    }
+	    // This is not part of public API, but it is usefull for tests, so we expose it.
+	    Promise[Zone.__symbol__('uncaughtPromiseErrors')] = _uncaughtPromiseErrors;
 	    return global.Zone = Zone;
 	})(typeof window === 'undefined' ? global : window);
 
@@ -675,7 +695,7 @@
 	"use strict";
 	var utils_1 = __webpack_require__(3);
 	var WTF_ISSUE_555 = 'Anchor,Area,Audio,BR,Base,BaseFont,Body,Button,Canvas,Content,DList,Directory,Div,Embed,FieldSet,Font,Form,Frame,FrameSet,HR,Head,Heading,Html,IFrame,Image,Input,Keygen,LI,Label,Legend,Link,Map,Marquee,Media,Menu,Meta,Meter,Mod,OList,Object,OptGroup,Option,Output,Paragraph,Pre,Progress,Quote,Script,Select,Source,Span,Style,TableCaption,TableCell,TableCol,Table,TableRow,TableSection,TextArea,Title,Track,UList,Unknown,Video';
-	var NO_EVENT_TARGET = 'ApplicationCache,EventSource,FileReader,InputMethodContext,MediaController,MessagePort,Node,Performance,SVGElementInstance,SharedWorker,TextTrack,TextTrackCue,TextTrackList,WebKitNamedFlow,Worker,WorkerGlobalScope,XMLHttpRequest,XMLHttpRequestEventTarget,XMLHttpRequestUpload,IDBRequest,IDBOpenDBRequest,IDBDatabase,IDBTransaction,IDBCursor,DBIndex'.split(',');
+	var NO_EVENT_TARGET = 'ApplicationCache,EventSource,FileReader,InputMethodContext,MediaController,MessagePort,Node,Performance,SVGElementInstance,SharedWorker,TextTrack,TextTrackCue,TextTrackList,WebKitNamedFlow,Window,Worker,WorkerGlobalScope,XMLHttpRequest,XMLHttpRequestEventTarget,XMLHttpRequestUpload,IDBRequest,IDBOpenDBRequest,IDBDatabase,IDBTransaction,IDBCursor,DBIndex'.split(',');
 	var EVENT_TARGET = 'EventTarget';
 	function eventTargetPatch(_global) {
 	    var apis = [];
@@ -946,6 +966,9 @@
 	    var instance = new OriginalClass(function () { });
 	    var prop;
 	    for (prop in instance) {
+	        // https://bugs.webkit.org/show_bug.cgi?id=44721
+	        if (className === 'XMLHttpRequest' && prop === 'responseBlob')
+	            continue;
 	        (function (prop) {
 	            if (typeof instance[prop] === 'function') {
 	                _global[className].prototype[prop] = function () {
@@ -1029,10 +1052,11 @@
 	        if (isUnconfigurable(obj, prop)) {
 	            throw new TypeError('Cannot assign to read only property \'' + prop + '\' of ' + obj);
 	        }
+	        var originalConfigurableFlag = desc.configurable;
 	        if (prop !== 'prototype') {
 	            desc = rewriteDescriptor(obj, prop, desc);
 	        }
-	        return _defineProperty(obj, prop, desc);
+	        return _tryDefineProperty(obj, prop, desc, originalConfigurableFlag);
 	    };
 	    Object.defineProperties = function (obj, props) {
 	        Object.keys(props).forEach(function (prop) {
@@ -1041,7 +1065,7 @@
 	        return obj;
 	    };
 	    Object.create = function (obj, proto) {
-	        if (typeof proto === 'object') {
+	        if (typeof proto === 'object' && !Object.isFrozen(proto)) {
 	            Object.keys(proto).forEach(function (prop) {
 	                proto[prop] = rewriteDescriptor(obj, prop, proto[prop]);
 	            });
@@ -1059,8 +1083,9 @@
 	exports.propertyPatch = propertyPatch;
 	;
 	function _redefineProperty(obj, prop, desc) {
+	    var originalConfigurableFlag = desc.configurable;
 	    desc = rewriteDescriptor(obj, prop, desc);
-	    return _defineProperty(obj, prop, desc);
+	    return _tryDefineProperty(obj, prop, desc, originalConfigurableFlag);
 	}
 	exports._redefineProperty = _redefineProperty;
 	;
@@ -1076,6 +1101,26 @@
 	        obj[unconfigurablesKey][prop] = true;
 	    }
 	    return desc;
+	}
+	function _tryDefineProperty(obj, prop, desc, originalConfigurableFlag) {
+	    try {
+	        return _defineProperty(obj, prop, desc);
+	    }
+	    catch (e) {
+	        if (desc.configurable) {
+	            // In case of errors, when the configurable flag was likely set by rewriteDescriptor(), let's retry with the original flag value
+	            if (typeof originalConfigurableFlag == 'undefined') {
+	                delete desc.configurable;
+	            }
+	            else {
+	                desc.configurable = originalConfigurableFlag;
+	            }
+	            return _defineProperty(obj, prop, desc);
+	        }
+	        else {
+	            throw e;
+	        }
+	    }
 	}
 
 
@@ -1287,7 +1332,17 @@
 	                delay: (nameSuffix === 'Timeout' || nameSuffix === 'Interval') ? args[1] || 0 : null,
 	                args: args
 	            };
-	            return zone.scheduleMacroTask(setName, args[0], options, scheduleTask, clearTask);
+	            var task = zone.scheduleMacroTask(setName, args[0], options, scheduleTask, clearTask);
+	            if (!task) {
+	                return task;
+	            }
+	            // Node.js must additionally support the ref and unref functions.
+	            var handle = task.data.handleId;
+	            if (handle.ref && handle.unref) {
+	                task.ref = handle.ref.bind(handle);
+	                task.unref = handle.unref.bind(handle);
+	            }
+	            return task;
 	        }
 	        else {
 	            // cause an error by calling it directly.
