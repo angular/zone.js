@@ -90,6 +90,7 @@ describe('setTimeout', function () {
     if (isNode) return;
     var cancelId = setTimeout(() => {
     }, 0);
+    console.log('>>>>>', cancelId.toString());
     expect(typeof (cancelId.toString())).toBe('number');
   })
 
