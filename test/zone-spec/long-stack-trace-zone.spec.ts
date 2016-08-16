@@ -32,6 +32,29 @@ describe('longStackTraceZone', function () {
       }, 0);
     });
   });
+
+  it('should produce long stack traces when reject in promise', function(done) {
+    lstz.runGuarded(function () {
+      setTimeout(function () {
+        setTimeout(async function () {
+          setTimeout(function () {
+            try {
+              expect(log[0].split('Elapsed: ').length).toBe(3);
+              done();
+            } catch (e) {
+              expect(e).toBe(null);
+            }
+          }, 0);
+          let promise = new Promise((resolve, reject) => {
+             process.nextTick(() => {
+               reject(new Error('Hello Promise'));
+             });
+          });
+          await promise;
+        }, 0);
+      }, 0);
+    });
+  });
 });
 
 export var __something__;
