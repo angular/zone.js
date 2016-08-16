@@ -98,11 +98,19 @@ gulp.task('build/long-stack-trace-zone.min.js', function(cb) {
 });
 
 gulp.task('build/proxy-zone.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/proxy.ts', 'proxy-zone.js', false, cb);
+  return generateBrowserScript('./lib/zone-spec/proxy-zone.ts', 'proxy-zone.js', false, cb);
 });
 
 gulp.task('build/proxy-zone.min.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/proxy.ts', 'proxy-zone.min.js', true, cb);
+  return generateBrowserScript('./lib/zone-spec/proxy-zone.ts', 'proxy-zone.min.js', true, cb);
+});
+
+gulp.task('build/task-tracking.js', function(cb) {
+  return generateBrowserScript('./lib/zone-spec/task-tracking.ts', 'task-tracking.js', false, cb);
+});
+
+gulp.task('build/task-tracking.min.js', function(cb) {
+  return generateBrowserScript('./lib/zone-spec/task-tracking.ts', 'task-tracking.min.js', true, cb);
 });
 
 gulp.task('build/wtf.js', function(cb) {
@@ -136,6 +144,8 @@ gulp.task('build', [
   'build/long-stack-trace-zone.min.js',
   'build/proxy-zone.js',
   'build/proxy-zone.min.js',
+  'build/task-tracking.js',
+  'build/task-tracking.min.js',
   'build/wtf.js',
   'build/wtf.min.js',
   'build/async-test.js',

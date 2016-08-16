@@ -9,3 +9,4 @@ import './zone-spec/async-test.spec';
 import './zone-spec/sync-test.spec';
 import './zone-spec/fake-async-test.spec';
 import './zone-spec/proxy.spec';
+import './zone-spec/task-tracking.spec';
