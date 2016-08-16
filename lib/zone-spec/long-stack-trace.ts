@@ -85,7 +85,7 @@
     onHandleError: function(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
                  error: any): any
     {
-      const parentTask = Zone.currentTask;
+      const parentTask = Zone.currentTask || error.task;
       if (error instanceof Error && parentTask) {
         let descriptor = Object.getOwnPropertyDescriptor(error, 'stack');
         if (descriptor) {
