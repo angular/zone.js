@@ -36,7 +36,7 @@ describe('longStackTraceZone', function () {
   it('should produce long stack traces when reject in promise', function(done) {
     lstz.runGuarded(function () {
       setTimeout(function () {
-        setTimeout(async function () {
+        setTimeout(function () {
           let promise = new Promise(function (resolve, reject) {
              setTimeout(function (){
                reject(new Error('Hello Promise'));
