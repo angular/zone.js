@@ -37,20 +37,22 @@ describe('longStackTraceZone', function () {
     lstz.runGuarded(function () {
       setTimeout(function () {
         setTimeout(async function () {
+          let promise = new Promise(function (resolve, reject) {
+             setTimeout(function (){
+               reject(new Error('Hello Promise'));
+             }, 0);
+          });
+          promise.then(function() {
+            fail('should not get here');
+          });
           setTimeout(function () {
             try {
-              expect(log[0].split('Elapsed: ').length).toBe(3);
+              expect(log[0].split('Elapsed: ').length).toBe(5);
               done();
             } catch (e) {
               expect(e).toBe(null);
             }
           }, 0);
-          let promise = new Promise((resolve, reject) => {
-             process.nextTick(() => {
-               reject(new Error('Hello Promise'));
-             });
-          });
-          await promise;
         }, 0);
       }, 0);
     });
