@@ -118,7 +118,7 @@
 	            return parentZoneDelegate.scheduleTask(targetZone, task);
 	        },
 	        onHandleError: function (parentZoneDelegate, currentZone, targetZone, error) {
-	            var parentTask = Zone.currentTask;
+	            var parentTask = Zone.currentTask || error.task;
 	            if (error instanceof Error && parentTask) {
 	                var descriptor = Object.getOwnPropertyDescriptor(error, 'stack');
 	                if (descriptor) {
