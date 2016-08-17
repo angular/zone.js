@@ -98,11 +98,11 @@ gulp.task('build/long-stack-trace-zone.min.js', function(cb) {
 });
 
 gulp.task('build/proxy-zone.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/proxy-zone.ts', 'proxy-zone.js', false, cb);
+  return generateBrowserScript('./lib/zone-spec/proxy.ts', 'proxy.js', false, cb);
 });
 
 gulp.task('build/proxy-zone.min.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/proxy-zone.ts', 'proxy-zone.min.js', true, cb);
+  return generateBrowserScript('./lib/zone-spec/proxy.ts', 'proxy.min.js', true, cb);
 });
 
 gulp.task('build/task-tracking.js', function(cb) {
