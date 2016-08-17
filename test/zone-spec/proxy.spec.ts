@@ -20,13 +20,19 @@ describe('ProxySpec', () => {
     });
 
     it('should assert that it is in or out of ProxyZone', () => {
-      expect(() => ProxyZoneSpec.assertPresent()).toThrow();
-      expect(ProxyZoneSpec.isLoaded()).toBe(false);
-      expect(ProxyZoneSpec.get()).toBe(undefined);
-      proxyZone.run(() => {
-        expect(ProxyZoneSpec.isLoaded()).toBe(true);
-        expect(() => ProxyZoneSpec.assertPresent()).not.toThrow();
-        expect(ProxyZoneSpec.get()).toBe(proxyZoneSpec);
+      let rootZone = Zone.current;
+      while(rootZone.parent) {
+        rootZone = rootZone.parent;
+      }
+      rootZone.run(() => {
+        expect(() => ProxyZoneSpec.assertPresent()).toThrow();
+        expect(ProxyZoneSpec.isLoaded()).toBe(false);
+        expect(ProxyZoneSpec.get()).toBe(undefined);
+        proxyZone.run(() => {
+          expect(ProxyZoneSpec.isLoaded()).toBe(true);
+          expect(() => ProxyZoneSpec.assertPresent()).not.toThrow();
+          expect(ProxyZoneSpec.get()).toBe(proxyZoneSpec);
+        });
       });
     });
 

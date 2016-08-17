@@ -15,7 +15,7 @@ describe('XMLHttpRequest', function () {
         expect(wtfMock.log[wtfMock.log.length - 5]).toMatch(
           /\> Zone\:invokeTask.*addEventListener\:readystatechange/);
         expect(wtfMock.log[wtfMock.log.length - 4]).toEqual(
-          '> Zone:invokeTask:XMLHttpRequest.send("<root>::WTF::TestZone")');
+          '> Zone:invokeTask:XMLHttpRequest.send("<root>::ProxyZone::WTF::TestZone")');
         expect(wtfMock.log[wtfMock.log.length - 3]).toEqual(
           '< Zone:invokeTask:XMLHttpRequest.send');
         expect(wtfMock.log[wtfMock.log.length - 2]).toMatch(

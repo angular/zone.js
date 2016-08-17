@@ -34,8 +34,9 @@ describe('Zone', function () {
   });
 
   it('should allow zones to be run from within another zone', function () {
-    var zoneA = Zone.current.fork({ name: 'A' });
-    var zoneB = Zone.current.fork({ name: 'B' });
+    var zone = Zone.current;
+    var zoneA = zone.fork({ name: 'A' });
+    var zoneB = zone.fork({ name: 'B' });
 
     zoneA.run(function () {
       zoneB.run(function () {
@@ -43,7 +44,7 @@ describe('Zone', function () {
       });
       expect(Zone.current).toBe(zoneA);
     });
-    expect(Zone.current).toBe(rootZone);
+    expect(Zone.current).toBe(zone);
   });
 
 

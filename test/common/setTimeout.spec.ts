@@ -10,11 +10,11 @@ describe('setTimeout', function () {
         expect(Zone.current.name).toEqual(('TestZone'));
         global[zoneSymbol('setTimeout')](function () {
           expect(wtfMock.log).toEqual([
-            '# Zone:fork("<root>::WTF", "TestZone")',
-            '> Zone:invoke:unit-test("<root>::WTF::TestZone")',
-            '# Zone:schedule:macroTask:setTimeout("<root>::WTF::TestZone", ' + id + ')',
+            '# Zone:fork("<root>::ProxyZone::WTF", "TestZone")',
+            '> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")',
+            '# Zone:schedule:macroTask:setTimeout("<root>::ProxyZone::WTF::TestZone", ' + id + ')',
             '< Zone:invoke:unit-test',
-            '> Zone:invokeTask:setTimeout("<root>::WTF::TestZone")',
+            '> Zone:invokeTask:setTimeout("<root>::ProxyZone::WTF::TestZone")',
             '< Zone:invokeTask:setTimeout'
           ]);
           done();
@@ -33,9 +33,9 @@ describe('setTimeout', function () {
         return value;
       });
       expect(wtfMock.log).toEqual([
-        '# Zone:fork("<root>::WTF", "TestZone")',
-        '> Zone:invoke:unit-test("<root>::WTF::TestZone")',
-        '# Zone:schedule:macroTask:setTimeout("<root>::WTF::TestZone", ' + id + ')'
+        '# Zone:fork("<root>::ProxyZone::WTF", "TestZone")',
+        '> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")',
+        '# Zone:schedule:macroTask:setTimeout("<root>::ProxyZone::WTF::TestZone", ' + id + ')'
       ]);
     }, null, null, 'unit-test');
   });
