@@ -3,7 +3,7 @@
   // Patch jasmine's describe/it/beforeEach/afterEach functions so test code always runs
   // in a testZone (ProxyZone). (See: angular/zone.js#91 & angular/angular#10503)
   if (!Zone) throw new Error("Missing: zone.js");
-  if (!jasmine) throw new Error("Missing: jasmine.js");  
+  if (typeof jasmine == 'undefined') throw new Error("Missing: jasmine.js");  
   if (jasmine['__zone_patch__']) throw new Error("'jasmine' has already been patched with 'Zone'.");
   jasmine['__zone_patch__'] = true;
 
