@@ -28,7 +28,7 @@ describe('TaskTrackingZone', function() {
         expect(taskTrackingZoneSpec.microTasks.length).toBe(0);
 
         // If a browser does not have XMLHttpRequest, then end test here.
-        if (global['XMLHttpRequest']) return done();
+        if (typeof global['XMLHttpRequest'] == 'undefined') return done();
         const xhr = new XMLHttpRequest();
         xhr.open('get', '/', true);
         xhr.onreadystatechange = () => {
