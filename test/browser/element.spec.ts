@@ -50,6 +50,22 @@ describe('element', function () {
     button.dispatchEvent(clickEvent);
   });
 
+  fit('should not call microtasks early when an event is invoked', function() {
+    var log = '';
+    var logFunction = function logFunction () {
+      log += 'a';
+    };
+
+    Zone.current.scheduleMicroTask('test', () => {
+      log += 'microtask';
+    });
+    button.addEventListener('click', logFunction);
+
+    button.click();
+
+    expect(log).toEqual('a');
+  });
+
   it('should work with addEventListener when called with an EventListener-implementing listener', function () {
     var eventListener = {
       x: 5,

@@ -504,6 +504,9 @@ const Zone: ZoneType = (function(global: any) {
   if (global.Zone) {
     throw new Error('Zone already loaded.');
   }
+
+  let _invokingTasks = 0;
+
   class Zone implements AmbientZone {
     static __symbol__: (name: string) => string = __symbol__;
 
@@ -835,10 +838,16 @@ const Zone: ZoneType = (function(global: any) {
       this.callback = callback;
       const self = this;
       this.invoke = function () {
+        let drainAfter: boolean;
         try {
+          drainAfter = !_invokingTasks;
+          _invokingTasks++;
           return zone.runTask(self, this, <any>arguments);
         } finally {
-          drainMicroTaskQueue();
+          if (drainAfter) {
+            drainMicroTaskQueue();
+          }
+          _invokingTasks--;
         }
       };
     }
