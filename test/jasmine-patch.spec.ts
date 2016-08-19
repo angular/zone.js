@@ -1,3 +1,8 @@
+beforeEach(() => {
+  // assert that each jasmine run has a task, so that drainMicrotask works properly.
+  expect(Zone.currentTask).toBeTruthy();
+});
+
 describe('jasmine', () => {
   let throwOnAsync = false;
   let beforeEachZone: Zone = null;
