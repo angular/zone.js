@@ -51,16 +51,15 @@ describe('element', function () {
   });
 
   it('should not call microtasks early when an event is invoked', function(done) {
-    // we have to run this test in setTimeout to guarantee that we are running in an existing task
-    setTimeout(() => {
-      var log = '';
+    var log = '';
+    button.addEventListener('click', () => {
       Zone.current.scheduleMicroTask('test', () => log += 'microtask;');
-      button.addEventListener('click', () => log += 'click;');
-      button.click();
-
-      expect(log).toEqual('click;');
-      done();
+      log += 'click;'
     });
+    button.click();
+
+    expect(log).toEqual('click;');
+    done();
   });
 
   it('should call microtasks early when an event is invoked', function(done) {
@@ -80,11 +79,15 @@ describe('element', function () {
      *    eager drainage.
      * 3. Pay the cost of throwing an exception in event tasks and verifying that we are the
      *    top most frame.
+     *
+     * For now we are choosing to ignore it and assume that this arrises in tests only.
      */
     global[Zone['__symbol__']('setTimeout')](() => {
       var log = '';
-      Zone.current.scheduleMicroTask('test', () => log += 'microtask;');
-      button.addEventListener('click', () => log += 'click;');
+      button.addEventListener('click', () => {
+        Zone.current.scheduleMicroTask('test', () => log += 'microtask;');
+        log += 'click;'
+      });
       button.click();
 
       expect(log).toEqual('click;microtask;');
