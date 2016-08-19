@@ -386,11 +386,15 @@
 	            this.callback = callback;
 	            var self = this;
 	            this.invoke = function () {
+	                _numberOfNestedTaskFrames++;
 	                try {
 	                    return zone.runTask(self, this, arguments);
 	                }
 	                finally {
-	                    drainMicroTaskQueue();
+	                    if (_numberOfNestedTaskFrames == 1) {
+	                        drainMicroTaskQueue();
+	                    }
+	                    _numberOfNestedTaskFrames--;
 	                }
 	            };
 	        }
@@ -414,9 +418,11 @@
 	    var _microTaskQueue = [];
 	    var _isDrainingMicrotaskQueue = false;
 	    var _uncaughtPromiseErrors = [];
-	    var _drainScheduled = false;
+	    var _numberOfNestedTaskFrames = 0;
 	    function scheduleQueueDrain() {
-	        if (!_drainScheduled && !_currentTask && _microTaskQueue.length == 0) {
+	        // if we are not running in any task, and there has not been anything scheduled
+	        // we must bootstrap the initial task creation by manually scheduling the drain
+	        if (_numberOfNestedTaskFrames == 0 && _microTaskQueue.length == 0) {
 	            // We are not running in Task, so we need to kickstart the microtask queue.
 	            if (global[symbolPromise]) {
 	                global[symbolPromise].resolve(0)[symbolThen](drainMicroTaskQueue);
@@ -468,7 +474,6 @@
 	                }
 	            }
 	            _isDrainingMicrotaskQueue = false;
-	            _drainScheduled = false;
 	        }
 	    }
 	    function isThenable(value) {
