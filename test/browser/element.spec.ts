@@ -50,6 +50,48 @@ describe('element', function () {
     button.dispatchEvent(clickEvent);
   });
 
+  it('should not call microtasks early when an event is invoked', function(done) {
+    // we have to run this test in setTimeout to guarantee that we are running in an existing task
+    setTimeout(() => {
+      var log = '';
+      Zone.current.scheduleMicroTask('test', () => log += 'microtask;');
+      button.addEventListener('click', () => log += 'click;');
+      button.click();
+
+      expect(log).toEqual('click;');
+      done();
+    });
+  });
+
+  it('should call microtasks early when an event is invoked', function(done) {
+    /*
+     * In this test we escape the Zone using unpatched setTimeout.
+     * This way the eventTask invoked from click will think it is the top most
+     * task and eagerly drain the microtask queue.
+     *
+     * THIS IS THE WRONG BEHAVIOR!
+     *
+     * But there is no easy way for the task to know if it is the top most task.
+     *
+     * Given that this can only arise when someone is emulating clicks on DOM in a synchronous
+     * fashion we have few choices:
+     * 1. Ignore as this is unlikely to be a problem outside of tests.
+     * 2. Monkey patch the event methods to increment the _numberOfNestedTaskFrames and prevent
+     *    eager drainage.
+     * 3. Pay the cost of throwing an exception in event tasks and verifying that we are the
+     *    top most frame.
+     */
+    global[Zone['__symbol__']('setTimeout')](() => {
+      var log = '';
+      Zone.current.scheduleMicroTask('test', () => log += 'microtask;');
+      button.addEventListener('click', () => log += 'click;');
+      button.click();
+
+      expect(log).toEqual('click;microtask;');
+      done();
+    });
+  });
+
   it('should work with addEventListener when called with an EventListener-implementing listener', function () {
     var eventListener = {
       x: 5,

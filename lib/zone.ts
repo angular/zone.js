@@ -504,6 +504,7 @@ const Zone: ZoneType = (function(global: any) {
   if (global.Zone) {
     throw new Error('Zone already loaded.');
   }
+
   class Zone implements AmbientZone {
     static __symbol__: (name: string) => string = __symbol__;
 
@@ -835,10 +836,14 @@ const Zone: ZoneType = (function(global: any) {
       this.callback = callback;
       const self = this;
       this.invoke = function () {
+        _numberOfNestedTaskFrames++;
         try {
           return zone.runTask(self, this, <any>arguments);
         } finally {
-          drainMicroTaskQueue();
+          if (_numberOfNestedTaskFrames == 1) {
+            drainMicroTaskQueue();
+          }
+          _numberOfNestedTaskFrames--;
         }
       };
     }
@@ -869,10 +874,12 @@ const Zone: ZoneType = (function(global: any) {
   let _microTaskQueue: Task[] = [];
   let _isDrainingMicrotaskQueue: boolean = false;
   const _uncaughtPromiseErrors: UncaughtPromiseError[] = [];
-  let _drainScheduled: boolean = false;
+  let _numberOfNestedTaskFrames = 0;
 
   function scheduleQueueDrain() {
-    if (!_drainScheduled && !_currentTask && _microTaskQueue.length == 0) {
+    // if we are not running in any task, and there has not been anything scheduled
+    // we must bootstrap the initial task creation by manually scheduling the drain
+    if (_numberOfNestedTaskFrames == 0 && _microTaskQueue.length == 0) {
       // We are not running in Task, so we need to kickstart the microtask queue.
       if (global[symbolPromise]) {
         global[symbolPromise].resolve(0)[symbolThen](drainMicroTaskQueue);
@@ -927,7 +934,6 @@ const Zone: ZoneType = (function(global: any) {
         }
       }
       _isDrainingMicrotaskQueue = false;
-      _drainScheduled = false;
     }
   }
 

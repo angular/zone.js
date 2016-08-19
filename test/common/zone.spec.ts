@@ -150,6 +150,33 @@ describe('Zone', function () {
       ]);
     });
   });
+
+  describe('invoking tasks', () => {
+    var log;
+    function noop() {}
+
+
+    beforeEach(() => {
+      log = [];
+    });
+
+    it('should not drain the microtask queue too early', () => {
+      var z = Zone.current;
+      var event = z.scheduleEventTask('test', () => log.push('eventTask'), null, noop, noop);
+
+      z.scheduleMicroTask('test', () => log.push('microTask'));
+
+      var macro = z.scheduleMacroTask('test', () => {
+        event.invoke();
+        // At this point, we should not have invoked the microtask.
+        expect(log).toEqual([
+          'eventTask'
+        ]);
+      }, null, noop, noop);
+
+      macro.invoke();
+    });
+  });
 });
 
 function throwError () {
