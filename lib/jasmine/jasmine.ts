@@ -102,7 +102,16 @@
     execute() {
       if(Zone.current !== ambientZone) throw new Error("Unexpected Zone: " + Zone.current.name);
       testProxyZone = ambientZone.fork(new ProxyZoneSpec());
-      super.execute();
+      if (!Zone.currentTask) {
+        // if we are not running in a task then if someone would register a
+        // element.addEventListener and then calling element.click() the
+        // addEventListener callback would think that it is the top most task and would
+        // drain the microtask queue on element.click() which would be incorrect.
+        // For this reason we always force a task when running jasmine tests.
+        Zone.current.scheduleMicroTask('jasmine.execute().forceTask', () => super.execute());
+      } else {
+        super.execute();
+      }
     }
   };
 })();
