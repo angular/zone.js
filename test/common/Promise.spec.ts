@@ -23,22 +23,26 @@ function flushMicrotasks() {
 
 describe('Promise', ifEnvSupports('Promise', function () {
   if (!global.Promise) return;
-  var testZone = Zone.current.fork({name: 'TestZone'});
-
-  var log;
-  var pZone = Zone.current.fork({
-    name: 'promise-zone',
-    onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                     task: MicroTask): any =>
-    {
-      log.push('scheduleTask');
-      parentZoneDelegate.scheduleTask(targetZone, task);
-    }
-  });
-
-  var queueZone = Zone.current.fork(new MicroTaskQueueZoneSpec());
+  var log: string[];
+  var queueZone: Zone;
+  var testZone: Zone;
+  var pZone: Zone;
 
   beforeEach(() => {
+    testZone = Zone.current.fork({name: 'TestZone'});
+
+    pZone = Zone.current.fork({
+      name: 'promise-zone',
+      onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                       task: MicroTask): any =>
+      {
+        log.push('scheduleTask');
+        parentZoneDelegate.scheduleTask(targetZone, task);
+      }
+    });
+
+    queueZone = Zone.current.fork(new MicroTaskQueueZoneSpec());
+
     log = [];
   });
 
@@ -91,12 +95,12 @@ describe('Promise', ifEnvSupports('Promise', function () {
     queueZone.run(() => {
       var flush = Zone.current.get('flush');
       var queue = Zone.current.get('queue');
-      var p = new Promise(function (resolve, reject) {
+      var p = new Promise<string>(function (resolve, reject) {
         resolve('RValue');
-      }).then((v) => {
+      }).then((v: string) => {
         log.push(v);
         return 'second value';
-      }).then((v) => {
+      }).then((v: string) => {
         log.push(v);
       });
       expect(queue.length).toEqual(1);
@@ -110,12 +114,12 @@ describe('Promise', ifEnvSupports('Promise', function () {
     queueZone.run(() => {
       var flush = Zone.current.get('flush');
       var queue = Zone.current.get('queue');
-      var p = new Promise(function (resolve, reject) {
+      var p = new Promise<string>(function (resolve, reject) {
         resolve(Promise.resolve('RValue'));
-      }).then((v) => {
+      }).then((v: string) => {
         log.push(v);
         return Promise.resolve('second value');
-      }).then((v) => {
+      }).then((v: string) => {
         log.push(v);
       });
       expect(queue.length).toEqual(1);

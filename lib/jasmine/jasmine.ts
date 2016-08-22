@@ -31,7 +31,7 @@
 
   // Monkey patch all of the jasmine DSL so that each function runs in appropriate zone.
   const jasmineEnv = jasmine.getEnv();
-  ['desribe', 'xdescribe', 'fdescribe'].forEach((methodName) => {
+  ['describe', 'xdescribe', 'fdescribe'].forEach((methodName) => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
     jasmineEnv[methodName] = function(description: string, specDefinitions: Function) {
       return originalJasmineFn.call(this, description,  wrapDescribeInZone(specDefinitions));

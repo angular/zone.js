@@ -1,7 +1,11 @@
 import {ifEnvSupports} from '../test-util';
 
 describe('XMLHttpRequest', function () {
-  var testZone = Zone.current.fork({name: 'test'});
+  var testZone: Zone;
+
+  beforeEach(() => {
+    testZone = Zone.current.fork({name: 'test'});
+  });
 
   it('should intercept XHRs and treat them as MacroTasks', function(done) {
     var req: any;

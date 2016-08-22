@@ -1,17 +1,18 @@
 describe('longStackTraceZone', function () {
-  var log;
-
-  var lstz = Zone.current.fork(Zone['longStackTraceZoneSpec']).fork({
-    name: 'long-stack-trace-zone-test',
-    onHandleError: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                   error: any): boolean => {
-      parentZoneDelegate.handleError(targetZone, error);
-      log.push(error.stack);
-      return false;
-    }
-  });
+  let log;
+  let lstz: Zone;
 
   beforeEach(function () {
+    lstz = Zone.current.fork(Zone['longStackTraceZoneSpec']).fork({
+      name: 'long-stack-trace-zone-test',
+      onHandleError: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                      error: any): boolean => {
+        parentZoneDelegate.handleError(targetZone, error);
+        log.push(error.stack);
+        return false;
+      }
+    });
+
     log = [];
   });
 
