@@ -90,7 +90,6 @@
   const QueueRunner = (jasmine as any).QueueRunner as { new(attrs: QueueRunnerAttrs): QueueRunner };
   (jasmine as any).QueueRunner = class ZoneQueueRunner extends QueueRunner {
     constructor(attrs: QueueRunnerAttrs) {
-      attrs.clearStack = (fn) => fn(); // Don't clear since onComplete will clear.
       attrs.onComplete = ((fn) => () => {
         // All functions are done, clear the test zone.
         testProxyZone = null;
