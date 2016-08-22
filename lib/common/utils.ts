@@ -82,8 +82,9 @@ export function patchProperty(obj, prop) {
     }
   };
 
+  // The getter would return undefined for unassigned properties but the default value of an unassigned property is null
   desc.get = function () {
-    return this[_prop];
+    return this[_prop] || null;
   };
 
   Object.defineProperty(obj, prop, desc);
