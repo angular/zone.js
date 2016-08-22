@@ -88,7 +88,7 @@
 	    function scheduleTask(task) {
 	        var data = task.data;
 	        data.target.addEventListener('readystatechange', function () {
-	            if (data.target.readyState === XMLHttpRequest.DONE) {
+	            if (data.target.readyState === data.target.DONE) {
 	                if (!data.aborted) {
 	                    task.invoke();
 	                }
@@ -802,8 +802,9 @@
 	            this[_prop] = null;
 	        }
 	    };
+	    // The getter would return undefined for unassigned properties but the default value of an unassigned property is null
 	    desc.get = function () {
-	        return this[_prop];
+	        return this[_prop] || null;
 	    };
 	    Object.defineProperty(obj, prop, desc);
 	}

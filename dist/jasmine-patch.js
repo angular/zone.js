@@ -55,7 +55,7 @@
 	    // in a testZone (ProxyZone). (See: angular/zone.js#91 & angular/angular#10503)
 	    if (!Zone)
 	        throw new Error("Missing: zone.js");
-	    if (!jasmine)
+	    if (typeof jasmine == 'undefined')
 	        throw new Error("Missing: jasmine.js");
 	    if (jasmine['__zone_patch__'])
 	        throw new Error("'jasmine' has already been patched with 'Zone'.");
@@ -83,7 +83,7 @@
 	    var testProxyZone = null;
 	    // Monkey patch all of the jasmine DSL so that each function runs in appropriate zone.
 	    var jasmineEnv = jasmine.getEnv();
-	    ['desribe', 'xdescribe', 'fdescribe'].forEach(function (methodName) {
+	    ['describe', 'xdescribe', 'fdescribe'].forEach(function (methodName) {
 	        var originalJasmineFn = jasmineEnv[methodName];
 	        jasmineEnv[methodName] = function (description, specDefinitions) {
 	            return originalJasmineFn.call(this, description, wrapDescribeInZone(specDefinitions));
