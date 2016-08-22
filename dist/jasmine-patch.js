@@ -127,7 +127,6 @@
 	    jasmine.QueueRunner = (function (_super) {
 	        __extends(ZoneQueueRunner, _super);
 	        function ZoneQueueRunner(attrs) {
-	            attrs.clearStack = function (fn) { return fn(); }; // Don't clear since onComplete will clear.
 	            attrs.onComplete = (function (fn) { return function () {
 	                // All functions are done, clear the test zone.
 	                testProxyZone = null;
