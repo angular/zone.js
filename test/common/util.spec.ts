@@ -37,7 +37,7 @@ describe('utils', function () {
       var Type = function() {};
       var method = Type.prototype.method = function () {};
       patchMethod(Type.prototype, 'method', (delegate) => {
-        return function (self, args) { return delegate.apply(self, ['patch', ...args]); }
+        return function (self, args: any[]) { return delegate.apply(self, ['patch', ...args]); }
       });
       var pMethod = Type.prototype.method;
       expect(pMethod).not.toBe(method);

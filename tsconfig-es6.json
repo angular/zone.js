@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "module": "es2015",
+    "target": "es5",
+    "noImplicitAny": false,
+    "outDir": "build-es6",
+    "inlineSourceMap": false,
+    "inlineSources": false,
+    "declaration": true,
+    "noEmitOnError": false,
+    "stripInternal": true
+  },
+  "exclude": [
+    "node_modules",
+    "typings/main",
+    "typings/main.d.ts",
+    "build",
+    "dist"
+  ]
+}

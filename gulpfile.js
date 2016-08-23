@@ -1,136 +1,126 @@
 'use strict';
 
 var gulp = require('gulp');
+var rollup = require('gulp-rollup');
+var rename = require("gulp-rename");
 var gutil = require("gulp-util");
 var webpack = require('webpack');
 var rename = require('gulp-rename');
 var uglify = require('gulp-uglify');
-var typescript = require('gulp-tsc');
+var pump = require('pump');
+var uglify = require('gulp-uglify');
+var path = require('path');
+var spawn = require('child_process').spawn;
 
 
 var distFolder = './dist';
 
-function generateBrowserScript(inFile, outFile, minify, callback) {
-  var plugins = [];
+function generateScript(inFile, outFile, minify, callback) {
+  inFile = path.join('./build-es6/', inFile).replace(/\.ts$/, '.js');
+  var parts = [
+    gulp.src('./build-es6/lib/**/*.js')
+        .pipe(rollup({ entry: inFile}))
+        .pipe(rename(outFile)),
+  ];
   if (minify) {
-    plugins.push(new webpack.optimize.UglifyJsPlugin({
-      mangle: {
-        except: ['$super', '$', 'exports', 'require']
-      }
-    }));
+    parts.push(uglify());
   }
-  webpack({
-    entry: inFile,
-    plugins: plugins,
-    output: {
-      filename: 'dist/' + outFile
-    },
-    resolve: {
-      extensions: ['', '.webpack.js', '.web.js', '.ts', '.js']
-    },
-    module: {
-      loaders: [
-        {test: /\.ts$/, loader: 'ts-loader', exclude: /node_modules/}
-      ]
-    },
-    node: {
-      process: false
-    }
-  }, function(err, stats) {
-    if(err) {
-      callback(err);
-    } else {
-      gutil.log("[webpack]", stats.toString({
-        // output meta
-      }));
-      callback();
-    }
-  });
+  parts.push(gulp.dest('./dist'));
+  pump(parts, callback);
+}
+
+function tsc(config, cb) {
+  spawn('./node_modules/.bin/tsc', ['-p', config], {stdio: 'inherit'})
+      .on('close', function(exitCode) {
+        if (exitCode) {
+          var err = new Error('TypeScript compiler failed');
+          // The stack is not useful in this context.
+          err.showStack = false;
+          cb(err);
+        } else {
+          cb();
+        }
+      });
 }
 
 // This is equivalent to `npm run tsc`.
 gulp.task('compile', function(cb) {
-  var spawn = require('child_process').spawn;
-  spawn('./node_modules/.bin/tsc', {stdio: 'inherit'}).on('close', function(exitCode) {
-    if (exitCode) {
-      var err = new Error('TypeScript compiler failed');
-      // The stack is not useful in this context.
-      err.showStack = false;
-      cb(err);
-    } else {
-      cb();
-    }
-  });
+  tsc('tsconfig.json', cb);
 });
 
-gulp.task('build/zone.js.d.ts', ['compile'], function() {
+gulp.task('compile-es6', function(cb) {
+  tsc('tsconfig-es6.json', cb);
+});
+
+gulp.task('build/zone.js.d.ts', ['compile-es6'], function() {
   return gulp.src('./build/lib/zone.d.ts').pipe(rename('zone.js.d.ts')).pipe(gulp.dest('./dist'));
 });
 
 // Zone for Node.js environment.
-gulp.task('build/zone-node.js', function(cb) {
-  return generateBrowserScript('./lib/node/node.ts', 'zone-node.js', false, cb);
+gulp.task('build/zone-node.js', ['compile-es6'], function(cb) {
+  return generateScript('./lib/node/node.ts', 'zone-node.js', false, cb);
 });
 
 // Zone for the browser.
-gulp.task('build/zone.js', function(cb) {
-  return generateBrowserScript('./lib/browser/browser.ts', 'zone.js', false, cb);
+gulp.task('build/zone.js', ['compile-es6'], function(cb) {
+
+  return generateScript('./lib/browser/browser.ts', 'zone.js', false, cb);
 });
 
-gulp.task('build/zone.min.js', function(cb) {
-  return generateBrowserScript('./lib/browser/browser.ts', 'zone.min.js', true, cb);
+gulp.task('build/zone.min.js', ['compile-es6'], function(cb) {
+  return generateScript('./lib/browser/browser.ts', 'zone.min.js', true, cb);
 });
 
-gulp.task('build/jasmine-patch.js', function(cb) {
-  return generateBrowserScript('./lib/jasmine/jasmine.ts', 'jasmine-patch.js', false, cb);
+gulp.task('build/jasmine-patch.js', ['compile-es6'], function(cb) {
+  return generateScript('./lib/jasmine/jasmine.ts', 'jasmine-patch.js', false, cb);
 });
 
-gulp.task('build/jasmine-patch.min.js', function(cb) {
-  return generateBrowserScript('./lib/jasmine/jasmine.ts', 'jasmine-patch.min.js', true, cb);
+gulp.task('build/jasmine-patch.min.js', ['compile-es6'], function(cb) {
+  return generateScript('./lib/jasmine/jasmine.ts', 'jasmine-patch.min.js', true, cb);
 });
 
-gulp.task('build/long-stack-trace-zone.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.js', false, cb);
+gulp.task('build/long-stack-trace-zone.js', ['compile-es6'], function(cb) {
+  return generateScript('./lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.js', false, cb);
 });
 
-gulp.task('build/long-stack-trace-zone.min.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.min.js', true, cb);
+gulp.task('build/long-stack-trace-zone.min.js', ['compile-es6'], function(cb) {
+  return generateScript('./lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.min.js', true, cb);
 });
 
-gulp.task('build/proxy-zone.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/proxy.ts', 'proxy.js', false, cb);
+gulp.task('build/proxy-zone.js', ['compile-es6'], function(cb) {
+  return generateScript('./lib/zone-spec/proxy.ts', 'proxy.js', false, cb);
 });
 
-gulp.task('build/proxy-zone.min.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/proxy.ts', 'proxy.min.js', true, cb);
+gulp.task('build/proxy-zone.min.js', ['compile-es6'], function(cb) {
+  return generateScript('./lib/zone-spec/proxy.ts', 'proxy.min.js', true, cb);
 });
 
-gulp.task('build/task-tracking.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/task-tracking.ts', 'task-tracking.js', false, cb);
+gulp.task('build/task-tracking.js', ['compile-es6'], function(cb) {
+  return generateScript('./lib/zone-spec/task-tracking.ts', 'task-tracking.js', false, cb);
 });
 
-gulp.task('build/task-tracking.min.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/task-tracking.ts', 'task-tracking.min.js', true, cb);
+gulp.task('build/task-tracking.min.js', ['compile-es6'], function(cb) {
+  return generateScript('./lib/zone-spec/task-tracking.ts', 'task-tracking.min.js', true, cb);
 });
 
-gulp.task('build/wtf.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/wtf.ts', 'wtf.js', false, cb);
+gulp.task('build/wtf.js', ['compile-es6'], function(cb) {
+  return generateScript('./lib/zone-spec/wtf.ts', 'wtf.js', false, cb);
 });
 
-gulp.task('build/wtf.min.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/wtf.ts', 'wtf.min.js', true, cb);
+gulp.task('build/wtf.min.js', ['compile-es6'], function(cb) {
+  return generateScript('./lib/zone-spec/wtf.ts', 'wtf.min.js', true, cb);
 });
 
-gulp.task('build/async-test.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/async-test.ts', 'async-test.js', false, cb);
+gulp.task('build/async-test.js', ['compile-es6'], function(cb) {
+  return generateScript('./lib/zone-spec/async-test.ts', 'async-test.js', false, cb);
 });
 
-gulp.task('build/fake-async-test.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/fake-async-test.ts', 'fake-async-test.js', false, cb);
+gulp.task('build/fake-async-test.js', ['compile-es6'], function(cb) {
+  return generateScript('./lib/zone-spec/fake-async-test.ts', 'fake-async-test.js', false, cb);
 });
 
-gulp.task('build/sync-test.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/sync-test.ts', 'sync-test.js', false, cb);
+gulp.task('build/sync-test.js', ['compile-es6'], function(cb) {
+  return generateScript('./lib/zone-spec/sync-test.ts', 'sync-test.js', false, cb);
 });
 
 gulp.task('build', [
