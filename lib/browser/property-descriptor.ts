@@ -65,7 +65,7 @@ function patchViaCapturingAllTheEvents() {
   for(let i = 0; i < eventNames.length; i++) {
     const property = eventNames[i];
     const onproperty = 'on' + property;
-    document.addEventListener(property, function (event) {
+    self.addEventListener(property, function (event) {
       let elt = <Node>event.target, bound, source;
       if (elt) {
         source = elt.constructor['name'] + '.' + onproperty;
