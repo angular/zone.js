@@ -1242,7 +1242,7 @@
 	    var _loop_1 = function(i) {
 	        var property = eventNames[i];
 	        var onproperty = 'on' + property;
-	        document.addEventListener(property, function (event) {
+	        self.addEventListener(property, function (event) {
 	            var elt = event.target, bound, source;
 	            if (elt) {
 	                source = elt.constructor['name'] + '.' + onproperty;
