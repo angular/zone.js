@@ -84,7 +84,7 @@ function patchXHR(window: any) {
   var openNative = patchMethod(window.XMLHttpRequest.prototype, 'open', () => function(self: any, args: any[]) {
     self[XHR_SYNC] = args[2] == false;
     return openNative.apply(self, args);
-  };
+  });
 
   var sendNative = patchMethod(window.XMLHttpRequest.prototype, 'send', () => function(self: any, args: any[]) {
     var zone = Zone.current;

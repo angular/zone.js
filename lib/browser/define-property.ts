@@ -79,7 +79,13 @@ function _tryDefineProperty (obj, prop, desc, originalConfigurableFlag) {
       } else {
         desc.configurable = originalConfigurableFlag;
       }
-      return _defineProperty(obj, prop, desc);
+      try {
+        return _defineProperty(obj, prop, desc);
+      } catch (e) {
+        var descJson: string  = null;
+        try { descJson = JSON.stringify(desc); } catch (e) { descJson = descJson.toString(); }
+        console.log(`Attempting to configure '${prop}' with descriptor '${descJson}' on object '${obj}' and got error, giving up: ${e}`);
+      }
     } else {
       throw e;
     }
