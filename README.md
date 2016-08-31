@@ -4,8 +4,8 @@
 
 Implements _Zones_ for JavaScript, inspired by [Dart](https://www.dartlang.org/articles/zones/).
 
-> If you're using zone.js via npmcdn please provide a query param `?main=browser`  
-`https://npmcdn.com/zone.js?main=browser`
+> If you're using zone.js via unpkg please provide a query param `?main=browser`  
+`https://unpkg.com/zone.js?main=browser`
 
 # NEW Zone.js POST-v0.6.0
 
