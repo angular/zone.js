@@ -232,6 +232,11 @@ interface ZoneType {
    * @returns {Task} The task associated with the current execution.
    */
   currentTask: Task;
+
+  /**
+   * Verify that Zone has been correctly patched. Specifically that Promise is zone aware.
+   */
+  assertZonePatched();
 }
 
 /**
@@ -507,6 +512,15 @@ const Zone: ZoneType = (function(global: any) {
 
   class Zone implements AmbientZone {
     static __symbol__: (name: string) => string = __symbol__;
+
+    static assertZonePatched() {
+      if (global.Promise !== ZoneAwarePromise) {
+        throw new Error("Zone.js has detected that ZoneAwarePromise `(window|global).Promise` " +
+            "has been overwritten.\n" +
+            "Most likely cause is that a Promise polyfill has been loaded " +
+            "after Zone.js (If you must load polyfills do so before Zone.js.)");
+      }
+    }
 
 
     static get current(): AmbientZone { return _currentZone; };
