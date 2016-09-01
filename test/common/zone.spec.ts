@@ -149,6 +149,27 @@ describe('Zone', function () {
         { microTask: false, macroTask: false, eventTask: false, change: 'microTask', zone: 'parent' },
       ]);
     });
+
+    describe('assert ZoneAwarePromise', () => {
+      it('should not throw when all is OK', () => {
+        Zone.assertZonePatched();
+      });
+
+      it('should throw when Promise has been patched', () => {
+        class WrongPromise{}
+
+        var ZoneAwarePromise = global.Promise;
+        global.Promise = WrongPromise;
+        try {
+          expect(ZoneAwarePromise).toBeTruthy();
+          expect(() => Zone.assertZonePatched()).toThrow();
+        } finally {
+          // restore it.
+          global.Promise = ZoneAwarePromise;
+        }
+        Zone.assertZonePatched();
+      });
+    });
   });
 
   describe('invoking tasks', () => {
