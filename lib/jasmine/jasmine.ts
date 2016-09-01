@@ -39,14 +39,16 @@
   });
   ['it', 'xit', 'fit'].forEach((methodName) => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
-    jasmineEnv[methodName] = function(description: string, specDefinitions: Function) {
-      return originalJasmineFn.call(this, description, wrapTestInZone(specDefinitions));
+    jasmineEnv[methodName] = function(description: string, specDefinitions: Function, timeout: number) {
+      arguments[1] = wrapTestInZone(specDefinitions);
+      return originalJasmineFn.apply(this, arguments);
     } 
   });
   ['beforeEach', 'afterEach'].forEach((methodName) => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
     jasmineEnv[methodName] = function(specDefinitions: Function) {
-      return originalJasmineFn.call(this, wrapTestInZone(specDefinitions));
+      arguments[0] = wrapTestInZone(specDefinitions);
+      return originalJasmineFn.apply(this, arguments);
     } 
   });
 
