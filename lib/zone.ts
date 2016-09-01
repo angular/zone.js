@@ -752,6 +752,10 @@ const Zone: ZoneType = (function(global: any) {
 
     scheduleTask(targetZone: Zone, task: Task): Task {
       try {
+        if (targetZone == this.zone) {
+          this._updateTaskCount(task.type, 1);
+        }
+      } finally {
         if (this._scheduleTaskZS) {
           return this._scheduleTaskZS.onScheduleTask(this._scheduleTaskDlgt, this.zone, targetZone, task);
         } else if (task.scheduleFn) {
@@ -762,10 +766,6 @@ const Zone: ZoneType = (function(global: any) {
           throw new Error('Task is missing scheduleFn.');
         }
         return task;
-      } finally {
-        if (targetZone == this.zone) {
-          this._updateTaskCount(task.type, 1);
-        }
       }
     }
 
