@@ -147,6 +147,23 @@ describe('XMLHttpRequest', function () {
     }
   });
 
+  it('should work with synchronous XMLHttpRequest', function () {
+    const log = [];
+    Zone.current.fork({
+      name: 'sync-xhr-test',
+      onHasTask: function(delegate: ZoneDelegate, current: Zone, target: Zone,
+                          hasTaskState: HasTaskState) {
+        log.push(hasTaskState);
+        delegate.hasTask(target, hasTaskState);
+      }
+    }).run(() => {
+      var req = new XMLHttpRequest();
+      req.open('get', '/', false);
+      req.send();
+    });
+    expect(log).toEqual([]);
+  });
+
   it('should preserve static constants', function() {
     expect(XMLHttpRequest.UNSENT).toEqual(0);
     expect(XMLHttpRequest.OPENED).toEqual(1);

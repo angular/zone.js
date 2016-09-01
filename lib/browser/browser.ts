@@ -39,6 +39,7 @@ registerElementPatch(_global);
 patchXHR(_global);
 
 const XHR_TASK = zoneSymbol('xhrTask');
+const XHR_SYNC = zoneSymbol('xhrSync');
 
 interface XHROptions extends TaskData {
   target: any;
@@ -65,7 +66,7 @@ function patchXHR(window: any) {
     if (!storedTask) {
       data.target[XHR_TASK] = task;
     }
-    setNative.apply(data.target, data.args);
+    sendNative.apply(data.target, data.args);
     return task;
   }
 
@@ -77,23 +78,32 @@ function patchXHR(window: any) {
     // Note - ideally, we would call data.target.removeEventListener here, but it's too late
     // to prevent it from firing. So instead, we store info for the event listener.
     data.aborted = true;
-    return clearNative.apply(data.target, data.args);
+    return abortNative.apply(data.target, data.args);
   }
 
-  var setNative = patchMethod(window.XMLHttpRequest.prototype, 'send', () => function(self: any, args: any[]) {
-    var zone = Zone.current;
+  var openNative = patchMethod(window.XMLHttpRequest.prototype, 'open', () => function(self: any, args: any[]) {
+    self[XHR_SYNC] = args[2] == false;
+    return openNative.apply(self, args);
+  };
 
-    var options: XHROptions = {
-      target: self,
-      isPeriodic: false,
-      delay: null,
-      args: args,
-      aborted: false
-    };
-    return zone.scheduleMacroTask('XMLHttpRequest.send', placeholderCallback, options, scheduleTask, clearTask);
+  var sendNative = patchMethod(window.XMLHttpRequest.prototype, 'send', () => function(self: any, args: any[]) {
+    var zone = Zone.current;
+    if (self[XHR_SYNC]) {
+      // if the XHR is sync there is no task to schedule, just execute the code.
+      return sendNative.apply(self, args);
+    } else {
+      var options: XHROptions = {
+        target: self,
+        isPeriodic: false,
+        delay: null,
+        args: args,
+        aborted: false
+      };
+      return zone.scheduleMacroTask('XMLHttpRequest.send', placeholderCallback, options, scheduleTask, clearTask);
+    }
   });
 
-  var clearNative = patchMethod(window.XMLHttpRequest.prototype, 'abort', (delegate: Function) => function(self: any, args: any[]) {
+  var abortNative = patchMethod(window.XMLHttpRequest.prototype, 'abort', (delegate: Function) => function(self: any, args: any[]) {
     var task: Task = findPendingTask(self);
     if (task && typeof task.type == 'string') {
       // If the XHR has already completed, do nothing.
