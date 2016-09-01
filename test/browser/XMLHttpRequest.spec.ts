@@ -147,6 +147,12 @@ describe('XMLHttpRequest', function () {
     }
   });
 
+  it('should work with synchronous XMLHttpRequest', function () {
+    var req = new XMLHttpRequest();
+    req.open('get', '/', false);
+    req.send();
+  });
+
   it('should preserve static constants', function() {
     expect(XMLHttpRequest.UNSENT).toEqual(0);
     expect(XMLHttpRequest.OPENED).toEqual(1);
