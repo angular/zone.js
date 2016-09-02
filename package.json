@@ -14,12 +14,11 @@
     "test": "test"
   },
   "scripts": {
-    "prepublish": "./node_modules/.bin/typings install && ./node_modules/.bin/tsc && gulp build",
-    "typings": "./node_modules/.bin/typings install",
+    "prepublish": "./node_modules/.bin/tsc && gulp build",
     "ws-server": "node ./test/ws-server.js",
     "tsc": "./node_modules/.bin/tsc",
     "tsc:w": "./node_modules/.bin/tsc -w",
-    "test": "karma start karma.conf.js",
+    "test": "npm run tsc && concurrently \"npm run tsc:w\" \"npm run ws-server\" \"karma start karma.conf.js\"",
     "test-node": "./node_modules/.bin/gulp test/node",
     "serve": "python -m SimpleHTTPServer 8000"
   },
@@ -34,6 +33,10 @@
   },
   "dependencies": {},
   "devDependencies": {
+    "@types/jasmine": "^2.2.33",
+    "@types/node": "^6.0.38",
+    "@types/systemjs": "^0.19.30",
+    "concurrently": "^2.2.0",
     "es6-promise": "^3.0.2",
     "gulp": "^3.8.11",
     "gulp-rename": "^1.2.2",
@@ -52,9 +55,9 @@
     "karma-sourcemap-loader": "^0.3.6",
     "karma-webpack": "^1.7.0",
     "nodejs-websocket": "^1.2.0",
+    "pump": "^1.0.1",
+    "systemjs": "^0.19.37",
     "ts-loader": "^0.6.0",
-    "typescript": "^1.8.0",
-    "typings": "^0.7.12",
-    "webpack": "^1.12.2"
+    "typescript": "^2.0.2"
   }
 }

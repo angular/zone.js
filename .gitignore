@@ -1,10 +1,9 @@
 build/
+build-esm/
 blink-core/
 blink-idl/
-typings/
 parsed-idl/
 /node_modules
 .idea
 .vscode
 npm-debug.log
-build-es6

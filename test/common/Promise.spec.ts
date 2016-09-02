@@ -262,7 +262,7 @@ describe('Promise', ifEnvSupports('Promise', function () {
       it('should reject the value', () => {
         queueZone.run(() => {
           var value = null;
-          Promise.race([Promise.reject('rejection1'), 'v1'])['catch']((v) => value = v);
+          (Promise as any).race([Promise.reject('rejection1'), 'v1'])['catch']((v) => value = v);
           //expect(Zone.current.get('queue').length).toEqual(2);
           flushMicrotasks();
           expect(value).toEqual('rejection1');
@@ -272,7 +272,7 @@ describe('Promise', ifEnvSupports('Promise', function () {
       it('should resolve the value', () => {
         queueZone.run(() => {
           var value = null;
-          Promise.race([Promise.resolve('resolution'), 'v1']).then((v) => value = v);
+          (Promise as any).race([Promise.resolve('resolution'), 'v1']).then((v) => value = v);
           //expect(Zone.current.get('queue').length).toEqual(2);
           flushMicrotasks();
           expect(value).toEqual('resolution');

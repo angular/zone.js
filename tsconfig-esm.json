@@ -3,18 +3,19 @@
     "module": "es2015",
     "target": "es5",
     "noImplicitAny": false,
-    "outDir": "build-es6",
+    "outDir": "build-esm",
     "inlineSourceMap": false,
     "inlineSources": false,
     "declaration": true,
     "noEmitOnError": false,
-    "stripInternal": true
+    "stripInternal": true,
+    "sourceMap": true,
+    "lib": ["es5", "dom", "es2015.promise"]
   },
   "exclude": [
     "node_modules",
-    "typings/main",
-    "typings/main.d.ts",
     "build",
+    "build-esm",
     "dist"
   ]
 }

@@ -4,17 +4,17 @@
     "target": "es5",
     "noImplicitAny": false,
     "outDir": "build",
-    "inlineSourceMap": false,
-    "inlineSources": false,
-    "declaration": true,
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "declaration": false,
     "noEmitOnError": false,
-    "stripInternal": true
+    "stripInternal": false,
+    "lib": ["es5", "dom", "es2015.promise"]
   },
   "exclude": [
     "node_modules",
-    "typings/main",
-    "typings/main.d.ts",
     "build",
+    "build-esm",
     "dist"
   ]
 }

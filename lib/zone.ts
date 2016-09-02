@@ -1050,7 +1050,7 @@ const Zone: ZoneType = (function(global: any) {
       return resolvePromise(<ZoneAwarePromise<U>>new this(null), REJECTED, error);
     }
 
-    static race<R>(values: Thenable<any>[]): Promise<R> {
+    static race<R>(values: PromiseLike<any>[]): Promise<R> {
       let resolve: (v: any) => void;
       let reject: (v: any) => void;
       let promise: any = new this((res, rej) => {resolve = res; reject = rej});
@@ -1072,8 +1072,6 @@ const Zone: ZoneType = (function(global: any) {
       let promise = new this((res, rej) => {resolve = res; reject = rej;});
       let count = 0;
       const resolvedValues = [];
-      function onReject(error) { promise && reject(error); promise = null; }
-
       for(let value of values) {
         if (!isThenable(value)) {
           value = this.resolve(value);
@@ -1081,18 +1079,17 @@ const Zone: ZoneType = (function(global: any) {
         value.then(((index) => (value) => {
           resolvedValues[index] = value;
           count--;
-          if (promise && !count) {
+          if (!count) {
             resolve(resolvedValues);
           }
-          promise == null;
-        })(count), onReject);
+        })(count), reject);
         count++;
       }
       if (!count) resolve(resolvedValues);
       return promise;
     }
 
-    constructor(executor: (resolve : (value?: R | Thenable<R>) => void,
+    constructor(executor: (resolve : (value?: R | PromiseLike<R>) => void,
                            reject: (error?: any) => void) => void) {
       const promise: ZoneAwarePromise<R> = this;
       if (!(promise instanceof ZoneAwarePromise)) {
@@ -1107,8 +1104,8 @@ const Zone: ZoneType = (function(global: any) {
       }
     }
 
-    then<R, U>(onFulfilled?: (value: R) => U | Thenable<U>,
-               onRejected?: (error: any) => U | Thenable<U>): Promise<R>
+    then<R, U>(onFulfilled?: (value: R) => U | PromiseLike<U>,
+               onRejected?: (error: any) => U | PromiseLike<U>): Promise<R>
     {
       const chainPromise: Promise<R> = new (this.constructor as typeof ZoneAwarePromise)(null);
       const zone = Zone.current;
@@ -1120,14 +1117,14 @@ const Zone: ZoneType = (function(global: any) {
       return chainPromise;
     }
 
-    catch<U>(onRejected?: (error: any) => U | Thenable<U>): Promise<R> {
+    catch<U>(onRejected?: (error: any) => U | PromiseLike<U>): Promise<R> {
       return this.then(null, onRejected);
     }
   }
 
   const NativePromise = global[__symbol__('Promise')] = global.Promise;
   global.Promise = ZoneAwarePromise;
-  if (NativePromise) {
+  function patchThen(NativePromise) {
     const NativePromiseProtototype = NativePromise.prototype;
     const NativePromiseThen = NativePromiseProtototype[__symbol__('then')]
         = NativePromiseProtototype.then;
@@ -1136,6 +1133,18 @@ const Zone: ZoneType = (function(global: any) {
       return new ZoneAwarePromise((resolve, reject) => {
         NativePromiseThen.call(nativePromise, resolve, reject);
       }).then(onResolve, onReject);
+    };
+  }
+
+  if (NativePromise) {
+    patchThen(NativePromise);
+    if (typeof global['fetch'] !== 'undefined') {
+      const fetchPromise = global['fetch']();
+      // ignore output to prevent error;
+      fetchPromise.then(() => null, () => null);
+      if (fetchPromise.constructor != NativePromise) {
+        patchThen(fetchPromise.constructor);
+      }
     }
   }
 

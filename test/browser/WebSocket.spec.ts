@@ -29,7 +29,7 @@ if (!window['soucelabs']) {
 
 
     it('should be patched in a Web Worker', done => {
-      var worker = new Worker('/base/test/ws-webworker-context.ts');
+      var worker = new Worker('/base/build/test/ws-webworker-context.js');
       worker.onmessage = (e:MessageEvent) => {
         expect(e.data).toBe('pass');
         done();
@@ -44,7 +44,6 @@ if (!window['soucelabs']) {
           done();
         });
       });
-
       socket.send('hi');
     }, TIMEOUT);
 
