@@ -4,8 +4,8 @@ import {zoneSymbol} from "../common/utils";
  * things like redefining `createdCallback` on an element.
  */
 
-const _defineProperty = Object.defineProperty;
-const _getOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
+const _defineProperty = Object[zoneSymbol('defineProperties')] = Object.defineProperty;
+const _getOwnPropertyDescriptor = Object[zoneSymbol('getOwnPropertyDescriptor')] = Object.getOwnPropertyDescriptor;
 const _create = Object.create;
 const unconfigurablesKey = zoneSymbol('unconfigurables');
 

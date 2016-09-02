@@ -1,5 +1,7 @@
+import {zoneSymbol} from '../../lib/common/utils';
+
 describe('longStackTraceZone', function () {
-  let log;
+  let log: Error[];
   let lstz: Zone;
 
   beforeEach(function () {
@@ -8,7 +10,7 @@ describe('longStackTraceZone', function () {
       onHandleError: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
                       error: any): boolean => {
         parentZoneDelegate.handleError(targetZone, error);
-        log.push(error.stack);
+        log.push(error);
         return false;
       }
     });
@@ -22,7 +24,7 @@ describe('longStackTraceZone', function () {
         setTimeout(function () {
           setTimeout(function () {
             try {
-              expect(log[0].split('Elapsed: ').length).toBe(3);
+              expect(log[0].stack.split('Elapsed: ').length).toBe(3);
               done();
             } catch (e) {
               expect(e).toBe(null);
@@ -31,6 +33,26 @@ describe('longStackTraceZone', function () {
           throw new Error('Hello');
         }, 0);
       }, 0);
+    });
+  });
+
+  it('should produce a long stack trace even if stack setter throws', (done) => {
+    let wasStackAssigne = false;
+    let error = new Error('Expected error');
+    Object[zoneSymbol('defineProperties')](error, 'stack', {
+      configurable: false,
+      get: () => 'someStackTrace',
+      set: (v) => {
+        throw new Error('no writes');
+      }
+    });
+    lstz.run(() => {
+      setTimeout(() => { throw error; }
+    });
+    setTimeout(() => {
+      var e = log[0];
+      expect(e.longStack).toBeTruthy();
+      done();
     });
   });
 
@@ -48,7 +70,7 @@ describe('longStackTraceZone', function () {
           });
           setTimeout(function () {
             try {
-              expect(log[0].split('Elapsed: ').length).toBe(5);
+              expect(log[0].stack.split('Elapsed: ').length).toBe(5);
               done();
             } catch (e) {
               expect(e).toBe(null);
