@@ -1084,7 +1084,6 @@ const Zone: ZoneType = (function(global: any) {
           if (promise && !count) {
             resolve(resolvedValues);
           }
-          promise == null;
         })(count), onReject);
         count++;
       }
