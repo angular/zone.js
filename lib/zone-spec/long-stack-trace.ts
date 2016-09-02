@@ -87,20 +87,33 @@
     {
       const parentTask = Zone.currentTask || error.task;
       if (error instanceof Error && parentTask) {
-        let descriptor = Object.getOwnPropertyDescriptor(error, 'stack');
-        if (descriptor) {
-          const delegateGet = descriptor.get;
-          const value = descriptor.value;
-          descriptor = {
-            get: function() {
-              return renderLongStackTrace(parentTask.data && parentTask.data[creationTrace],
-                  delegateGet ? delegateGet.apply(this): value);
-            }
-          };
-          Object.defineProperty(error, 'stack', descriptor);
-        } else {
-          error.stack = renderLongStackTrace(parentTask.data && parentTask.data[creationTrace],
-              error.stack);
+        var stackSetSucceded: string|boolean = null;
+        try {
+          let descriptor = Object.getOwnPropertyDescriptor(error, 'stack');
+          if (descriptor && descriptor.configurable) {
+            const delegateGet = descriptor.get;
+            const value = descriptor.value;
+            descriptor = {
+              get: function () {
+                return renderLongStackTrace(parentTask.data && parentTask.data[creationTrace],
+                    delegateGet ? delegateGet.apply(this) : value);
+              }
+            };
+            Object.defineProperty(error, 'stack', descriptor);
+            stackSetSucceded = true;
+          }
+        } catch (e) { }
+        var longStack: string = stackSetSucceded ? null : renderLongStackTrace(
+                parentTask.data && parentTask.data[creationTrace], error.stack);
+        if (!stackSetSucceded) {
+          try {
+            stackSetSucceded = error.stack = longStack;
+          } catch (e) { }
+        }
+        if (!stackSetSucceded) {
+          try {
+            stackSetSucceded = (error as any).longStack = longStack;
+          } catch (e) { }
         }
       }
       return parentZoneDelegate.handleError(targetZone, error);

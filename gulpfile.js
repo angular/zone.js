@@ -160,6 +160,10 @@ gulp.task('test/node', ['compile'], function(cb) {
       cb();
     }
   });
+  jrunner.print = function(value) {
+    process.stdout.write(value);
+  }
+  jrunner.addReporter(new JasmineRunner.ConsoleReporter(jrunner));
   jrunner.projectBaseDir = __dirname;
   jrunner.specDir = '';
   jrunner.addSpecFiles(specFiles);

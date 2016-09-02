@@ -46,7 +46,7 @@
   });
   ['beforeEach', 'afterEach'].forEach((methodName) => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
-    jasmineEnv[methodName] = function(specDefinitions: Function) {
+    jasmineEnv[methodName] = function(specDefinitions: Function, timeout: number) {
       arguments[0] = wrapTestInZone(specDefinitions);
       return originalJasmineFn.apply(this, arguments);
     } 
