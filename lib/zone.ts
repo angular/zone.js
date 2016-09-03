@@ -119,16 +119,71 @@
  * zones are children of the root zone.
  *
  */
-interface Zone {
+if ((global as any).Zone) {
+  throw new Error('Zone already loaded.');
+}
+
+abstract class Zone {
+  /**
+   * @returns {Zone} Returns the current [Zone]. Returns the current zone. The only way to change
+   * the current zone is by invoking a run() method, which will update the current zone for the
+   * duration of the run method callback.
+   */
+  static get current(): Zone { return null; };
+
+  /**
+   * @returns {Task} The task associated with the current execution.
+   */
+  static get currentTask(): Task { return null; };
+
+  /**
+   * Verify that Zone has been correctly patched. Specifically that Promise is zone aware.
+   */
+  static assertZonePatched() {}
+
+  /**
+   * @internal
+   */
+  static __symbol__(name): string { return '__zone_symbol__' + name; };
+
+
   /**
    *
    * @returns {Zone} The parent Zone.
    */
-  parent: Zone;
+  public get parent(): Zone { return this._parent; };
+
   /**
    * @returns {string} The Zone name (useful for debugging)
    */
-  name: string;
+  public get name(): string { return this._name; };
+
+
+  /**
+   * @internal
+   */
+  private _parent: Zone;
+  /**
+   * @internal
+   */
+  private _name: string;
+  /**
+   * @internal
+   */
+  private _properties: {[key: string]: any} = null;
+  /**
+   * @internal
+   */
+  private _zoneDelegate: ZoneDelegate;
+
+  constructor(parent: Zone, zoneSpec: ZoneSpec)
+  {
+    this._parent = parent;
+    this._name = zoneSpec ? zoneSpec.name || 'unnamed' : '<root>';
+    this._properties = zoneSpec && zoneSpec.properties || {};
+    var ZoneDelegate = Zone[Zone.__symbol__('ZoneDelegate')];
+    this._zoneDelegate = new ZoneDelegate(this, this._parent && this._parent._zoneDelegate, zoneSpec);
+  }
 
   /**
    * Returns a value associated with the `key`.
@@ -139,7 +194,11 @@ interface Zone {
    * @param key The key to retrieve.
    * @returns {any} The value for the key, or `undefined` if not found.
    */
-  get(key: string): any;
+  public get(key: string): any {
+    const zone: Zone = this.getZoneWith(key) as Zone;
+    if (zone) return zone._properties[key];
+  }
+
   /**
    * Returns a Zone which defines a `key`.
    *
@@ -148,14 +207,28 @@ interface Zone {
    * @param key The key to use for identification of the returned zone.
    * @returns {Zone} The Zone which defines the `key`, `null` if not found.
    */
-  getZoneWith(key: string): Zone;
+  public getZoneWith(key: string): Zone {
+    let current: Zone = this;
+    while (current) {
+      if (current._properties.hasOwnProperty(key)) {
+        return current;
+      }
+      current = current._parent;
+    }
+    return null;
+  }
+
   /**
    * Used to create a child zone.
    *
    * @param zoneSpec A set of rules which the child zone should follow.
    * @returns {Zone} A new child zone.
    */
-  fork(zoneSpec: ZoneSpec): Zone;
+  public fork(zoneSpec: ZoneSpec): Zone {
+    if (!zoneSpec) throw new Error('ZoneSpec required!');
+    return this._zoneDelegate.fork(this, zoneSpec);
+  }
+
   /**
    * Wraps a callback function in a new function which will properly restore the current zone upon
    * invocation.
@@ -169,7 +242,18 @@ interface Zone {
    * @param source A unique debug location of the API being wrapped.
    * @returns {function(): *} A function which will invoke the `callback` through [Zone.runGuarded].
    */
-  wrap(callback: Function, source: string): Function;
+  public wrap(callback: Function, source: string): Function
+  {
+    if (typeof callback !== 'function') {
+      throw new Error('Expecting function got: ' + callback);
+    }
+    const _callback = this._zoneDelegate.intercept(this, callback, source);
+    const zone: Zone = this;
+    return function() {
+      return zone.runGuarded(_callback, this, <any>arguments, source);
+    }
+  }
+
   /**
    * Invokes a function in a given zone.
    *
@@ -181,7 +265,8 @@ interface Zone {
    * @param source A unique debug location of the API being invoked.
    * @returns {any} Value from the `callback` function.
    */
-  run<T>(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): T;
+  abstract run(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): any;
+
   /**
    * Invokes a function in a given zone and catches any exceptions.
    *
@@ -196,7 +281,8 @@ interface Zone {
    * @param source A unique debug location of the API being invoked.
    * @returns {any} Value from the `callback` function.
    */
-  runGuarded<T>(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): T;
+  abstract runGuarded(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): any;
+
   /**
    * Execute the Task by restoring the [Zone.currentTask] in the Task's zone.
    *
@@ -205,10 +291,20 @@ interface Zone {
    * @param applyArgs
    * @returns {*}
    */
-  runTask(task: Task, applyThis?: any, applyArgs?: any): any;
-  scheduleMicroTask(source: string, callback: Function, data?: TaskData, customSchedule?: (task: Task) => void): MicroTask;
-  scheduleMacroTask(source: string, callback: Function, data: TaskData, customSchedule: (task: Task) => void, customCancel: (task: Task) => void): MacroTask;
-  scheduleEventTask(source: string, callback: Function, data: TaskData, customSchedule: (task: Task) => void, customCancel: (task: Task) => void): EventTask;
+  abstract runTask(task: Task, applyThis?: any, applyArgs?: any): any;
+
+
+  abstract scheduleMicroTask(source: string, callback: Function, data?: TaskData,
+                             customSchedule?: (task: Task) => void): MicroTask;
+
+  abstract scheduleMacroTask(source: string, callback: Function, data: TaskData,
+                             customSchedule: (task: Task) => void,
+                             customCancel: (task: Task) => void): MacroTask;
+
+  abstract scheduleEventTask(source: string, callback: Function, data: TaskData,
+                             customSchedule: (task: Task) => void,
+                             customCancel: (task: Task) => void): EventTask;
+
   /**
    * Allows the zone to intercept canceling of scheduled Task.
    *
@@ -218,26 +314,13 @@ interface Zone {
    * @param task
    * @returns {any}
    */
-  cancelTask(task: Task): any;
-}
-
-interface ZoneType {
-  /**
-   * @returns {Zone} Returns the current [Zone]. Returns the current zone. The only way to change
-   * the current zone is by invoking a run() method, which will update the current zone for the
-   * duration of the run method callback.
-   */
-  current: Zone;
-  /**
-   * @returns {Task} The task associated with the current execution.
-   */
-  currentTask: Task;
-
-  /**
-   * Verify that Zone has been correctly patched. Specifically that Promise is zone aware.
-   */
-  assertZonePatched();
-}
+  cancelTask(task: Task): any {
+    const value = this._zoneDelegate.cancelTask(this, task);
+    task.runCount = -1;
+    task.cancelFn = null;
+    return value;
+  }
+};
 
 /**
  * Provides a way to configure the interception of zone events.
@@ -340,7 +423,7 @@ interface ZoneSpec {
    */
   onHasTask?: (delegate: ZoneDelegate, current: Zone, target: Zone,
                hasTaskState: HasTaskState) => void;
-};
+}
 
 /**
  *  A delegate when intercepting zone operations.
@@ -390,7 +473,7 @@ type HasTaskState = {
   macroTask: boolean;
   eventTask: boolean;
   change: TaskType;
-};
+}
 
 /**
  * Task type: `microTask`, `macroTask`, `eventTask`.
@@ -500,202 +583,130 @@ interface EventTask extends Task {
   /* TS v1.8 => type: 'eventTask'; */
 }
 
-/** @internal */
-type AmbientZone = Zone;
-/** @internal */
-type AmbientZoneDelegate = ZoneDelegate;
-
-const Zone: ZoneType = (function(global: any) {
-  if (global.Zone) {
-    throw new Error('Zone already loaded.');
-  }
-
-  class Zone implements AmbientZone {
-    static __symbol__: (name: string) => string = __symbol__;
-
-    static assertZonePatched() {
-      if (global.Promise !== ZoneAwarePromise) {
-        throw new Error("Zone.js has detected that ZoneAwarePromise `(window|global).Promise` " +
-            "has been overwritten.\n" +
-            "Most likely cause is that a Promise polyfill has been loaded " +
-            "after Zone.js (Polyfilling Promise api is not necessary when zone.js is loaded. " +
-            "If you must load one, do so before loading zone.js.)");
-      }
-    }
-
-
-    static get current(): AmbientZone { return _currentZone; };
-    static get currentTask(): Task { return _currentTask; };
-
-    public get parent(): AmbientZone { return this._parent; };
-    public get name(): string { return this._name; };
-
-
-    private _parent: Zone;
-    private _name: string;
-    private _properties: {[key: string]: any} = null;
-    private _zoneDelegate: ZoneDelegate;
-
-    constructor(parent: Zone, zoneSpec: ZoneSpec)
-    {
-      this._parent = parent;
-      this._name = zoneSpec ? zoneSpec.name || 'unnamed' : '<root>';
-      this._properties = zoneSpec && zoneSpec.properties || {};
-      this._zoneDelegate = new ZoneDelegate(this, this._parent && this._parent._zoneDelegate, zoneSpec);
-    }
-
-    public get(key: string): any {
-      const zone: Zone = this.getZoneWith(key) as Zone;
-      if (zone) return zone._properties[key];
-    }
-
-    public getZoneWith(key: string): AmbientZone {
-      let current: Zone = this;
-      while (current) {
-        if (current._properties.hasOwnProperty(key)) {
-          return current;
-        }
-        current = current._parent;
-      }
-      return null;
-    }
-
-    public fork(zoneSpec: ZoneSpec): AmbientZone {
-      if (!zoneSpec) throw new Error('ZoneSpec required!');
-      return this._zoneDelegate.fork(this, zoneSpec);
-    }
-
-    public wrap(callback: Function, source: string): Function
-    {
-      if (typeof callback !== 'function') {
-        throw new Error('Expecting function got: ' + callback);
-      }
-      const _callback = this._zoneDelegate.intercept(this, callback, source);
-      const zone: Zone = this;
-      return function() {
-        return zone.runGuarded(_callback, this, <any>arguments, source);
-      }
-    }
-
-    public run(callback: Function, applyThis: any = null, applyArgs: any[] = null,
-               source: string = null)
-    {
-      const oldZone = _currentZone;
-      _currentZone = this;
-      try {
-        return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
-      } finally {
-        _currentZone = oldZone;
-      }
-    }
-
-    public runGuarded(callback: Function, applyThis: any = null, applyArgs: any[] = null,
-                      source: string = null)
-    {
-      const oldZone = _currentZone;
-      _currentZone = this;
-      try {
-        try {
-          return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
-        } catch (error) {
-          if (this._zoneDelegate.handleError(this, error)) {
-            throw error;
-          }
-        }
-      } finally {
-        _currentZone = oldZone;
-      }
-    }
-
-
-    runTask(task: Task, applyThis?: any, applyArgs?: any) {
-      task.runCount++;
-      if (task.zone != this)
-        throw new Error('A task can only be run in the zone which created it! (Creation: ' +
-            task.zone.name + '; Execution: ' + this.name + ')');
-      const previousTask = _currentTask;
-      _currentTask = task;
-      const oldZone = _currentZone;
-      _currentZone = this;
-      try {
-        if (task.type == 'macroTask' && task.data && !task.data.isPeriodic) {
-          task.cancelFn = null;
-        }
-        try {
-          return this._zoneDelegate.invokeTask(this, task, applyThis, applyArgs);
-        } catch (error) {
-          if (this._zoneDelegate.handleError(this, error)) {
-            throw error;
-          }
-        }
-      } finally {
-        _currentZone = oldZone;
-        _currentTask = previousTask;
-      }
-    }
-
-
-    scheduleMicroTask(source: string, callback: Function, data?: TaskData,
-                      customSchedule?: (task: Task) => void): MicroTask {
-      return <MicroTask>this._zoneDelegate.scheduleTask(this,
-          new ZoneTask('microTask', this, source, callback, data, customSchedule, null));
-    }
-
-    scheduleMacroTask(source: string, callback: Function, data: TaskData,
-                      customSchedule: (task: Task) => void,
-                      customCancel: (task: Task) => void): MacroTask {
-      return <MacroTask>this._zoneDelegate.scheduleTask(this,
-          new ZoneTask('macroTask', this, source, callback, data, customSchedule, customCancel));
-    }
-
-    scheduleEventTask(source: string, callback: Function, data: TaskData,
-                      customSchedule: (task: Task) => void,
-                      customCancel: (task: Task) => void): EventTask {
-      return <EventTask>this._zoneDelegate.scheduleTask(this,
-          new ZoneTask('eventTask', this, source, callback, data, customSchedule, customCancel));
-    }
-
-    cancelTask(task: Task): any {
-      const value = this._zoneDelegate.cancelTask(this, task);
-      task.runCount = -1;
-      task.cancelFn = null;
-      return value;
+(function(global: any) {
+  Object.defineProperty(Zone, 'current', {get: () => _currentZone });
+  Object.defineProperty(Zone, 'currentTask', {get: () => _currentTask });
+  Zone.assertZonePatched = () => {
+    if (global.Promise !== ZoneAwarePromise) {
+      throw new Error("Zone.js has detected that ZoneAwarePromise `(window|global).Promise` " +
+          "has been overwritten.\n" +
+          "Most likely cause is that a Promise polyfill has been loaded " +
+          "after Zone.js (Polyfilling Promise api is not necessary when zone.js is loaded. " +
+          "If you must load one, do so before loading zone.js.)");
     }
   };
+  Zone.prototype.run = function(callback: Function, applyThis: any = null, applyArgs: any[] = null,
+      source: string = null)
+  {
+    const oldZone = _currentZone;
+    _currentZone = this;
+    try {
+      return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
+    } finally {
+      _currentZone = oldZone;
+    }
+  }
 
-  class ZoneDelegate implements AmbientZoneDelegate {
+  Zone.prototype.runGuarded = function(callback: Function, applyThis: any = null, applyArgs: any[] = null,
+      source: string = null)
+  {
+    const oldZone = _currentZone;
+    _currentZone = this;
+    try {
+      try {
+        return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
+      } catch (error) {
+        if (this._zoneDelegate.handleError(this, error)) {
+          throw error;
+        }
+      }
+    } finally {
+      _currentZone = oldZone;
+    }
+  }
+
+
+  Zone.prototype.runTask = function(task: Task, applyThis?: any, applyArgs?: any) {
+    task.runCount++;
+    if (task.zone != this)
+      throw new Error('A task can only be run in the zone which created it! (Creation: ' +
+          task.zone.name + '; Execution: ' + this.name + ')');
+    const previousTask = _currentTask;
+    _currentTask = task;
+    const oldZone = _currentZone;
+    _currentZone = this;
+    try {
+      if (task.type == 'macroTask' && task.data && !task.data.isPeriodic) {
+        task.cancelFn = null;
+      }
+      try {
+        return this._zoneDelegate.invokeTask(this, task, applyThis, applyArgs);
+      } catch (error) {
+        if (this._zoneDelegate.handleError(this, error)) {
+          throw error;
+        }
+      }
+    } finally {
+      _currentZone = oldZone;
+      _currentTask = previousTask;
+    }
+  }
+
+  Zone.prototype.scheduleMicroTask = function(source: string, callback: Function, data?: TaskData,
+      customSchedule?: (task: Task) => void): MicroTask {
+    return <MicroTask>this._zoneDelegate.scheduleTask(this,
+        new ZoneTask('microTask', this, source, callback, data, customSchedule, null));
+  }
+
+  Zone.prototype.scheduleMacroTask = function(source: string, callback: Function, data: TaskData,
+      customSchedule: (task: Task) => void,
+      customCancel: (task: Task) => void): MacroTask {
+    return <MacroTask>this._zoneDelegate.scheduleTask(this,
+        new ZoneTask('macroTask', this, source, callback, data, customSchedule, customCancel));
+  }
+
+  Zone.prototype.scheduleEventTask = function(source: string, callback: Function, data: TaskData,
+      customSchedule: (task: Task) => void,
+      customCancel: (task: Task) => void): EventTask {
+    return <EventTask>this._zoneDelegate.scheduleTask(this,
+        new ZoneTask('eventTask', this, source, callback, data, customSchedule, customCancel));
+  }
+
+
+
+  Zone[Zone.__symbol__('ZoneDelegate')] = class InternalZoneDelegate implements ZoneDelegate {
     public zone: Zone;
 
     private _taskCounts: {microTask: number, macroTask: number, eventTask: number}
         = {microTask: 0, macroTask: 0, eventTask: 0};
 
-    private _parentDelegate: ZoneDelegate;
+    private _parentDelegate: InternalZoneDelegate;
 
-    private _forkDlgt: ZoneDelegate;
+    private _forkDlgt: InternalZoneDelegate;
     private _forkZS: ZoneSpec;
 
-    private _interceptDlgt: ZoneDelegate;
+    private _interceptDlgt: InternalZoneDelegate;
     private _interceptZS: ZoneSpec;
 
-    private _invokeDlgt: ZoneDelegate;
+    private _invokeDlgt: InternalZoneDelegate;
     private _invokeZS: ZoneSpec;
 
-    private _handleErrorDlgt: ZoneDelegate;
+    private _handleErrorDlgt: InternalZoneDelegate;
     private _handleErrorZS: ZoneSpec;
 
-    private _scheduleTaskDlgt: ZoneDelegate;
+    private _scheduleTaskDlgt: InternalZoneDelegate;
     private _scheduleTaskZS: ZoneSpec;
 
-    private _invokeTaskDlgt: ZoneDelegate;
+    private _invokeTaskDlgt: InternalZoneDelegate;
     private _invokeTaskZS: ZoneSpec;
 
-    private _cancelTaskDlgt: ZoneDelegate;
+    private _cancelTaskDlgt: InternalZoneDelegate;
     private _cancelTaskZS: ZoneSpec;
 
-    private _hasTaskDlgt: ZoneDelegate;
+    private _hasTaskDlgt: InternalZoneDelegate;
     private _hasTaskZS: ZoneSpec;
 
-    constructor(zone: Zone, parentDelegate: ZoneDelegate, zoneSpec:ZoneSpec) {
+    constructor(zone: Zone, parentDelegate: InternalZoneDelegate, zoneSpec:ZoneSpec) {
       this.zone = zone;
       this._parentDelegate = parentDelegate;
 
@@ -724,10 +735,10 @@ const Zone: ZoneType = (function(global: any) {
       this._hasTaskDlgt = zoneSpec && (zoneSpec.onHasTask ? parentDelegate : parentDelegate._hasTaskDlgt);
     }
 
-    fork(targetZone: Zone, zoneSpec: ZoneSpec): AmbientZone {
+    fork(targetZone: Zone, zoneSpec: ZoneSpec): Zone {
       return this._forkZS
           ? this._forkZS.onFork(this._forkDlgt, this.zone, targetZone, zoneSpec)
-          : new Zone(targetZone, zoneSpec);
+          : new (Zone as any)(targetZone, zoneSpec);
     }
 
     intercept(targetZone: Zone, callback: Function, source: string): Function {
@@ -873,18 +884,18 @@ const Zone: ZoneType = (function(global: any) {
   }
 
   interface UncaughtPromiseError extends Error {
-    zone: AmbientZone;
+    zone: Zone;
     task: Task;
     promise: ZoneAwarePromise<any>;
     rejection: any;
   }
 
-  function __symbol__(name: string) { return '__zone_symbol__' + name; };
+  const __symbol__: (name: string) => string  = Zone.__symbol__;
   const symbolSetTimeout = __symbol__('setTimeout');
   const symbolPromise = __symbol__('Promise');
   const symbolThen = __symbol__('then');
 
-  let _currentZone: Zone = new Zone(null, null);
+  let _currentZone: Zone = new (Zone as any)(null, null);
   let _currentTask: Task = null;
   let _microTaskQueue: Task[] = [];
   let _isDrainingMicrotaskQueue: boolean = false;
@@ -1025,7 +1036,7 @@ const Zone: ZoneType = (function(global: any) {
 
 
   function scheduleResolveOrReject<R, U>(promise: ZoneAwarePromise<any>,
-                                         zone: AmbientZone,
+                                         zone: Zone,
                                          chainPromise: ZoneAwarePromise<any>,
                                          onFulfilled?: (value: R) => U,
                                          onRejected?: (error: any) => U): void
@@ -1150,5 +1161,5 @@ const Zone: ZoneType = (function(global: any) {
 
   // This is not part of public API, but it is usefull for tests, so we expose it.
   Promise[Zone.__symbol__('uncaughtPromiseErrors')] = _uncaughtPromiseErrors;
-  return global.Zone = Zone;
+  global.Zone = Zone;
 })(typeof window === 'undefined' ? global : window);
