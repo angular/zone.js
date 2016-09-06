@@ -7,3 +7,4 @@ parsed-idl/
 .idea
 .vscode
 npm-debug.log
+build-esm/
