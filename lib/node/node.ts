@@ -1,6 +1,8 @@
 import '../zone';
 import {patchTimer} from '../common/timers';
 
+import './events';
+
 const set = 'set';
 const clear = 'clear';
 const _global = typeof window === 'undefined' ? global : window;

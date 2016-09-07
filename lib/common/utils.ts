@@ -108,10 +108,11 @@ export function patchOnProperties(obj: any, properties: string[]) {
 };
 
 const EVENT_TASKS = zoneSymbol('eventTasks');
+
+// For EventTarget
 const ADD_EVENT_LISTENER = 'addEventListener';
 const REMOVE_EVENT_LISTENER = 'removeEventListener';
-const SYMBOL_ADD_EVENT_LISTENER = zoneSymbol(ADD_EVENT_LISTENER);
-const SYMBOL_REMOVE_EVENT_LISTENER = zoneSymbol(REMOVE_EVENT_LISTENER);
+
 
 interface ListenerTaskMeta extends TaskData {
   useCapturing: boolean;
@@ -151,82 +152,112 @@ function attachRegisteredEvent(target: any, eventTask: Task): void {
   eventTasks.push(eventTask);
 }
 
-function scheduleEventListener(eventTask: Task): any {
-  const meta = <ListenerTaskMeta>eventTask.data;
-  attachRegisteredEvent(meta.target, eventTask);
-  return meta.target[SYMBOL_ADD_EVENT_LISTENER](meta.eventName, eventTask.invoke,
-      meta.useCapturing);
-}
+export function makeZoneAwareAddListener(addFnName: string, removeFnName: string, useCapturingParam: boolean = true, allowDuplicates: boolean = false) {
+  const addFnSymbol = zoneSymbol(addFnName);
+  const removeFnSymbol = zoneSymbol(removeFnName);
+  const defaultUseCapturing = useCapturingParam ? false : undefined;
 
-function cancelEventListener(eventTask: Task): void {
-  const meta = <ListenerTaskMeta>eventTask.data;
-  findExistingRegisteredTask(meta.target, eventTask.invoke, meta.eventName,
-      meta.useCapturing, true);
-  meta.target[SYMBOL_REMOVE_EVENT_LISTENER](meta.eventName, eventTask.invoke,
-      meta.useCapturing);
-}
+  function scheduleEventListener(eventTask: Task): any {
+    const meta = <ListenerTaskMeta>eventTask.data;
+    attachRegisteredEvent(meta.target, eventTask);
+    return meta.target[addFnSymbol](meta.eventName, eventTask.invoke,
+        meta.useCapturing);
+  }
 
-function zoneAwareAddEventListener(self: any, args: any[]) {
-  const eventName: string = args[0];
-  const handler: EventListenerOrEventListenerObject = args[1];
-  const useCapturing: boolean = args[2] || false;
-  // - Inside a Web Worker, `this` is undefined, the context is `global`
-  // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
-  // see https://github.com/angular/zone.js/issues/190
-  const target = self || _global;
-  let delegate: EventListener = null;
-  if (typeof handler == 'function') {
-    delegate = <EventListener>handler;
-  } else if (handler && (<EventListenerObject>handler).handleEvent) {
-    delegate = (event) => (<EventListenerObject>handler).handleEvent(event);
+  function cancelEventListener(eventTask: Task): void {
+    const meta = <ListenerTaskMeta>eventTask.data;
+    findExistingRegisteredTask(meta.target, eventTask.invoke, meta.eventName,
+        meta.useCapturing, true);
+    meta.target[removeFnSymbol](meta.eventName, eventTask.invoke,
+        meta.useCapturing);
   }
-  var validZoneHandler = false;
-  try {
-    // In cross site contexts (such as WebDriver frameworks like Selenium),
-    // accessing the handler object here will cause an exception to be thrown which
-    // will fail tests prematurely.
-    validZoneHandler = handler && handler.toString() === "[object FunctionWrapper]";
-  } catch(e) {
-    // Returning nothing here is fine, because objects in a cross-site context are unusable
-    return;
-  }
-  // Ignore special listeners of IE11 & Edge dev tools, see https://github.com/angular/zone.js/issues/150
-  if (!delegate || validZoneHandler) {
-    return target[SYMBOL_ADD_EVENT_LISTENER](eventName, handler, useCapturing);
-  }
-  const eventTask: Task
-      = findExistingRegisteredTask(target, handler, eventName, useCapturing, false);
-  if (eventTask) {
-    // we already registered, so this will have noop.
-    return target[SYMBOL_ADD_EVENT_LISTENER](eventName, eventTask.invoke, useCapturing);
-  }
-  const zone: Zone = Zone.current;
-  const source = target.constructor['name'] + '.addEventListener:' + eventName;
-  const data: ListenerTaskMeta = {
-    target: target,
-    eventName: eventName,
-    name: eventName,
-    useCapturing: useCapturing,
-    handler: handler
+
+  return function zoneAwareAddListener(self: any, args: any[]) {
+    const eventName: string = args[0];
+    const handler: EventListenerOrEventListenerObject = args[1];
+    const useCapturing: boolean = args[2] || defaultUseCapturing;
+    // - Inside a Web Worker, `this` is undefined, the context is `global`
+    // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
+    // see https://github.com/angular/zone.js/issues/190
+    const target = self || _global;
+    let delegate: EventListener = null;
+    if (typeof handler == 'function') {
+      delegate = <EventListener>handler;
+    } else if (handler && (<EventListenerObject>handler).handleEvent) {
+      delegate = (event) => (<EventListenerObject>handler).handleEvent(event);
+    }
+    var validZoneHandler = false;
+    try {
+      // In cross site contexts (such as WebDriver frameworks like Selenium),
+      // accessing the handler object here will cause an exception to be thrown which
+      // will fail tests prematurely.
+      validZoneHandler = handler && handler.toString() === "[object FunctionWrapper]";
+    } catch(e) {
+      // Returning nothing here is fine, because objects in a cross-site context are unusable
+      return;
+    }
+    // Ignore special listeners of IE11 & Edge dev tools, see https://github.com/angular/zone.js/issues/150
+    if (!delegate || validZoneHandler) {
+      return target[addFnSymbol](eventName, handler, useCapturing);
+    }
+
+    if (!allowDuplicates) {
+      const eventTask: Task
+          = findExistingRegisteredTask(target, handler, eventName, useCapturing, false);
+      if (eventTask) {
+        // we already registered, so this will have noop.
+        return target[addFnSymbol](eventName, eventTask.invoke, useCapturing);
+      }
+    }
+  
+    const zone: Zone = Zone.current;
+    const source = target.constructor['name'] + '.' + addFnName + ':' + eventName;
+    const data: ListenerTaskMeta = {
+      target: target,
+      eventName: eventName,
+      name: eventName,
+      useCapturing: useCapturing,
+      handler: handler
+    };
+    zone.scheduleEventTask(source, delegate, data, scheduleEventListener, cancelEventListener);
   };
-  zone.scheduleEventTask(source, delegate, data, scheduleEventListener, cancelEventListener);
 }
 
-function zoneAwareRemoveEventListener(self: any, args: any[]) {
-  const eventName: string = args[0];
-  const handler: EventListenerOrEventListenerObject = args[1];
-  const useCapturing: boolean = args[2] || false;
-  // - Inside a Web Worker, `this` is undefined, the context is `global`
-  // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
-  // see https://github.com/angular/zone.js/issues/190
-  const target = self || _global;
-  const eventTask = findExistingRegisteredTask(target, handler, eventName, useCapturing, true);
-  if (eventTask) {
-    eventTask.zone.cancelTask(eventTask);
-  } else {
-    target[SYMBOL_REMOVE_EVENT_LISTENER](eventName, handler, useCapturing);
+export function makeZoneAwareRemoveListener(fnName: string, useCapturingParam: boolean = true) {
+  const symbol = zoneSymbol(fnName);
+  const defaultUseCapturing = useCapturingParam ? false : undefined;
+
+  return function zoneAwareRemoveListener(self: any, args: any[]) {
+    const eventName: string = args[0];
+    const handler: EventListenerOrEventListenerObject = args[1];
+    const useCapturing: boolean = args[2] || defaultUseCapturing;
+    // - Inside a Web Worker, `this` is undefined, the context is `global`
+    // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
+    // see https://github.com/angular/zone.js/issues/190
+    const target = self || _global;
+    const eventTask = findExistingRegisteredTask(target, handler, eventName, useCapturing, true);
+    if (eventTask) {
+      eventTask.zone.cancelTask(eventTask);
+    } else {
+      target[symbol](eventName, handler, useCapturing);
+    }
+  };
+}
+
+export function makeZoneAwareListeners(fnName: string) {
+  const symbol = zoneSymbol(fnName);
+
+  return function zoneAwareEventListeners(self: any, args: any[]) {
+    const eventName: string = args[0];
+    const target = self || _global;
+    return target[EVENT_TASKS]
+      .filter(task => task.data.eventName === eventName)
+      .map(task => task.data.handler);
   }
 }
+
+const zoneAwareAddEventListener = makeZoneAwareAddListener(ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER);
+const zoneAwareRemoveEventListener = makeZoneAwareRemoveListener(REMOVE_EVENT_LISTENER);
 
 export function patchEventTargetMethods(obj: any): boolean {
   if (obj && obj.addEventListener) {
@@ -236,7 +267,8 @@ export function patchEventTargetMethods(obj: any): boolean {
   } else {
     return false;
   }
-};
+}
+
 
 const originalInstanceKey = zoneSymbol('originalInstance');
 
