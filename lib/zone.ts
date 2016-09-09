@@ -916,7 +916,7 @@ const Zone: ZoneType = (function(global: any) {
           'Unhandled Promise rejection:', rejection instanceof Error ? rejection.message : rejection,
           '; Zone:', (<Zone>e.zone).name,
           '; Task:', e.task && (<Task>e.task).source,
-          '; Value:', rejection, 
+          '; Value:', rejection,
           rejection instanceof Error ? rejection.stack : undefined
       );
     }
@@ -1121,6 +1121,12 @@ const Zone: ZoneType = (function(global: any) {
       return this.then(null, onRejected);
     }
   }
+  // Protect against aggressive optimizers dropping seemingly unused properties.
+  // E.g. Closure Compiler in advanced mode.
+  ZoneAwarePromise['resolve'] = ZoneAwarePromise.resolve;
+  ZoneAwarePromise['reject'] = ZoneAwarePromise.reject;
+  ZoneAwarePromise['race'] = ZoneAwarePromise.race;
+  ZoneAwarePromise['all'] = ZoneAwarePromise.all;
 
   const NativePromise = global[__symbol__('Promise')] = global.Promise;
   global.Promise = ZoneAwarePromise;
