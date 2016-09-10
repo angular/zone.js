@@ -531,6 +531,12 @@ var Zone$1 = (function (global) {
         };
         return ZoneAwarePromise;
     }());
+    // Protect against aggressive optimizers dropping seemingly unused properties.
+    // E.g. Closure Compiler in advanced mode.
+    ZoneAwarePromise['resolve'] = ZoneAwarePromise.resolve;
+    ZoneAwarePromise['reject'] = ZoneAwarePromise.reject;
+    ZoneAwarePromise['race'] = ZoneAwarePromise.race;
+    ZoneAwarePromise['all'] = ZoneAwarePromise.all;
     var NativePromise = global[__symbol__('Promise')] = global.Promise;
     global.Promise = ZoneAwarePromise;
     function patchThen(NativePromise) {
