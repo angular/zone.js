@@ -230,6 +230,10 @@ interface ZoneType {
      * @returns {Task} The task associated with the current execution.
      */
     currentTask: Task;
+    /**
+     * Verify that Zone has been correctly patched. Specifically that Promise is zone aware.
+     */
+    assertZonePatched(): any;
 }
 /**
  * Provides a way to configure the interception of zone events.
