@@ -564,7 +564,7 @@ var Zone$1 = (function (global) {
     // This is not part of public API, but it is usefull for tests, so we expose it.
     Promise[Zone.__symbol__('uncaughtPromiseErrors')] = _uncaughtPromiseErrors;
     return global.Zone = Zone;
-})(typeof window === 'undefined' ? global : window);
+})(typeof window === 'object' && window || typeof self === 'object' && self || global);
 
 /**
  * Suppress closure compiler errors about unknown 'process' variable
@@ -665,7 +665,7 @@ function patchTimer(window, setName, cancelName, nameSuffix) {
 
 var set = 'set';
 var clear = 'clear';
-var _global = typeof window === 'undefined' ? global : window;
+var _global = typeof window === 'object' && window || typeof self === 'object' && self || global;
 // Timers
 var timers = require('timers');
 patchTimer(timers, set, clear, 'Timeout');

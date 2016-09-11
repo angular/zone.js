@@ -564,7 +564,7 @@ var Zone$1 = (function (global) {
     // This is not part of public API, but it is usefull for tests, so we expose it.
     Promise[Zone.__symbol__('uncaughtPromiseErrors')] = _uncaughtPromiseErrors;
     return global.Zone = Zone;
-})(typeof window === 'undefined' ? global : window);
+})(typeof window === 'object' && window || typeof self === 'object' && self || global);
 
 /**
  * Suppress closure compiler errors about unknown 'process' variable
@@ -572,7 +572,7 @@ var Zone$1 = (function (global) {
  * @suppress {undefinedVars}
  */
 var zoneSymbol = Zone['__symbol__'];
-var _global$1 = typeof window == 'undefined' ? global : window;
+var _global$1 = typeof window === 'object' && window || typeof self === 'object' && self || global;
 function bindArguments(args, source) {
     for (var i = args.length - 1; i >= 0; i--) {
         if (typeof args[i] === 'function') {
@@ -1194,7 +1194,7 @@ function patchTimer(window, setName, cancelName, nameSuffix) {
 var set = 'set';
 var clear = 'clear';
 var blockingMethods = ['alert', 'prompt', 'confirm'];
-var _global = typeof window == 'undefined' ? global : window;
+var _global = typeof window === 'object' && window || typeof self === 'object' && self || global;
 patchTimer(_global, set, clear, 'Timeout');
 patchTimer(_global, set, clear, 'Interval');
 patchTimer(_global, set, clear, 'Immediate');
