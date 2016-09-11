@@ -1,6 +1,4 @@
 // Setup tests for Zone without microtask support
-(self as any).global = self;
-
 System.config({
   defaultJSExtensions: true
 });

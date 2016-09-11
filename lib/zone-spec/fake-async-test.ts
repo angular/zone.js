@@ -258,4 +258,4 @@
   // Export the class so that new instances can be created with proper
   // constructor params.
   Zone['FakeAsyncTestZoneSpec'] = FakeAsyncTestZoneSpec;
-})(typeof window !== 'undefined' ? window : global);
+})(typeof window === 'object' && window || typeof self === 'object' && self || global);

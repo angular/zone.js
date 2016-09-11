@@ -3,7 +3,7 @@ import {patchTimer} from '../common/timers';
 
 const set = 'set';
 const clear = 'clear';
-const _global = typeof window === 'undefined' ? global : window;
+const _global = typeof window === 'object' && window || typeof self === 'object' && self || global;
 
 // Timers
 const timers = require('timers');

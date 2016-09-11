@@ -137,4 +137,4 @@
   }
 
   Zone['wtfZoneSpec'] = !wtfEnabled ? null : new WtfZoneSpec();
-})(typeof window == 'undefined' ? global : window);
+})(typeof window === 'object' && window || typeof self === 'object' && self || global);

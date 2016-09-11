@@ -1157,4 +1157,4 @@ const Zone: ZoneType = (function(global: any) {
   // This is not part of public API, but it is usefull for tests, so we expose it.
   Promise[Zone.__symbol__('uncaughtPromiseErrors')] = _uncaughtPromiseErrors;
   return global.Zone = Zone;
-})(typeof window === 'undefined' ? global : window);
+})(typeof window === 'object' && window || typeof self === 'object' && self || global);

@@ -9,7 +9,7 @@ import {patchMethod, patchPrototype, patchClass, zoneSymbol} from "../common/uti
 const set = 'set';
 const clear = 'clear';
 const blockingMethods = ['alert', 'prompt', 'confirm'];
-const _global = typeof window == 'undefined' ? global : window;
+const _global = typeof window === 'object' && window || typeof self === 'object' && self || global;
 
 patchTimer(_global, set, clear, 'Timeout');
 patchTimer(_global, set, clear, 'Interval');
