@@ -2,6 +2,7 @@ import '../zone';
 import {patchTimer} from '../common/timers';
 
 import './events';
+import './fs';
 
 const set = 'set';
 const clear = 'clear';
