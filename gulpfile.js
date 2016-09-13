@@ -60,6 +60,10 @@ gulp.task('build/zone-node.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/node/node.ts', 'zone-node.js', false, cb);
 });
 
+gulp.task('build/zone-nativescript.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/nativescript/nativescript.ts', 'zone-nativescript.js', false, cb);
+});
+
 // Zone for the browser.
 gulp.task('build/zone.js', ['compile-esm'], function(cb) {
 
@@ -127,6 +131,7 @@ gulp.task('build', [
   'build/zone.js.d.ts',
   'build/zone.min.js',
   'build/zone-node.js',
+  'build/zone-nativescript.js',
   'build/jasmine-patch.js',
   'build/jasmine-patch.min.js',
   'build/long-stack-trace-zone.js',
@@ -147,6 +152,34 @@ gulp.task('test/node', ['compile'], function(cb) {
   var jrunner = new JasmineRunner();
 
   var specFiles = ['build/test/node_entry_point.js'];
+
+  jrunner.configureDefaultReporter({showColors: true});
+
+  jrunner.onComplete(function(passed) {
+    if (!passed) {
+      var err = new Error('Jasmine node tests failed.');
+      // The stack is not useful in this context.
+      err.showStack = false;
+      cb(err);
+    } else {
+      cb();
+    }
+  });
+  jrunner.print = function(value) {
+    process.stdout.write(value);
+  }
+  jrunner.addReporter(new JasmineRunner.ConsoleReporter(jrunner));
+  jrunner.projectBaseDir = __dirname;
+  jrunner.specDir = '';
+  jrunner.addSpecFiles(specFiles);
+  jrunner.execute();
+});
+
+gulp.task('test/nativescript', ['compile'], function(cb) {
+  var JasmineRunner = require('jasmine');
+  var jrunner = new JasmineRunner();
+
+  var specFiles = ['build/test/nativescript_entry_point.js'];
 
   jrunner.configureDefaultReporter({showColors: true});
 

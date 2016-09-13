@@ -20,6 +20,7 @@
     "tsc:w": "./node_modules/.bin/tsc -w",
     "test": "npm run tsc && concurrently \"npm run tsc:w\" \"npm run ws-server\" \"karma start karma.conf.js\"",
     "test-node": "./node_modules/.bin/gulp test/node",
+    "test-nativescript": "./node_modules/.bin/gulp test/nativescript",
     "serve": "python -m SimpleHTTPServer 8000"
   },
   "repository": {
