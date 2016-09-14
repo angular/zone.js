@@ -1145,7 +1145,14 @@ const Zone: ZoneType = (function(global: any) {
   if (NativePromise) {
     patchThen(NativePromise);
     if (typeof global['fetch'] !== 'undefined') {
-      const fetchPromise = global['fetch']('about:blank');
+      var fetchPromise: Promise<any>;
+      try {
+        // In MS Edge this throws
+        fetchPromise = global['fetch']();
+      } catch (e) {
+        // In Chrome this throws instead.
+        fetchPromise = global['fetch']('about:blank');
+      }
       // ignore output to prevent error;
       fetchPromise.then(() => null, () => null);
       if (fetchPromise.constructor != NativePromise) {
