@@ -553,7 +553,7 @@ var Zone$1 = (function (global) {
     if (NativePromise) {
         patchThen(NativePromise);
         if (typeof global['fetch'] !== 'undefined') {
-            var fetchPromise = global['fetch']();
+            var fetchPromise = global['fetch']('about:blank');
             // ignore output to prevent error;
             fetchPromise.then(function () { return null; }, function () { return null; });
             if (fetchPromise.constructor != NativePromise) {
@@ -572,12 +572,144 @@ var Zone$1 = (function (global) {
  * @suppress {undefinedVars}
  */
 var zoneSymbol = Zone['__symbol__'];
+var _global$1 = typeof window === 'object' && window || typeof self === 'object' && self || global;
+function bindArguments(args, source) {
+    for (var i = args.length - 1; i >= 0; i--) {
+        if (typeof args[i] === 'function') {
+            args[i] = Zone.current.wrap(args[i], source + '_' + i);
+        }
+    }
+    return args;
+}
+;
 var isNode = (typeof process !== 'undefined' && {}.toString.call(process) === '[object process]');
 var EVENT_TASKS = zoneSymbol('eventTasks');
+// For EventTarget
 var ADD_EVENT_LISTENER = 'addEventListener';
 var REMOVE_EVENT_LISTENER = 'removeEventListener';
-var SYMBOL_ADD_EVENT_LISTENER = zoneSymbol(ADD_EVENT_LISTENER);
-var SYMBOL_REMOVE_EVENT_LISTENER = zoneSymbol(REMOVE_EVENT_LISTENER);
+function findExistingRegisteredTask(target, handler, name, capture, remove) {
+    var eventTasks = target[EVENT_TASKS];
+    if (eventTasks) {
+        for (var i = 0; i < eventTasks.length; i++) {
+            var eventTask = eventTasks[i];
+            var data = eventTask.data;
+            if (data.handler === handler
+                && data.useCapturing === capture
+                && data.eventName === name) {
+                if (remove) {
+                    eventTasks.splice(i, 1);
+                }
+                return eventTask;
+            }
+        }
+    }
+    return null;
+}
+function attachRegisteredEvent(target, eventTask) {
+    var eventTasks = target[EVENT_TASKS];
+    if (!eventTasks) {
+        eventTasks = target[EVENT_TASKS] = [];
+    }
+    eventTasks.push(eventTask);
+}
+function makeZoneAwareAddListener(addFnName, removeFnName, useCapturingParam, allowDuplicates) {
+    if (useCapturingParam === void 0) { useCapturingParam = true; }
+    if (allowDuplicates === void 0) { allowDuplicates = false; }
+    var addFnSymbol = zoneSymbol(addFnName);
+    var removeFnSymbol = zoneSymbol(removeFnName);
+    var defaultUseCapturing = useCapturingParam ? false : undefined;
+    function scheduleEventListener(eventTask) {
+        var meta = eventTask.data;
+        attachRegisteredEvent(meta.target, eventTask);
+        return meta.target[addFnSymbol](meta.eventName, eventTask.invoke, meta.useCapturing);
+    }
+    function cancelEventListener(eventTask) {
+        var meta = eventTask.data;
+        findExistingRegisteredTask(meta.target, eventTask.invoke, meta.eventName, meta.useCapturing, true);
+        meta.target[removeFnSymbol](meta.eventName, eventTask.invoke, meta.useCapturing);
+    }
+    return function zoneAwareAddListener(self, args) {
+        var eventName = args[0];
+        var handler = args[1];
+        var useCapturing = args[2] || defaultUseCapturing;
+        // - Inside a Web Worker, `this` is undefined, the context is `global`
+        // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
+        // see https://github.com/angular/zone.js/issues/190
+        var target = self || _global$1;
+        var delegate = null;
+        if (typeof handler == 'function') {
+            delegate = handler;
+        }
+        else if (handler && handler.handleEvent) {
+            delegate = function (event) { return handler.handleEvent(event); };
+        }
+        var validZoneHandler = false;
+        try {
+            // In cross site contexts (such as WebDriver frameworks like Selenium),
+            // accessing the handler object here will cause an exception to be thrown which
+            // will fail tests prematurely.
+            validZoneHandler = handler && handler.toString() === "[object FunctionWrapper]";
+        }
+        catch (e) {
+            // Returning nothing here is fine, because objects in a cross-site context are unusable
+            return;
+        }
+        // Ignore special listeners of IE11 & Edge dev tools, see https://github.com/angular/zone.js/issues/150
+        if (!delegate || validZoneHandler) {
+            return target[addFnSymbol](eventName, handler, useCapturing);
+        }
+        if (!allowDuplicates) {
+            var eventTask = findExistingRegisteredTask(target, handler, eventName, useCapturing, false);
+            if (eventTask) {
+                // we already registered, so this will have noop.
+                return target[addFnSymbol](eventName, eventTask.invoke, useCapturing);
+            }
+        }
+        var zone = Zone.current;
+        var source = target.constructor['name'] + '.' + addFnName + ':' + eventName;
+        var data = {
+            target: target,
+            eventName: eventName,
+            name: eventName,
+            useCapturing: useCapturing,
+            handler: handler
+        };
+        zone.scheduleEventTask(source, delegate, data, scheduleEventListener, cancelEventListener);
+    };
+}
+function makeZoneAwareRemoveListener(fnName, useCapturingParam) {
+    if (useCapturingParam === void 0) { useCapturingParam = true; }
+    var symbol = zoneSymbol(fnName);
+    var defaultUseCapturing = useCapturingParam ? false : undefined;
+    return function zoneAwareRemoveListener(self, args) {
+        var eventName = args[0];
+        var handler = args[1];
+        var useCapturing = args[2] || defaultUseCapturing;
+        // - Inside a Web Worker, `this` is undefined, the context is `global`
+        // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
+        // see https://github.com/angular/zone.js/issues/190
+        var target = self || _global$1;
+        var eventTask = findExistingRegisteredTask(target, handler, eventName, useCapturing, true);
+        if (eventTask) {
+            eventTask.zone.cancelTask(eventTask);
+        }
+        else {
+            target[symbol](eventName, handler, useCapturing);
+        }
+    };
+}
+function makeZoneAwareListeners(fnName) {
+    var symbol = zoneSymbol(fnName);
+    return function zoneAwareEventListeners(self, args) {
+        var eventName = args[0];
+        var target = self || _global$1;
+        return target[EVENT_TASKS]
+            .filter(function (task) { return task.data.eventName === eventName; })
+            .map(function (task) { return task.data.handler; });
+    };
+}
+var zoneAwareAddEventListener = makeZoneAwareAddListener(ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER);
+var zoneAwareRemoveEventListener = makeZoneAwareRemoveListener(REMOVE_EVENT_LISTENER);
 var originalInstanceKey = zoneSymbol('originalInstance');
 function createNamedFn(name, delegate) {
     try {
@@ -663,6 +795,93 @@ function patchTimer(window, setName, cancelName, nameSuffix) {
     }; });
 }
 
+// For EventEmitter
+var EE_ADD_LISTENER = 'addListener';
+var EE_PREPEND_LISTENER = 'prependListener';
+var EE_REMOVE_LISTENER = 'removeListener';
+var EE_LISTENERS = 'listeners';
+var EE_ON = 'on';
+var zoneAwareAddListener = makeZoneAwareAddListener(EE_ADD_LISTENER, EE_REMOVE_LISTENER, false, true);
+var zoneAwarePrependListener = makeZoneAwareAddListener(EE_PREPEND_LISTENER, EE_REMOVE_LISTENER, false, true);
+var zoneAwareRemoveListener = makeZoneAwareRemoveListener(EE_REMOVE_LISTENER, false);
+var zoneAwareListeners = makeZoneAwareListeners(EE_LISTENERS);
+function patchEventEmitterMethods(obj) {
+    if (obj && obj.addListener) {
+        patchMethod(obj, EE_ADD_LISTENER, function () { return zoneAwareAddListener; });
+        patchMethod(obj, EE_PREPEND_LISTENER, function () { return zoneAwarePrependListener; });
+        patchMethod(obj, EE_REMOVE_LISTENER, function () { return zoneAwareRemoveListener; });
+        patchMethod(obj, EE_LISTENERS, function () { return zoneAwareListeners; });
+        obj[EE_ON] = obj[EE_ADD_LISTENER];
+        return true;
+    }
+    else {
+        return false;
+    }
+}
+// EventEmitter
+var events;
+try {
+    events = require('events');
+}
+catch (err) { }
+if (events && events.EventEmitter) {
+    patchEventEmitterMethods(events.EventEmitter.prototype);
+}
+
+var fs;
+try {
+    fs = require('fs');
+}
+catch (err) { }
+// TODO(alxhub): Patch `watch` and `unwatchFile`.
+var TO_PATCH = [
+    'access',
+    'appendFile',
+    'chmod',
+    'chown',
+    'close',
+    'exists',
+    'fchmod',
+    'fchown',
+    'fdatasync',
+    'fstat',
+    'fsync',
+    'ftruncate',
+    'futimes',
+    'lchmod',
+    'lchown',
+    'link',
+    'lstat',
+    'mkdir',
+    'mkdtemp',
+    'open',
+    'read',
+    'readdir',
+    'readFile',
+    'readlink',
+    'realpath',
+    'rename',
+    'rmdir',
+    'stat',
+    'symlink',
+    'truncate',
+    'unlink',
+    'utimes',
+    'write',
+    'writeFile',
+];
+if (fs) {
+    TO_PATCH
+        .filter(function (name) { return !!fs[name] && typeof fs[name] === 'function'; })
+        .forEach(function (name) {
+        fs[name] = (function (delegate) {
+            return function () {
+                return delegate.apply(this, bindArguments(arguments, 'fs.' + name));
+            };
+        })(fs[name]);
+    });
+}
+
 var set = 'set';
 var clear = 'clear';
 var _global = typeof window === 'object' && window || typeof self === 'object' && self || global;
@@ -713,4 +932,22 @@ if (crypto) {
             return nativePbkdf2_1.apply(void 0, args);
         }
     }.bind(crypto);
+}
+// HTTP Client
+var httpClient;
+try {
+    httpClient = require('_http_client');
+}
+catch (err) { }
+if (httpClient && httpClient.ClientRequest) {
+    var ClientRequest_1 = httpClient.ClientRequest.bind(httpClient);
+    httpClient.ClientRequest = function (options, callback) {
+        if (!callback) {
+            return new ClientRequest_1(options);
+        }
+        else {
+            var zone = Zone.current;
+            return new ClientRequest_1(options, zone.wrap(callback, 'http.ClientRequest'));
+        }
+    };
 }
