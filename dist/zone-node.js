@@ -553,7 +553,15 @@ var Zone$1 = (function (global) {
     if (NativePromise) {
         patchThen(NativePromise);
         if (typeof global['fetch'] !== 'undefined') {
-            var fetchPromise = global['fetch']('about:blank');
+            var fetchPromise = void 0;
+            try {
+                // In MS Edge this throws
+                fetchPromise = global['fetch']();
+            }
+            catch (e) {
+                // In Chrome this throws instead.
+                fetchPromise = global['fetch']('about:blank');
+            }
             // ignore output to prevent error;
             fetchPromise.then(function () { return null; }, function () { return null; });
             if (fetchPromise.constructor != NativePromise) {
