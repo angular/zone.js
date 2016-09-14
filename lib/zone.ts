@@ -1145,7 +1145,7 @@ const Zone: ZoneType = (function(global: any) {
   if (NativePromise) {
     patchThen(NativePromise);
     if (typeof global['fetch'] !== 'undefined') {
-      const fetchPromise = global['fetch']();
+      const fetchPromise = global['fetch']('about:blank');
       // ignore output to prevent error;
       fetchPromise.then(() => null, () => null);
       if (fetchPromise.constructor != NativePromise) {
