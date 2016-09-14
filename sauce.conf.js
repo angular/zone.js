@@ -70,12 +70,12 @@ module.exports = function (config) {
       platform: 'Windows 10',
       version: '11'
     },
-    /*'SL_MSEDGE13': {
+    'SL_MSEDGE13': {
       base: 'SauceLabs',
       browserName: 'MicrosoftEdge',
       platform: 'Windows 10',
       version: '13.10586'
-    },*/
+    },
     'SL_ANDROID4.1': {
       base: 'SauceLabs',
       browserName: 'android',
