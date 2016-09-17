@@ -119,6 +119,29 @@ describe('FakeAsyncTestZoneSpec', () => {
       });
     });
 
+    it('should run queued timer created by timer callback', () => {
+      fakeAsyncTestZone.run(() => {
+        let counter = 0;
+        const startCounterLoop = () => {
+          counter++;
+          setTimeout(startCounterLoop, 10);
+        }
+
+        startCounterLoop();
+
+        expect(counter).toEqual(1);
+
+        testZoneSpec.tick(10);
+        expect(counter).toEqual(2);
+
+        testZoneSpec.tick(10);
+        expect(counter).toEqual(3);
+
+        testZoneSpec.tick(30);
+        expect(counter).toEqual(6);
+      });
+    });
+
     it('should run queued timer only once', () => {
       fakeAsyncTestZone.run(() => {
         let cycles = 0;
@@ -160,6 +183,9 @@ describe('FakeAsyncTestZoneSpec', () => {
 
         testZoneSpec.tick(10);
         expect(cycles).toEqual(3);
+
+        testZoneSpec.tick(30);
+        expect(cycles).toEqual(6);
       });
     });
 
