@@ -18,7 +18,17 @@ function generateScript(inFile, outFile, minify, callback) {
   inFile = path.join('./build-esm/', inFile).replace(/\.ts$/, '.js');
   var parts = [
     gulp.src('./build-esm/lib/**/*.js')
-        .pipe(rollup({ entry: inFile}))
+        .pipe(rollup({
+          entry: inFile,
+          format: 'umd',
+          banner: '/**\n'
+              + '* @license\n'
+              + '* Copyright Google Inc. All Rights Reserved.\n'
+              + '*\n'
+              + '* Use of this source code is governed by an MIT-style license that can be\n'
+              + '* found in the LICENSE file at https://angular.io/license\n'
+              + '*/'
+        }))
         .pipe(rename(outFile)),
   ];
   if (minify) {
