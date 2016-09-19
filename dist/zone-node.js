@@ -1,5 +1,16 @@
-;
-;
+/**
+* @license
+* Copyright Google Inc. All Rights Reserved.
+*
+* Use of this source code is governed by an MIT-style license that can be
+* found in the LICENSE file at https://angular.io/license
+*/
+(function (global, factory) {
+    typeof exports === 'object' && typeof module !== 'undefined' ? factory() :
+    typeof define === 'function' && define.amd ? define(factory) :
+    (factory());
+}(this, (function () { 'use strict';
+
 var Zone$1 = (function (global) {
     if (global.Zone) {
         throw new Error('Zone already loaded.');
@@ -26,25 +37,25 @@ var Zone$1 = (function (global) {
             enumerable: true,
             configurable: true
         });
-        ;
+        
         Object.defineProperty(Zone, "currentTask", {
             get: function () { return _currentTask; },
             enumerable: true,
             configurable: true
         });
-        ;
+        
         Object.defineProperty(Zone.prototype, "parent", {
             get: function () { return this._parent; },
             enumerable: true,
             configurable: true
         });
-        ;
+        
         Object.defineProperty(Zone.prototype, "name", {
             get: function () { return this._name; },
             enumerable: true,
             configurable: true
         });
-        ;
+        
         Zone.prototype.get = function (key) {
             var zone = this.getZoneWith(key);
             if (zone)
@@ -153,7 +164,7 @@ var Zone$1 = (function (global) {
         Zone.__symbol__ = __symbol__;
         return Zone;
     }());
-    ;
+    
     var ZoneDelegate = (function () {
         function ZoneDelegate(zone, parentDelegate, zoneSpec) {
             this._taskCounts = { microTask: 0, macroTask: 0, eventTask: 0 };
@@ -311,7 +322,7 @@ var Zone$1 = (function (global) {
         return ZoneTask;
     }());
     function __symbol__(name) { return '__zone_symbol__' + name; }
-    ;
+    
     var symbolSetTimeout = __symbol__('setTimeout');
     var symbolPromise = __symbol__('Promise');
     var symbolThen = __symbol__('then');
@@ -418,12 +429,12 @@ var Zone$1 = (function (global) {
                         throw new Error("Uncaught (in promise): " + value);
                     }
                     catch (e) {
-                        var error = e;
-                        error.rejection = value;
-                        error.promise = promise;
-                        error.zone = Zone.current;
-                        error.task = Zone.currentTask;
-                        _uncaughtPromiseErrors.push(error);
+                        var error_1 = e;
+                        error_1.rejection = value;
+                        error_1.promise = promise;
+                        error_1.zone = Zone.current;
+                        error_1.task = Zone.currentTask;
+                        _uncaughtPromiseErrors.push(error_1);
                         scheduleQueueDrain();
                     }
                 }
@@ -589,8 +600,54 @@ function bindArguments(args, source) {
     }
     return args;
 }
-;
+
+
+
+
 var isNode = (typeof process !== 'undefined' && {}.toString.call(process) === '[object process]');
+
+function patchProperty(obj, prop) {
+    var desc = Object.getOwnPropertyDescriptor(obj, prop) || {
+        enumerable: true,
+        configurable: true
+    };
+    // A property descriptor cannot have getter/setter and be writable
+    // deleting the writable and value properties avoids this error:
+    //
+    // TypeError: property descriptors must not specify a value or be writable when a
+    // getter or setter has been specified
+    delete desc.writable;
+    delete desc.value;
+    // substr(2) cuz 'onclick' -> 'click', etc
+    var eventName = prop.substr(2);
+    var _prop = '_' + prop;
+    desc.set = function (fn) {
+        if (this[_prop]) {
+            this.removeEventListener(eventName, this[_prop]);
+        }
+        if (typeof fn === 'function') {
+            var wrapFn = function (event) {
+                var result;
+                result = fn.apply(this, arguments);
+                if (result != undefined && !result)
+                    event.preventDefault();
+            };
+            this[_prop] = wrapFn;
+            this.addEventListener(eventName, wrapFn, false);
+        }
+        else {
+            this[_prop] = null;
+        }
+    };
+    // The getter would return undefined for unassigned properties but the default value of an unassigned property is null
+    desc.get = function () {
+        return this[_prop] || null;
+    };
+    Object.defineProperty(obj, prop, desc);
+}
+
+
+
 var EVENT_TASKS = zoneSymbol('eventTasks');
 // For EventTarget
 var ADD_EVENT_LISTENER = 'addEventListener';
@@ -718,7 +775,11 @@ function makeZoneAwareListeners(fnName) {
 }
 var zoneAwareAddEventListener = makeZoneAwareAddListener(ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER);
 var zoneAwareRemoveEventListener = makeZoneAwareRemoveListener(REMOVE_EVENT_LISTENER);
+
 var originalInstanceKey = zoneSymbol('originalInstance');
+// wrap some native API on `window`
+
+
 function createNamedFn(name, delegate) {
     try {
         return (Function('f', "return function " + name + "(){return f(this, arguments)}"))(delegate);
@@ -809,15 +870,15 @@ var EE_PREPEND_LISTENER = 'prependListener';
 var EE_REMOVE_LISTENER = 'removeListener';
 var EE_LISTENERS = 'listeners';
 var EE_ON = 'on';
-var zoneAwareAddListener = makeZoneAwareAddListener(EE_ADD_LISTENER, EE_REMOVE_LISTENER, false, true);
+var zoneAwareAddListener$1 = makeZoneAwareAddListener(EE_ADD_LISTENER, EE_REMOVE_LISTENER, false, true);
 var zoneAwarePrependListener = makeZoneAwareAddListener(EE_PREPEND_LISTENER, EE_REMOVE_LISTENER, false, true);
-var zoneAwareRemoveListener = makeZoneAwareRemoveListener(EE_REMOVE_LISTENER, false);
+var zoneAwareRemoveListener$1 = makeZoneAwareRemoveListener(EE_REMOVE_LISTENER, false);
 var zoneAwareListeners = makeZoneAwareListeners(EE_LISTENERS);
 function patchEventEmitterMethods(obj) {
     if (obj && obj.addListener) {
-        patchMethod(obj, EE_ADD_LISTENER, function () { return zoneAwareAddListener; });
+        patchMethod(obj, EE_ADD_LISTENER, function () { return zoneAwareAddListener$1; });
         patchMethod(obj, EE_PREPEND_LISTENER, function () { return zoneAwarePrependListener; });
-        patchMethod(obj, EE_REMOVE_LISTENER, function () { return zoneAwareRemoveListener; });
+        patchMethod(obj, EE_REMOVE_LISTENER, function () { return zoneAwareRemoveListener$1; });
         patchMethod(obj, EE_LISTENERS, function () { return zoneAwareListeners; });
         obj[EE_ON] = obj[EE_ADD_LISTENER];
         return true;
@@ -959,3 +1020,5 @@ if (httpClient && httpClient.ClientRequest) {
         }
     };
 }
+
+})));
