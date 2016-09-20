@@ -102,6 +102,27 @@ describe('setTimeout', function() {
     expect(typeof(cancelId.toString())).toBe('number');
   });
 
+  it('should allow cancelation by numeric timeout Id', function (done) {
+    // Node returns complex object from setTimeout, ignore this test.
+    if (isNode) {
+      done();
+      return;
+    }
+
+    const testZone = Zone.current.fork(Zone['wtfZoneSpec']).fork({ name: 'TestZone' });
+    testZone.run(() => {
+      const spy = jasmine.createSpy('spy');
+      const task: Task = <any>setTimeout(spy, 0);
+      const cancelId: number = <any>task;
+      clearTimeout(0 + cancelId);
+      setTimeout(function () {
+        expect(spy).not.toHaveBeenCalled();
+        expect(task.runCount).toEqual(-1);
+        done();
+      }, 1);
+    });
+  });
+
   it('should pass invalid values through', function() {
     clearTimeout(null);
     clearTimeout(<any>{});
