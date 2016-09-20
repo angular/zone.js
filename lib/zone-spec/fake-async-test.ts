@@ -51,15 +51,16 @@
     }
     
     tick(millis: number = 0): void {
-      this._currentTime += millis;
-      while (this._schedulerQueue.length > 0) {  
+      let finalTime = this._currentTime + millis;
+      while (this._schedulerQueue.length > 0) {
         let current = this._schedulerQueue[0];        
-        if (this._currentTime < current.endTime) {
+        if (finalTime < current.endTime) {
           // Done processing the queue since it's sorted by endTime.
           break;
         } else {
           // Time to run scheduled function. Remove it from the head of queue.
           let current = this._schedulerQueue.shift();
+          this._currentTime = current.endTime;
           let retval = current.func.apply(global, current.args);
           if (!retval) {
             // Uncaught exception in the current scheduled function. Stop processing the queue.
@@ -67,6 +68,7 @@
           }
         }
       }
+      this._currentTime = finalTime;
     }
   }
   
