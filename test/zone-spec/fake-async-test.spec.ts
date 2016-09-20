@@ -59,7 +59,7 @@ describe('FakeAsyncTestZoneSpec', () => {
         fakeAsyncTestZone.run(() => {
           Promise.resolve(null).then((_) => { throw new Error('async'); });
           expect(() => { testZoneSpec.flushMicrotasks(); })
-            .toThrowError('Uncaught (in promise): Error: async');
+            .toThrowError(/Uncaught \(in promise\): Error: async/);
         });
       });
 

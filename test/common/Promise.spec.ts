@@ -233,6 +233,7 @@ describe('Promise', ifEnvSupports('Promise', function () {
         var promiseError: Error = null;
         var zone: Zone = null;
         var task: Task = null;
+        var error: Error = null;
         queueZone.fork({
           name: 'promise-error',
           onHandleError: (delegate: ZoneDelegate, current: Zone, target: Zone,
@@ -244,13 +245,19 @@ describe('Promise', ifEnvSupports('Promise', function () {
         }).run(() => {
           zone = Zone.current;
           task = Zone.currentTask;
-          Promise.reject('rejectedErrorShouldBeHandled');
+          error = new Error('rejectedErrorShouldBeHandled');
+          try {
+            // throw so that the stack trace is captured
+            throw error;
+          } catch (e) {}
+          Promise.reject(error);
           expect(promiseError).toBe(null);
         });
         setTimeout(() => null);
         setTimeout(() => {
-          expect(promiseError.message).toBe('Uncaught (in promise): rejectedErrorShouldBeHandled');
-          expect(promiseError['rejection']).toBe('rejectedErrorShouldBeHandled');
+          expect(promiseError.message).toBe('Uncaught (in promise): ' + error +
+              (error.stack ? '\n' + error.stack : ''));
+          expect(promiseError['rejection']).toBe(error);
           expect(promiseError['zone']).toBe(zone);
           expect(promiseError['task']).toBe(task);
           done();

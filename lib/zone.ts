@@ -867,7 +867,7 @@ const Zone: ZoneType = (function(global: any) {
       if (this.data && typeof this.data.handleId !== 'undefined') {
         return this.data.handleId;
       } else {
-        return this.toString();
+        return Object.prototype.toString.call(this);
       }
     }
   }
@@ -994,7 +994,7 @@ const Zone: ZoneType = (function(global: any) {
         if (queue.length == 0 && state == REJECTED) {
           promise[symbolState] = REJECTED_NO_CATCH;
           try {
-            throw new Error("Uncaught (in promise): " +  value);
+            throw new Error("Uncaught (in promise): " +  value + (value && value.stack ? '\n' + value.stack : ''));
           } catch (e) {
             const error: UncaughtPromiseError = e;
             error.rejection = value;
