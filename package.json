@@ -38,6 +38,7 @@
     "@types/systemjs": "^0.19.30",
     "concurrently": "^2.2.0",
     "es6-promise": "^3.0.2",
+    "whatwg-fetch": "^1.0.0",
     "gulp": "^3.8.11",
     "gulp-rename": "^1.2.2",
     "gulp-rollup": "^2.3.0",
