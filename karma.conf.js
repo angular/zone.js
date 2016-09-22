@@ -6,6 +6,7 @@ module.exports = function (config) {
     files: [
       'node_modules/systemjs/dist/system-polyfills.js',
       'node_modules/systemjs/dist/system.src.js',
+      'node_modules/whatwg-fetch/fetch.js',
       {pattern: 'test/assets/**/*.*', watched: true, served: true, included: false},
       {pattern: 'build/**/*.js.map', watched: true, served: true, included: false},
       {pattern: 'build/**/*.js', watched: true, served: true, included: false},

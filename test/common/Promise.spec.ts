@@ -341,17 +341,22 @@ describe('Promise', ifEnvSupports('Promise', function () {
       });
     });
 
-    it('should work for blob response', function(done) {
-      testZone.run(function() {
-        global['fetch']('/base/test/assets/sample.json').then(function(response: any) {
+    it('should work for blob response', function (done) {
+      testZone.run(function () {
+        global['fetch']('/base/test/assets/sample.json').then(function (response:any) {
           var fetchZone = Zone.current;
           expect(fetchZone).toBe(testZone);
 
-          response.blob().then(function(blob) {
-            expect(Zone.current).toBe(fetchZone);
-            expect(blob instanceof Blob).toEqual(true);
+          // Android 4.3- doesn't support response.blob()
+          if (response.blob) {
+            response.blob().then(function (blob) {
+              expect(Zone.current).toBe(fetchZone);
+              expect(blob instanceof Blob).toEqual(true);
+              done();
+            });
+          } else {
             done();
-          });
+          }
         });
       });
     });
@@ -362,13 +367,19 @@ describe('Promise', ifEnvSupports('Promise', function () {
           var fetchZone = Zone.current;
           expect(fetchZone).toBe(testZone);
 
-          response.arrayBuffer().then(function(blob) {
-            expect(Zone.current).toBe(fetchZone);
-            expect(blob instanceof ArrayBuffer).toEqual(true);
+          // Android 4.3- doesn't support response.arrayBuffer()
+          if (response.arrayBuffer) {
+            response.arrayBuffer().then(function (blob) {
+              expect(Zone.current).toBe(fetchZone);
+              expect(blob instanceof ArrayBuffer).toEqual(true);
+              done();
+            });
+          } else {
             done();
-          });
+          }
         });
       });
     });
+
   }));
 }));
