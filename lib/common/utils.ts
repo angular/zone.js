@@ -347,7 +347,7 @@ export function patchMethod(target: any, name: string,
                                       name: string) => (self: any, args: any[]) => any): Function
 {
   let proto = target;
-  while (proto && !proto.hasOwnProperty(name)) {
+  while (proto && Object.getOwnPropertyNames(proto).indexOf(name) === -1) {
     proto = Object.getPrototypeOf(proto);
   }
   if (!proto && target[name]) {
