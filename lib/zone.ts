@@ -1155,7 +1155,7 @@ const Zone: ZoneType = (function(global: any) {
       }
       // ignore output to prevent error;
       fetchPromise.then(() => null, () => null);
-      if (fetchPromise.constructor != NativePromise) {
+      if (fetchPromise.constructor != NativePromise && fetchPromise.constructor != ZoneAwarePromise) {
         patchThen(fetchPromise.constructor);
       }
     }
