@@ -1,4 +1,12 @@
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
+/**
  * Zone is a mechanism for intercepting and keeping track of asynchronous work.
  *
  * A Zone is a global object which is configured with rules about how to intercept and keep track

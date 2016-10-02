@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 beforeEach(() => {
   // assert that each jasmine run has a task, so that drainMicrotask works properly.
   expect(Zone.currentTask).toBeTruthy();
