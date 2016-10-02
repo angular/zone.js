@@ -4,8 +4,8 @@ describe('nodejs EventEmitter', () => {
   let zone, zoneA, zoneB, emitter, expectZoneACount;
   beforeEach(() => {
     zone = Zone.current;
-    zoneA = zone.fork({ name: 'A' });
-    zoneB = zone.fork({ name: 'B' });
+    zoneA = zone.fork({name: 'A'});
+    zoneB = zone.fork({name: 'B'});
 
     emitter = new EventEmitter();
     expectZoneACount = 0;

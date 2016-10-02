@@ -1,14 +1,14 @@
 'use strict';
-import {isNode, zoneSymbol} from "../../lib/common/utils";
+import {isNode, zoneSymbol} from '../../lib/common/utils';
 
-describe('setInterval', function () {
+describe('setInterval', function() {
 
-  it('should work with setInterval', function (done) {
+  it('should work with setInterval', function(done) {
     var cancelId: any;
-    var testZone = Zone.current.fork(Zone['wtfZoneSpec']).fork({ name: 'TestZone' });
+    var testZone = Zone.current.fork(Zone['wtfZoneSpec']).fork({name: 'TestZone'});
     testZone.run(() => {
       var id;
-      var intervalFn = function () {
+      var intervalFn = function() {
         expect(Zone.current.name).toEqual(('TestZone'));
         global[zoneSymbol('setTimeout')](function() {
           expect(wtfMock.log).toEqual([

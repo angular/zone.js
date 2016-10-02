@@ -10,7 +10,7 @@ describe('jasmine', () => {
   const syncZone = Zone.current;
   try {
     Zone.current.scheduleMicroTask('dontallow', () => null);
-  } catch(e) {
+  } catch (e) {
     throwOnAsync = true;
   }
 

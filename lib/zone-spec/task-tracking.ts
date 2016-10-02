@@ -1,39 +1,44 @@
 /**
- * A `TaskTrackingZoneSpec` allows one to track all outstanding Tasks. 
- * 
+ * A `TaskTrackingZoneSpec` allows one to track all outstanding Tasks.
+ *
  * This is useful in tests. For example to see which tasks are preventing a test from completing
  * or an automated way of releasing all of the event listeners at the end of the test.
  */
 class TaskTrackingZoneSpec implements ZoneSpec {
   name = 'TaskTrackingZone';
-  microTasks: Task[] = []; 
-  macroTasks: Task[] = []; 
+  microTasks: Task[] = [];
+  macroTasks: Task[] = [];
   eventTasks: Task[] = [];
-  properties: {[key: string]: any} = {'TaskTrackingZone': this}; 
+  properties: {[key: string]: any} = {'TaskTrackingZone': this};
 
   static get() {
     return Zone.current.get('TaskTrackingZone');
   }
 
-  private getTasksFor(type: string): Task [] {
+  private getTasksFor(type: string): Task[] {
     switch (type) {
-      case 'microTask': return this.microTasks;
-      case 'macroTask': return this.macroTasks;
-      case 'eventTask': return this.eventTasks;
+      case 'microTask':
+        return this.microTasks;
+      case 'macroTask':
+        return this.macroTasks;
+      case 'eventTask':
+        return this.eventTasks;
     }
     throw new Error('Unknown task format: ' + type);
   }
 
-  onScheduleTask(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task): Task {
+  onScheduleTask(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+      Task {
     task['creationLocation'] = new Error(`Task '${task.type}' from '${task.source}'.`);
     const tasks = this.getTasksFor(task.type);
     tasks.push(task);
     return parentZoneDelegate.scheduleTask(targetZone, task);
   }
 
-  onCancelTask(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task): any {
+  onCancelTask(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+      any {
     const tasks = this.getTasksFor(task.type);
-    for(var i = 0; i < tasks.length; i++) {
+    for (var i = 0; i < tasks.length; i++) {
       if (tasks[i] == task) {
         tasks.splice(i, 1);
         break;
@@ -42,12 +47,13 @@ class TaskTrackingZoneSpec implements ZoneSpec {
     return parentZoneDelegate.cancelTask(targetZone, task);
   }
 
-  onInvokeTask(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                  task: Task, applyThis: any, applyArgs: any): any 
-  {
-    if (task.type === 'eventTask')  return parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
+  onInvokeTask(
+      parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task,
+      applyThis: any, applyArgs: any): any {
+    if (task.type === 'eventTask')
+      return parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
     const tasks = this.getTasksFor(task.type);
-    for(var i = 0; i < tasks.length; i++) {
+    for (var i = 0; i < tasks.length; i++) {
       if (tasks[i] == task) {
         tasks.splice(i, 1);
         break;

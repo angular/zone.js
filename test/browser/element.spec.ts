@@ -1,49 +1,50 @@
 import {ifEnvSupports} from '../test-util';
 
-describe('element', function () {
+describe('element', function() {
 
   var button;
 
-  beforeEach(function () {
+  beforeEach(function() {
     button = document.createElement('button');
     document.body.appendChild(button);
   });
 
-  afterEach(function () {
+  afterEach(function() {
     document.body.removeChild(button);
   });
 
   // https://github.com/angular/zone.js/issues/190
-  it('should work when addEventListener / removeEventListener are called in the global context', function () {
-    var clickEvent = document.createEvent('Event');
-    var callCount = 0;
+  it('should work when addEventListener / removeEventListener are called in the global context',
+     function() {
+       var clickEvent = document.createEvent('Event');
+       var callCount = 0;
 
+       clickEvent.initEvent('click', true, true);
+
+       var listener = function(event) {
+         callCount++;
+         expect(event).toBe(clickEvent);
+       };
+
+       // `this` would be null inside the method when `addEventListener` is called from strict mode
+       // it would be `window`:
+       // - when called from non strict-mode,
+       // - when `window.addEventListener` is called explicitely.
+       addEventListener('click', listener);
+
+       button.dispatchEvent(clickEvent);
+       expect(callCount).toEqual(1);
+
+       removeEventListener('click', listener);
+       button.dispatchEvent(clickEvent);
+       expect(callCount).toEqual(1);
+     });
+
+  it('should work with addEventListener when called with a function listener', function() {
+    var clickEvent = document.createEvent('Event');
     clickEvent.initEvent('click', true, true);
 
-    var listener = function (event) {
-      callCount++;
-      expect(event).toBe(clickEvent);
-    };
-
-    // `this` would be null inside the method when `addEventListener` is called from strict mode
-    // it would be `window`:
-    // - when called from non strict-mode,
-    // - when `window.addEventListener` is called explicitely.
-    addEventListener('click', listener);
-
-    button.dispatchEvent(clickEvent);
-    expect(callCount).toEqual(1);
-
-    removeEventListener('click', listener);
-    button.dispatchEvent(clickEvent);
-    expect(callCount).toEqual(1);
-  });
-
-  it('should work with addEventListener when called with a function listener', function () {
-    var clickEvent = document.createEvent('Event');
-    clickEvent.initEvent('click', true, true);
-
-    button.addEventListener('click', function (event) {
+    button.addEventListener('click', function(event) {
       expect(event).toBe(clickEvent);
     });
 
@@ -96,28 +97,29 @@ describe('element', function () {
     });
   });
 
-  it('should work with addEventListener when called with an EventListener-implementing listener', function () {
-    var eventListener = {
-      x: 5,
-      handleEvent: function(event) {
-        // Test that context is preserved
-        expect(this.x).toBe(5);
+  it('should work with addEventListener when called with an EventListener-implementing listener',
+     function() {
+       var eventListener = {
+         x: 5,
+         handleEvent: function(event) {
+           // Test that context is preserved
+           expect(this.x).toBe(5);
 
-        expect(event).toBe(clickEvent);
-      }
-    };
+           expect(event).toBe(clickEvent);
+         }
+       };
 
-    var clickEvent = document.createEvent('Event');
-    clickEvent.initEvent('click', true, true);
+       var clickEvent = document.createEvent('Event');
+       clickEvent.initEvent('click', true, true);
 
-    button.addEventListener('click', eventListener);
+       button.addEventListener('click', eventListener);
 
-    button.dispatchEvent(clickEvent);
-  });
+       button.dispatchEvent(clickEvent);
+     });
 
-  it('should respect removeEventListener when called with a function listener', function () {
+  it('should respect removeEventListener when called with a function listener', function() {
     var log = '';
-    var logFunction = function logFunction () {
+    var logFunction = function logFunction() {
       log += 'a';
     };
 
@@ -135,11 +137,8 @@ describe('element', function () {
     expect(log).toEqual('aa');
   });
 
-  it('should respect removeEventListener with an EventListener-implementing listener', function () {
-    var eventListener = {
-      x: 5,
-      handleEvent: jasmine.createSpy('handleEvent')
-    };
+  it('should respect removeEventListener with an EventListener-implementing listener', function() {
+    var eventListener = {x: 5, handleEvent: jasmine.createSpy('handleEvent')};
 
     button.addEventListener('click', eventListener);
     button.removeEventListener('click', eventListener);
@@ -149,12 +148,10 @@ describe('element', function () {
     expect(eventListener.handleEvent).not.toHaveBeenCalled();
   });
 
-  it('should have no effect while calling addEventListener without listener', function () {
+  it('should have no effect while calling addEventListener without listener', function() {
     var onAddEventListenerSpy = jasmine.createSpy('addEventListener');
-    var eventListenerZone = Zone.current.fork({
-      name: 'eventListenerZone',
-      onScheduleTask: onAddEventListenerSpy
-    });
+    var eventListenerZone =
+        Zone.current.fork({name: 'eventListenerZone', onScheduleTask: onAddEventListenerSpy});
     expect(function() {
       eventListenerZone.run(function() {
         button.addEventListener('click', null);
@@ -164,12 +161,10 @@ describe('element', function () {
     expect(onAddEventListenerSpy).not.toHaveBeenCalledWith();
   });
 
-  it('should have no effect while calling removeEventListener without listener', function () {
-    var onAddEventListenerSpy =  jasmine.createSpy('removeEventListener');
-    var eventListenerZone = Zone.current.fork({
-      name: 'eventListenerZone',
-      onScheduleTask: onAddEventListenerSpy
-     });
+  it('should have no effect while calling removeEventListener without listener', function() {
+    var onAddEventListenerSpy = jasmine.createSpy('removeEventListener');
+    var eventListenerZone =
+        Zone.current.fork({name: 'eventListenerZone', onScheduleTask: onAddEventListenerSpy});
     expect(function() {
       eventListenerZone.run(function() {
         button.removeEventListener('click', null);
@@ -203,15 +198,15 @@ describe('element', function () {
     expect(log).toEqual(['listener']);
   });
 
-  it('should correctly handler capturing versus nonCapturing eventListeners', function () {
+  it('should correctly handler capturing versus nonCapturing eventListeners', function() {
     var log = [];
     var clickEvent = document.createEvent('Event');
 
-    function capturingListener () {
+    function capturingListener() {
       log.push('capturingListener');
     }
 
-    function bubblingListener () {
+    function bubblingListener() {
       log.push('bubblingListener');
     }
 
@@ -222,17 +217,14 @@ describe('element', function () {
 
     button.dispatchEvent(clickEvent);
 
-    expect(log).toEqual([
-      'capturingListener',
-      'bubblingListener'
-    ]);
+    expect(log).toEqual(['capturingListener', 'bubblingListener']);
   });
 
-  it('should correctly handler a listener that is both capturing and nonCapturing', function () {
+  it('should correctly handler a listener that is both capturing and nonCapturing', function() {
     var log = [];
     var clickEvent = document.createEvent('Event');
 
-    function listener () {
+    function listener() {
       log.push('listener');
     }
 
@@ -248,10 +240,7 @@ describe('element', function () {
 
     button.dispatchEvent(clickEvent);
 
-    expect(log).toEqual([
-      'listener',
-      'listener'
-    ]);
+    expect(log).toEqual(['listener', 'listener']);
   });
 
   describe('onclick', function() {
@@ -259,17 +248,17 @@ describe('element', function () {
     function supportsOnClick() {
       var div = document.createElement('div');
       var clickPropDesc = Object.getOwnPropertyDescriptor(div, 'onclick');
-      return !(EventTarget &&
-               div instanceof EventTarget &&
-               clickPropDesc && clickPropDesc.value === null);
+      return !(
+          EventTarget && div instanceof EventTarget && clickPropDesc &&
+          clickPropDesc.value === null);
     }
     (<any>supportsOnClick).message = 'Supports Element#onclick patching';
 
 
     ifEnvSupports(supportsOnClick, function() {
-      it('should spawn new child zones', function () {
+      it('should spawn new child zones', function() {
         var run = false;
-        button.onclick = function () {
+        button.onclick = function() {
           run = true;
         };
 
@@ -279,12 +268,12 @@ describe('element', function () {
     });
 
 
-    it('should only allow one onclick handler', function () {
+    it('should only allow one onclick handler', function() {
       var log = '';
-      button.onclick = function () {
+      button.onclick = function() {
         log += 'a';
       };
-      button.onclick = function () {
+      button.onclick = function() {
         log += 'b';
       };
 
@@ -293,9 +282,9 @@ describe('element', function () {
     });
 
 
-    it('should handler removing onclick', function () {
+    it('should handler removing onclick', function() {
       var log = '';
-      button.onclick = function () {
+      button.onclick = function() {
         log += 'a';
       };
       button.onclick = null;
@@ -314,13 +303,13 @@ describe('element', function () {
 
   describe('onEvent default behavior', function() {
     var checkbox;
-    beforeEach(function () {
+    beforeEach(function() {
       checkbox = document.createElement('input');
-      checkbox.type = "checkbox";
+      checkbox.type = 'checkbox';
       document.body.appendChild(checkbox);
     });
 
-    afterEach(function () {
+    afterEach(function() {
       document.body.removeChild(checkbox);
     });
 

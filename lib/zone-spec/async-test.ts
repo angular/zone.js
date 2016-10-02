@@ -32,8 +32,9 @@ class AsyncTestZoneSpec implements ZoneSpec {
   // Note - we need to use onInvoke at the moment to call finish when a test is
   // fully synchronous. TODO(juliemr): remove this when the logic for
   // onHasTask changes and it calls whenever the task queues are dirty.
-  onInvoke(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-    delegate: Function, applyThis: any, applyArgs: any[], source: string): any {
+  onInvoke(
+      parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function,
+      applyThis: any, applyArgs: any[], source: string): any {
     try {
       return parentZoneDelegate.invoke(targetZone, delegate, applyThis, applyArgs, source);
     } finally {
@@ -41,8 +42,8 @@ class AsyncTestZoneSpec implements ZoneSpec {
     }
   }
 
-  onHandleError(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-    error: any): boolean {
+  onHandleError(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, error: any):
+      boolean {
     // Let the parent try to handle the error.
     const result = parentZoneDelegate.handleError(targetZone, error);
     if (result) {

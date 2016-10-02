@@ -4,24 +4,19 @@ function windowPrototype() {
   return !!(global['Window'] && global['Window'].prototype);
 }
 
-describe('Zone', function () {
+describe('Zone', function() {
   var rootZone = Zone.current;
 
-  describe('hooks', function () {
-    it('should allow you to override alert/prompt/confirm', function () {
+  describe('hooks', function() {
+    it('should allow you to override alert/prompt/confirm', function() {
       var alertSpy = jasmine.createSpy('alert');
       var promptSpy = jasmine.createSpy('prompt');
       var confirmSpy = jasmine.createSpy('confirm');
-      var spies = {
-        'alert': alertSpy,
-        'prompt': promptSpy,
-        'confirm': confirmSpy
-      };
+      var spies = {'alert': alertSpy, 'prompt': promptSpy, 'confirm': confirmSpy};
       var myZone = Zone.current.fork({
         name: 'spy',
         onInvoke: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                   callback: Function, applyThis: any, applyArgs: any[], source: string): any =>
-        {
+                   callback: Function, applyThis: any, applyArgs: any[], source: string): any => {
           if (source) {
             spies[source].apply(null, applyArgs);
           } else {
@@ -30,7 +25,7 @@ describe('Zone', function () {
         }
       });
 
-      myZone.run(function () {
+      myZone.run(function() {
         alert('alertMsg');
         prompt('promptMsg', 'default');
         confirm('confirmMsg');
@@ -41,28 +36,28 @@ describe('Zone', function () {
       expect(confirmSpy).toHaveBeenCalledWith('confirmMsg');
     });
 
-    describe('eventListener hooks', function () {
+    describe('eventListener hooks', function() {
       var button;
       var clickEvent;
 
-      beforeEach(function () {
+      beforeEach(function() {
         button = document.createElement('button');
         clickEvent = document.createEvent('Event');
         clickEvent.initEvent('click', true, true);
         document.body.appendChild(button);
       });
 
-      afterEach(function () {
+      afterEach(function() {
         document.body.removeChild(button);
       });
 
-      it('should support addEventListener', function () {
+      it('should support addEventListener', function() {
         var hookSpy = jasmine.createSpy('hook');
         var eventListenerSpy = jasmine.createSpy('eventListener');
         var zone = rootZone.fork({
           name: 'spy',
           onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                                task: Task): any => {
+                           task: Task): any => {
             hookSpy();
             return parentZoneDelegate.scheduleTask(targetZone, task);
           }
@@ -71,42 +66,42 @@ describe('Zone', function () {
         zone.run(function() {
           button.addEventListener('click', eventListenerSpy);
         });
-        
+
         button.dispatchEvent(clickEvent);
 
         expect(hookSpy).toHaveBeenCalled();
         expect(eventListenerSpy).toHaveBeenCalled();
       });
 
-      it('should support addEventListener on window', ifEnvSupports(windowPrototype, function () {
-        var hookSpy = jasmine.createSpy('hook');
-        var eventListenerSpy = jasmine.createSpy('eventListener');
-        var zone = rootZone.fork({
-          name: 'spy',
-          onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                                task: Task): any => {
-            hookSpy();
-            return parentZoneDelegate.scheduleTask(targetZone, task);
-          }
-        });
+      it('should support addEventListener on window', ifEnvSupports(windowPrototype, function() {
+           var hookSpy = jasmine.createSpy('hook');
+           var eventListenerSpy = jasmine.createSpy('eventListener');
+           var zone = rootZone.fork({
+             name: 'spy',
+             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+               hookSpy();
+               return parentZoneDelegate.scheduleTask(targetZone, task);
+             }
+           });
 
-        zone.run(function() {
-          window.addEventListener('click', eventListenerSpy);
-        });
-        
-        window.dispatchEvent(clickEvent);
+           zone.run(function() {
+             window.addEventListener('click', eventListenerSpy);
+           });
 
-        expect(hookSpy).toHaveBeenCalled();
-        expect(eventListenerSpy).toHaveBeenCalled();
-      }));
+           window.dispatchEvent(clickEvent);
 
-      it('should support removeEventListener', function () {
+           expect(hookSpy).toHaveBeenCalled();
+           expect(eventListenerSpy).toHaveBeenCalled();
+         }));
+
+      it('should support removeEventListener', function() {
         var hookSpy = jasmine.createSpy('hook');
         var eventListenerSpy = jasmine.createSpy('eventListener');
         var zone = rootZone.fork({
           name: 'spy',
           onCancelTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
+                         task: Task): any => {
             hookSpy();
             return parentZoneDelegate.cancelTask(targetZone, task);
           }

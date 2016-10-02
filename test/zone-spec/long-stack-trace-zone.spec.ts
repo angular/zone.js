@@ -1,11 +1,11 @@
 import {zoneSymbol} from '../../lib/common/utils';
 var defineProperty = Object[zoneSymbol('defineProperty')] || Object.defineProperty;
 
-describe('longStackTraceZone', function () {
+describe('longStackTraceZone', function() {
   let log: Error[];
   let lstz: Zone;
 
-  beforeEach(function () {
+  beforeEach(function() {
     lstz = Zone.current.fork(Zone['longStackTraceZoneSpec']).fork({
       name: 'long-stack-trace-zone-test',
       onHandleError: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
@@ -19,11 +19,11 @@ describe('longStackTraceZone', function () {
     log = [];
   });
 
-  it('should produce long stack traces', function (done) {
-    lstz.run(function () {
-      setTimeout(function () {
-        setTimeout(function () {
-          setTimeout(function () {
+  it('should produce long stack traces', function(done) {
+    lstz.run(function() {
+      setTimeout(function() {
+        setTimeout(function() {
+          setTimeout(function() {
             try {
               expect(log[0].stack.split('Elapsed: ').length).toBe(3);
               done();
@@ -48,7 +48,9 @@ describe('longStackTraceZone', function () {
       }
     });
     lstz.run(() => {
-      setTimeout(() => { throw error; });
+      setTimeout(() => {
+        throw error;
+      });
     });
     setTimeout(() => {
       var e = log[0];
@@ -58,18 +60,18 @@ describe('longStackTraceZone', function () {
   });
 
   it('should produce long stack traces when reject in promise', function(done) {
-    lstz.runGuarded(function () {
-      setTimeout(function () {
-        setTimeout(function () {
-          let promise = new Promise(function (resolve, reject) {
-             setTimeout(function (){
-               reject(new Error('Hello Promise'));
-             }, 0);
+    lstz.runGuarded(function() {
+      setTimeout(function() {
+        setTimeout(function() {
+          let promise = new Promise(function(resolve, reject) {
+            setTimeout(function() {
+              reject(new Error('Hello Promise'));
+            }, 0);
           });
           promise.then(function() {
             fail('should not get here');
           });
-          setTimeout(function () {
+          setTimeout(function() {
             try {
               expect(log[0].stack.split('Elapsed: ').length).toBe(5);
               done();

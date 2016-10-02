@@ -21,7 +21,7 @@ describe('ProxySpec', () => {
 
     it('should assert that it is in or out of ProxyZone', () => {
       let rootZone = Zone.current;
-      while(rootZone.parent) {
+      while (rootZone.parent) {
         rootZone = rootZone.parent;
       }
       rootZone.run(() => {
@@ -76,8 +76,7 @@ describe('ProxySpec', () => {
         name: '.',
         onFork: (parentZoneDelegate, currentZone, targetZone, zoneSpec) => {
           expect(currentZone).toBe(proxyZone);
-          expect(targetZone).toBe(proxyZone),
-          expect(zoneSpec.name).toBe('fork2');
+          expect(targetZone).toBe(proxyZone), expect(zoneSpec.name).toBe('fork2');
           called = true;
         }
       });
@@ -91,8 +90,8 @@ describe('ProxySpec', () => {
       proxyZoneSpec.setDelegate({
         name: '.',
         onIntercept: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                delegate: Function, source: string): Function => {
-                  return () => '(works)';
+                      delegate: Function, source: string): Function => {
+          return () => '(works)';
         }
       });
       expect(proxyZone.wrap(fn, 'test')('works')).toEqual('(works)');
@@ -104,23 +103,26 @@ describe('ProxySpec', () => {
       proxyZoneSpec.setDelegate({
         name: '.',
         onInvoke: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-          delegate: Function, applyThis: any, applyArgs: any[], source: string) => {
-            return `(${parentZoneDelegate.invoke(targetZone, delegate, applyThis, applyArgs, source)})`;
+                   delegate: Function, applyThis: any, applyArgs: any[], source: string) => {
+          return `(${parentZoneDelegate.invoke(
+              targetZone, delegate, applyThis, applyArgs, source)})`;
         }
       });
       expect(proxyZone.run(fn)).toEqual('(works)');
     });
 
     it('should handleError', () => {
-      const error = new Error("TestError");
-      const fn = () => { throw error; };
+      const error = new Error('TestError');
+      const fn = () => {
+        throw error;
+      };
       expect(() => proxyZone.run(fn)).toThrow(error);
       proxyZoneSpec.setDelegate({
         name: '.',
         onHandleError: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                  error: any): boolean => {
-            expect(error).toEqual(error);
-            return false;
+                        error: any): boolean => {
+          expect(error).toEqual(error);
+          return false;
         }
       });
       expect(() => proxyZone.runGuarded(fn)).not.toThrow();
