@@ -5,7 +5,7 @@ var logArgs = [];
 var wtfMock = {
   log: log,
   logArgs: logArgs,
-  reset: function () {
+  reset: function() {
     log.length = 0;
     logArgs.length = 0;
   },
@@ -30,7 +30,7 @@ var wtfMock = {
         var name = parts[0];
         return function scopeFn() {
           var args = [];
-          for(var i = arguments.length - 1; i >= 0; i--) {
+          for (var i = arguments.length - 1; i >= 0; i--) {
             var arg = arguments[i];
             if (arg !== undefined) {
               args.unshift(__stringify(arg));
@@ -38,7 +38,7 @@ var wtfMock = {
           }
           log.push('> ' + name + '(' + args.join(', ') + ')');
           logArgs.push(args);
-          return function (retValue) {
+          return function(retValue) {
             log.push('< ' + name + (retValue == undefined ? '' : ' => ' + retValue));
             logArgs.push(retValue);
             return retValue;
@@ -50,7 +50,7 @@ var wtfMock = {
         var name = parts[0];
         return function eventFn() {
           var args = [];
-          for(var i = arguments.length - 1; i >= 0; i--) {
+          for (var i = arguments.length - 1; i >= 0; i--) {
             var arg = arguments[i];
             if (arg !== undefined) {
               args.unshift(__stringify(arg));
@@ -65,10 +65,10 @@ var wtfMock = {
 };
 
 function __stringify(obj) {
-  var str = typeof obj == 'string'  || !obj ? JSON.stringify(obj) : obj.toString();
-  if (str == "[object Arguments]") {
-    str =  JSON.stringify(Array.prototype.slice.call(obj));
-  } else if (str == "[object Object]") {
+  var str = typeof obj == 'string' || !obj ? JSON.stringify(obj) : obj.toString();
+  if (str == '[object Arguments]') {
+    str = JSON.stringify(Array.prototype.slice.call(obj));
+  } else if (str == '[object Object]') {
     str = JSON.stringify(obj);
   }
   return str;

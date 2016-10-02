@@ -1,8 +1,8 @@
 import '../zone';
-import {patchTimer} from '../common/timers';
-
 import './events';
 import './fs';
+
+import {patchTimer} from '../common/timers';
 
 const set = 'set';
 const clear = 'clear';
@@ -27,7 +27,8 @@ if (shouldPatchGlobalTimers) {
 let crypto;
 try {
   crypto = require('crypto');
-} catch (err) {}
+} catch (err) {
+}
 
 // TODO(gdi2290): implement a better way to patch these methods
 if (crypto) {
@@ -60,7 +61,8 @@ if (crypto) {
 let httpClient;
 try {
   httpClient = require('_http_client');
-} catch (err) {}
+} catch (err) {
+}
 
 if (httpClient && httpClient.ClientRequest) {
   let ClientRequest = httpClient.ClientRequest.bind(httpClient);

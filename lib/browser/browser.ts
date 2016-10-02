@@ -1,10 +1,12 @@
 import '../zone';
-import {eventTargetPatch} from './event-target';
-import {propertyPatch} from './define-property';
-import {registerElementPatch} from './register-element';
-import {propertyDescriptorPatch} from './property-descriptor';
+
 import {patchTimer} from '../common/timers';
-import {patchMethod, patchPrototype, patchClass, zoneSymbol} from "../common/utils";
+import {patchClass, patchMethod, patchPrototype, zoneSymbol} from '../common/utils';
+
+import {propertyPatch} from './define-property';
+import {eventTargetPatch} from './event-target';
+import {propertyDescriptorPatch} from './property-descriptor';
+import {registerElementPatch} from './register-element';
 
 const set = 'set';
 const clear = 'clear';
@@ -21,7 +23,7 @@ patchTimer(_global, 'webkitRequest', 'webkitCancel', 'AnimationFrame');
 for (var i = 0; i < blockingMethods.length; i++) {
   var name = blockingMethods[i];
   patchMethod(_global, name, (delegate, symbol, name) => {
-    return function (s:any, args: any[]) {
+    return function(s: any, args: any[]) {
       return Zone.current.run(delegate, _global, args, name);
     };
   });
@@ -70,8 +72,7 @@ function patchXHR(window: any) {
     return task;
   }
 
-  function placeholderCallback() {
-  }
+  function placeholderCallback() {}
 
   function clearTask(task: Task) {
     var data = <XHROptions>task.data;
@@ -81,45 +82,43 @@ function patchXHR(window: any) {
     return abortNative.apply(data.target, data.args);
   }
 
-  var openNative = patchMethod(window.XMLHttpRequest.prototype, 'open', () => function(self: any, args: any[]) {
-    self[XHR_SYNC] = args[2] == false;
-    return openNative.apply(self, args);
-  });
+  var openNative =
+      patchMethod(window.XMLHttpRequest.prototype, 'open', () => function(self: any, args: any[]) {
+        self[XHR_SYNC] = args[2] == false;
+        return openNative.apply(self, args);
+      });
 
-  var sendNative = patchMethod(window.XMLHttpRequest.prototype, 'send', () => function(self: any, args: any[]) {
-    var zone = Zone.current;
-    if (self[XHR_SYNC]) {
-      // if the XHR is sync there is no task to schedule, just execute the code.
-      return sendNative.apply(self, args);
-    } else {
-      var options: XHROptions = {
-        target: self,
-        isPeriodic: false,
-        delay: null,
-        args: args,
-        aborted: false
-      };
-      return zone.scheduleMacroTask('XMLHttpRequest.send', placeholderCallback, options, scheduleTask, clearTask);
-    }
-  });
+  var sendNative =
+      patchMethod(window.XMLHttpRequest.prototype, 'send', () => function(self: any, args: any[]) {
+        var zone = Zone.current;
+        if (self[XHR_SYNC]) {
+          // if the XHR is sync there is no task to schedule, just execute the code.
+          return sendNative.apply(self, args);
+        } else {
+          var options: XHROptions =
+              {target: self, isPeriodic: false, delay: null, args: args, aborted: false};
+          return zone.scheduleMacroTask(
+              'XMLHttpRequest.send', placeholderCallback, options, scheduleTask, clearTask);
+        }
+      });
 
-  var abortNative = patchMethod(window.XMLHttpRequest.prototype, 'abort', (delegate: Function) => function(self: any, args: any[]) {
-    var task: Task = findPendingTask(self);
-    if (task && typeof task.type == 'string') {
-      // If the XHR has already completed, do nothing.
-      if (task.cancelFn == null) {
-        return;
-      }
-      task.zone.cancelTask(task);
-    }
-    // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no task to cancel. Do nothing.
-  });
+  var abortNative = patchMethod(
+      window.XMLHttpRequest.prototype, 'abort',
+      (delegate: Function) => function(self: any, args: any[]) {
+        var task: Task = findPendingTask(self);
+        if (task && typeof task.type == 'string') {
+          // If the XHR has already completed, do nothing.
+          if (task.cancelFn == null) {
+            return;
+          }
+          task.zone.cancelTask(task);
+        }
+        // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no task
+        // to cancel. Do nothing.
+      });
 }
 
 /// GEO_LOCATION
 if (_global['navigator'] && _global['navigator'].geolocation) {
-  patchPrototype(_global['navigator'].geolocation, [
-    'getCurrentPosition',
-    'watchPosition'
-  ]);
+  patchPrototype(_global['navigator'].geolocation, ['getCurrentPosition', 'watchPosition']);
 }

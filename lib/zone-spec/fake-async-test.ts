@@ -18,18 +18,13 @@
 
     constructor() {}
 
-    scheduleFunction(cb: Function, delay: number, args: any[] = [], id: number = -1) : number {
+    scheduleFunction(cb: Function, delay: number, args: any[] = [], id: number = -1): number {
       let currentId: number = id < 0 ? this.nextId++ : id;
       let endTime = this._currentTime + delay;
 
       // Insert so that scheduler queue remains sorted by end time.
-      let newEntry: ScheduledFunction = {
-        endTime: endTime,
-        id: currentId,
-        func: cb,
-        args: args,
-        delay: delay
-      };
+      let newEntry:
+          ScheduledFunction = {endTime: endTime, id: currentId, func: cb, args: args, delay: delay};
       let i = 0;
       for (; i < this._schedulerQueue.length; i++) {
         let currentEntry = this._schedulerQueue[i];
@@ -82,7 +77,8 @@
     private _scheduler: Scheduler = new Scheduler();
     private _microtasks: Function[] = [];
     private _lastError: Error = null;
-    private _uncaughtPromiseErrors: {rejection: any}[] = Promise[Zone['__symbol__']('uncaughtPromiseErrors')];
+    private _uncaughtPromiseErrors: {rejection: any}[] =
+        Promise[Zone['__symbol__']('uncaughtPromiseErrors')];
 
     pendingPeriodicTimers: number[] = [];
     pendingTimers: number[] = [];
@@ -91,18 +87,18 @@
       this.name = 'fakeAsyncTestZone for ' + namePrefix;
     }
 
-    private _fnAndFlush(fn: Function,
-                        completers: {onSuccess?: Function, onError?: Function}): Function {
+    private _fnAndFlush(fn: Function, completers: {onSuccess?: Function, onError?: Function}):
+        Function {
       return (...args): boolean => {
         fn.apply(global, args);
 
-        if (this._lastError === null) { // Success
+        if (this._lastError === null) {  // Success
           if (completers.onSuccess != null) {
             completers.onSuccess.apply(global);
           }
           // Flush microtasks only on success.
           this.flushMicrotasks();
-        } else { // Failure
+        } else {  // Failure
           if (completers.onError != null) {
             completers.onError.apply(global);
           }
@@ -112,11 +108,11 @@
       };
     }
 
-    private static _removeTimer(timers: number[], id:number): void {
+    private static _removeTimer(timers: number[], id: number): void {
       let index = timers.indexOf(id);
-        if (index > -1) {
-          timers.splice(index, 1);
-        }
+      if (index > -1) {
+        timers.splice(index, 1);
+      }
     }
 
     private _dequeueTimer(id: number): Function {
@@ -125,8 +121,8 @@
       };
     }
 
-    private _requeuePeriodicTimer(
-        fn: Function, interval: number, args: any[], id: number): Function {
+    private _requeuePeriodicTimer(fn: Function, interval: number, args: any[], id: number):
+        Function {
       return () => {
         // Requeue the timer callback if it's not been canceled.
         if (this.pendingPeriodicTimers.indexOf(id) !== -1) {
@@ -209,7 +205,7 @@
 
     name: string;
 
-    properties: { [key: string]: any } = { 'FakeAsyncTestZoneSpec': this };
+    properties: {[key: string]: any} = {'FakeAsyncTestZoneSpec': this};
 
     onScheduleTask(delegate: ZoneDelegate, current: Zone, target: Zone, task: Task): Task {
       switch (task.type) {
@@ -220,11 +216,11 @@
           switch (task.source) {
             case 'setTimeout':
               task.data['handleId'] =
-                this._setTimeout(task.invoke, task.data['delay'], task.data['args']);
+                  this._setTimeout(task.invoke, task.data['delay'], task.data['args']);
               break;
             case 'setInterval':
               task.data['handleId'] =
-                this._setInterval(task.invoke, task.data['delay'], task.data['args']);
+                  this._setInterval(task.invoke, task.data['delay'], task.data['args']);
               break;
             case 'XMLHttpRequest.send':
               throw new Error('Cannot make XHRs from within a fake async test.');
@@ -250,10 +246,11 @@
       }
     }
 
-    onHandleError(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+    onHandleError(
+        parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
         error: any): boolean {
       this._lastError = error;
-      return false; // Don't propagate error to parent zone.
+      return false;  // Don't propagate error to parent zone.
     }
   }
 

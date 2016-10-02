@@ -1,21 +1,25 @@
 'use strict';
 (() => {
-  var __extends = function (d, b) {
-    for (var p in b) if (b.hasOwnProperty(p)) d[p] = b[p];
-    function __() { this.constructor = d; }
+  var __extends = function(d, b) {
+    for (var p in b)
+      if (b.hasOwnProperty(p)) d[p] = b[p];
+    function __() {
+      this.constructor = d;
+    }
     d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
   };
   // Patch jasmine's describe/it/beforeEach/afterEach functions so test code always runs
   // in a testZone (ProxyZone). (See: angular/zone.js#91 & angular/angular#10503)
-  if (!Zone) throw new Error("Missing: zone.js");
-  if (typeof jasmine == 'undefined') throw new Error("Missing: jasmine.js");
-  if (jasmine['__zone_patch__']) throw new Error("'jasmine' has already been patched with 'Zone'.");
+  if (!Zone) throw new Error('Missing: zone.js');
+  if (typeof jasmine == 'undefined') throw new Error('Missing: jasmine.js');
+  if (jasmine['__zone_patch__'])
+    throw new Error('\'jasmine\' has already been patched with \'Zone\'.');
   jasmine['__zone_patch__'] = true;
 
   const SyncTestZoneSpec: {new (name: string): ZoneSpec} = Zone['SyncTestZoneSpec'];
   const ProxyZoneSpec: {new (): ZoneSpec} = Zone['ProxyZoneSpec'];
-  if (!SyncTestZoneSpec) throw new Error("Missing: SyncTestZoneSpec");
-  if (!ProxyZoneSpec) throw new Error("Missing: ProxyZoneSpec");
+  if (!SyncTestZoneSpec) throw new Error('Missing: SyncTestZoneSpec');
+  if (!ProxyZoneSpec) throw new Error('Missing: ProxyZoneSpec');
 
   const ambientZone = Zone.current;
   // Create a synchronous-only zone in which to run `describe` blocks in order to raise an
@@ -39,12 +43,13 @@
   ['describe', 'xdescribe', 'fdescribe'].forEach((methodName) => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
     jasmineEnv[methodName] = function(description: string, specDefinitions: Function) {
-      return originalJasmineFn.call(this, description,  wrapDescribeInZone(specDefinitions));
+      return originalJasmineFn.call(this, description, wrapDescribeInZone(specDefinitions));
     };
   });
   ['it', 'xit', 'fit'].forEach((methodName) => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
-    jasmineEnv[methodName] = function(description: string, specDefinitions: Function, timeout: number) {
+    jasmineEnv[methodName] = function(
+        description: string, specDefinitions: Function, timeout: number) {
       arguments[1] = wrapTestInZone(specDefinitions);
       return originalJasmineFn.apply(this, arguments);
     };
@@ -76,9 +81,11 @@
     // The `done` callback is only passed through if the function expects at least one argument.
     // Note we have to make a function with correct number of arguments, otherwise jasmine will
     // think that all functions are sync or async.
-    return (testBody.length == 0)
-          ? function() { return testProxyZone.run(testBody, this); }
-          : function(done) { return testProxyZone.run(testBody, this, [done]); };
+    return (testBody.length == 0) ? function() {
+      return testProxyZone.run(testBody, this);
+    } : function(done) {
+      return testProxyZone.run(testBody, this, [done]);
+    };
   }
   interface QueueRunner {
     execute(): void;
@@ -91,11 +98,11 @@
     catchException: () => boolean;
     userContext: any;
     timeout: {setTimeout: Function, clearTimeout: Function};
-    fail: ()=> void;
+    fail: () => void;
   }
 
-  const QueueRunner = (jasmine as any).QueueRunner as { new(attrs: QueueRunnerAttrs): QueueRunner };
-  (jasmine as any).QueueRunner = (function (_super) {
+  const QueueRunner = (jasmine as any).QueueRunner as {new (attrs: QueueRunnerAttrs): QueueRunner};
+  (jasmine as any).QueueRunner = (function(_super) {
     __extends(ZoneQueueRunner, _super);
     function ZoneQueueRunner(attrs) {
       attrs.onComplete = ((fn) => () => {
@@ -105,8 +112,8 @@
       })(attrs.onComplete);
       _super.call(this, attrs);
     }
-    ZoneQueueRunner.prototype.execute = function () {
-      if(Zone.current !== ambientZone) throw new Error("Unexpected Zone: " + Zone.current.name);
+    ZoneQueueRunner.prototype.execute = function() {
+      if (Zone.current !== ambientZone) throw new Error('Unexpected Zone: ' + Zone.current.name);
       testProxyZone = ambientZone.fork(new ProxyZoneSpec());
       if (!Zone.currentTask) {
         // if we are not running in a task then if someone would register a
@@ -114,8 +121,8 @@
         // addEventListener callback would think that it is the top most task and would
         // drain the microtask queue on element.click() which would be incorrect.
         // For this reason we always force a task when running jasmine tests.
-        Zone.current.scheduleMicroTask('jasmine.execute().forceTask',
-            () => QueueRunner.prototype.execute.call(this));
+        Zone.current.scheduleMicroTask(
+            'jasmine.execute().forceTask', () => QueueRunner.prototype.execute.call(this));
       } else {
         _super.prototype.execute.call(this);
       }

@@ -9,8 +9,10 @@ const EE_LISTENERS = 'listeners';
 const EE_ON = 'on';
 
 
-const zoneAwareAddListener = makeZoneAwareAddListener(EE_ADD_LISTENER, EE_REMOVE_LISTENER, false, true);
-const zoneAwarePrependListener = makeZoneAwareAddListener(EE_PREPEND_LISTENER, EE_REMOVE_LISTENER, false, true);
+const zoneAwareAddListener =
+    makeZoneAwareAddListener(EE_ADD_LISTENER, EE_REMOVE_LISTENER, false, true);
+const zoneAwarePrependListener =
+    makeZoneAwareAddListener(EE_PREPEND_LISTENER, EE_REMOVE_LISTENER, false, true);
 const zoneAwareRemoveListener = makeZoneAwareRemoveListener(EE_REMOVE_LISTENER, false);
 const zoneAwareListeners = makeZoneAwareListeners(EE_LISTENERS);
 
@@ -31,7 +33,8 @@ export function patchEventEmitterMethods(obj: any): boolean {
 let events;
 try {
   events = require('events');
-} catch (err) {}
+} catch (err) {
+}
 
 if (events && events.EventEmitter) {
   patchEventEmitterMethods(events.EventEmitter.prototype);

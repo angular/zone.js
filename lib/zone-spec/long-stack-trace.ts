@@ -6,10 +6,9 @@ const creationTrace = '__creationTrace__';
 class LongStackTrace {
   error: Error = getStacktrace();
   timestamp: Date = new Date();
-
 }
 
-function getStacktraceWithUncaughtError (): Error {
+function getStacktraceWithUncaughtError(): Error {
   return new Error('STACKTRACE TRACKING');
 }
 
@@ -25,20 +24,20 @@ function getStacktraceWithCaughtError(): Error {
 // isn't thrown, however it's faster not to actually throw the exception.
 const error = getStacktraceWithUncaughtError();
 const coughtError = getStacktraceWithCaughtError();
-const getStacktrace = error.stack
-    ? getStacktraceWithUncaughtError
-    : (coughtError.stack ? getStacktraceWithCaughtError: getStacktraceWithUncaughtError);
+const getStacktrace = error.stack ?
+    getStacktraceWithUncaughtError :
+    (coughtError.stack ? getStacktraceWithCaughtError : getStacktraceWithUncaughtError);
 
 function getFrames(error: Error): string[] {
   return error.stack ? error.stack.split(NEWLINE) : [];
 }
 
-function addErrorStack(lines:string[], error:Error):void {
+function addErrorStack(lines: string[], error: Error): void {
   let trace: string[] = getFrames(error);
   for (let i = 0; i < trace.length; i++) {
     const frame = trace[i];
     // Filter out the Frames which are part of stack capturing.
-    if (! (i < IGNORE_FRAMES.length && IGNORE_FRAMES[i] === frame)) {
+    if (!(i < IGNORE_FRAMES.length && IGNORE_FRAMES[i] === frame)) {
       lines.push(trace[i]);
     }
   }
@@ -52,7 +51,8 @@ function renderLongStackTrace(frames: LongStackTrace[], stack: string): string {
     for (let i = 0; i < frames.length; i++) {
       const traceFrames: LongStackTrace = frames[i];
       const lastTime = traceFrames.timestamp;
-      longTrace.push(`${SEP} Elapsed: ${timestamp - lastTime.getTime()} ms; At: ${lastTime} ${SEP}`);
+      longTrace.push(
+          `${SEP} Elapsed: ${timestamp - lastTime.getTime()} ms; At: ${lastTime} ${SEP}`);
       addErrorStack(longTrace, traceFrames.error);
 
       timestamp = lastTime.getTime();
@@ -64,11 +64,10 @@ function renderLongStackTrace(frames: LongStackTrace[], stack: string): string {
 
 Zone['longStackTraceZoneSpec'] = <ZoneSpec>{
   name: 'long-stack-trace',
-  longStackTraceLimit: 10, // Max number of task to keep the stack trace for.
+  longStackTraceLimit: 10,  // Max number of task to keep the stack trace for.
 
-  onScheduleTask: function(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                        task: Task): any
-  {
+  onScheduleTask: function(
+      parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task): any {
     const currentTask = Zone.currentTask;
     let trace = currentTask && currentTask.data && currentTask.data[creationTrace] || [];
     trace = [new LongStackTrace()].concat(trace);
@@ -80,9 +79,8 @@ Zone['longStackTraceZoneSpec'] = <ZoneSpec>{
     return parentZoneDelegate.scheduleTask(targetZone, task);
   },
 
-  onHandleError: function(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-               error: any): any
-  {
+  onHandleError: function(
+      parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, error: any): any {
     const parentTask = Zone.currentTask || error.task;
     if (error instanceof Error && parentTask) {
       var stackSetSucceded: string|boolean = null;
@@ -92,26 +90,31 @@ Zone['longStackTraceZoneSpec'] = <ZoneSpec>{
           const delegateGet = descriptor.get;
           const value = descriptor.value;
           descriptor = {
-            get: function () {
-              return renderLongStackTrace(parentTask.data && parentTask.data[creationTrace],
+            get: function() {
+              return renderLongStackTrace(
+                  parentTask.data && parentTask.data[creationTrace],
                   delegateGet ? delegateGet.apply(this) : value);
             }
           };
           Object.defineProperty(error, 'stack', descriptor);
           stackSetSucceded = true;
         }
-      } catch (e) { }
-      var longStack: string = stackSetSucceded ? null : renderLongStackTrace(
-              parentTask.data && parentTask.data[creationTrace], error.stack);
+      } catch (e) {
+      }
+      var longStack: string = stackSetSucceded ?
+          null :
+          renderLongStackTrace(parentTask.data && parentTask.data[creationTrace], error.stack);
       if (!stackSetSucceded) {
         try {
           stackSetSucceded = error.stack = longStack;
-        } catch (e) { }
+        } catch (e) {
+        }
       }
       if (!stackSetSucceded) {
         try {
           stackSetSucceded = (error as any).longStack = longStack;
-        } catch (e) { }
+        } catch (e) {
+        }
       }
     }
     return parentZoneDelegate.handleError(targetZone, error);

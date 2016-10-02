@@ -1,5 +1,6 @@
-import {_redefineProperty} from './define-property';
 import {isBrowser} from '../common/utils';
+
+import {_redefineProperty} from './define-property';
 
 export function registerElementPatch(_global: any) {
   if (!isBrowser || !('registerElement' in (<any>_global).document)) {
@@ -7,16 +8,12 @@ export function registerElementPatch(_global: any) {
   }
 
   const _registerElement = (<any>document).registerElement;
-  const callbacks = [
-    'createdCallback',
-    'attachedCallback',
-    'detachedCallback',
-    'attributeChangedCallback'
-  ];
+  const callbacks =
+      ['createdCallback', 'attachedCallback', 'detachedCallback', 'attributeChangedCallback'];
 
-  (<any>document).registerElement = function (name, opts) {
+  (<any>document).registerElement = function(name, opts) {
     if (opts && opts.prototype) {
-      callbacks.forEach(function (callback) {
+      callbacks.forEach(function(callback) {
         const source = 'Document.registerElement::' + callback;
         if (opts.prototype.hasOwnProperty(callback)) {
           const descriptor = Object.getOwnPropertyDescriptor(opts.prototype, callback);
