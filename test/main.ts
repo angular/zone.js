@@ -2,7 +2,7 @@ declare var __karma__ : {
   loaded: Function,
   start: Function
   error: Function
-}
+};
 
 __karma__.loaded = function() {};
 (window as any).global = window;
@@ -16,4 +16,4 @@ System.import('/base/build/test/browser_entry_point').then(
     },
     (error) => {
       console.error(error.stack || error);
-    })
+    });

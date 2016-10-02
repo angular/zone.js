@@ -80,7 +80,7 @@ describe('setTimeout', function () {
     testZone.run(() => {
       var cancelId = setTimeout(function() {
         clearTimeout(cancelId);
-        done();       
+        done();
       }, 0);
     });
   });
@@ -91,7 +91,7 @@ describe('setTimeout', function () {
     var cancelId = setTimeout(() => {
     }, 0);
     expect(typeof (cancelId.toString())).toBe('number');
-  })
+  });
 
   it('should pass invalid values through', function () {
     clearTimeout(null);

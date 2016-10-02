@@ -209,7 +209,7 @@ export function makeZoneAwareAddListener(addFnName: string, removeFnName: string
         return target[addFnSymbol](eventName, eventTask.invoke, useCapturing);
       }
     }
-  
+
     const zone: Zone = Zone.current;
     const source = target.constructor['name'] + '.' + addFnName + ':' + eventName;
     const data: ListenerTaskMeta = {
@@ -253,7 +253,7 @@ export function makeZoneAwareListeners(fnName: string) {
     return target[EVENT_TASKS]
       .filter(task => task.data.eventName === eventName)
       .map(task => task.data.handler);
-  }
+  };
 }
 
 const zoneAwareAddEventListener = makeZoneAwareAddListener(ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER);

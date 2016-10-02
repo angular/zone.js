@@ -574,7 +574,7 @@ const Zone: ZoneType = (function(global: any) {
       const zone: Zone = this;
       return function() {
         return zone.runGuarded(_callback, this, <any>arguments, source);
-      }
+      };
     }
 
     public run(callback: Function, applyThis: any = null, applyArgs: any[] = null,
@@ -755,7 +755,7 @@ const Zone: ZoneType = (function(global: any) {
         if (this._scheduleTaskZS) {
           return this._scheduleTaskZS.onScheduleTask(this._scheduleTaskDlgt, this.zone, targetZone, task);
         } else if (task.scheduleFn) {
-          task.scheduleFn(task)
+          task.scheduleFn(task);
         } else if (task.type == 'microTask') {
           scheduleMicroTask(<MicroTask>task);
         } else {
@@ -788,7 +788,7 @@ const Zone: ZoneType = (function(global: any) {
       } else  if (!task.cancelFn) {
         throw new Error('Task does not support cancellation, or is already canceled.');
       } else {
-        value = task.cancelFn(task)
+        value = task.cancelFn(task);
       }
       if (targetZone == this.zone) {
         // this should not be in the finally block, because exceptions assume not canceled.
@@ -973,7 +973,7 @@ const Zone: ZoneType = (function(global: any) {
     return (v) => {
       resolvePromise(promise, state, v);
       // Do not return value or you will break the Promise spec.
-    }
+    };
   }
 
   function resolvePromise(promise: ZoneAwarePromise<any>, state: boolean, value: any): ZoneAwarePromise<any> {
@@ -1053,9 +1053,9 @@ const Zone: ZoneType = (function(global: any) {
     static race<R>(values: PromiseLike<any>[]): Promise<R> {
       let resolve: (v: any) => void;
       let reject: (v: any) => void;
-      let promise: any = new this((res, rej) => {resolve = res; reject = rej});
-      function onResolve(value) { promise && (promise = null || resolve(value)) }
-      function onReject(error) { promise && (promise = null || reject(error)) }
+      let promise: any = new this((res, rej) => {[resolve, reject] = [res, rej];});
+      function onResolve(value) { promise && (promise = null || resolve(value)); }
+      function onReject(error) { promise && (promise = null || reject(error)); }
 
       for(let value of values) {
         if (!isThenable(value)) {

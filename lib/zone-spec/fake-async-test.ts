@@ -1,27 +1,27 @@
 (function(global: any) {
   interface ScheduledFunction {
     endTime: number;
-    id: number,
+    id: number;
     func: Function;
     args: any[];
     delay: number;
   }
-  
+
   class Scheduler {
     // Next scheduler id.
     public nextId: number = 0;
-    
+
     // Scheduler queue with the tuple of end time and callback function - sorted by end time.
     private _schedulerQueue: ScheduledFunction[] = [];
     // Current simulated time in millis.
     private _currentTime: number = 0;
-    
+
     constructor() {}
-    
+
     scheduleFunction(cb: Function, delay: number, args: any[] = [], id: number = -1) : number {
       let currentId: number = id < 0 ? this.nextId++ : id;
       let endTime = this._currentTime + delay;
-            
+
       // Insert so that scheduler queue remains sorted by end time.
       let newEntry: ScheduledFunction = {
         endTime: endTime,
@@ -29,7 +29,7 @@
         func: cb,
         args: args,
         delay: delay
-      }
+      };
       let i = 0;
       for (; i < this._schedulerQueue.length; i++) {
         let currentEntry = this._schedulerQueue[i];
@@ -40,7 +40,7 @@
       this._schedulerQueue.splice(i, 0, newEntry);
       return currentId;
     }
-    
+
     removeScheduledFunctionWithId(id: number): void {
       for (let i = 0; i < this._schedulerQueue.length; i++) {
         if (this._schedulerQueue[i].id == id) {
@@ -49,11 +49,11 @@
         }
       }
     }
-    
+
     tick(millis: number = 0): void {
       let finalTime = this._currentTime + millis;
       while (this._schedulerQueue.length > 0) {
-        let current = this._schedulerQueue[0];        
+        let current = this._schedulerQueue[0];
         if (finalTime < current.endTime) {
           // Done processing the queue since it's sorted by endTime.
           break;
@@ -71,19 +71,19 @@
       this._currentTime = finalTime;
     }
   }
-  
+
   class FakeAsyncTestZoneSpec implements ZoneSpec {
     static assertInZone(): void {
       if (Zone.current.get('FakeAsyncTestZoneSpec') == null) {
         throw new Error('The code should be running in the fakeAsync zone to call this function');
       }
     }
-    
+
     private _scheduler: Scheduler = new Scheduler();
     private _microtasks: Function[] = [];
     private _lastError: Error = null;
     private _uncaughtPromiseErrors: {rejection: any}[] = Promise[Zone['__symbol__']('uncaughtPromiseErrors')];
-        
+
     pendingPeriodicTimers: number[] = [];
     pendingTimers: number[] = [];
 
@@ -95,7 +95,7 @@
                         completers: {onSuccess?: Function, onError?: Function}): Function {
       return (...args): boolean => {
         fn.apply(global, args);
-        
+
         if (this._lastError === null) { // Success
           if (completers.onSuccess != null) {
             completers.onSuccess.apply(global);
@@ -103,28 +103,28 @@
           // Flush microtasks only on success.
           this.flushMicrotasks();
         } else { // Failure
-          if (completers.onError != null) { 
+          if (completers.onError != null) {
             completers.onError.apply(global);
           }
         }
-        // Return true if there were no errors, false otherwise. 
+        // Return true if there were no errors, false otherwise.
         return this._lastError === null;
-      }
+      };
     }
-    
+
     private static _removeTimer(timers: number[], id:number): void {
       let index = timers.indexOf(id);
         if (index > -1) {
           timers.splice(index, 1);
         }
     }
-    
+
     private _dequeueTimer(id: number): Function {
       return () => {
         FakeAsyncTestZoneSpec._removeTimer(this.pendingTimers, id);
       };
     }
-    
+
     private _requeuePeriodicTimer(
         fn: Function, interval: number, args: any[], id: number): Function {
       return () => {
@@ -132,15 +132,15 @@
         if (this.pendingPeriodicTimers.indexOf(id) !== -1) {
           this._scheduler.scheduleFunction(fn, interval, args, id);
         }
-      }
+      };
     }
-    
+
     private _dequeuePeriodicTimer(id: number): Function {
       return () => {
         FakeAsyncTestZoneSpec._removeTimer(this.pendingPeriodicTimers, id);
       };
     }
-    
+
     private _setTimeout(fn: Function, delay: number, args: any[]): number {
       let removeTimerFn = this._dequeueTimer(this._scheduler.nextId);
       // Queue the callback and dequeue the timer on success and error.
@@ -149,20 +149,20 @@
       this.pendingTimers.push(id);
       return id;
     }
-    
+
     private _clearTimeout(id: number): void {
       FakeAsyncTestZoneSpec._removeTimer(this.pendingTimers, id);
       this._scheduler.removeScheduledFunctionWithId(id);
     }
-    
+
     private _setInterval(fn: Function, interval: number, ...args): number {
       let id = this._scheduler.nextId;
       let completers = {onSuccess: null, onError: this._dequeuePeriodicTimer(id)};
       let cb = this._fnAndFlush(fn, completers);
-      
-      // Use the callback created above to requeue on success. 
+
+      // Use the callback created above to requeue on success.
       completers.onSuccess = this._requeuePeriodicTimer(cb, interval, args, id);
-      
+
       // Queue the callback and dequeue the periodic timer only on error.
       this._scheduler.scheduleFunction(cb, interval, args);
       this.pendingPeriodicTimers.push(id);
@@ -180,7 +180,7 @@
       this._lastError = null;
       throw error;
     }
-    
+
     tick(millis: number = 0): void {
       FakeAsyncTestZoneSpec.assertInZone();
       this.flushMicrotasks();
@@ -197,7 +197,7 @@
           // If there is an error stop processing the microtask queue and rethrow the error.
           this._resetLastErrorAndThrow();
         }
-      }
+      };
       while (this._microtasks.length > 0) {
         let microtask = this._microtasks.shift();
         microtask();
@@ -249,10 +249,10 @@
           return delegate.cancelTask(target, task);
       }
     }
-    
+
     onHandleError(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
         error: any): boolean {
-      this._lastError = error; 
+      this._lastError = error;
       return false; // Don't propagate error to parent zone.
     }
   }
