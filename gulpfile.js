@@ -191,3 +191,25 @@ gulp.task('lint', () => {
     }))
     .pipe(tslint.report({emitError: true}));
 });
+
+// clang-format entry points
+const srcsToFmt = [
+  'lib/**/*.ts',
+  'test/**/*.ts',
+];
+
+// Check source code for formatting errors (clang-format)
+gulp.task('format:enforce', () => {
+  const format = require('gulp-clang-format');
+  const clangFormat = require('clang-format');
+  return gulp.src(srcsToFmt).pipe(
+    format.checkFormat('file', clangFormat, {verbose: true, fail: true}));
+});
+
+// Format the source code with clang-format (see .clang-format)
+gulp.task('format', () => {
+  const format = require('gulp-clang-format');
+  const clangFormat = require('clang-format');
+  return gulp.src(srcsToFmt, { base: '.' }).pipe(
+    format.format('file', clangFormat)).pipe(gulp.dest('.'));
+});
