@@ -37,6 +37,12 @@ describe('nodejs EventEmitter', () => {
     zoneB.run(() => emitter.emit('test', 'test value'));
     expect(expectZoneACount).toBe(2);
   });
+  it('allows chaining methods', () => {
+    zoneA.run(() => {
+      expect(emitter.on('test', expectZoneA)).toBe(emitter);
+      expect(emitter.addListener('test', expectZoneA)).toBe(emitter);
+    });
+  });
   it('should remove listeners properly', () => {
     zoneA.run(() => {
       emitter.on('test', shouldNotRun);

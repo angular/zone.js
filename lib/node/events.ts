@@ -8,6 +8,12 @@
 
 import {makeZoneAwareAddListener, makeZoneAwareListeners, makeZoneAwareRemoveListener, patchMethod} from '../common/utils';
 
+const callAndReturnFirstParam = (fn: (self: any, args: any[]) => any) => {
+  return (self: any, args: any[]) => {
+    fn(self, args);
+    return self;
+  };
+};
 
 // For EventEmitter
 const EE_ADD_LISTENER = 'addListener';
@@ -16,12 +22,9 @@ const EE_REMOVE_LISTENER = 'removeListener';
 const EE_LISTENERS = 'listeners';
 const EE_ON = 'on';
 
-
-const zoneAwareAddListener =
-    makeZoneAwareAddListener(EE_ADD_LISTENER, EE_REMOVE_LISTENER, false, true);
-const zoneAwarePrependListener =
-    makeZoneAwareAddListener(EE_PREPEND_LISTENER, EE_REMOVE_LISTENER, false, true);
-const zoneAwareRemoveListener = makeZoneAwareRemoveListener(EE_REMOVE_LISTENER, false);
+const zoneAwareAddListener = callAndReturnFirstParam(makeZoneAwareAddListener(EE_ADD_LISTENER, EE_REMOVE_LISTENER, false, true));
+const zoneAwarePrependListener = callAndReturnFirstParam(makeZoneAwareAddListener(EE_PREPEND_LISTENER, EE_REMOVE_LISTENER, false, true));
+const zoneAwareRemoveListener = callAndReturnFirstParam(makeZoneAwareRemoveListener(EE_REMOVE_LISTENER, false));
 const zoneAwareListeners = makeZoneAwareListeners(EE_LISTENERS);
 
 export function patchEventEmitterMethods(obj: any): boolean {
