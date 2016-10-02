@@ -39,6 +39,7 @@
     "concurrently": "^2.2.0",
     "es6-promise": "^3.0.2",
     "gulp": "^3.8.11",
+    "gulp-clang-format": "^1.0.23",
     "gulp-rename": "^1.2.2",
     "gulp-rollup": "^2.3.0",
     "gulp-tsc": "^1.1.4",
