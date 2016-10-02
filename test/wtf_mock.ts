@@ -19,7 +19,7 @@ var wtfMock = {
       return function() {
         logArgs.push([]);
         log.push('<<< ' + type);
-      }
+      };
     },
     endTimeRange: function(range) {
       range();

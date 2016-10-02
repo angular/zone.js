@@ -22,7 +22,7 @@ describe('element', function () {
 
     var listener = function (event) {
       callCount++;
-      expect(event).toBe(clickEvent)
+      expect(event).toBe(clickEvent);
     };
 
     // `this` would be null inside the method when `addEventListener` is called from strict mode
@@ -44,7 +44,7 @@ describe('element', function () {
     clickEvent.initEvent('click', true, true);
 
     button.addEventListener('click', function (event) {
-      expect(event).toBe(clickEvent)
+      expect(event).toBe(clickEvent);
     });
 
     button.dispatchEvent(clickEvent);
@@ -54,7 +54,7 @@ describe('element', function () {
     var log = '';
     button.addEventListener('click', () => {
       Zone.current.scheduleMicroTask('test', () => log += 'microtask;');
-      log += 'click;'
+      log += 'click;';
     });
     button.click();
 
@@ -87,7 +87,7 @@ describe('element', function () {
       var log = '';
       button.addEventListener('click', () => {
         Zone.current.scheduleMicroTask('test', () => log += 'microtask;');
-        log += 'click;'
+        log += 'click;';
       });
       button.click();
 
@@ -150,9 +150,9 @@ describe('element', function () {
   });
 
   it('should have no effect while calling addEventListener without listener', function () {
-    var onAddEventListenerSpy = jasmine.createSpy('addEventListener')
+    var onAddEventListenerSpy = jasmine.createSpy('addEventListener');
     var eventListenerZone = Zone.current.fork({
-      name: 'eventListenerZone', 
+      name: 'eventListenerZone',
       onScheduleTask: onAddEventListenerSpy
     });
     expect(function() {
@@ -166,8 +166,8 @@ describe('element', function () {
 
   it('should have no effect while calling removeEventListener without listener', function () {
     var onAddEventListenerSpy =  jasmine.createSpy('removeEventListener');
-    var eventListenerZone = Zone.current.fork({ 
-      name: 'eventListenerZone', 
+    var eventListenerZone = Zone.current.fork({
+      name: 'eventListenerZone',
       onScheduleTask: onAddEventListenerSpy
      });
     expect(function() {
@@ -323,7 +323,7 @@ describe('element', function () {
     afterEach(function () {
       document.body.removeChild(checkbox);
     });
-    
+
     it('should be possible to prevent default behavior by returning false', function() {
       checkbox.onclick = function() {
         return false;

@@ -85,7 +85,7 @@ describe('AsyncTestZoneSpec', function() {
       var deferred = new Promise((resolve, reject) => {
         setTimeout(() => {
           resolve();
-        }, 10)
+        }, 10);
       }).then(() => {
         finished = true;
       });
@@ -220,7 +220,7 @@ describe('AsyncTestZoneSpec', function() {
           if (req.status != 200) {
             throw new Error('bad url failure');
           }
-        }
+        };
         req.open('get', '/bad-url', true);
         req.send();
       });
@@ -228,8 +228,6 @@ describe('AsyncTestZoneSpec', function() {
   }));
 
   it('should fail if setInterval is used', (done) => {
-    var finished = false;
-
     var testZoneSpec = new AsyncTestZoneSpec(() => {
       done.fail('expected failCallback to be called');
     }, (err) => {
@@ -246,8 +244,6 @@ describe('AsyncTestZoneSpec', function() {
   });
 
   it('should fail if an error is thrown asynchronously', (done) => {
-    var finished = false;
-
     var testZoneSpec = new AsyncTestZoneSpec(() => {
       done.fail('expected failCallback to be called');
     }, (err) => {
@@ -265,8 +261,6 @@ describe('AsyncTestZoneSpec', function() {
   });
 
   it('should fail if a promise rejection is unhandled', (done) => {
-    var finished = false;
-
     var testZoneSpec = new AsyncTestZoneSpec(() => {
       done.fail('expected failCallback to be called');
     }, (err) => {

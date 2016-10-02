@@ -88,7 +88,7 @@ describe('Promise', ifEnvSupports('Promise', function () {
       });
       expect(p instanceof Promise).toBe(true);
       expect(log).toEqual(['scheduleTask']);
-    })
+    });
   });
 
   it('should allow sync resolution of promises', () => {
@@ -157,7 +157,7 @@ describe('Promise', ifEnvSupports('Promise', function () {
         });
       });
 
-      
+
       expect(reject()).toBe(undefined);
     });
 

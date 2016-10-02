@@ -71,5 +71,5 @@ if (httpClient && httpClient.ClientRequest) {
       let zone = Zone.current;
       return new ClientRequest(options, zone.wrap(callback, 'http.ClientRequest'));
     }
-  }
+  };
 }

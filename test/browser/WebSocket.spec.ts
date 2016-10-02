@@ -33,7 +33,7 @@ if (!window['soucelabs']) {
       worker.onmessage = (e:MessageEvent) => {
         expect(e.data).toBe('pass');
         done();
-      }
+      };
     });
 
     it('should work with addEventListener', function (done) {

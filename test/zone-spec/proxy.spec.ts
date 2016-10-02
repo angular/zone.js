@@ -5,7 +5,7 @@ describe('ProxySpec', () => {
   let delegate: ZoneSpec;
   let proxyZoneSpec: any;
   let proxyZone: Zone;
-  
+
   beforeEach(() => {
     ProxyZoneSpec = Zone['ProxyZoneSpec'];
     expect(typeof ProxyZoneSpec).toBe('function');
@@ -58,7 +58,7 @@ describe('ProxySpec', () => {
       expect(proxyZoneSpec.getDelegate()).toEqual(otherDelegate);
       proxyZoneSpec.resetDelegate();
       expect(proxyZoneSpec.getDelegate()).toEqual(defaultDelegate);
-    }); 
+    });
   });
 
   describe('forwarding', () => {
@@ -73,7 +73,7 @@ describe('ProxySpec', () => {
       expect(forkeZone.name).toBe('fork');
       var called = false;
       proxyZoneSpec.setDelegate({
-        name: '.', 
+        name: '.',
         onFork: (parentZoneDelegate, currentZone, targetZone, zoneSpec) => {
           expect(currentZone).toBe(proxyZone);
           expect(targetZone).toBe(proxyZone),
@@ -89,7 +89,7 @@ describe('ProxySpec', () => {
       const fn = (a) => a;
       expect(proxyZone.wrap(fn, 'test')('works')).toEqual('works');
       proxyZoneSpec.setDelegate({
-        name: '.', 
+        name: '.',
         onIntercept: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
                 delegate: Function, source: string): Function => {
                   return () => '(works)';
@@ -102,7 +102,7 @@ describe('ProxySpec', () => {
       const fn = () => 'works';
       expect(proxyZone.run(fn)).toEqual('works');
       proxyZoneSpec.setDelegate({
-        name: '.', 
+        name: '.',
         onInvoke: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
           delegate: Function, applyThis: any, applyArgs: any[], source: string) => {
             return `(${parentZoneDelegate.invoke(targetZone, delegate, applyThis, applyArgs, source)})`;
@@ -113,10 +113,10 @@ describe('ProxySpec', () => {
 
     it('should handleError', () => {
       const error = new Error("TestError");
-      const fn = () => { throw error };
+      const fn = () => { throw error; };
       expect(() => proxyZone.run(fn)).toThrow(error);
       proxyZoneSpec.setDelegate({
-        name: '.', 
+        name: '.',
         onHandleError: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
                   error: any): boolean => {
             expect(error).toEqual(error);

@@ -10,7 +10,7 @@ describe('FakeAsyncTestZoneSpec', () => {
     testZoneSpec = new FakeAsyncTestZoneSpec('name');
     fakeAsyncTestZone = Zone.current.fork(testZoneSpec);
   });
-  
+
   it('sets the FakeAsyncTestZoneSpec property', () => {
     fakeAsyncTestZone.run(() => {
       expect(Zone.current.get('FakeAsyncTestZoneSpec')).toEqual(testZoneSpec);
@@ -33,9 +33,9 @@ describe('FakeAsyncTestZoneSpec', () => {
 
     it('should throw error on Rejected promise', () => {
       expect(() => {
-        fakeAsyncTestZone.run(() => { 
-          Promise.reject('myError')
-          testZoneSpec.flushMicrotasks(); 
+        fakeAsyncTestZone.run(() => {
+          Promise.reject('myError');
+          testZoneSpec.flushMicrotasks();
         });
       }).toThrowError('Uncaught (in promise): myError');
     });
@@ -97,7 +97,7 @@ describe('FakeAsyncTestZoneSpec', () => {
     it('should run queued zero duration timer on zero tick', () => {
       fakeAsyncTestZone.run(() => {
         let ran = false;
-        setTimeout(() => { ran = true }, 0);
+        setTimeout(() => { ran = true; }, 0);
 
         expect(ran).toEqual(false);
 
@@ -125,7 +125,7 @@ describe('FakeAsyncTestZoneSpec', () => {
         const startCounterLoop = () => {
           counter++;
           setTimeout(startCounterLoop, 10);
-        }
+        };
 
         startCounterLoop();
 
@@ -285,7 +285,7 @@ describe('FakeAsyncTestZoneSpec', () => {
         }, 10);
 
         expect(() => { testZoneSpec.tick(10); }).toThrowError('1');
- 
+
         // Periodic timer is cancelled on first error.
         expect(count).toBe(1);
         testZoneSpec.tick(10);
@@ -295,7 +295,7 @@ describe('FakeAsyncTestZoneSpec', () => {
       expect(testZoneSpec.pendingPeriodicTimers.length).toBe(0);
     });
   });
-  
+
   it('should be able to resume processing timer callbacks after handling an error', () => {
       fakeAsyncTestZone.run(() => {
         let ran = false;
@@ -303,7 +303,7 @@ describe('FakeAsyncTestZoneSpec', () => {
         setTimeout(() => {ran = true; }, 10);
         expect(() => { testZoneSpec.tick(10); }).toThrowError('timer');
         expect(ran).toBe(false);
-        
+
         // Restart timer queue processing.
         testZoneSpec.tick(0);
         expect(ran).toBe(true);
@@ -311,7 +311,7 @@ describe('FakeAsyncTestZoneSpec', () => {
       // There should be no pending timers after the error in timer callback.
       expect(testZoneSpec.pendingTimers.length).toBe(0);
     });
-  
+
   describe('outside of FakeAsync Zone', () => {
     it('calling flushMicrotasks should throw exception', () => {
       expect(() => { testZoneSpec.flushMicrotasks(); })
@@ -322,7 +322,7 @@ describe('FakeAsyncTestZoneSpec', () => {
         .toThrowError('The code should be running in the fakeAsync zone to call this function');
     });
   });
-  
+
   describe('XHRs', ifEnvSupports('XMLHttpRequest', () => {
     it('should throw an exception if an XHR is initiated in the zone', () => {
       expect(() => {
@@ -335,7 +335,7 @@ describe('FakeAsyncTestZoneSpec', () => {
               finished = true;
             }
           };
-          
+
           req.open('GET', '/', true);
           req.send();
         });

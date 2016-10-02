@@ -22,8 +22,8 @@ for (var i = 0; i < blockingMethods.length; i++) {
   var name = blockingMethods[i];
   patchMethod(_global, name, (delegate, symbol, name) => {
     return function (s:any, args: any[]) {
-      return Zone.current.run(delegate, _global, args, name)
-    }
+      return Zone.current.run(delegate, _global, args, name);
+    };
   });
 }
 
