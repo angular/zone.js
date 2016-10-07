@@ -57,7 +57,7 @@ describe('setTimeout', function() {
       setTimeout(function() {
         expect(spy).not.toHaveBeenCalled();
         done();
-      });
+      }, 1);
     });
   });
 
@@ -72,7 +72,7 @@ describe('setTimeout', function() {
           clearTimeout(cancelId);
           done();
         });
-      });
+      }, 1);
     });
   });
 
