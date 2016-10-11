@@ -182,4 +182,22 @@ describe('XMLHttpRequest', function() {
     expect(XMLHttpRequest.LOADING).toEqual(3);
     expect(XMLHttpRequest.DONE).toEqual(4);
   });
+
+  it('should reflect property in originFn after patched', function(done) {
+    var req = new XMLHttpRequest();
+    req.open('get', '/', true);
+    function readyStateChanged (event: ProgressEvent): any {
+      const { subscriber } = (<any>readyStateChanged);
+      expect(() => { subscriber(event) })
+        .not.toThrow();
+      done();
+    }
+    req.onreadystatechange = readyStateChanged;
+    (<any>req.onreadystatechange).subscriber = function(event: ProgressEvent) {
+      event.cancelBubble = true;
+    };
+    req.send();
+    // ensure onreadystatechange callback only called once
+    req.abort();
+  });
 });
