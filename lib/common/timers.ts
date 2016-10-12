@@ -19,14 +19,21 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
   setName += nameSuffix;
   cancelName += nameSuffix;
 
+  const tasksByHandleId: Object = {};
+
   function scheduleTask(task: Task) {
     const data = <TimerOptions>task.data;
-    data.args[0] = task.invoke;
+    data.args[0] = function() {
+      task.invoke.apply(this, arguments);
+      delete tasksByHandleId[data.handleId];
+    };
     data.handleId = setNative.apply(window, data.args);
+    tasksByHandleId[data.handleId] = task;
     return task;
   }
 
   function clearTask(task: Task) {
+    delete tasksByHandleId[(<TimerOptions>task.data).handleId];
     return clearNative((<TimerOptions>task.data).handleId);
   }
 
@@ -59,7 +66,7 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
 
   clearNative =
       patchMethod(window, cancelName, (delegate: Function) => function(self: any, args: any[]) {
-        var task: Task = args[0];
+        var task: Task = typeof args[0] === 'number' ? tasksByHandleId[args[0]] : args[0];
         if (task && typeof task.type === 'string') {
           if (task.cancelFn && task.data.isPeriodic || task.runCount === 0) {
             // Do not cancel already canceled functions
