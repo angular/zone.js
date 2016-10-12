@@ -58,4 +58,9 @@ describe('nodejs EventEmitter', () => {
     });
     expect(emitter.listeners('test')).toEqual([expectZoneA, shouldNotRun]);
   });
+  it('should return empty array when an event has no listeners', () => {
+    zoneA.run(() => {
+      expect(emitter.listeners('test')).toEqual([]);
+    });
+  })
 });

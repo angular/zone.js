@@ -253,6 +253,9 @@ export function makeZoneAwareListeners(fnName: string) {
   return function zoneAwareEventListeners(self: any, args: any[]) {
     const eventName: string = args[0];
     const target = self || _global;
+    if (!target[EVENT_TASKS]) {
+      return [];
+    }
     return target[EVENT_TASKS]
         .filter(task => task.data.eventName === eventName)
         .map(task => task.data.handler);
