@@ -11,6 +11,13 @@
     (factory());
 }(this, (function () { 'use strict';
 
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 var NEWLINE = '\n';
 var SEP = '  -------------  ';
 var IGNORE_FRAMES = [];
@@ -37,9 +44,9 @@ function getStacktraceWithCaughtError() {
 // isn't thrown, however it's faster not to actually throw the exception.
 var error = getStacktraceWithUncaughtError();
 var coughtError = getStacktraceWithCaughtError();
-var getStacktrace = error.stack
-    ? getStacktraceWithUncaughtError
-    : (coughtError.stack ? getStacktraceWithCaughtError : getStacktraceWithUncaughtError);
+var getStacktrace = error.stack ?
+    getStacktraceWithUncaughtError :
+    (coughtError.stack ? getStacktraceWithCaughtError : getStacktraceWithUncaughtError);
 function getFrames(error) {
     return error.stack ? error.stack.split(NEWLINE) : [];
 }
@@ -100,19 +107,24 @@ Zone['longStackTraceZoneSpec'] = {
                     stackSetSucceded = true;
                 }
             }
-            catch (e) { }
-            var longStack = stackSetSucceded ? null : renderLongStackTrace(parentTask.data && parentTask.data[creationTrace], error.stack);
+            catch (e) {
+            }
+            var longStack = stackSetSucceded ?
+                null :
+                renderLongStackTrace(parentTask.data && parentTask.data[creationTrace], error.stack);
             if (!stackSetSucceded) {
                 try {
                     stackSetSucceded = error.stack = longStack;
                 }
-                catch (e) { }
+                catch (e) {
+                }
             }
             if (!stackSetSucceded) {
                 try {
                     stackSetSucceded = error.longStack = longStack;
                 }
-                catch (e) { }
+                catch (e) {
+                }
             }
         }
         return parentZoneDelegate.handleError(targetZone, error);
