@@ -1,43 +1,48 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 import {ifEnvSupports} from '../test-util';
 
-describe('requestAnimationFrame', function () {
-  var functions = [
-    'requestAnimationFrame',
-    'webkitRequestAnimationFrame',
-    'mozRequestAnimationFrame'
-  ];
+describe('requestAnimationFrame', function() {
+  var functions =
+      ['requestAnimationFrame', 'webkitRequestAnimationFrame', 'mozRequestAnimationFrame'];
 
-  functions.forEach(function (fnName) {
-    describe(fnName, ifEnvSupports(fnName, function () {
-      var rAF = window[fnName];
+  functions.forEach(function(fnName) {
+    describe(fnName, ifEnvSupports(fnName, function() {
+               var rAF = window[fnName];
 
-      it('should be tolerant of invalid arguments', function () {
-        // rAF throws an error on invalid arguments, so expect that.
-        expect(function () {
-          rAF(null);
-        }).toThrow();
-      });
+               it('should be tolerant of invalid arguments', function() {
+                 // rAF throws an error on invalid arguments, so expect that.
+                 expect(function() {
+                   rAF(null);
+                 }).toThrow();
+               });
 
-      it('should bind to same zone when called recursively', function (done) {
-        Zone.current.fork({ name: 'TestZone' }).run(() => {
-          var frames = 0;
-          var previousTimeStamp = 0;
+               it('should bind to same zone when called recursively', function(done) {
+                 Zone.current.fork({name: 'TestZone'}).run(() => {
+                   var frames = 0;
+                   var previousTimeStamp = 0;
 
-          function frameCallback(timestamp) {
-            expect(timestamp).toMatch(/^[\d.]+$/);
-            // expect previous <= current
-            expect(previousTimeStamp).not.toBeGreaterThan(timestamp);
-            previousTimeStamp = timestamp;
+                   function frameCallback(timestamp) {
+                     expect(timestamp).toMatch(/^[\d.]+$/);
+                     // expect previous <= current
+                     expect(previousTimeStamp).not.toBeGreaterThan(timestamp);
+                     previousTimeStamp = timestamp;
 
-            if (frames++ > 15) {
-              return done();
-            }
-            rAF(frameCallback);
-          }
+                     if (frames++ > 15) {
+                       return done();
+                     }
+                     rAF(frameCallback);
+                   }
 
-          rAF(frameCallback);
-        });
-      });
-    }));
+                   rAF(frameCallback);
+                 });
+               });
+             }));
   });
 });

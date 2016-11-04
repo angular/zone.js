@@ -1,7 +1,7 @@
 language: node_js
 sudo: false
 node_js:
-  - '4.2.1'
+  - '6.3.1'
 env:
   global:
     - BROWSER_PROVIDER_READY_FILE=/tmp/sauce-connect-ready
@@ -18,10 +18,9 @@ env:
 
 before_script:
   - mkdir -p $LOGS_DIR
-  - npm run typings
   - ./scripts/sauce/sauce_connect_setup.sh
   - ./scripts/sauce/sauce_connect_block.sh
 
 script:
-  - node_modules/.bin/karma start karma-sauce.conf.js
+  - node_modules/.bin/karma start karma-sauce.conf.js --single-run
   - node_modules/.bin/gulp test/node

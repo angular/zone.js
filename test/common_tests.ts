@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 import './common/microtasks.spec';
 import './common/zone.spec';
 import './common/util.spec';
@@ -9,3 +17,4 @@ import './zone-spec/async-test.spec';
 import './zone-spec/sync-test.spec';
 import './zone-spec/fake-async-test.spec';
 import './zone-spec/proxy.spec';
+import './zone-spec/task-tracking.spec';

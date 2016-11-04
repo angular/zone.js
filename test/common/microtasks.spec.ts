@@ -1,7 +1,17 @@
-describe('Microtasks', function () {
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
+describe('Microtasks', function() {
   if (!global.Promise) return;
 
-  function scheduleFn(task: Task) { Promise.resolve().then(<any>task.invoke); }
+  function scheduleFn(task: Task) {
+    Promise.resolve().then(<any>task.invoke);
+  }
 
   it('should execute microtasks enqueued in the root zone', function(done) {
     var log = [];
@@ -32,10 +42,7 @@ describe('Microtasks', function () {
     }, 30);
 
     setTimeout(function() {
-      expect(log).toEqual([
-        '+root', '-root', 'root.mit',
-        '+mat1', '-mat1', 'mat1.mit',
-        'mat2']);
+      expect(log).toEqual(['+root', '-root', 'root.mit', '+mat1', '-mat1', 'mat1.mit', 'mat2']);
       done();
     }, 40);
 
@@ -56,38 +63,38 @@ describe('Microtasks', function () {
   });
 
   it('should execute Promise wrapCallback in the zone where they are scheduled even if resolved ' +
-      'in different zone.', function(done)
-  {
-    var resolve;
-    var promise = new Promise(function (rs) {
-      resolve = rs;
-    });
+         'in different zone.',
+     function(done) {
+       var resolve;
+       var promise = new Promise(function(rs) {
+         resolve = rs;
+       });
 
-    var testZone = Zone.current.fork({name: 'test'});
+       var testZone = Zone.current.fork({name: 'test'});
 
-    testZone.run(function() {
-      promise.then(function() {
-        expect(Zone.current).toBe(testZone);
-        done();
-      });
-    });
+       testZone.run(function() {
+         promise.then(function() {
+           expect(Zone.current).toBe(testZone);
+           done();
+         });
+       });
 
-    Zone.current.fork({name: 'test'}).run(function() {
-      resolve(null);
-    });
-  });
+       Zone.current.fork({name: 'test'}).run(function() {
+         resolve(null);
+       });
+     });
 
   describe('Promise', function() {
     it('should go through scheduleTask', function(done) {
       var called = false;
       var testZone = Zone.current.fork({
         name: 'test',
-        onScheduleTask: function(delegate: ZoneDelegate, current: Zone, target: Zone,
-                                 task: Task): Task {
-          called = true;
-          delegate.scheduleTask(target, task);
-          return task;
-        }
+        onScheduleTask: function(delegate: ZoneDelegate, current: Zone, target: Zone, task: Task):
+            Task {
+              called = true;
+              delegate.scheduleTask(target, task);
+              return task;
+            }
       });
 
       testZone.run(function() {

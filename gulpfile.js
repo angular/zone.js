@@ -1,128 +1,138 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 'use strict';
 
 var gulp = require('gulp');
-var gutil = require("gulp-util");
-var webpack = require('webpack');
+var rollup = require('gulp-rollup');
+var rename = require("gulp-rename");
 var rename = require('gulp-rename');
 var uglify = require('gulp-uglify');
-var typescript = require('gulp-tsc');
+var pump = require('pump');
+var uglify = require('gulp-uglify');
+var path = require('path');
+var spawn = require('child_process').spawn;
 
-
-var distFolder = './dist';
-
-function generateBrowserScript(inFile, outFile, minify, callback) {
-  var plugins = [];
+function generateScript(inFile, outFile, minify, callback) {
+  inFile = path.join('./build-esm/', inFile).replace(/\.ts$/, '.js');
+  var parts = [
+    gulp.src('./build-esm/lib/**/*.js')
+        .pipe(rollup({
+          entry: inFile,
+          format: 'umd',
+          banner: '/**\n'
+              + '* @license\n'
+              + '* Copyright Google Inc. All Rights Reserved.\n'
+              + '*\n'
+              + '* Use of this source code is governed by an MIT-style license that can be\n'
+              + '* found in the LICENSE file at https://angular.io/license\n'
+              + '*/'
+        }))
+        .pipe(rename(outFile)),
+  ];
   if (minify) {
-    plugins.push(new webpack.optimize.UglifyJsPlugin({
-      mangle: {
-        except: ['$super', '$', 'exports', 'require']
-      }
-    }));
+    parts.push(uglify());
   }
-  webpack({
-    entry: inFile,
-    plugins: plugins,
-    output: {
-      filename: 'dist/' + outFile
-    },
-    resolve: {
-      extensions: ['', '.webpack.js', '.web.js', '.ts', '.js']
-    },
-    module: {
-      loaders: [
-        {test: /\.ts$/, loader: 'ts-loader', exclude: /node_modules/}
-      ]
-    },
-    node: {
-      process: false
-    }
-  }, function(err, stats) {
-    if(err) {
-      callback(err);
-    } else {
-      gutil.log("[webpack]", stats.toString({
-        // output meta
-      }));
-      callback();
-    }
-  });
+  parts.push(gulp.dest('./dist'));
+  pump(parts, callback);
+}
+
+function tsc(config, cb) {
+  spawn('./node_modules/.bin/tsc', ['-p', config], {stdio: 'inherit'})
+      .on('close', function(exitCode) {
+        if (exitCode) {
+          var err = new Error('TypeScript compiler failed');
+          // The stack is not useful in this context.
+          err.showStack = false;
+          cb(err);
+        } else {
+          cb();
+        }
+      });
 }
 
 // This is equivalent to `npm run tsc`.
 gulp.task('compile', function(cb) {
-  var spawn = require('child_process').spawn;
-  spawn('./node_modules/.bin/tsc', {stdio: 'inherit'}).on('close', function(exitCode) {
-    if (exitCode) {
-      var err = new Error('TypeScript compiler failed');
-      // The stack is not useful in this context.
-      err.showStack = false;
-      cb(err);
-    } else {
-      cb();
-    }
-  });
+  tsc('tsconfig.json', cb);
 });
 
-gulp.task('build/zone.js.d.ts', ['compile'], function() {
+gulp.task('compile-esm', function(cb) {
+  tsc('tsconfig-esm.json', cb);
+});
+
+gulp.task('build/zone.js.d.ts', ['compile-esm'], function() {
   return gulp.src('./build/lib/zone.d.ts').pipe(rename('zone.js.d.ts')).pipe(gulp.dest('./dist'));
 });
 
 // Zone for Node.js environment.
-gulp.task('build/zone-node.js', function(cb) {
-  return generateBrowserScript('./lib/node/node.ts', 'zone-node.js', false, cb);
+gulp.task('build/zone-node.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/node/node.ts', 'zone-node.js', false, cb);
 });
 
 // Zone for the browser.
-gulp.task('build/zone.js', function(cb) {
-  return generateBrowserScript('./lib/browser/browser.ts', 'zone.js', false, cb);
+gulp.task('build/zone.js', ['compile-esm'], function(cb) {
+
+  return generateScript('./lib/browser/browser.ts', 'zone.js', false, cb);
 });
 
-gulp.task('build/zone.min.js', function(cb) {
-  return generateBrowserScript('./lib/browser/browser.ts', 'zone.min.js', true, cb);
+gulp.task('build/zone.min.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/browser/browser.ts', 'zone.min.js', true, cb);
 });
 
-gulp.task('build/jasmine-patch.js', function(cb) {
-  return generateBrowserScript('./lib/jasmine/jasmine.ts', 'jasmine-patch.js', false, cb);
+gulp.task('build/jasmine-patch.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/jasmine/jasmine.ts', 'jasmine-patch.js', false, cb);
 });
 
-gulp.task('build/jasmine-patch.min.js', function(cb) {
-  return generateBrowserScript('./lib/jasmine/jasmine.ts', 'jasmine-patch.min.js', true, cb);
+gulp.task('build/jasmine-patch.min.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/jasmine/jasmine.ts', 'jasmine-patch.min.js', true, cb);
 });
 
-gulp.task('build/long-stack-trace-zone.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.js', false, cb);
+gulp.task('build/long-stack-trace-zone.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.js', false, cb);
 });
 
-gulp.task('build/long-stack-trace-zone.min.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.min.js', true, cb);
+gulp.task('build/long-stack-trace-zone.min.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.min.js', true, cb);
 });
 
-gulp.task('build/proxy-zone.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/proxy.ts', 'proxy-zone.js', false, cb);
+gulp.task('build/proxy-zone.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/zone-spec/proxy.ts', 'proxy.js', false, cb);
 });
 
-gulp.task('build/proxy-zone.min.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/proxy.ts', 'proxy-zone.min.js', true, cb);
+gulp.task('build/proxy-zone.min.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/zone-spec/proxy.ts', 'proxy.min.js', true, cb);
 });
 
-gulp.task('build/wtf.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/wtf.ts', 'wtf.js', false, cb);
+gulp.task('build/task-tracking.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/zone-spec/task-tracking.ts', 'task-tracking.js', false, cb);
 });
 
-gulp.task('build/wtf.min.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/wtf.ts', 'wtf.min.js', true, cb);
+gulp.task('build/task-tracking.min.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/zone-spec/task-tracking.ts', 'task-tracking.min.js', true, cb);
 });
 
-gulp.task('build/async-test.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/async-test.ts', 'async-test.js', false, cb);
+gulp.task('build/wtf.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/zone-spec/wtf.ts', 'wtf.js', false, cb);
 });
 
-gulp.task('build/fake-async-test.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/fake-async-test.ts', 'fake-async-test.js', false, cb);
+gulp.task('build/wtf.min.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/zone-spec/wtf.ts', 'wtf.min.js', true, cb);
 });
 
-gulp.task('build/sync-test.js', function(cb) {
-  return generateBrowserScript('./lib/zone-spec/sync-test.ts', 'sync-test.js', false, cb);
+gulp.task('build/async-test.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/zone-spec/async-test.ts', 'async-test.js', false, cb);
+});
+
+gulp.task('build/fake-async-test.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/zone-spec/fake-async-test.ts', 'fake-async-test.js', false, cb);
+});
+
+gulp.task('build/sync-test.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/zone-spec/sync-test.ts', 'sync-test.js', false, cb);
 });
 
 gulp.task('build', [
@@ -136,6 +146,8 @@ gulp.task('build', [
   'build/long-stack-trace-zone.min.js',
   'build/proxy-zone.js',
   'build/proxy-zone.min.js',
+  'build/task-tracking.js',
+  'build/task-tracking.min.js',
   'build/wtf.js',
   'build/wtf.min.js',
   'build/async-test.js',
@@ -161,8 +173,50 @@ gulp.task('test/node', ['compile'], function(cb) {
       cb();
     }
   });
+  jrunner.print = function(value) {
+    process.stdout.write(value);
+  };
+  jrunner.addReporter(new JasmineRunner.ConsoleReporter(jrunner));
   jrunner.projectBaseDir = __dirname;
   jrunner.specDir = '';
   jrunner.addSpecFiles(specFiles);
   jrunner.execute();
+});
+
+// Check the coding standards and programming errors
+gulp.task('lint', () => {
+  const tslint = require('gulp-tslint');
+  // Built-in rules are at
+  // https://github.com/palantir/tslint#supported-rules
+  const tslintConfig = require('./tslint.json');
+
+  return gulp.src(['lib/**/*.ts', 'test/**/*.ts'])
+    .pipe(tslint({
+      tslint: require('tslint').default,
+      configuration: tslintConfig,
+      formatter: 'prose',
+    }))
+    .pipe(tslint.report({emitError: true}));
+});
+
+// clang-format entry points
+const srcsToFmt = [
+  'lib/**/*.ts',
+  'test/**/*.ts',
+];
+
+// Check source code for formatting errors (clang-format)
+gulp.task('format:enforce', () => {
+  const format = require('gulp-clang-format');
+  const clangFormat = require('clang-format');
+  return gulp.src(srcsToFmt).pipe(
+    format.checkFormat('file', clangFormat, {verbose: true, fail: true}));
+});
+
+// Format the source code with clang-format (see .clang-format)
+gulp.task('format', () => {
+  const format = require('gulp-clang-format');
+  const clangFormat = require('clang-format');
+  return gulp.src(srcsToFmt, { base: '.' }).pipe(
+    format.format('file', clangFormat)).pipe(gulp.dest('.'));
 });

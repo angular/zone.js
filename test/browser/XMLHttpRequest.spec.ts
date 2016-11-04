@@ -1,25 +1,37 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 import {ifEnvSupports} from '../test-util';
 
-describe('XMLHttpRequest', function () {
-  var testZone = Zone.current.fork({name: 'test'});
+describe('XMLHttpRequest', function() {
+  var testZone: Zone;
+
+  beforeEach(() => {
+    testZone = Zone.current.fork({name: 'test'});
+  });
 
   it('should intercept XHRs and treat them as MacroTasks', function(done) {
     var req: any;
-    var testZoneWithWtf = Zone.current.fork(Zone['wtfZoneSpec']).fork({ name: 'TestZone' });
+    var testZoneWithWtf = Zone.current.fork(Zone['wtfZoneSpec']).fork({name: 'TestZone'});
     testZoneWithWtf.run(() => {
       req = new XMLHttpRequest();
       req.onload = () => {
         // The last entry in the log should be the invocation for the current onload,
         // which will vary depending on browser environment. The prior entries
         // should be the invocation of the send macrotask.
-        expect(wtfMock.log[wtfMock.log.length - 5]).toMatch(
-          /\> Zone\:invokeTask.*addEventListener\:readystatechange/);
-        expect(wtfMock.log[wtfMock.log.length - 4]).toEqual(
-          '> Zone:invokeTask:XMLHttpRequest.send("<root>::WTF::TestZone")');
-        expect(wtfMock.log[wtfMock.log.length - 3]).toEqual(
-          '< Zone:invokeTask:XMLHttpRequest.send');
-        expect(wtfMock.log[wtfMock.log.length - 2]).toMatch(
-          /\< Zone\:invokeTask.*addEventListener\:readystatechange/);
+        expect(wtfMock.log[wtfMock.log.length - 5])
+            .toMatch(/\> Zone\:invokeTask.*addEventListener\:readystatechange/);
+        expect(wtfMock.log[wtfMock.log.length - 4])
+            .toEqual('> Zone:invokeTask:XMLHttpRequest.send("<root>::ProxyZone::WTF::TestZone")');
+        expect(wtfMock.log[wtfMock.log.length - 3])
+            .toEqual('< Zone:invokeTask:XMLHttpRequest.send');
+        expect(wtfMock.log[wtfMock.log.length - 2])
+            .toMatch(/\< Zone\:invokeTask.*addEventListener\:readystatechange/);
         done();
       };
 
@@ -31,13 +43,13 @@ describe('XMLHttpRequest', function () {
     }, null, null, 'unit-test');
   });
 
-  it('should work with onreadystatechange', function (done) {
+  it('should work with onreadystatechange', function(done) {
     var req;
 
     testZone.run(function() {
       req = new XMLHttpRequest();
       var firstCall = true;
-      req.onreadystatechange = function () {
+      req.onreadystatechange = function() {
         // Make sure that the wrapCallback will only be called once
         req.onreadystatechange = null;
         expect(Zone.current).toBe(testZone);
@@ -52,85 +64,86 @@ describe('XMLHttpRequest', function () {
   var supportsOnProgress = function() {
     return 'onprogress' in new XMLHttpRequest();
   };
-  (<any>supportsOnProgress).message = "XMLHttpRequest.onprogress";
+  (<any>supportsOnProgress).message = 'XMLHttpRequest.onprogress';
 
-  describe('onprogress', ifEnvSupports(supportsOnProgress, function () {
-    it('should work with onprogress', function (done) {
-      var req;
-      testZone.run(function() {
-        req = new XMLHttpRequest();
-        req.onprogress = function () {
-          // Make sure that the wrapCallback will only be called once
-          req.onprogress = null;
-          expect(Zone.current).toBe(testZone);
-          done();
-        };
-        req.open('get', '/', true);
-      });
+  describe('onprogress', ifEnvSupports(supportsOnProgress, function() {
+             it('should work with onprogress', function(done) {
+               var req;
+               testZone.run(function() {
+                 req = new XMLHttpRequest();
+                 req.onprogress = function() {
+                   // Make sure that the wrapCallback will only be called once
+                   req.onprogress = null;
+                   expect(Zone.current).toBe(testZone);
+                   done();
+                 };
+                 req.open('get', '/', true);
+               });
 
-      req.send();
-    });
+               req.send();
+             });
 
-    it('should allow canceling of an XMLHttpRequest', function(done) {
-      var spy = jasmine.createSpy('spy');
-      var req;
-      var pending = false;
+             it('should allow canceling of an XMLHttpRequest', function(done) {
+               var spy = jasmine.createSpy('spy');
+               var req;
+               var pending = false;
 
-      var trackingTestZone = Zone.current.fork({
-        name: 'tracking test zone',
-        onHasTask: (delegate: ZoneDelegate, current: Zone, target: Zone, hasTaskState: HasTaskState) => {
-          if (hasTaskState.change == 'macroTask') {
-            pending = hasTaskState.macroTask;
-          }
-          delegate.hasTask(target, hasTaskState);
-        }
-      });
+               var trackingTestZone = Zone.current.fork({
+                 name: 'tracking test zone',
+                 onHasTask: (delegate: ZoneDelegate, current: Zone, target: Zone,
+                             hasTaskState: HasTaskState) => {
+                   if (hasTaskState.change == 'macroTask') {
+                     pending = hasTaskState.macroTask;
+                   }
+                   delegate.hasTask(target, hasTaskState);
+                 }
+               });
 
-      trackingTestZone.run(function() {
-        req = new XMLHttpRequest();
-        req.onreadystatechange = function() {
-          if (req.readyState === XMLHttpRequest.DONE) {
-            if (req.status !== 0) {
-              spy();
-            }
-          }
-        };
-        req.open('get', '/', true);
+               trackingTestZone.run(function() {
+                 req = new XMLHttpRequest();
+                 req.onreadystatechange = function() {
+                   if (req.readyState === XMLHttpRequest.DONE) {
+                     if (req.status !== 0) {
+                       spy();
+                     }
+                   }
+                 };
+                 req.open('get', '/', true);
 
-        req.send();
-        req.abort();
-      });
+                 req.send();
+                 req.abort();
+               });
 
-      setTimeout(function() {
-        expect(spy).not.toHaveBeenCalled();
-        expect(pending).toEqual(false);
-        done();
-      }, 0);
-    });
+               setTimeout(function() {
+                 expect(spy).not.toHaveBeenCalled();
+                 expect(pending).toEqual(false);
+                 done();
+               }, 0);
+             });
 
-    it('should allow aborting an XMLHttpRequest after its completed', function(done) {
-      var req;
+             it('should allow aborting an XMLHttpRequest after its completed', function(done) {
+               var req;
 
-      testZone.run(function() {
-        req = new XMLHttpRequest();
-        req.onreadystatechange = function() {
-          if (req.readyState === XMLHttpRequest.DONE) {
-            if (req.status !== 0) {
-              setTimeout(function() {
-                req.abort();
-                done();
-              }, 0);
-            }
-          }
-        };
-        req.open('get', '/', true);
+               testZone.run(function() {
+                 req = new XMLHttpRequest();
+                 req.onreadystatechange = function() {
+                   if (req.readyState === XMLHttpRequest.DONE) {
+                     if (req.status !== 0) {
+                       setTimeout(function() {
+                         req.abort();
+                         done();
+                       }, 0);
+                     }
+                   }
+                 };
+                 req.open('get', '/', true);
 
-        req.send();
-      });
-    });
-  }));
+                 req.send();
+               });
+             });
+           }));
 
-  it('should preserve other setters', function () {
+  it('should preserve other setters', function() {
     var req = new XMLHttpRequest();
     req.open('get', '/', true);
     req.send();
@@ -138,9 +151,28 @@ describe('XMLHttpRequest', function () {
       req.responseType = 'document';
       expect(req.responseType).toBe('document');
     } catch (e) {
-      //Android browser: using this setter throws, this should be preserved
+      // Android browser: using this setter throws, this should be preserved
       expect(e.message).toBe('INVALID_STATE_ERR: DOM Exception 11');
     }
+  });
+
+  it('should work with synchronous XMLHttpRequest', function() {
+    const log = [];
+    Zone.current
+        .fork({
+          name: 'sync-xhr-test',
+          onHasTask: function(
+              delegate: ZoneDelegate, current: Zone, target: Zone, hasTaskState: HasTaskState) {
+            log.push(hasTaskState);
+            delegate.hasTask(target, hasTaskState);
+          }
+        })
+        .run(() => {
+          var req = new XMLHttpRequest();
+          req.open('get', '/', false);
+          req.send();
+        });
+    expect(log).toEqual([]);
   });
 
   it('should preserve static constants', function() {
@@ -151,4 +183,3 @@ describe('XMLHttpRequest', function () {
     expect(XMLHttpRequest.DONE).toEqual(4);
   });
 });
-

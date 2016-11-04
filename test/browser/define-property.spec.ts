@@ -1,8 +1,17 @@
-describe('defineProperty', function () {
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 
-  it('should not throw when defining length on an array', function () {
+describe('defineProperty', function() {
+
+  it('should not throw when defining length on an array', function() {
     var someArray = [];
-    expect(() => Object.defineProperty(someArray, 'length', {value: 2, writable: false})).not.toThrow();
+    expect(() => Object.defineProperty(someArray, 'length', {value: 2, writable: false}))
+        .not.toThrow();
   });
 
 });

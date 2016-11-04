@@ -1,16 +1,12 @@
-importScripts('/base/test/zone_worker_entry_point.ts');
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 
-Zone.current.fork({name: 'webworker'}).run(() => {
-  var websocket = new WebSocket('ws://localhost:8001');
-  websocket.addEventListener('open', () => {
-    websocket.onmessage = () => {
-      if((<any>self).Zone.current.name === 'webworker') {
-        (<any>self).postMessage('pass');
-      } else {
-        (<any>self).postMessage('fail');
-      }
-    };
-    websocket.send('text');
-  });
-});
+declare function importScripts(path: string): void;
 
+    importScripts('/base/node_modules/systemjs/dist/system.src.js');
+    importScripts('/base/build/test/zone_worker_entry_point.js');

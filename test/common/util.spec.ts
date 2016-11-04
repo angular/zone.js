@@ -1,13 +1,21 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 import {patchMethod, zoneSymbol} from '../../lib/common/utils';
 
-describe('utils', function () {
+describe('utils', function() {
 
   describe('patchMethod', () => {
     it('should patch target where the method is defined', () => {
       var args;
       var self;
       var Type = function() {};
-      var method = Type.prototype.method = function (..._args) {
+      var method = Type.prototype.method = function(..._args) {
         args = _args;
         self = this;
         return 'OK';
@@ -20,9 +28,9 @@ describe('utils', function () {
         expect(name).toEqual('method');
         delegateMethod = delegate;
         delegateSymbol = symbol;
-        return function (self, args) {
+        return function(self, args) {
           return delegate.apply(self, ['patch', args[0]]);
-        }
+        };
       })).toBe(delegateMethod);
 
       expect(instance.method('a0')).toEqual('OK');
@@ -35,23 +43,31 @@ describe('utils', function () {
 
     it('should not double patch', () => {
       var Type = function() {};
-      var method = Type.prototype.method = function () {};
+      var method = Type.prototype.method = function() {};
       patchMethod(Type.prototype, 'method', (delegate) => {
-        return function (self, args) { return delegate.apply(self, ['patch', ...args]); }
+        return function(self, args: any[]) {
+          return delegate.apply(self, ['patch', ...args]);
+        };
       });
       var pMethod = Type.prototype.method;
       expect(pMethod).not.toBe(method);
       patchMethod(Type.prototype, 'method', (delegate) => {
-        return function (self, args) { return delegate.apply(self, ['patch', ...args]); }
+        return function(self, args) {
+          return delegate.apply(self, ['patch', ...args]);
+        };
       });
       expect(pMethod).toBe(Type.prototype.method);
     });
 
     it('should have a method name in the stacktrace', () => {
-      var fn = function someOtherName() { throw new Error('MyError'); };
-      var target = { mySpecialMethodName: fn }
+      var fn = function someOtherName() {
+        throw new Error('MyError');
+      };
+      var target = {mySpecialMethodName: fn};
       patchMethod(target, 'mySpecialMethodName', (delegate: Function) => {
-        return function(self, args) { return delegate() };
+        return function(self, args) {
+          return delegate();
+        };
       });
       try {
         target.mySpecialMethodName();

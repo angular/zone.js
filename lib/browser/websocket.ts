@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 import {patchEventTargetMethods, patchOnProperties} from '../common/utils';
 
 // we have to patch the instance since the proto is non-configurable
@@ -30,5 +38,7 @@ export function apply(_global: any) {
 
     return proxySocket;
   };
-  for (var prop in WS) { _global.WebSocket[prop] = WS[prop]; }
+  for (var prop in WS) {
+    _global.WebSocket[prop] = WS[prop];
+  }
 }

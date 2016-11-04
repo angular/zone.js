@@ -1,31 +1,36 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 import {zoneSymbol} from '../../lib/common/utils';
 
-describe('Zone', function () {
+describe('Zone', function() {
   var rootZone = Zone.current;
 
-  it('should have a name', function () {
+  it('should have a name', function() {
     expect(Zone.current.name).toBeDefined();
   });
 
-  describe('hooks', function () {
+  describe('hooks', function() {
 
-    it('should throw if onError is not defined', function () {
-      expect(function () {
+    it('should throw if onError is not defined', function() {
+      expect(function() {
         Zone.current.run(throwError);
       }).toThrow();
     });
 
 
-    it('should fire onError if a function run by a zone throws', function () {
+    it('should fire onError if a function run by a zone throws', function() {
       var errorSpy = jasmine.createSpy('error');
-      var myZone = Zone.current.fork({
-        name: 'spy',
-        onHandleError: errorSpy
-      });
+      var myZone = Zone.current.fork({name: 'spy', onHandleError: errorSpy});
 
       expect(errorSpy).not.toHaveBeenCalled();
 
-      expect(function () {
+      expect(function() {
         myZone.runGuarded(throwError);
       }).not.toThrow();
 
@@ -33,35 +38,36 @@ describe('Zone', function () {
     });
   });
 
-  it('should allow zones to be run from within another zone', function () {
-    var zoneA = Zone.current.fork({ name: 'A' });
-    var zoneB = Zone.current.fork({ name: 'B' });
+  it('should allow zones to be run from within another zone', function() {
+    var zone = Zone.current;
+    var zoneA = zone.fork({name: 'A'});
+    var zoneB = zone.fork({name: 'B'});
 
-    zoneA.run(function () {
-      zoneB.run(function () {
+    zoneA.run(function() {
+      zoneB.run(function() {
         expect(Zone.current).toBe(zoneB);
       });
       expect(Zone.current).toBe(zoneA);
     });
-    expect(Zone.current).toBe(rootZone);
+    expect(Zone.current).toBe(zone);
   });
 
 
   describe('wrap', function() {
-    it('should throw if argument is not a function', function () {
-      expect(function () {
+    it('should throw if argument is not a function', function() {
+      expect(function() {
         (<Function>Zone.current.wrap)(11);
       }).toThrowError('Expecting function got: 11');
     });
   });
 
 
-  describe('get', function () {
-    it('should store properties', function () {
-      var testZone = Zone.current.fork({name: 'A', properties: { key: 'value' }});
+  describe('get', function() {
+    it('should store properties', function() {
+      var testZone = Zone.current.fork({name: 'A', properties: {key: 'value'}});
       expect(testZone.get('key')).toEqual('value');
       expect(testZone.getZoneWith('key')).toEqual(testZone);
-      var childZone = testZone.fork({name: 'B', properties: { key: 'override' }});
+      var childZone = testZone.fork({name: 'B', properties: {key: 'override'}});
       expect(testZone.get('key')).toEqual('value');
       expect(testZone.getZoneWith('key')).toEqual(testZone);
       expect(childZone.get('key')).toEqual('override');
@@ -74,11 +80,11 @@ describe('Zone', function () {
     var log;
     var zone: Zone = Zone.current.fork({
       name: 'parent',
-      onHasTask: (delegate: ZoneDelegate, current: Zone, target: Zone,
-                  hasTaskState: HasTaskState): void => {
-        hasTaskState['zone'] = target.name;
-        log.push(hasTaskState);
-      },
+      onHasTask: (delegate: ZoneDelegate, current: Zone, target: Zone, hasTaskState: HasTaskState):
+                     void => {
+                       hasTaskState['zone'] = target.name;
+                       log.push(hasTaskState);
+                     },
       onScheduleTask: (delegate: ZoneDelegate, current: Zone, target: Zone, task: Task) => {
         // Do nothing to prevent tasks from being run on VM turn;
         // Tests run task explicitly.
@@ -102,18 +108,21 @@ describe('Zone', function () {
 
     it('should not decrement counters on periodic tasks', () => {
       zone.run(() => {
-        var task = zone.scheduleMacroTask('test', () => log.push('macroTask'), {
-          isPeriodic: true
-        }, noop, noop);
+        var task = zone.scheduleMacroTask(
+            'test', () => log.push('macroTask'), {isPeriodic: true}, noop, noop);
         zone.runTask(task);
         zone.runTask(task);
         zone.cancelTask(task);
       });
       expect(log).toEqual([
-        { microTask: false, macroTask: true, eventTask: false, change: 'macroTask', zone: 'parent' },
-        'macroTask',
-        'macroTask',
-        { microTask: false, macroTask: false, eventTask: false, change: 'macroTask', zone: 'parent' }
+        {microTask: false, macroTask: true, eventTask: false, change: 'macroTask', zone: 'parent'},
+        'macroTask', 'macroTask', {
+          microTask: false,
+          macroTask: false,
+          eventTask: false,
+          change: 'macroTask',
+          zone: 'parent'
+        }
       ]);
     });
 
@@ -125,13 +134,19 @@ describe('Zone', function () {
         z.cancelTask(z.scheduleEventTask('test', () => log.push('eventTask'), null, noop, noop));
       });
       expect(log).toEqual([
-        { microTask: true, macroTask: false, eventTask: false, change: 'microTask', zone: 'parent' },
+        {microTask: true, macroTask: false, eventTask: false, change: 'microTask', zone: 'parent'},
         'microTask',
-        { microTask: false, macroTask: false, eventTask: false, change: 'microTask', zone: 'parent' },
-        { microTask: false, macroTask: true, eventTask: false, change: 'macroTask', zone: 'parent' },
-        { microTask: false, macroTask: false, eventTask: false, change: 'macroTask', zone: 'parent' },
-        { microTask: false, macroTask: false, eventTask: true, change: 'eventTask', zone: 'parent' },
-        { microTask: false, macroTask: false, eventTask: false, change: 'eventTask', zone: 'parent' }
+        {microTask: false, macroTask: false, eventTask: false, change: 'microTask', zone: 'parent'},
+        {microTask: false, macroTask: true, eventTask: false, change: 'macroTask', zone: 'parent'},
+        {microTask: false, macroTask: false, eventTask: false, change: 'macroTask', zone: 'parent'},
+        {microTask: false, macroTask: false, eventTask: true, change: 'eventTask', zone: 'parent'},
+        {
+          microTask: false,
+          macroTask: false,
+          eventTask: false,
+          change: 'eventTask',
+          zone: 'parent'
+        }
       ]);
     });
 
@@ -141,16 +156,62 @@ describe('Zone', function () {
         z.runTask(z.scheduleMicroTask('test', () => log.push('microTask')));
       });
       expect(log).toEqual([
-        { microTask: true, macroTask: false, eventTask: false, change: 'microTask', zone: 'child' },
-        { microTask: true, macroTask: false, eventTask: false, change: 'microTask', zone: 'parent' },
+        {microTask: true, macroTask: false, eventTask: false, change: 'microTask', zone: 'child'},
+        {microTask: true, macroTask: false, eventTask: false, change: 'microTask', zone: 'parent'},
         'microTask',
-        { microTask: false, macroTask: false, eventTask: false, change: 'microTask', zone: 'child' },
-        { microTask: false, macroTask: false, eventTask: false, change: 'microTask', zone: 'parent' },
+        {microTask: false, macroTask: false, eventTask: false, change: 'microTask', zone: 'child'},
+        {microTask: false, macroTask: false, eventTask: false, change: 'microTask', zone: 'parent'},
       ]);
+    });
+
+    describe('assert ZoneAwarePromise', () => {
+      it('should not throw when all is OK', () => {
+        Zone.assertZonePatched();
+      });
+
+      it('should throw when Promise has been patched', () => {
+        class WrongPromise {}
+
+        var ZoneAwarePromise = global.Promise;
+        global.Promise = WrongPromise;
+        try {
+          expect(ZoneAwarePromise).toBeTruthy();
+          expect(() => Zone.assertZonePatched()).toThrow();
+        } finally {
+          // restore it.
+          global.Promise = ZoneAwarePromise;
+        }
+        Zone.assertZonePatched();
+      });
+    });
+  });
+
+  describe('invoking tasks', () => {
+    var log;
+    function noop() {}
+
+
+    beforeEach(() => {
+      log = [];
+    });
+
+    it('should not drain the microtask queue too early', () => {
+      var z = Zone.current;
+      var event = z.scheduleEventTask('test', () => log.push('eventTask'), null, noop, noop);
+
+      z.scheduleMicroTask('test', () => log.push('microTask'));
+
+      var macro = z.scheduleMacroTask('test', () => {
+        event.invoke();
+        // At this point, we should not have invoked the microtask.
+        expect(log).toEqual(['eventTask']);
+      }, null, noop, noop);
+
+      macro.invoke();
     });
   });
 });
 
-function throwError () {
+function throwError() {
   throw new Error();
 }
