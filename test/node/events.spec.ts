@@ -68,5 +68,13 @@ describe('nodejs EventEmitter', () => {
     zoneA.run(() => {
       expect(emitter.listeners('test')).toEqual([]);
     });
-  })
+  });
+  it ('should remove All listeners properly', () => {
+    zoneA.run(() => {
+      emitter.on('test', expectZoneA);
+      emitter.on('test', expectZoneA);
+      emitter.removeAllListeners('test');
+      expect(emitter.listeners('test').length).toEqual(0);
+    });
+  });
 });

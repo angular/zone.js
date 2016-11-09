@@ -10,10 +10,8 @@
 var gulp = require('gulp');
 var rollup = require('gulp-rollup');
 var rename = require("gulp-rename");
-var rename = require('gulp-rename');
 var uglify = require('gulp-uglify');
 var pump = require('pump');
-var uglify = require('gulp-uglify');
 var path = require('path');
 var spawn = require('child_process').spawn;
 
