@@ -77,4 +77,11 @@ describe('nodejs EventEmitter', () => {
       expect(emitter.listeners('test').length).toEqual(0);
     });
   });
+  it ('should remove once listener properly', () => {
+    zoneA.run(() => {
+      emitter.once('test', shouldNotRun);
+      emitter.removeListener('test', shouldNotRun);
+      emitter.emit('test');
+    });
+  });
 });
