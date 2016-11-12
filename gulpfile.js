@@ -150,6 +150,8 @@ gulp.task('build', [
   'build/zone-node.js',
   'build/jasmine-patch.js',
   'build/jasmine-patch.min.js',
+  'build/mocha-patch.js',
+  'build/mocha-patch.min.js',
   'build/long-stack-trace-zone.js',
   'build/long-stack-trace-zone.min.js',
   'build/proxy-zone.js',
