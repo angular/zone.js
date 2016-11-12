@@ -1,7 +1,7 @@
 'use strict';
 
-((context) => {
-  var Mocha = context['Mocha'];
+((context: any) => {
+  var Mocha = context.Mocha;
   
   if (typeof Mocha === 'undefined') {
     throw new Error('Missing Mocha.js');
@@ -25,69 +25,102 @@
   Mocha['__zone_patch__'] = true;
 
   const rootZone = Zone.current;
-  const syncZone = rootZone.fork(new SyncTestZoneSpec());
+  const syncZone = rootZone.fork(new SyncTestZoneSpec('Mocha.describe'));
   let testZone = null;
 
-  function wrapCallbackInProxyZone(fn: Function): Function {   
-    const asyncTest = function(done){
-      // add mochas 'done' callback for async tests if needed
-      return testZone.run(fn, this, [done]);
-    };
+  const mochaOriginal = {
+    after: Mocha.after,
+    afterEach: Mocha.afterEach,
+    before: Mocha.before,
+    beforeEach: Mocha.beforeEach,
+    describe: Mocha.describe,
+    suite: Mocha.suite,
+    it: Mocha.it,
+    specify: Mocha.it,
+    test: Mocha.test
+  };
 
-    const syncTest = function(){
-      return testZone.run(fn, this);
-    };
-    
-    const wrapFn: Function = fn.length === 0 ? syncTest : asyncTest;   
-
-    // Mocha uses toString to get the body of the test (later used in the result view) 
-    // Make sure we return the real test body, not the wrapper body, otherwise the test body just show "return testZone.run ..."
-    wrapFn.toString = function(){
-      return fn.toString();
-    };
-
-    return wrapFn;
+  function wrapDescribeInZone(args: IArguments): any[] {
+    for (let i = 0; i < args.length; i++) {
+      let arg = args[i];
+      if (typeof arg === 'function') {
+        args[i] = function() {
+          return syncZone.run(arg, this, arguments as any as any[]);
+        };
+      }
+    }
+    return args as any;
   }
 
-  function wrapDescribeInSyncZone(fn: Function): Function {
-    return function(){
-      return syncZone.run(fn, this);
+  function wrapTestInZone(args: IArguments): any[] {
+    const asyncTest = function(fn){
+      return function(done){
+        return testZone.run(fn, this, [done]);
+      };
     };
+
+    const syncTest: any = function(fn){
+      return function(){
+        return testZone.run(fn, this);
+      };
+    };  
+
+    for (let i = 0; i < args.length; i++) {
+      let arg = args[i];
+      if (typeof arg === 'function') {
+        // The `done` callback is only passed through if the function expects at
+        // least one argument.
+        // Note we have to make a function with correct number of arguments,
+        // otherwise mocha will
+        // think that all functions are sync or async.
+        args[i] = (arg.length === 0) ? syncTest(arg) : asyncTest(arg);
+        args[i].toString = function(){
+          return arg.toString();
+        };
+      }
+    }
+    return args as any;
   }
 
-  ['it', 'specify', 'test'].forEach((funcName) => {
-    if (!context[funcName]) {
-      return;
-    }
+  context.describe = context.suite = Mocha.describe = function() {
+    return mochaOriginal.describe.apply(this, wrapDescribeInZone(arguments));
+  };
 
-    let originalFn = context[funcName];
-    context[funcName] = function (name: string, fn: Function) {
-      arguments[1] = wrapCallbackInProxyZone(fn);
-      return originalFn.apply(this, arguments);
-    };
-  });
+  context.xdescribe = context.suite.skip = Mocha.describe.skip = function() {
+    return mochaOriginal.describe.skip.apply(this, wrapDescribeInZone(arguments));
+  };
 
-  ['describe', 'suite'].forEach((funcName) => {
-    if (!context[funcName]) {
-      return;
-    }
+  context.describe.only = context.suite.only = Mocha.describe.only = function() {
+    return mochaOriginal.describe.only.apply(this, wrapDescribeInZone(arguments));
+  };
 
-    let originalFn = context[funcName];
-    context[funcName] = function (name: string, fn: Function) {
-      return originalFn.call(this, name, wrapDescribeInSyncZone(fn));
-    };
-  });
+  context.it = context.specify = context.test = Mocha.it = function() {
+    return mochaOriginal.it.apply(this, wrapTestInZone(arguments));
+  };
 
-  ['beforeEach', 'afterEach', 'after', 'before', 'suiteSetup', 'suiteTeardown', 'setup', 'teardown'].forEach((funcName) => {
-    if (!context[funcName]) {
-      return;
-    }
+  context.xit = context.xspecify = Mocha.it.skip = function() {
+    return mochaOriginal.it.skip.apply(this, wrapTestInZone(arguments));
+  };
 
-    let originalFn = context[funcName];
-    context[funcName] = function (fn: Function) {
-      return originalFn.call(this, wrapCallbackInProxyZone(fn));
-    };
-  });
+  context.it.only = context.test.only = Mocha.it.only = function() {
+    return mochaOriginal.it.only.apply(this, wrapTestInZone(arguments));
+  };
+
+  context.after = context.suiteTeardown = Mocha.after = function(){
+    return mochaOriginal.after.apply(this, wrapTestInZone(arguments));
+  };
+
+  context.afterEach = context.teardown = Mocha.afterEach = function(){
+    return mochaOriginal.afterEach.apply(this, wrapTestInZone(arguments));
+  };
+
+  context.before = context.suiteSetup = Mocha.before = function(){
+    return mochaOriginal.before.apply(this, wrapTestInZone(arguments));
+  };
+
+  context.beforeEach = context.setup = Mocha.beforeEach = function(){
+    return mochaOriginal.beforeEach.apply(this, wrapTestInZone(arguments));
+  };
 
   ((originalRunTest, originalRun) => {
     Mocha.Runner.prototype.runTest = function(fn){
