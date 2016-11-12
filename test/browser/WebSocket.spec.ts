@@ -21,7 +21,9 @@ if (!window['soucelabs']) {
 
              beforeEach(function(done) {
                socket = new WebSocket(TEST_SERVER_URL);
-               socket.addEventListener('open', done);
+               socket.addEventListener('open', function(){
+                 done();
+               });
                socket.addEventListener('error', function() {
                  fail(
                      'Can\'t establish socket to ' + TEST_SERVER_URL +
@@ -31,9 +33,11 @@ if (!window['soucelabs']) {
              }, TIMEOUT);
 
              afterEach(function(done) {
-               socket.addEventListener('close', done);
+               socket.addEventListener('close', function(){
+                 done();
+               });
                socket.close();
-               done();
+              //  done();
              }, TIMEOUT);
 
 
