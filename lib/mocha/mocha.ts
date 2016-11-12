@@ -1,6 +1,8 @@
 'use strict';
 
 ((context) => {
+  var Mocha = context['Mocha'];
+  
   if (typeof Mocha === 'undefined') {
     throw new Error('Missing Mocha.js');
   }
