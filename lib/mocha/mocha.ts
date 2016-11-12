@@ -52,7 +52,7 @@
   function wrapDescribeInSyncZone(fn: Function): Function {
     return function(){
       return syncZone.run(fn, this);
-    }
+    };
   }
 
   ['it', 'specify', 'test'].forEach((funcName) => {

@@ -80,7 +80,7 @@ import '../lib/mocha/mocha';
           return;
         }
 
-        throw new Error(`Expected function to throw`);
+        throw new Error(`Expected ${expected} to throw`);
       },
       toThrowError: function (errorToBeThrow) {
         try {
@@ -89,7 +89,7 @@ import '../lib/mocha/mocha';
           return;
         }
 
-        throw Error(`Expected function to throw: ${errorToBeThrow}`);
+        throw Error(`Expected ${expected} to throw: ${errorToBeThrow}`);
       },
       toBeTruthy: function () {
         if (!expected) {
@@ -103,12 +103,12 @@ import '../lib/mocha/mocha';
       },
       toHaveBeenCalled: function () {
         if (expected.countCall === 0) {
-          throw new Error(`Expected function to be called`);
+          throw new Error(`Expected ${expected} to been called`);
         }
       },
       toHaveBeenCalledWith: function (...params) {
         if (!eq(expected.callArgs, params)) {
-          throw new Error(`Expected function to be called with: ${expected.callArgs}, called with: ${params}`);
+          throw new Error(`Expected ${expected} to been called with ${expected.callArgs}, called with: ${params}`);
         }
       },
       toMatch: function (actual) {
@@ -124,21 +124,21 @@ import '../lib/mocha/mocha';
         },
         toHaveBeenCalled: function () {
           if (expected.countCall > 0) {
-            throw new Error(`Expected function to not be called`);
+            throw new Error(`Expected ${expected} to not been called`);
           }
         },
         toThrow: function () {
           try {
             expected();
           } catch (error) {
-            throw new Error(`Expected function to not throw`);
+            throw new Error(`Expected ${expected} to not throw`);
           }
         },
         toThrowError: function () {
           try {
             expected();
           } catch (error) {
-            throw Error(`Expected function to not throw error`);
+            throw Error(`Expected ${expected} to not throw error`);
           }
         },
         toBeGreaterThan: function (actual: number) {
@@ -149,7 +149,7 @@ import '../lib/mocha/mocha';
         },
         toHaveBeenCalledWith: function (params) {
           if (!eq(expected.callArgs, params)) {
-            throw new Error(`Expected function to not be called with ${params}`);
+            throw new Error(`Expected ${expected} to not been called with ${params}`);
           }
         }
       }
