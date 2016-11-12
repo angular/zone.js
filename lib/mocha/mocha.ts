@@ -11,7 +11,8 @@
     throw new Error('Missing Zone.js');
   }
 
-  let ProxyZoneSpec = Zone['ProxyZoneSpec'];
+  const ProxyZoneSpec = Zone['ProxyZoneSpec'];
+  const SyncTestZoneSpec = Zone['SyncTestZoneSpec'];
 
   if (!ProxyZoneSpec) {
     throw new Error('Missing ProxyZoneSpec');
@@ -23,21 +24,21 @@
 
   Mocha['__zone_patch__'] = true;
 
-  let rootZone = Zone.current;
+  const rootZone = Zone.current;
+  const syncZone = rootZone.fork(new SyncTestZoneSpec());
+  let testZone = null;
 
-  function wrapCallbackInProxyZone(fn: Function): Function {
-    let testZone = rootZone.fork(new ProxyZoneSpec());
-    
-    let asyncTest = function(done){
+  function wrapCallbackInProxyZone(fn: Function): Function {   
+    const asyncTest = function(done){
       // add mochas 'done' callback for async tests if needed
       return testZone.run(fn, this, [done]);
     };
 
-    let syncTest = function(){
+    const syncTest = function(){
       return testZone.run(fn, this);
     };
     
-    let wrapFn: Function = fn.length == 0 ? syncTest : asyncTest;   
+    const wrapFn: Function = fn.length === 0 ? syncTest : asyncTest;   
 
     // Mocha uses toString to get the body of the test (later used in the result view) 
     // Make sure we return the real test body, not the wrapper body, otherwise the test body just show "return testZone.run ..."
@@ -46,6 +47,12 @@
     };
 
     return wrapFn;
+  }
+
+  function wrapDescribeInSyncZone(fn: Function): Function {
+    return function(){
+      return syncZone.run(fn, this);
+    }
   }
 
   ['it', 'specify', 'test'].forEach((funcName) => {
@@ -67,7 +74,7 @@
 
     let originalFn = context[funcName];
     context[funcName] = function (name: string, fn: Function) {
-      return originalFn.call(this, name, wrapCallbackInProxyZone(fn));
+      return originalFn.call(this, name, wrapDescribeInSyncZone(fn));
     };
   });
 
@@ -82,12 +89,25 @@
     };
   });
 
-  (runTest => {
+  ((originalRunTest, originalRun) => {
     Mocha.Runner.prototype.runTest = function(fn){
       Zone.current.scheduleMicroTask('mocha.forceTask', () => {
-        runTest.call(this, fn);
+        originalRunTest.call(this, fn);
       });
     };
-  })(Mocha.Runner.prototype.runTest);
+
+    Mocha.Runner.prototype.run = function(fn){
+      this.on('test', (e) => {
+        if(Zone.current !== rootZone){
+          throw new Error('Unexpected zone: '+ Zone.current.name);
+        }
+        testZone = rootZone.fork(new ProxyZoneSpec());
+      });
+
+      return originalRun.call(this, fn);
+    };
+
+    
+  })(Mocha.Runner.prototype.runTest, Mocha.Runner.prototype.run);
 
 })(window);
