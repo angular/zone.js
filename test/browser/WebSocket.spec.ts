@@ -37,7 +37,6 @@ if (!window['soucelabs']) {
                  done();
                });
                socket.close();
-              //  done();
              }, TIMEOUT);
 
 

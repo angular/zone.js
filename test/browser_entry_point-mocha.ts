@@ -35,3 +35,4 @@ import './browser/requestAnimationFrame.spec';
 import './browser/WebSocket.spec';
 import './browser/XMLHttpRequest.spec';
 // import './browser/geolocation.spec.manual';
+import './mocha-patch.spec';
