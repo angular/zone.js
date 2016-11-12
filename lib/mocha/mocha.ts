@@ -27,6 +27,7 @@
   const rootZone = Zone.current;
   const syncZone = rootZone.fork(new SyncTestZoneSpec('Mocha.describe'));
   let testZone = null;
+  const suiteZone = rootZone.fork(new ProxyZoneSpec());
 
   const mochaOriginal = {
     after: Mocha.after,
@@ -34,22 +35,37 @@
     before: Mocha.before,
     beforeEach: Mocha.beforeEach,
     describe: Mocha.describe,
-    suite: Mocha.suite,
-    it: Mocha.it,
-    specify: Mocha.it,
-    test: Mocha.test
+    it: Mocha.it
   };
 
-  function wrapDescribeInZone(args: IArguments): any[] {
+  function modifyArguments(args: IArguments, syncTest: Function, asyncTest?: Function): any[] {
     for (let i = 0; i < args.length; i++) {
       let arg = args[i];
       if (typeof arg === 'function') {
-        args[i] = function() {
-          return syncZone.run(arg, this, arguments as any as any[]);
+        // The `done` callback is only passed through if the function expects at
+        // least one argument.
+        // Note we have to make a function with correct number of arguments,
+        // otherwise mocha will
+        // think that all functions are sync or async.
+        args[i] = (arg.length === 0) ? syncTest(arg) : asyncTest(arg);
+        // Mocha uses toString to view the test body in the result list, make sure we return the correct function body
+        args[i].toString = function(){
+          return arg.toString();
         };
       }
     }
+
     return args as any;
+  }
+
+  function wrapDescribeInZone(args: IArguments): any[] {
+    const syncTest: any = function(fn){
+      return function(){
+        return syncZone.run(fn, this, arguments as any as any[]);
+      };
+    };
+
+    return modifyArguments(args, syncTest);
   }
 
   function wrapTestInZone(args: IArguments): any[] {
@@ -63,24 +79,26 @@
       return function(){
         return testZone.run(fn, this);
       };
-    };  
+    };
 
-    for (let i = 0; i < args.length; i++) {
-      let arg = args[i];
-      if (typeof arg === 'function') {
-        // The `done` callback is only passed through if the function expects at
-        // least one argument.
-        // Note we have to make a function with correct number of arguments,
-        // otherwise mocha will
-        // think that all functions are sync or async.
-        args[i] = (arg.length === 0) ? syncTest(arg) : asyncTest(arg);
-        args[i].toString = function(){
-          return arg.toString();
-        };
-      }
-    }
-    return args as any;
+    return modifyArguments(args, syncTest, asyncTest);
   }
+
+  function wrapSuiteInZone(args: IArguments): any[] {
+    const asyncTest = function(fn){
+      return function(done){
+        return suiteZone.run(fn, this, [done]);
+      };
+    };
+
+    const syncTest: any = function(fn){
+      return function(){
+        return suiteZone.run(fn, this);
+      };
+    };
+
+    return modifyArguments(args, syncTest, asyncTest);
+  };
 
   context.describe = context.suite = Mocha.describe = function() {
     return mochaOriginal.describe.apply(this, wrapDescribeInZone(arguments));
@@ -107,7 +125,7 @@
   };
 
   context.after = context.suiteTeardown = Mocha.after = function(){
-    return mochaOriginal.after.apply(this, wrapTestInZone(arguments));
+    return mochaOriginal.after.apply(this, wrapSuiteInZone(arguments));
   };
 
   context.afterEach = context.teardown = Mocha.afterEach = function(){
@@ -115,7 +133,7 @@
   };
 
   context.before = context.suiteSetup = Mocha.before = function(){
-    return mochaOriginal.before.apply(this, wrapTestInZone(arguments));
+    return mochaOriginal.before.apply(this, wrapSuiteInZone(arguments));
   };
 
   context.beforeEach = context.setup = Mocha.beforeEach = function(){
