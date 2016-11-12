@@ -28,16 +28,17 @@
   function wrapCallbackInProxyZone(fn: Function): Function {
     let testZone = rootZone.fork(new ProxyZoneSpec());
     
-    if (fn.length === 1) {
-      // add mochas 'done' callback for async tests
-      return function (done) {
-        return testZone.run(fn, this, [done]);
-      }
-    }
+    // add mochas 'done' callback for async tests if needed
+    let wrapFn: Function = fn.length === 1 ? function (done) { return testZone.run(fn, this, [done]); } 
+                                            : function(){ return testZone.run(fn, this); };
 
-    return function testFunc() {
-      return testZone.run(fn, this);
+    // Mocha uses toString to get the body of the test (later used in the result view) 
+    // Make sure we return the real test body, not the wrapper body, otherwise the test body just show "return testZone.run ..."
+    wrapFn.toString = function(){
+      return fn.toString();
     };
+
+    return wrapFn;
   }
 
   ['it', 'specify', 'test'].forEach((funcName) => {
