@@ -11,77 +11,83 @@ declare function before(fn: () => void): void;
 declare function after(fn: () => void): void;
 //
 
-describe('Mocha BDD-style', () => {
-  let throwOnAsync = false;
-  let beforeEachZone: Zone = null;
-  let itZone: Zone = null;
-  const syncZone = Zone.current;
-  let beforeZone: Zone = null;
+import {ifEnvSupports} from './test-util';
 
-  before(() => {
-    beforeZone = Zone.current;
+ifEnvSupports('Mocha', function() {
+
+  describe('Mocha BDD-style', () => {
+    let throwOnAsync = false;
+    let beforeEachZone: Zone = null;
+    let itZone: Zone = null;
+    const syncZone = Zone.current;
+    let beforeZone: Zone = null;
+
+    before(() => {
+      beforeZone = Zone.current;
+    });
+
+    try {
+      Zone.current.scheduleMicroTask('dontallow', () => null);
+    } catch (e) {
+      throwOnAsync = true;
+    }
+
+    beforeEach(() => beforeEachZone = Zone.current);
+
+    it('should throw on async in describe', () => {
+      expect(Zone.currentTask).toBeTruthy();
+      expect(throwOnAsync).toBe(true);
+      expect(syncZone.name).toEqual('syncTestZone for Mocha.describe');
+      itZone = Zone.current;
+    });
+
+    afterEach(() => {
+      let zone = Zone.current;
+      expect(zone.name).toEqual('ProxyZone');
+      expect(beforeEachZone).toBe(zone);
+      expect(itZone).toBe(zone);
+    });
+
+    after(() => {
+      expect(beforeZone).toBe(Zone.current);
+    });
   });
 
-  try {
-    Zone.current.scheduleMicroTask('dontallow', () => null);
-  } catch (e) {
-    throwOnAsync = true;
-  }
+  suite('Mocha TDD-style', () => {
+    let testZone: Zone = null;
+    let beforeEachZone: Zone = null;
+    let suiteSetupZone: Zone = null;
 
-  beforeEach(() => beforeEachZone = Zone.current);
+    suiteSetup(() => {
+      suiteSetupZone = Zone.current;
+    });
 
-  it('should throw on async in describe', () => {
-    expect(Zone.currentTask).toBeTruthy();
-    expect(throwOnAsync).toBe(true);
-    expect(syncZone.name).toEqual('syncTestZone for Mocha.describe');
-    itZone = Zone.current;
+    setup(() => {
+      beforeEachZone = Zone.current;
+    });
+
+    test('should run in Zone with "test"-syntax in TDD-mode', () => {
+      testZone = Zone.current;
+      expect(Zone.currentTask).toBeTruthy();
+      expect(testZone.name).toEqual('ProxyZone'); 
+    });
+
+    specify('test should run in Zone with "specify"-syntax in TDD-mode', () => {
+      testZone = Zone.current;
+      expect(Zone.currentTask).toBeTruthy();
+      expect(testZone.name).toEqual('ProxyZone'); 
+    });
+
+    teardown(() => {
+      expect(Zone.current.name).toEqual('ProxyZone');
+      expect(beforeEachZone).toBe(Zone.current);
+      expect(testZone).toBe(Zone.current);
+    });
+
+    suiteTeardown(() => {
+      expect(suiteSetupZone).toBe(Zone.current);
+    });
+
   });
 
-  afterEach(() => {
-    let zone = Zone.current;
-    expect(zone.name).toEqual('ProxyZone');
-    expect(beforeEachZone).toBe(zone);
-    expect(itZone).toBe(zone);
-  });
-
-  after(() => {
-    expect(beforeZone).toBe(Zone.current);
-  });
-});
-
-suite('Mocha TDD-style', () => {
-  let testZone: Zone = null;
-  let beforeEachZone: Zone = null;
-  let suiteSetupZone: Zone = null;
-
-  suiteSetup(() => {
-    suiteSetupZone = Zone.current;
-  });
-
-  setup(() => {
-    beforeEachZone = Zone.current;
-  });
-
-  test('should run in Zone with "test"-syntax in TDD-mode', () => {
-    testZone = Zone.current;
-    expect(Zone.currentTask).toBeTruthy();
-    expect(testZone.name).toEqual('ProxyZone'); 
-  });
-
-  specify('test should run in Zone with "specify"-syntax in TDD-mode', () => {
-    testZone = Zone.current;
-    expect(Zone.currentTask).toBeTruthy();
-    expect(testZone.name).toEqual('ProxyZone'); 
-  });
-
-  teardown(() => {
-    expect(Zone.current.name).toEqual('ProxyZone');
-    expect(beforeEachZone).toBe(Zone.current);
-    expect(testZone).toBe(Zone.current);
-  });
-
-  suiteTeardown(() => {
-    expect(suiteSetupZone).toBe(Zone.current);
-  });
-
-});
+})();

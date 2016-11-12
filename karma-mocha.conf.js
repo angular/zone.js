@@ -7,6 +7,4 @@ module.exports = function (config) {
   config.client.mocha = {
     timeout: 5000 // copied timeout for Jasmine in WebSocket.spec (otherwise Mochas default timeout at 2 sec is to low for the tests)
   };
-
-  config.files.push('build/test/main-mocha.js');
 };

@@ -19,20 +19,3 @@ import '../lib/zone-spec/proxy';
 import '../lib/zone-spec/sync-test';
 import '../lib/zone-spec/task-tracking';
 import '../lib/zone-spec/wtf';
-
-// Setup test environment
-import './test-env-setup-mocha';
-
-// List all tests here:
-import './common_tests';
-import './browser/browser.spec';
-import './browser/define-property.spec';
-import './browser/element.spec';
-import './browser/FileReader.spec';
-import './browser/HTMLImports.spec';
-import './browser/registerElement.spec';
-import './browser/requestAnimationFrame.spec';
-import './browser/WebSocket.spec';
-import './browser/XMLHttpRequest.spec';
-// import './browser/geolocation.spec.manual';
-import './mocha-patch.spec';

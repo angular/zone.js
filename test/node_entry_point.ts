@@ -21,7 +21,7 @@ import '../lib/zone-spec/task-tracking';
 import '../lib/zone-spec/wtf';
 
 // Setup test environment
-import './test-env-setup';
+import './test-env-setup-jasmine';
 
 // List all tests here:
 import './common_tests';

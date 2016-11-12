@@ -15,7 +15,8 @@ module.exports = function (config) {
       'node_modules/whatwg-fetch/fetch.js',
       {pattern: 'test/assets/**/*.*', watched: true, served: true, included: false},
       {pattern: 'build/**/*.js.map', watched: true, served: true, included: false},
-      {pattern: 'build/**/*.js', watched: true, served: true, included: false}
+      {pattern: 'build/**/*.js', watched: true, served: true, included: false},
+      'build/test/main.js'
     ],
 
     plugins: [
