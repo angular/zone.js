@@ -15,15 +15,13 @@ module.exports = function (config) {
       'node_modules/whatwg-fetch/fetch.js',
       {pattern: 'test/assets/**/*.*', watched: true, served: true, included: false},
       {pattern: 'build/**/*.js.map', watched: true, served: true, included: false},
-      {pattern: 'build/**/*.js', watched: true, served: true, included: false},
-      'build/test/main.js'
+      {pattern: 'build/**/*.js', watched: true, served: true, included: false}
     ],
 
     plugins: [
       require('karma-chrome-launcher'),
       require('karma-firefox-launcher'),
-      require('karma-jasmine'),
-      require('karma-sourcemap-loader'),
+      require('karma-sourcemap-loader')
     ],
 
     preprocessors: {
@@ -42,7 +40,6 @@ module.exports = function (config) {
     logLevel: config.LOG_INFO,
 
     browsers: ['Firefox'],
-    frameworks: ['jasmine'],
 
     captureTimeout: 60000,
 

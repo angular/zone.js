@@ -8,5 +8,6 @@
 
 module.exports = function (config) {
   require('./karma.conf')(config);
+  require('./karma-jasmine.conf')(config);
   require('./sauce.conf')(config);
 };
