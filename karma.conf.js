@@ -22,8 +22,7 @@ module.exports = function (config) {
     plugins: [
       require('karma-chrome-launcher'),
       require('karma-firefox-launcher'),
-      require('karma-jasmine'),
-      require('karma-sourcemap-loader'),
+      require('karma-sourcemap-loader')
     ],
 
     preprocessors: {
@@ -42,7 +41,6 @@ module.exports = function (config) {
     logLevel: config.LOG_INFO,
 
     browsers: ['Firefox'],
-    frameworks: ['jasmine'],
 
     captureTimeout: 60000,
 

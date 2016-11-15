@@ -22,5 +22,6 @@ before_script:
   - ./scripts/sauce/sauce_connect_block.sh
 
 script:
-  - node_modules/.bin/karma start karma-sauce.conf.js --single-run
+  - node_modules/.bin/karma start karma-sauce-jasmine.conf.js --single-run
+  - node_modules/.bin/karma start karma-sauce-mocha.conf.js --single-run
   - node_modules/.bin/gulp test/node

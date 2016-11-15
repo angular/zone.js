@@ -91,6 +91,14 @@ gulp.task('build/jasmine-patch.min.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/jasmine/jasmine.ts', 'jasmine-patch.min.js', true, cb);
 });
 
+gulp.task('build/mocha-patch.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/mocha/mocha.ts', 'mocha-patch.js', false, cb);
+});
+
+gulp.task('build/mocha-patch.min.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/mocha/mocha.ts', 'mocha-patch.min.js', true, cb);
+});
+
 gulp.task('build/long-stack-trace-zone.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.js', false, cb);
 });
@@ -142,6 +150,8 @@ gulp.task('build', [
   'build/zone-node.js',
   'build/jasmine-patch.js',
   'build/jasmine-patch.min.js',
+  'build/mocha-patch.js',
+  'build/mocha-patch.min.js',
   'build/long-stack-trace-zone.js',
   'build/long-stack-trace-zone.min.js',
   'build/proxy-zone.js',
