@@ -170,24 +170,28 @@ function findAllExistingRegisteredTasks(target: any, name: string, capture: bool
   return null;
 }
 
-function attachRegisteredEvent(target: any, eventTask: Task): void {
+function attachRegisteredEvent(target: any, eventTask: Task, isPrepend: boolean): void {
   let eventTasks: Task[] = target[EVENT_TASKS];
   if (!eventTasks) {
     eventTasks = target[EVENT_TASKS] = [];
   }
-  eventTasks.push(eventTask);
+  if (isPrepend) {
+    eventTasks.unshift(eventTask);
+  } else {
+    eventTasks.push(eventTask);
+  }
 }
 
 export function makeZoneAwareAddListener(
     addFnName: string, removeFnName: string, useCapturingParam: boolean = true,
-    allowDuplicates: boolean = false) {
+    allowDuplicates: boolean = false, isPrepend: boolean = false) {
   const addFnSymbol = zoneSymbol(addFnName);
   const removeFnSymbol = zoneSymbol(removeFnName);
   const defaultUseCapturing = useCapturingParam ? false : undefined;
 
   function scheduleEventListener(eventTask: Task): any {
     const meta = <ListenerTaskMeta>eventTask.data;
-    attachRegisteredEvent(meta.target, eventTask);
+    attachRegisteredEvent(meta.target, eventTask, isPrepend);
     return meta.target[addFnSymbol](meta.eventName, eventTask.invoke, meta.useCapturing);
   }
 
