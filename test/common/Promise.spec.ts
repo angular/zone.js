@@ -331,6 +331,53 @@ describe(
         });
       });
 
+      describe('Promise subclasses', function() {
+        function MyPromise(init) {
+          this._promise = new Promise(init);
+        }
+
+        MyPromise.prototype.catch = function _catch() {
+          return this._promise.catch.apply(this._promise, arguments);
+        };
+
+        MyPromise.prototype.then = function then() {
+          return this._promise.then.apply(this._promise, arguments);
+        };
+
+        var setPrototypeOf = (Object as any).setPrototypeOf || function(obj, proto) {
+          obj.__proto__ = proto;
+          return obj;
+        }
+
+        setPrototypeOf(MyPromise.prototype, Promise.prototype);
+
+        it('should reject if the Promise subclass rejects', function() {
+          var myPromise = new MyPromise(function(resolve, reject) {
+            reject('foo');
+          });
+
+          return Promise.resolve().then(function() {
+            return myPromise;
+          }).then(function() {
+            throw new Error('Unexpected resolution');
+          }, function(result) {
+            expect(result).toBe('foo');
+          });
+        });
+
+        it('should resolve if the Promise subclass resolves', function() {
+          var myPromise = new MyPromise(function(resolve, reject) {
+            resolve('foo');
+          });
+
+          return Promise.resolve().then(function() {
+            return myPromise;
+          }).then(function(result) {
+            expect(result).toBe('foo');
+          });
+        });
+      });
+
       describe('fetch', ifEnvSupports('fetch', function() {
                  it('should work for text response', function(done) {
                    testZone.run(function() {

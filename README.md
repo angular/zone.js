@@ -1,11 +1,13 @@
 # Zone.js
 
 [![Build Status](https://travis-ci.org/angular/zone.js.png)](https://travis-ci.org/angular/zone.js)
+[![CDNJS](https://img.shields.io/cdnjs/v/zone.js.svg)](https://cdnjs.com/libraries/zone.js)
 
 Implements _Zones_ for JavaScript, inspired by [Dart](https://www.dartlang.org/articles/zones/).
 
 > If you're using zone.js via unpkg please provide a query param `?main=browser`  
-`https://unpkg.com/zone.js?main=browser`
+`https://unpkg.com/zone.js?main=browser`  
+> If you're using `newrelic` make sure you import `newrelic` first as it patches global.Promise before zone,js does
 
 # NEW Zone.js POST-v0.6.0
 
