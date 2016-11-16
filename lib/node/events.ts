@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {makeZoneAwareAddListener, makeZoneAwareListeners, makeZoneAwareRemoveListener, patchMethod} from '../common/utils';
+import {makeZoneAwareAddListener, makeZoneAwareListeners, makeZoneAwareRemoveListener, makeZoneAwareRemoveAllListeners, patchMethod} from '../common/utils';
 
 const callAndReturnFirstParam = (fn: (self: any, args: any[]) => any) => {
   return (self: any, args: any[]) => {
@@ -19,12 +19,14 @@ const callAndReturnFirstParam = (fn: (self: any, args: any[]) => any) => {
 const EE_ADD_LISTENER = 'addListener';
 const EE_PREPEND_LISTENER = 'prependListener';
 const EE_REMOVE_LISTENER = 'removeListener';
+const EE_REMOVE_ALL_LISTENER = 'removeAllListeners';
 const EE_LISTENERS = 'listeners';
 const EE_ON = 'on';
 
-const zoneAwareAddListener = callAndReturnFirstParam(makeZoneAwareAddListener(EE_ADD_LISTENER, EE_REMOVE_LISTENER, false, true));
-const zoneAwarePrependListener = callAndReturnFirstParam(makeZoneAwareAddListener(EE_PREPEND_LISTENER, EE_REMOVE_LISTENER, false, true));
+const zoneAwareAddListener = callAndReturnFirstParam(makeZoneAwareAddListener(EE_ADD_LISTENER, EE_REMOVE_LISTENER, false, true, false));
+const zoneAwarePrependListener = callAndReturnFirstParam(makeZoneAwareAddListener(EE_PREPEND_LISTENER, EE_REMOVE_LISTENER, false, true, true));
 const zoneAwareRemoveListener = callAndReturnFirstParam(makeZoneAwareRemoveListener(EE_REMOVE_LISTENER, false));
+const zoneAwareRemoveAllListeners = callAndReturnFirstParam(makeZoneAwareRemoveAllListeners(EE_REMOVE_ALL_LISTENER, false));
 const zoneAwareListeners = makeZoneAwareListeners(EE_LISTENERS);
 
 export function patchEventEmitterMethods(obj: any): boolean {
@@ -32,6 +34,7 @@ export function patchEventEmitterMethods(obj: any): boolean {
     patchMethod(obj, EE_ADD_LISTENER, () => zoneAwareAddListener);
     patchMethod(obj, EE_PREPEND_LISTENER, () => zoneAwarePrependListener);
     patchMethod(obj, EE_REMOVE_LISTENER, () => zoneAwareRemoveListener);
+    patchMethod(obj, EE_REMOVE_ALL_LISTENER, () => zoneAwareRemoveAllListeners);
     patchMethod(obj, EE_LISTENERS, () => zoneAwareListeners);
     obj[EE_ON] = obj[EE_ADD_LISTENER];
     return true;

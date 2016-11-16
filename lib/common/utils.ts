@@ -118,11 +118,16 @@ const EVENT_TASKS = zoneSymbol('eventTasks');
 const ADD_EVENT_LISTENER = 'addEventListener';
 const REMOVE_EVENT_LISTENER = 'removeEventListener';
 
+interface NestedEventListener {
+  listener?: EventListenerOrEventListenerObject;
+}
+
+declare type NestedEventListenerOrEventListenerObject = NestedEventListener | EventListener | EventListenerObject;
 
 interface ListenerTaskMeta extends TaskData {
   useCapturing: boolean;
   eventName: string;
-  handler: EventListenerOrEventListenerObject;
+  handler: NestedEventListenerOrEventListenerObject;
   target: any;
   name: string;
 }
@@ -134,7 +139,8 @@ function findExistingRegisteredTask(
     for (let i = 0; i < eventTasks.length; i++) {
       const eventTask = eventTasks[i];
       const data = <ListenerTaskMeta>eventTask.data;
-      if (data.handler === handler && data.useCapturing === capture && data.eventName === name) {
+      const listener = <NestedEventListener>data.handler;
+      if ((data.handler === handler || listener.listener === handler) && data.useCapturing === capture && data.eventName === name) {
         if (remove) {
           eventTasks.splice(i, 1);
         }
@@ -145,25 +151,47 @@ function findExistingRegisteredTask(
   return null;
 }
 
+function findAllExistingRegisteredTasks(target: any, name: string, capture: boolean, remove: boolean): Task[] {
+  const eventTasks: Task[] = target[EVENT_TASKS];
+  if (eventTasks) {
+    const result = [];
+    for (var i = eventTasks.length - 1; i >= 0; i --) {
+      const eventTask = eventTasks[i];
+      const data = <ListenerTaskMeta>eventTask.data;
+      if (data.eventName === name && data.useCapturing === capture) {
+        result.push(eventTask);
+        if (remove) {
+          eventTasks.splice(i, 1);
+        }
+      }
+    }
+    return result;
+  }
+  return null;
+}
 
-function attachRegisteredEvent(target: any, eventTask: Task): void {
+function attachRegisteredEvent(target: any, eventTask: Task, isPrepend: boolean): void {
   let eventTasks: Task[] = target[EVENT_TASKS];
   if (!eventTasks) {
     eventTasks = target[EVENT_TASKS] = [];
   }
-  eventTasks.push(eventTask);
+  if (isPrepend) {
+    eventTasks.unshift(eventTask);
+  } else {
+    eventTasks.push(eventTask);
+  }
 }
 
 export function makeZoneAwareAddListener(
     addFnName: string, removeFnName: string, useCapturingParam: boolean = true,
-    allowDuplicates: boolean = false) {
+    allowDuplicates: boolean = false, isPrepend: boolean = false) {
   const addFnSymbol = zoneSymbol(addFnName);
   const removeFnSymbol = zoneSymbol(removeFnName);
   const defaultUseCapturing = useCapturingParam ? false : undefined;
 
   function scheduleEventListener(eventTask: Task): any {
     const meta = <ListenerTaskMeta>eventTask.data;
-    attachRegisteredEvent(meta.target, eventTask);
+    attachRegisteredEvent(meta.target, eventTask, isPrepend);
     return meta.target[addFnSymbol](meta.eventName, eventTask.invoke, meta.useCapturing);
   }
 
@@ -245,6 +273,25 @@ export function makeZoneAwareRemoveListener(fnName: string, useCapturingParam: b
       target[symbol](eventName, handler, useCapturing);
     }
   };
+}
+
+export function makeZoneAwareRemoveAllListeners(fnName: string, useCapturingParam: boolean = true) {
+  const symbol = zoneSymbol(fnName);
+  const defaultUseCapturing = useCapturingParam ? false : undefined;
+
+  return function zoneAwareRemoveAllListener(self: any, args: any[]) {
+    var eventName = args[0];
+    var useCapturing = args[1] || defaultUseCapturing;
+    var target = self || _global;
+    var eventTasks = findAllExistingRegisteredTasks(target, eventName, useCapturing, true);
+    if (eventTasks) {
+      for (var i = 0; i < eventTasks.length; i ++) {
+        var eventTask = eventTasks[i];
+        eventTask.zone.cancelTask(eventTask);
+      }
+    }
+    target[symbol](eventName, useCapturing);
+  }
 }
 
 export function makeZoneAwareListeners(fnName: string) {
