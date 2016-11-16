@@ -1,6 +1,7 @@
 # Zone.js
 
 [![Build Status](https://travis-ci.org/angular/zone.js.png)](https://travis-ci.org/angular/zone.js)
+[![CDNJS](https://img.shields.io/cdnjs/v/zone.js.svg)](https://cdnjs.com/libraries/zone.js)
 
 Implements _Zones_ for JavaScript, inspired by [Dart](https://www.dartlang.org/articles/zones/).
 
