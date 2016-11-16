@@ -1030,7 +1030,10 @@ const Zone: ZoneType = (function(global: any) {
   function resolvePromise(
       promise: ZoneAwarePromise<any>, state: boolean, value: any): ZoneAwarePromise<any> {
     if (promise[symbolState] === UNRESOLVED) {
-      if (value instanceof ZoneAwarePromise && value[symbolState] !== UNRESOLVED) {
+      if (value instanceof ZoneAwarePromise &&
+          value.hasOwnProperty(symbolState) &&
+          value.hasOwnProperty(symbolValue) &&
+          value[symbolState] !== UNRESOLVED) {
         clearRejectedNoCatch(<Promise<any>>value);
         resolvePromise(promise, value[symbolState], value[symbolValue]);
       } else if (isThenable(value)) {
