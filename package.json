@@ -18,8 +18,9 @@
     "ws-server": "node ./test/ws-server.js",
     "tsc": "tsc",
     "tsc:w": "tsc -w",
-    "test": "npm run tsc && concurrently \"npm run tsc:w\" \"npm run ws-server\" \"karma start karma.conf.js\"",
+    "test": "npm run tsc && concurrently \"npm run tsc:w\" \"npm run ws-server\" \"karma start karma-jasmine.conf.js\"",
     "test-node": "gulp test/node",
+    "test-mocha": "npm run tsc && concurrently \"npm run tsc:w\" \"npm run ws-server\" \"karma start karma-mocha.conf.js\"",
     "serve": "python -m SimpleHTTPServer 8000"
   },
   "repository": {
@@ -52,9 +53,11 @@
     "karma-chrome-launcher": "^0.2.1",
     "karma-firefox-launcher": "^0.1.4",
     "karma-jasmine": "^0.3.6",
+    "karma-mocha": "^1.2.0",
     "karma-safari-launcher": "^0.1.1",
     "karma-sauce-launcher": "^0.2.10",
     "karma-sourcemap-loader": "^0.3.6",
+    "mocha": "^3.1.2",
     "nodejs-websocket": "^1.2.0",
     "pump": "^1.0.1",
     "systemjs": "^0.19.37",
