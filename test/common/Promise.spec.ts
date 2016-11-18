@@ -204,15 +204,6 @@ describe(
             });
           });
 
-          it('should reject promise', () => {
-            queueZone.run(() => {
-              var value = null;
-              Promise.reject('rejectReason')['catch']((v) => value = v);
-              flushMicrotasks();
-              expect(value).toEqual('rejectReason');
-            });
-          });
-
           it('should re-reject promise', () => {
             queueZone.run(() => {
               var value = null;
