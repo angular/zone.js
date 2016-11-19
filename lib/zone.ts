@@ -962,7 +962,7 @@ const Zone: ZoneType = (function(global: any) {
   function scheduleQueueDrain() {
     // if we are not running in any task, and there has not been anything scheduled
     // we must bootstrap the initial task creation by manually scheduling the drain
-    if (_numberOfNestedTaskFrames == 0 && _microTaskQueue.length == 0) {
+    if (_numberOfNestedTaskFrames === 0 && _microTaskQueue.length === 0) {
       // We are not running in Task, so we need to kickstart the microtask queue.
       if (global[symbolPromise]) {
         global[symbolPromise].resolve(0)[symbolThen](drainMicroTaskQueue);
