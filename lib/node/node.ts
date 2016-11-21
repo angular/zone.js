@@ -30,6 +30,13 @@ if (shouldPatchGlobalTimers) {
   patchTimer(_global, set, clear, 'Immediate');
 }
 
+// patch process.nextTick
+var nativeNextTick = process.nextTick;
+process.nextTick = function() {
+  var args = arguments;
+  args[0] = Zone.current.wrap(args[0], 'process.nextTick');
+  nativeNextTick.apply(this, args);
+}
 
 // Crypto
 let crypto;
