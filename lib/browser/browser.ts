@@ -6,8 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import '../zone';
-
 import {patchTimer} from '../common/timers';
 import {patchClass, patchMethod, patchPrototype, zoneSymbol} from '../common/utils';
 

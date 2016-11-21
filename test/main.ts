@@ -17,8 +17,8 @@ __karma__.loaded = function () { };
 System.config({ defaultJSExtensions: true });
 
 System.import('/base/build/test/browser-zone-setup').then(() => {
-  let testFrameworkPatch = typeof (window as any).Mocha !== 'undefined' ? '/base/build/test/test-env-setup-mocha'
-                                                                                : '/base/build/test/test-env-setup-jasmine';
+  let testFrameworkPatch = typeof (window as any).Mocha !== 'undefined'
+      ? '/base/build/test/test-env-setup-mocha' : '/base/build/test/test-env-setup-jasmine';
   // Setup test environment
   System.import(testFrameworkPatch).then(() => {
     System.import('/base/build/test/browser_entry_point')

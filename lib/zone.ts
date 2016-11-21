@@ -519,6 +519,21 @@ interface EventTask extends Task {
   /* TS v1.8 => type: 'eventTask'; */
 }
 
+/**
+ * Extend the Error with additional fields for rewritten stack frames
+ */
+interface Error {
+  /**
+   * Stack trace where extra frames have been removed and zone names added.
+   */
+  zoneAwareStack?: string;
+
+  /**
+   * Original stack trace with no modiffications
+   */
+  originalStack?: string;
+}
+
 /** @internal */
 type AmbientZone = Zone;
 /** @internal */
@@ -545,7 +560,7 @@ const Zone: ZoneType = (function(global: any) {
 
 
     static get current(): AmbientZone {
-      return _currentZone;
+      return _currentZoneFrame.zone;
     };
     static get currentTask(): Task {
       return _currentTask;
@@ -606,19 +621,17 @@ const Zone: ZoneType = (function(global: any) {
 
     public run(
         callback: Function, applyThis: any = null, applyArgs: any[] = null, source: string = null) {
-      const oldZone = _currentZone;
-      _currentZone = this;
+      _currentZoneFrame = new ZoneFrame(_currentZoneFrame, this);
       try {
         return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
       } finally {
-        _currentZone = oldZone;
+        _currentZoneFrame = _currentZoneFrame.parent;
       }
     }
 
     public runGuarded(
         callback: Function, applyThis: any = null, applyArgs: any[] = null, source: string = null) {
-      const oldZone = _currentZone;
-      _currentZone = this;
+      _currentZoneFrame = new ZoneFrame(_currentZoneFrame, this);
       try {
         try {
           return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
@@ -628,7 +641,7 @@ const Zone: ZoneType = (function(global: any) {
           }
         }
       } finally {
-        _currentZone = oldZone;
+        _currentZoneFrame = _currentZoneFrame.parent;
       }
     }
 
@@ -641,8 +654,7 @@ const Zone: ZoneType = (function(global: any) {
             '; Execution: ' + this.name + ')');
       const previousTask = _currentTask;
       _currentTask = task;
-      const oldZone = _currentZone;
-      _currentZone = this;
+      _currentZoneFrame = new ZoneFrame(_currentZoneFrame, this);
       try {
         if (task.type == 'macroTask' && task.data && !task.data.isPeriodic) {
           task.cancelFn = null;
@@ -655,7 +667,7 @@ const Zone: ZoneType = (function(global: any) {
           }
         }
       } finally {
-        _currentZone = oldZone;
+        _currentZoneFrame = _currentZoneFrame.parent;
         _currentTask = previousTask;
       }
     }
@@ -924,6 +936,15 @@ const Zone: ZoneType = (function(global: any) {
     rejection: any;
   }
 
+  class ZoneFrame {
+    public parent: ZoneFrame;
+    public zone: Zone;
+    constructor(parent: ZoneFrame, zone: Zone) {
+      this.parent = parent;
+      this.zone = zone;
+    }
+  }
+
   function __symbol__(name: string) {
     return '__zone_symbol__' + name;
   };
@@ -931,7 +952,7 @@ const Zone: ZoneType = (function(global: any) {
   const symbolPromise = __symbol__('Promise');
   const symbolThen = __symbol__('then');
 
-  let _currentZone: Zone = new Zone(null, null);
+  let _currentZoneFrame = new ZoneFrame(null, new Zone(null, null));
   let _currentTask: Task = null;
   let _microTaskQueue: Task[] = [];
   let _isDrainingMicrotaskQueue: boolean = false;
@@ -941,7 +962,7 @@ const Zone: ZoneType = (function(global: any) {
   function scheduleQueueDrain() {
     // if we are not running in any task, and there has not been anything scheduled
     // we must bootstrap the initial task creation by manually scheduling the drain
-    if (_numberOfNestedTaskFrames == 0 && _microTaskQueue.length == 0) {
+    if (_numberOfNestedTaskFrames === 0 && _microTaskQueue.length === 0) {
       // We are not running in Task, so we need to kickstart the microtask queue.
       if (global[symbolPromise]) {
         global[symbolPromise].resolve(0)[symbolThen](drainMicroTaskQueue);
@@ -1232,5 +1253,153 @@ const Zone: ZoneType = (function(global: any) {
 
   // This is not part of public API, but it is usefull for tests, so we expose it.
   Promise[Zone.__symbol__('uncaughtPromiseErrors')] = _uncaughtPromiseErrors;
+
+  /*
+   * This code patches Error so that:
+   *   - It ignores un-needed stack frames.
+   *   - It Shows the associated Zone for reach frame.
+   */
+
+  enum FrameType {
+    /// Skip this frame when printing out stack
+    blackList,
+    /// This frame marks zone transition
+    trasition
+  };
+  const NativeError = global[__symbol__('Error')] = global.Error;
+  // Store the frames which should be removed from the stack frames
+  const blackListedStackFrames: {[frame: string]:FrameType} = {};
+  // We must find the frame where Error was created, otherwise we assume we don't understand stack
+  let zoneAwareFrame: string;
+  global.Error = ZoneAwareError;
+  // How should the stack frames be parsed.
+  let frameParserStrategy = null;
+  const stackRewrite = 'stackRewrite';
+
+
+  /**
+   * This is ZoneAwareError which processes the stack frame and cleans up extra frames as well as
+   * adds zone information to it.
+   */
+  function ZoneAwareError() {
+    // Create an Error.
+    let error: Error = NativeError.apply(this, arguments);
+
+    // Save original stack trace
+    error.originalStack = error.stack;
+
+    // Process the stack trace and rewrite the frames.
+    if (ZoneAwareError[stackRewrite] && error.originalStack) {
+      let frames: string[] = error.originalStack.split('\n');
+      let zoneFrame = _currentZoneFrame;
+      let i = 0;
+      // Find the first frame
+      while (frames[i] !== zoneAwareFrame && i < frames.length) {
+        i++;
+      }
+      for(;i < frames.length && zoneFrame; i++) {
+        let frame = frames[i];
+        if (frame.trim()) {
+          let frameType = blackListedStackFrames.hasOwnProperty(frame) && blackListedStackFrames[frame];
+          if (frameType === FrameType.blackList) {
+            frames.splice(i, 1);
+            i--;
+          } else if (frameType === FrameType.trasition) {
+            if (zoneFrame.parent) {
+              // This is the special frame where zone changed. Print and process it accordingly
+              frames[i] += ` [${zoneFrame.parent.zone.name} => ${zoneFrame.zone.name}]`;
+              zoneFrame = zoneFrame.parent;
+            } else {
+              zoneFrame == null;
+            }
+          } else {
+            frames[i] += ` [${zoneFrame.zone.name}]`;
+          }
+        }
+      }
+      error.stack = error.zoneAwareStack = frames.join('\n');
+    }
+    return error;
+  };
+  // Copy the prototype so that instanceof operator works as expected
+  ZoneAwareError.prototype = NativeError.prototype;
+  ZoneAwareError[Zone.__symbol__('blacklistedStackFrames')] = blackListedStackFrames;
+  ZoneAwareError[stackRewrite] = false;
+
+  if (NativeError.hasOwnProperty('stackTraceLimit')) {
+    // Extend default stack limit as we will be removing few frames.
+    NativeError.stackTraceLimit = Math.max(NativeError.stackTraceLimit, 15);
+
+    // make sure that ZoneAwareError has the same property which forwards to NativeError.
+    Object.defineProperty(ZoneAwareError, 'stackTraceLimit', {
+      get: function() { return NativeError.stackTraceLimit; },
+      set: function(value) { return NativeError.stackTraceLimit = value; }
+    });
+  }
+
+  // Now we need to populet the `blacklistedStackFrames` as well as find the
+  // run/runGuraded/runTask frames. This is done by creating a detect zone and then threading
+  // the execution through all of the above methods so that we can look at the stack trace and
+  // find the frames of interest.
+  let detectZone: Zone = Zone.current.fork({
+    name: 'detect',
+    onInvoke: function(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                        delegate: Function, applyThis: any, applyArgs: any[], source: string): any {
+      // Here only so that it will show up in the stack frame so that it can be black listed.
+      return parentZoneDelegate.invoke(targetZone, delegate, applyThis, applyArgs, source);
+    },
+    onHandleError: function(parentZD: ZoneDelegate, current: Zone, target: Zone, error: any): boolean {
+      if (error.originalStack && Error === ZoneAwareError) {
+        let frames = error.originalStack.split(/\n/);
+        let runFrame = false, runGuardedFrame = false, runTaskFrame = false;
+        while (frames.length) {
+          let frame = frames.shift();
+          // On safari it is possible to have stack frame with no line number.
+          // This check makes sure that we don't filter frames on name only (must have linenumber)
+          if (/:\d+:\d+/.test(frame)) {
+            // Get rid of the path so that we don't accidintely find function name in path.
+            // In chrome the seperator is `(` and `@` in FF and safari
+            // Chrome: at Zone.run (zone.js:100)
+            // Chrome: at Zone.run (http://localhost:9876/base/build/lib/zone.js:100:24)
+            // FireFox: Zone.prototype.run@http://localhost:9876/base/build/lib/zone.js:101:24
+            // Safari: run@http://localhost:9876/base/build/lib/zone.js:101:24
+            let fnName: string = frame.split('(')[0].split('@')[0];
+            let frameType = FrameType.trasition;
+            if (fnName.indexOf('ZoneAwareError') !== -1) {
+              zoneAwareFrame = frame;
+            }
+            if (fnName.indexOf('runGuarded') !== -1) {
+              runGuardedFrame = true;
+            } else if (fnName.indexOf('runTask') !== -1) {
+              runTaskFrame = true;
+            } else if (fnName.indexOf('run') !== -1) {
+              runFrame = true;
+            } else {
+              frameType = FrameType.blackList;
+            }
+            blackListedStackFrames[frame] = frameType;
+            // Once we find all of the frames we can stop looking.
+            if (runFrame && runGuardedFrame && runTaskFrame) {
+              ZoneAwareError[stackRewrite] = true;
+              break;
+            }
+          }
+        }
+      }
+      return false;
+    }
+  }) as Zone;
+  // carefully constructor a stack frame which contains all of the frames of interest which
+  // need to be detected and blacklisted.
+  let detectRunFn = () => {
+    detectZone.run(() => {
+      detectZone.runGuarded(() => {
+        throw new Error('blacklistStackFrames');
+      });
+    });
+  };
+  // Cause the error to extract the stack frames.
+  detectZone.runTask(detectZone.scheduleMacroTask('detect', detectRunFn, null, () => null, null));
+
   return global.Zone = Zone;
 })(typeof window === 'object' && window || typeof self === 'object' && self || global);

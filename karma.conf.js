@@ -16,6 +16,8 @@ module.exports = function (config) {
       {pattern: 'test/assets/**/*.*', watched: true, served: true, included: false},
       {pattern: 'build/**/*.js.map', watched: true, served: true, included: false},
       {pattern: 'build/**/*.js', watched: true, served: true, included: false},
+      'build/test/wtf_mock.js',
+      'build/lib/zone.js',
       'build/test/main.js'
     ],
 
