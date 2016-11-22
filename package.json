@@ -19,9 +19,10 @@
     "ws-server": "node ./test/ws-server.js",
     "tsc": "tsc",
     "tsc:w": "tsc -w",
-    "test": "npm run tsc && concurrently \"npm run tsc:w\" \"npm run ws-server\" \"karma start karma-jasmine.conf.js\"",
+    "test": "npm run tsc && concurrently \"npm run tsc:w\" \"npm run ws-server\" \"karma start karma-build-jasmine.conf.js\"",
+    "test-dist": "concurrently \"npm run tsc:w\" \"npm run ws-server\" \"karma start karma-dist-jasmine.conf.js\"",
     "test-node": "gulp test/node",
-    "test-mocha": "npm run tsc && concurrently \"npm run tsc:w\" \"npm run ws-server\" \"karma start karma-mocha.conf.js\"",
+    "test-mocha": "npm run tsc && concurrently \"npm run tsc:w\" \"npm run ws-server\" \"karma start karma-build-mocha.conf.js\"",
     "serve": "python -m SimpleHTTPServer 8000"
   },
   "repository": {

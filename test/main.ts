@@ -15,9 +15,17 @@ declare var __karma__: {
 __karma__.loaded = function() {};
 (window as any).global = window;
 
-System.config({defaultJSExtensions: true});
+System.config({ defaultJSExtensions: true });
+var browserPatchedPromise = null;
+if (window[Zone['__symbol__']('setTimeout')]) {
+  browserPatchedPromise = Promise.resolve('browserPatched');
+} else {
+  // this means that Zone has not patched the browser yet, which means we must be running in
+  // build mode and need to load the browser patch.
+  browserPatchedPromise = System.import('/base/build/test/browser-zone-setup');
+}
 
-System.import('/base/build/test/browser-zone-setup').then(() => {
+browserPatchedPromise.then(() => {
   let testFrameworkPatch = typeof(window as any).Mocha !== 'undefined' ?
       '/base/build/test/test-env-setup-mocha' :
       '/base/build/test/test-env-setup-jasmine';
