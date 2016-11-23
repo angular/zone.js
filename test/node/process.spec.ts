@@ -7,12 +7,31 @@
  */
 
 describe('process related test', () => {
-    it('process.nextTick callback should in zone', function(done) {
-      Zone.current.fork({name: 'zoneA'}).run(function() {
-          process.nextTick(function() {
+    let zoneA, result;
+    beforeEach(() => {
+        zoneA = Zone.current.fork({name: 'zoneA'});
+        result = [];
+    });
+    it('process.nextTick callback should in zone', (done) => {
+      zoneA.run(function() {
+          process.nextTick(() => {
             expect(Zone.current.name).toEqual('zoneA');
             done();
           });
       });
+    });
+    it('process.nextTick should be treated as microTask', (done) => {
+        zoneA.run(function() {
+            setTimeout(() => {
+              result.push('timeout');
+            }, 0);
+            process.nextTick(() => {
+                result.push('tick');
+            });
+            setTimeout(() => {
+              expect(result).toEqual(['tick', 'timeout']);
+              done();
+            }, 0);
+        });
     });
 });
