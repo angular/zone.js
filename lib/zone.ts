@@ -1337,6 +1337,14 @@ const Zone: ZoneType = (function(global: any) {
     });
   }
 
+  if (NativeError.captureStackTrace) {
+    Object.defineProperty(ZoneAwareError, 'captureStackTrace', {
+      value: function(targetObject: Object, constructorOpt?: Function) {
+        NativeError.captureStackTrace(targetObject, constructorOpt);
+      }
+    });
+  }
+
   // Now we need to populet the `blacklistedStackFrames` as well as find the
   // run/runGuraded/runTask frames. This is done by creating a detect zone and then threading
   // the execution through all of the above methods so that we can look at the stack trace and
