@@ -1337,7 +1337,7 @@ const Zone: ZoneType = (function(global: any) {
     });
   }
 
-  if (NativeError.captureStackTrace) {
+  if (NativeError.hasOwnProperty('captureStackTrace')) {
     Object.defineProperty(ZoneAwareError, 'captureStackTrace', {
       value: function(targetObject: Object, constructorOpt?: Function) {
         NativeError.captureStackTrace(targetObject, constructorOpt);
