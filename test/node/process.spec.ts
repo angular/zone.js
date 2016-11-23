@@ -26,7 +26,7 @@ describe('process related test', () => {
               result.push('timeout');
             }, 0);
             process.nextTick(() => {
-                result.push('tick');
+              result.push('tick');
             });
             setTimeout(() => {
               expect(result).toEqual(['tick', 'timeout']);

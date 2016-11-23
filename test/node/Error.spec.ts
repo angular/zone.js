@@ -16,5 +16,14 @@ describe('ZoneAwareError', () => {
         Error.captureStackTrace(obj);
         expect(obj.stack).not.toBeUndefined();
     });
+
+    it ('should support prepareStackTrace', () => {
+        (<any>Error).prepareStackTrace = function(error, stack) {
+            return stack;
+        }
+        let obj: any = new Object();
+        Error.captureStackTrace(obj);
+        expect(obj.stack[0].getFileName()).not.toBeUndefined();
+    });
 });
 
