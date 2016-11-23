@@ -58,11 +58,6 @@ describe('ZoneAwareError', () => {
       expect(insideFrames[2]).toMatch(/testFn.*[<root>]]/);
     }
   });
-  it ('should have all properties from NativeError', () => {
-    let obj: any = new Object();
-    Error.captureStackTrace(obj);
-    expect(obj.stack).not.toBeUndefined();
-  });
 });
 
 function getRootZone() {
