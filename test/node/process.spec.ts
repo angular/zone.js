@@ -7,16 +7,11 @@
  */
 
 describe('process related test', () => {
-    let zone, zoneA;
-    beforeEach(() => {
-        zone = Zone.current;
-        zoneA = zone.fork({name: 'A'});
-    });
-
-    it('process.nextTick callback should in zone', function() {
-      zoneA.run(function() {
+    it('process.nextTick callback should in zone', function(done) {
+      Zone.current.fork({name: 'zoneA'}).run(function() {
           process.nextTick(function() {
-            expect(Zone.current).toEqual(zoneA);
+            expect(Zone.current.name).toEqual('zoneA');
+            done();
           });
       });
     });
