@@ -33,7 +33,7 @@ if (shouldPatchGlobalTimers) {
 // patch process.nextTick
 const nativeNextTick = process.nextTick;
 process.nextTick = function() {
-  var args = arguments;
+  let args = arguments;
   args[0] = Zone.current.wrap(args[0], 'process.nextTick');
   nativeNextTick.apply(this, args);
 }
