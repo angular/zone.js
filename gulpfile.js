@@ -63,7 +63,7 @@ gulp.task('compile-esm', function(cb) {
 });
 
 gulp.task('build/zone.js.d.ts', ['compile-esm'], function() {
-  return gulp.src('./build/lib/zone.d.ts').pipe(rename('zone.js.d.ts')).pipe(gulp.dest('./dist'));
+  return gulp.src('./build-esm/lib/zone.d.ts').pipe(rename('zone.js.d.ts')).pipe(gulp.dest('./dist'));
 });
 
 // Zone for Node.js environment.
@@ -73,12 +73,11 @@ gulp.task('build/zone-node.js', ['compile-esm'], function(cb) {
 
 // Zone for the browser.
 gulp.task('build/zone.js', ['compile-esm'], function(cb) {
-
   return generateScript('./lib/browser/rollup-main.ts', 'zone.js', false, cb);
 });
 
 gulp.task('build/zone.min.js', ['compile-esm'], function(cb) {
-  return generateScript('./lib/browser/browser.ts', 'zone.min.js', true, cb);
+  return generateScript('./lib/browser/rollup-main.ts', 'zone.min.js', true, cb);
 });
 
 gulp.task('build/jasmine-patch.js', ['compile-esm'], function(cb) {
