@@ -280,9 +280,15 @@ export function makeZoneAwareRemoveAllListeners(fnName: string, useCapturingPara
   const defaultUseCapturing = useCapturingParam ? false : undefined;
 
   return function zoneAwareRemoveAllListener(self: any, args: any[]) {
+    var target = self || _global;
+    if (args.length === 0) {
+      // remove all listeners without eventName
+      target[EVENT_TASKS] = [];
+      target[symbol]();
+      return;
+    }
     var eventName = args[0];
     var useCapturing = args[1] || defaultUseCapturing;
-    var target = self || _global;
     var eventTasks = findAllExistingRegisteredTasks(target, eventName, useCapturing, true);
     if (eventTasks) {
       for (var i = 0; i < eventTasks.length; i ++) {

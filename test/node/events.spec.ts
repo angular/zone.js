@@ -105,6 +105,15 @@ describe('nodejs EventEmitter', () => {
       expect(emitter.listeners('test').length).toEqual(0);
     });
   });
+  it ('should remove All listeners properly even without a type parameter', () => {
+    zoneA.run(() => {
+      emitter.on('test', shouldNotRun);
+      emitter.on('test1', shouldNotRun);
+      emitter.removeAllListeners();
+      expect(emitter.listeners('test').length).toEqual(0);
+      expect(emitter.listeners('test1').length).toEqual(0);
+    });
+  });
   it ('should remove once listener after emit', () => {
     zoneA.run(() => {
       emitter.once('test', expectZoneA);
@@ -117,6 +126,43 @@ describe('nodejs EventEmitter', () => {
       emitter.once('test', shouldNotRun);
       emitter.removeListener('test', shouldNotRun);
       emitter.emit('test');
+    });
+  });
+  it ('should trigger removeListener when remove listener', () => {
+    zoneA.run(() => {
+      emitter.on('removeListener', function(type, handler) {
+         zoneResults.push('remove' + type);
+      });
+      emitter.on('newListener', function(type, handler) {
+        zoneResults.push('new' + type);
+      });
+      emitter.on('test', shouldNotRun);
+      emitter.removeListener('test', shouldNotRun);
+      expect(zoneResults).toEqual(['newtest', 'removetest']);
+    });
+  });
+  it ('should trigger removeListener when remove all listeners with eventname ', () => {
+    zoneA.run(() => {
+      emitter.on('removeListener', function(type, handler) {
+        zoneResults.push('remove' + type);
+      });
+      emitter.on('test', shouldNotRun);
+      emitter.on('test1', expectZoneA);
+      emitter.removeAllListeners('test');
+      expect(zoneResults).toEqual(['removetest']);
+      expect(emitter.listeners('removeListener').length).toBe(1);
+    });
+  });
+  it ('should trigger removeListener when remove all listeners without eventname', () => {
+    zoneA.run(() => {
+      emitter.on('removeListener', function(type, handler) {
+        zoneResults.push('remove' + type);
+      });
+      emitter.on('test', shouldNotRun);
+      emitter.on('test1', expectZoneA);
+      emitter.removeAllListeners();
+      expect(zoneResults).toEqual(['removetest', 'removetest1']);
+      expect(emitter.listeners('removeListener').length).toBe(0);
     });
   });
 });
