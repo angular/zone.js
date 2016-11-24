@@ -1,4 +1,11 @@
 /**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
  * Zone is a mechanism for intercepting and keeping track of asynchronous work.
  *
  * A Zone is a global object which is configured with rules about how to intercept and keep track
@@ -458,5 +465,18 @@ interface MicroTask extends Task {
 interface MacroTask extends Task {
 }
 interface EventTask extends Task {
+}
+/**
+ * Extend the Error with additional fields for rewritten stack frames
+ */
+interface Error {
+    /**
+     * Stack trace where extra frames have been removed and zone names added.
+     */
+    zoneAwareStack?: string;
+    /**
+     * Original stack trace with no modiffications
+     */
+    originalStack?: string;
 }
 declare const Zone: ZoneType;
