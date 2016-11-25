@@ -87,7 +87,7 @@ if (httpClient && httpClient.ClientRequest) {
 }
 
 function patchNextTick() {
-  var setNative = null;
+  let setNative = null;
 
   function scheduleTask(task: Task) {
     const args = task.data;
@@ -101,8 +101,8 @@ function patchNextTick() {
   setNative =
       patchMethod(process, 'nextTick', (delegate: Function) => function(self: any, args: any[]) {
         if (typeof args[0] === 'function') {
-          var zone = Zone.current;
-          var task = zone.scheduleMicroTask('nextTick', args[0], args, scheduleTask);
+          const zone = Zone.current;
+          const task = zone.scheduleMicroTask('nextTick', args[0], args, scheduleTask);
           return task;
         } else {
           // cause an error by calling it directly.
