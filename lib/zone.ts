@@ -1310,7 +1310,7 @@ const Zone: ZoneType = (function(global: any) {
               frames[i] += ` [${zoneFrame.parent.zone.name} => ${zoneFrame.zone.name}]`;
               zoneFrame = zoneFrame.parent;
             } else {
-              zoneFrame == null;
+              zoneFrame = null;
             }
           } else {
             frames[i] += ` [${zoneFrame.zone.name}]`;
