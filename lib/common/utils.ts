@@ -285,7 +285,7 @@ export function makeZoneAwareRemoveAllListeners(fnName: string, useCapturingPara
       // remove all listeners without eventName
       target[EVENT_TASKS] = [];
       target[symbol]();
-      return this;
+      return;
     }
     const eventName = args[0];
     const useCapturing = args[1] || defaultUseCapturing;
