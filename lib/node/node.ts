@@ -11,6 +11,7 @@ import './events';
 import './fs';
 
 import {patchTimer} from '../common/timers';
+import {patchMethod} from '../common/utils';
 
 const set = 'set';
 const clear = 'clear';
@@ -30,13 +31,7 @@ if (shouldPatchGlobalTimers) {
   patchTimer(_global, set, clear, 'Immediate');
 }
 
-// patch process.nextTick
-const nativeNextTick = process.nextTick;
-process.nextTick = function() {
-  let args = arguments;
-  args[0] = Zone.current.wrap(args[0], 'process.nextTick');
-  nativeNextTick.apply(this, args);
-}
+patchNextTick();
 
 // Crypto
 let crypto;
@@ -89,4 +84,29 @@ if (httpClient && httpClient.ClientRequest) {
       return new ClientRequest(options, zone.wrap(callback, 'http.ClientRequest'));
     }
   };
+}
+
+function patchNextTick() {
+  var setNative = null;
+
+  function scheduleTask(task: Task) {
+    const args = task.data;
+    args[0] = function() {
+      task.invoke.apply(this, arguments);
+    };
+    setNative.apply(process, args);
+    return task;
+  }
+
+  setNative =
+      patchMethod(process, 'nextTick', (delegate: Function) => function(self: any, args: any[]) {
+        if (typeof args[0] === 'function') {
+          var zone = Zone.current;
+          var task = zone.scheduleMicroTask('nextTick', args[0], args, scheduleTask);
+          return task;
+        } else {
+          // cause an error by calling it directly.
+          return delegate.apply(process, args);
+        }
+      });
 }
