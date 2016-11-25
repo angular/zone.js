@@ -159,9 +159,11 @@ describe('nodejs EventEmitter', () => {
         zoneResults.push('remove' + type);
       });
       emitter.on('test', shouldNotRun);
-      emitter.on('test1', expectZoneA);
+      emitter.on('test1', shouldNotRun);
       emitter.removeAllListeners();
       expect(zoneResults).toEqual(['removetest', 'removetest1']);
+      expect(emitter.listeners('test').length).toBe(0);
+      expect(emitter.listeners('test1').length).toBe(0);
       expect(emitter.listeners('removeListener').length).toBe(0);
     });
   });
