@@ -48,7 +48,7 @@ export const isNode: boolean =
     (typeof process !== 'undefined' && {}.toString.call(process) === '[object process]');
 
 export const isBrowser: boolean =
-    !isNode && !isWebWorker && !!(typeof window !== 'undefined' && window['HTMLElement']);
+    ('nw' in _global || !isNode && !isWebWorker && !!(typeof window !== 'undefined' && window['HTMLElement']));
 
 
 export function patchProperty(obj, prop) {
