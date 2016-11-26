@@ -45,7 +45,7 @@ export const isWebWorker: boolean =
     (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope);
 
 export const isNode: boolean =
-    (typeof process !== 'undefined' && {}.toString.call(process) === '[object process]');
+    (!('nw' in _global) && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]');
 
 export const isBrowser: boolean =
     !isNode && !isWebWorker && !!(typeof window !== 'undefined' && window['HTMLElement']);
