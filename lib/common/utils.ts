@@ -284,6 +284,8 @@ export function makeZoneAwareRemoveAllListeners(fnName: string, useCapturingPara
     if (args.length === 0) {
       // remove all listeners without eventName
       target[EVENT_TASKS] = [];
+      // we don't cancel Task either, because call native eventEmitter.removeAllListeners will
+      // will do remove listener(cancelTask) for us
       target[symbol]();
       return;
     }
@@ -291,7 +293,11 @@ export function makeZoneAwareRemoveAllListeners(fnName: string, useCapturingPara
     const useCapturing = args[1] || defaultUseCapturing;
     // call this function just remove the related eventTask from target[EVENT_TASKS]
     findAllExistingRegisteredTasks(target, eventName, useCapturing, true);
-    target[symbol](eventName, useCapturing);
+    // we don't need useCapturing here because useCapturing is just for DOM, and
+    // removeAllListeners should only be called by node eventEmitter
+    // and we don't cancel Task either, because call native eventEmitter.removeAllListeners will
+    // will do remove listener(cancelTask) for us
+    target[symbol](eventName);
   }
 }
 
