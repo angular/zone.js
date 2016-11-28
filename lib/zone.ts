@@ -953,7 +953,7 @@ const Zone: ZoneType = (function(global: any) {
   const symbolThen = __symbol__('then');
 
   const symbolRootZoneSpec = '__rootZoneSpec__'
-  var rootZone: Zone = new Zone(null, null);
+  let rootZone: Zone = new Zone(null, null);
   if (global[symbolRootZoneSpec]) {
     rootZone = <Zone>rootZone.fork(global[symbolRootZoneSpec]);
     delete global[symbolRootZoneSpec];
