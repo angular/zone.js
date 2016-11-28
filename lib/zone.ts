@@ -956,6 +956,7 @@ const Zone: ZoneType = (function(global: any) {
   var rootZone: Zone = new Zone(null, null);
   if (global[symbolRootZoneSpec]) {
     rootZone = <Zone>rootZone.fork(global[symbolRootZoneSpec]);
+    delete global[symbolRootZoneSpec];
   }
 
   let _currentZoneFrame = new ZoneFrame(null, rootZone);
