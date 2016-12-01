@@ -14,6 +14,7 @@ var uglify = require('gulp-uglify');
 var pump = require('pump');
 var path = require('path');
 var spawn = require('child_process').spawn;
+const os = require('os');
 
 function generateScript(inFile, outFile, minify, callback) {
   inFile = path.join('./build-esm/', inFile).replace(/\.ts$/, '.js');
@@ -39,8 +40,13 @@ function generateScript(inFile, outFile, minify, callback) {
   pump(parts, callback);
 }
 
+// returns the script path for the current platform
+function platformScriptPath(path) {
+    return /^win/.test(os.platform()) ? `${path}.cmd` : path;
+}
+
 function tsc(config, cb) {
-  spawn('./node_modules/.bin/tsc', ['-p', config], {stdio: 'inherit'})
+  spawn(path.normalize(platformScriptPath('./node_modules/.bin/tsc')), ['-p', config], {stdio: 'inherit'})
       .on('close', function(exitCode) {
         if (exitCode) {
           var err = new Error('TypeScript compiler failed');
@@ -227,4 +233,18 @@ gulp.task('format', () => {
   const clangFormat = require('clang-format');
   return gulp.src(srcsToFmt, { base: '.' }).pipe(
     format.format('file', clangFormat)).pipe(gulp.dest('.'));
+});
+
+// Update the changelog with the latest changes
+gulp.task('changelog', () => {
+    const conventionalChangelog = require('gulp-conventional-changelog');
+
+    return gulp.src('CHANGELOG.md')
+        .pipe(conventionalChangelog({preset: 'angular', releaseCount: 1}, {
+            // Conventional Changelog Context
+            // We have to manually set version number so it doesn't get prefixed with `v`
+            // See https://github.com/conventional-changelog/conventional-changelog-core/issues/10
+            currentTag: require('./package.json').version
+        }))
+        .pipe(gulp.dest('./'));
 });
