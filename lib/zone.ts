@@ -952,7 +952,7 @@ const Zone: ZoneType = (function(global: any) {
   const symbolPromise = __symbol__('Promise');
   const symbolThen = __symbol__('then');
 
-  const symbolRootZoneSpec = '__rootZoneSpec__'
+  const symbolRootZoneSpec = '__rootZoneSpec__';
   let rootZone: Zone = new Zone(null, null);
   if (global[symbolRootZoneSpec]) {
     rootZone = <Zone>rootZone.fork(global[symbolRootZoneSpec]);
