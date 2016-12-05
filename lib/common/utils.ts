@@ -155,7 +155,7 @@ function findAllExistingRegisteredTasks(target: any, name: string, capture: bool
   const eventTasks: Task[] = target[EVENT_TASKS];
   if (eventTasks) {
     const result = [];
-    for (var i = eventTasks.length - 1; i >= 0; i --) {
+    for (let i = eventTasks.length - 1; i >= 0; i --) {
       const eventTask = eventTasks[i];
       const data = <ListenerTaskMeta>eventTask.data;
       if (data.eventName === name && data.useCapturing === capture) {
@@ -280,17 +280,24 @@ export function makeZoneAwareRemoveAllListeners(fnName: string, useCapturingPara
   const defaultUseCapturing = useCapturingParam ? false : undefined;
 
   return function zoneAwareRemoveAllListener(self: any, args: any[]) {
-    var eventName = args[0];
-    var useCapturing = args[1] || defaultUseCapturing;
-    var target = self || _global;
-    var eventTasks = findAllExistingRegisteredTasks(target, eventName, useCapturing, true);
-    if (eventTasks) {
-      for (var i = 0; i < eventTasks.length; i ++) {
-        var eventTask = eventTasks[i];
-        eventTask.zone.cancelTask(eventTask);
-      }
+    const target = self || _global;
+    if (args.length === 0) {
+      // remove all listeners without eventName
+      target[EVENT_TASKS] = [];
+      // we don't cancel Task either, because call native eventEmitter.removeAllListeners will
+      // will do remove listener(cancelTask) for us
+      target[symbol]();
+      return;
     }
-    target[symbol](eventName, useCapturing);
+    const eventName = args[0];
+    const useCapturing = args[1] || defaultUseCapturing;
+    // call this function just remove the related eventTask from target[EVENT_TASKS]
+    findAllExistingRegisteredTasks(target, eventName, useCapturing, true);
+    // we don't need useCapturing here because useCapturing is just for DOM, and
+    // removeAllListeners should only be called by node eventEmitter
+    // and we don't cancel Task either, because call native eventEmitter.removeAllListeners will
+    // will do remove listener(cancelTask) for us
+    target[symbol](eventName);
   }
 }
 

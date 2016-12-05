@@ -1264,7 +1264,7 @@ const Zone: ZoneType = (function(global: any) {
     /// Skip this frame when printing out stack
     blackList,
     /// This frame marks zone transition
-    trasition
+    transition
   };
   const NativeError = global[__symbol__('Error')] = global.Error;
   // Store the frames which should be removed from the stack frames
@@ -1304,7 +1304,7 @@ const Zone: ZoneType = (function(global: any) {
           if (frameType === FrameType.blackList) {
             frames.splice(i, 1);
             i--;
-          } else if (frameType === FrameType.trasition) {
+          } else if (frameType === FrameType.transition) {
             if (zoneFrame.parent) {
               // This is the special frame where zone changed. Print and process it accordingly
               frames[i] += ` [${zoneFrame.parent.zone.name} => ${zoneFrame.zone.name}]`;
@@ -1337,6 +1337,21 @@ const Zone: ZoneType = (function(global: any) {
     });
   }
 
+  if (NativeError.hasOwnProperty('captureStackTrace')) {
+    Object.defineProperty(ZoneAwareError, 'captureStackTrace', {
+      value: function(targetObject: Object, constructorOpt?: Function) {
+        NativeError.captureStackTrace(targetObject, constructorOpt);
+      }
+    });
+  }
+
+  Object.defineProperty(ZoneAwareError, 'prepareStackTrace', {
+    get: function() { return NativeError.prepareStackTrace; },
+    set: function(value) { return NativeError.prepareStackTrace = value; }
+  });
+
+  // Now we need to populet the `blacklistedStackFrames` as well as find the
+
   // Now we need to populet the `blacklistedStackFrames` as well as find the
   // run/runGuraded/runTask frames. This is done by creating a detect zone and then threading
   // the execution through all of the above methods so that we can look at the stack trace and
@@ -1364,7 +1379,7 @@ const Zone: ZoneType = (function(global: any) {
             // FireFox: Zone.prototype.run@http://localhost:9876/base/build/lib/zone.js:101:24
             // Safari: run@http://localhost:9876/base/build/lib/zone.js:101:24
             let fnName: string = frame.split('(')[0].split('@')[0];
-            let frameType = FrameType.trasition;
+            let frameType = FrameType.transition;
             if (fnName.indexOf('ZoneAwareError') !== -1) {
               zoneAwareFrame = frame;
             }
