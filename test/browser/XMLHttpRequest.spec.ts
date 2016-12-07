@@ -24,14 +24,12 @@ describe('XMLHttpRequest', function() {
         // The last entry in the log should be the invocation for the current onload,
         // which will vary depending on browser environment. The prior entries
         // should be the invocation of the send macrotask.
-        expect(wtfMock.log[wtfMock.log.length - 6])
-            .toMatch(/\> Zone\:invokeTask.*addEventListener\:readystatechange/);
         expect(wtfMock.log[wtfMock.log.length - 5])
-            .toEqual('> Zone:invokeTask:XMLHttpRequest.send("<root>::ProxyZone::WTF::TestZone")');
+            .toMatch(/\> Zone\:invokeTask.*addEventListener\:readystatechange/);
         expect(wtfMock.log[wtfMock.log.length - 4])
-            .toEqual('< Zone:invokeTask:XMLHttpRequest.send');
+            .toEqual('> Zone:invokeTask:XMLHttpRequest.send("<root>::ProxyZone::WTF::TestZone")');
         expect(wtfMock.log[wtfMock.log.length - 3])
-            .toMatch(/# Zone\:cancel.*addEventListener\:readystatechange/);
+            .toEqual('< Zone:invokeTask:XMLHttpRequest.send');
         expect(wtfMock.log[wtfMock.log.length - 2])
             .toMatch(/\< Zone\:invokeTask.*addEventListener\:readystatechange/);
         done();

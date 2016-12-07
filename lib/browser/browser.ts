@@ -48,6 +48,7 @@ patchXHR(_global);
 
 const XHR_TASK = zoneSymbol('xhrTask');
 const XHR_SYNC = zoneSymbol('xhrSync');
+const XHR_LISTENER = zoneSymbol('xhrListener');
 
 interface XHROptions extends TaskData {
   target: any;
@@ -64,16 +65,18 @@ function patchXHR(window: any) {
   function scheduleTask(task: Task) {
     var data = <XHROptions>task.data;
     // remove existing event listener
-    var listener = () => {
+    var listener = data.target[XHR_LISTENER];
+    if (listener) {
+        data.target.removeEventListener('readystatechange', listener);
+    }
+    var newListener = data.target[XHR_LISTENER] = () => {
       if (data.target.readyState === data.target.DONE) {
         if (!data.aborted) {
           task.invoke();
         }
-        // remove listener after xhr request is done.
-        data.target.removeEventListener('readystatechange', listener);
       }
     };
-    data.target.addEventListener('readystatechange', listener);
+    data.target.addEventListener('readystatechange', newListener);
 
     var storedTask: Task = data.target[XHR_TASK];
     if (!storedTask) {
