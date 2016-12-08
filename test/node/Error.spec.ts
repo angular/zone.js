@@ -7,23 +7,22 @@
  */
 
 describe('ZoneAwareError', () => {
-    // If the environment does not supports stack rewrites, then these tests will fail
-    // and there is no point in running them.
-    if (!Error['stackRewrite']) return;
+  // If the environment does not supports stack rewrites, then these tests will fail
+  // and there is no point in running them.
+  if (!Error['stackRewrite']) return;
 
-    it ('should have all properties from NativeError', () => {
-        let obj: any = new Object();
-        Error.captureStackTrace(obj);
-        expect(obj.stack).not.toBeUndefined();
-    });
+  it('should have all properties from NativeError', () => {
+    let obj: any = new Object();
+    Error.captureStackTrace(obj);
+    expect(obj.stack).not.toBeUndefined();
+  });
 
-    it ('should support prepareStackTrace', () => {
-        (<any>Error).prepareStackTrace = function(error, stack) {
-            return stack;
-        }
-        let obj: any = new Object();
-        Error.captureStackTrace(obj);
-        expect(obj.stack[0].getFileName()).not.toBeUndefined();
-    });
+  it('should support prepareStackTrace', () => {
+    (<any>Error).prepareStackTrace = function(error, stack) {
+      return stack;
+    };
+    let obj: any = new Object();
+    Error.captureStackTrace(obj);
+    expect(obj.stack[0].getFileName()).not.toBeUndefined();
+  });
 });
-

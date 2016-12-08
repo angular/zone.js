@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {makeZoneAwareAddListener, makeZoneAwareListeners, makeZoneAwareRemoveListener, makeZoneAwareRemoveAllListeners, patchMethod} from '../common/utils';
+import {makeZoneAwareAddListener, makeZoneAwareListeners, makeZoneAwareRemoveAllListeners, makeZoneAwareRemoveListener, patchMethod} from '../common/utils';
 
 const callAndReturnFirstParam = (fn: (self: any, args: any[]) => any) => {
   return (self: any, args: any[]) => {
@@ -23,10 +23,14 @@ const EE_REMOVE_ALL_LISTENER = 'removeAllListeners';
 const EE_LISTENERS = 'listeners';
 const EE_ON = 'on';
 
-const zoneAwareAddListener = callAndReturnFirstParam(makeZoneAwareAddListener(EE_ADD_LISTENER, EE_REMOVE_LISTENER, false, true, false));
-const zoneAwarePrependListener = callAndReturnFirstParam(makeZoneAwareAddListener(EE_PREPEND_LISTENER, EE_REMOVE_LISTENER, false, true, true));
-const zoneAwareRemoveListener = callAndReturnFirstParam(makeZoneAwareRemoveListener(EE_REMOVE_LISTENER, false));
-const zoneAwareRemoveAllListeners = callAndReturnFirstParam(makeZoneAwareRemoveAllListeners(EE_REMOVE_ALL_LISTENER, false));
+const zoneAwareAddListener = callAndReturnFirstParam(
+    makeZoneAwareAddListener(EE_ADD_LISTENER, EE_REMOVE_LISTENER, false, true, false));
+const zoneAwarePrependListener = callAndReturnFirstParam(
+    makeZoneAwareAddListener(EE_PREPEND_LISTENER, EE_REMOVE_LISTENER, false, true, true));
+const zoneAwareRemoveListener =
+    callAndReturnFirstParam(makeZoneAwareRemoveListener(EE_REMOVE_LISTENER, false));
+const zoneAwareRemoveAllListeners =
+    callAndReturnFirstParam(makeZoneAwareRemoveAllListeners(EE_REMOVE_ALL_LISTENER, false));
 const zoneAwareListeners = makeZoneAwareListeners(EE_LISTENERS);
 
 export function patchEventEmitterMethods(obj: any): boolean {

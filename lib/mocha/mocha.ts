@@ -2,7 +2,7 @@
 
 ((context: any) => {
   var Mocha = context.Mocha;
-  
+
   if (typeof Mocha === 'undefined') {
     throw new Error('Missing Mocha.js');
   }
@@ -18,7 +18,7 @@
     throw new Error('Missing ProxyZoneSpec');
   }
 
-  if(Mocha['__zone_patch__']){
+  if (Mocha['__zone_patch__']) {
     throw new Error('"Mocha" has already been patched with "Zone".');
   }
 
@@ -48,8 +48,9 @@
         // otherwise mocha will
         // think that all functions are sync or async.
         args[i] = (arg.length === 0) ? syncTest(arg) : asyncTest(arg);
-        // Mocha uses toString to view the test body in the result list, make sure we return the correct function body
-        args[i].toString = function(){
+        // Mocha uses toString to view the test body in the result list, make sure we return the
+        // correct function body
+        args[i].toString = function() {
           return arg.toString();
         };
       }
@@ -59,8 +60,8 @@
   }
 
   function wrapDescribeInZone(args: IArguments): any[] {
-    const syncTest: any = function(fn){
-      return function(){
+    const syncTest: any = function(fn) {
+      return function() {
         return syncZone.run(fn, this, arguments as any as any[]);
       };
     };
@@ -69,14 +70,14 @@
   }
 
   function wrapTestInZone(args: IArguments): any[] {
-    const asyncTest = function(fn){
-      return function(done){
+    const asyncTest = function(fn) {
+      return function(done) {
         return testZone.run(fn, this, [done]);
       };
     };
 
-    const syncTest: any = function(fn){
-      return function(){
+    const syncTest: any = function(fn) {
+      return function() {
         return testZone.run(fn, this);
       };
     };
@@ -85,14 +86,14 @@
   }
 
   function wrapSuiteInZone(args: IArguments): any[] {
-    const asyncTest = function(fn){
-      return function(done){
+    const asyncTest = function(fn) {
+      return function(done) {
         return suiteZone.run(fn, this, [done]);
       };
     };
 
-    const syncTest: any = function(fn){
-      return function(){
+    const syncTest: any = function(fn) {
+      return function() {
         return suiteZone.run(fn, this);
       };
     };
@@ -124,33 +125,33 @@
     return mochaOriginal.it.only.apply(this, wrapTestInZone(arguments));
   };
 
-  context.after = context.suiteTeardown = Mocha.after = function(){
+  context.after = context.suiteTeardown = Mocha.after = function() {
     return mochaOriginal.after.apply(this, wrapSuiteInZone(arguments));
   };
 
-  context.afterEach = context.teardown = Mocha.afterEach = function(){
+  context.afterEach = context.teardown = Mocha.afterEach = function() {
     return mochaOriginal.afterEach.apply(this, wrapTestInZone(arguments));
   };
 
-  context.before = context.suiteSetup = Mocha.before = function(){
+  context.before = context.suiteSetup = Mocha.before = function() {
     return mochaOriginal.before.apply(this, wrapSuiteInZone(arguments));
   };
 
-  context.beforeEach = context.setup = Mocha.beforeEach = function(){
+  context.beforeEach = context.setup = Mocha.beforeEach = function() {
     return mochaOriginal.beforeEach.apply(this, wrapTestInZone(arguments));
   };
 
   ((originalRunTest, originalRun) => {
-    Mocha.Runner.prototype.runTest = function(fn){
+    Mocha.Runner.prototype.runTest = function(fn) {
       Zone.current.scheduleMicroTask('mocha.forceTask', () => {
         originalRunTest.call(this, fn);
       });
     };
 
-    Mocha.Runner.prototype.run = function(fn){
+    Mocha.Runner.prototype.run = function(fn) {
       this.on('test', (e) => {
-        if(Zone.current !== rootZone){
-          throw new Error('Unexpected zone: '+ Zone.current.name);
+        if (Zone.current !== rootZone) {
+          throw new Error('Unexpected zone: ' + Zone.current.name);
         }
         testZone = rootZone.fork(new ProxyZoneSpec());
       });
@@ -158,7 +159,7 @@
       return originalRun.call(this, fn);
     };
 
-    
+
   })(Mocha.Runner.prototype.runTest, Mocha.Runner.prototype.run);
 
 })(window);

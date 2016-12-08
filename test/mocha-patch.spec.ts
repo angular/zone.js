@@ -1,17 +1,17 @@
 // Extra Mocha-specific typings to make sure typescript compiler is happy
 // Didn't want to add @types/mocha because of duplication in typings-file with @types/jasmine
 declare function suite(description: string, suiteFn: () => void): void;
-declare function test(description: string, testFn: () => void): void;
-declare function specify(description: string, testFn: () => void): void;
-declare function setup(fn: () => void): void;
-declare function teardown(fn: () => void): void;
-declare function suiteSetup(fn: () => void): void;
-declare function suiteTeardown(fn: () => void): void;
-declare function before(fn: () => void): void;
-declare function after(fn: () => void): void;
-//
+    declare function test(description: string, testFn: () => void): void;
+    declare function specify(description: string, testFn: () => void): void;
+    declare function setup(fn: () => void): void; declare function teardown(fn: () => void): void;
+    declare function suiteSetup(fn: () => void): void;
+    declare function suiteTeardown(fn: () => void): void;
+    declare function before(fn: () => void): void; declare function after(fn: () => void): void;
+    //
 
-import {ifEnvSupports} from './test-util';
+    import {
+      ifEnvSupports
+    } from './test-util';
 
 ifEnvSupports('Mocha', function() {
 
@@ -69,13 +69,13 @@ ifEnvSupports('Mocha', function() {
     test('should run in Zone with "test"-syntax in TDD-mode', () => {
       testZone = Zone.current;
       expect(Zone.currentTask).toBeTruthy();
-      expect(testZone.name).toEqual('ProxyZone'); 
+      expect(testZone.name).toEqual('ProxyZone');
     });
 
     specify('test should run in Zone with "specify"-syntax in TDD-mode', () => {
       testZone = Zone.current;
       expect(Zone.currentTask).toBeTruthy();
-      expect(testZone.name).toEqual('ProxyZone'); 
+      expect(testZone.name).toEqual('ProxyZone');
     });
 
     teardown(() => {
