@@ -1,7 +1,11 @@
 {
-    "rules": {
-      "no-duplicate-variable": true,
-      "semicolon": true,
-      "variable-name": [true, "ban-keywords"]
-    }
+  "rulesDirectory": [
+    "node_modules/tslint-eslint-rules/dist/rules"
+  ],
+  "rules": {
+    "no-duplicate-variable": true,
+    "semicolon": true,
+    "variable-name": [true, "ban-keywords"],
+    "no-inner-declarations": [true, "function"]
+  }
 }
