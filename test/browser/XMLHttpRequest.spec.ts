@@ -194,4 +194,12 @@ describe('XMLHttpRequest', function() {
       }
     });
   })
+
+  it('should work properly when send request to an invalid instance', function() {
+    testZone.run(function() {
+      var req = new XMLHttpRequest();
+      req.open('get', 'file:///test', true);
+      req.send();
+    });
+  });
 });
