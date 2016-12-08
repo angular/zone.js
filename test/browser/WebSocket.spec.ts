@@ -21,7 +21,7 @@ if (!window['soucelabs']) {
 
              beforeEach(function(done) {
                socket = new WebSocket(TEST_SERVER_URL);
-               socket.addEventListener('open', function(){
+               socket.addEventListener('open', function() {
                  done();
                });
                socket.addEventListener('error', function() {
@@ -33,7 +33,7 @@ if (!window['soucelabs']) {
              }, TIMEOUT);
 
              afterEach(function(done) {
-               socket.addEventListener('close', function(){
+               socket.addEventListener('close', function() {
                  done();
                });
                socket.close();

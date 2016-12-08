@@ -1051,10 +1051,8 @@ const Zone: ZoneType = (function(global: any) {
   function resolvePromise(
       promise: ZoneAwarePromise<any>, state: boolean, value: any): ZoneAwarePromise<any> {
     if (promise[symbolState] === UNRESOLVED) {
-      if (value instanceof ZoneAwarePromise &&
-          value.hasOwnProperty(symbolState) &&
-          value.hasOwnProperty(symbolValue) &&
-          value[symbolState] !== UNRESOLVED) {
+      if (value instanceof ZoneAwarePromise && value.hasOwnProperty(symbolState) &&
+          value.hasOwnProperty(symbolValue) && value[symbolState] !== UNRESOLVED) {
         clearRejectedNoCatch(<Promise<any>>value);
         resolvePromise(promise, value[symbolState], value[symbolValue]);
       } else if (isThenable(value)) {
@@ -1265,10 +1263,11 @@ const Zone: ZoneType = (function(global: any) {
     blackList,
     /// This frame marks zone transition
     transition
-  };
+  }
+
   const NativeError = global[__symbol__('Error')] = global.Error;
   // Store the frames which should be removed from the stack frames
-  const blackListedStackFrames: {[frame: string]:FrameType} = {};
+  const blackListedStackFrames: {[frame: string]: FrameType} = {};
   // We must find the frame where Error was created, otherwise we assume we don't understand stack
   let zoneAwareFrame: string;
   global.Error = ZoneAwareError;
@@ -1297,10 +1296,11 @@ const Zone: ZoneType = (function(global: any) {
       while (frames[i] !== zoneAwareFrame && i < frames.length) {
         i++;
       }
-      for(;i < frames.length && zoneFrame; i++) {
+      for (; i < frames.length && zoneFrame; i++) {
         let frame = frames[i];
         if (frame.trim()) {
-          let frameType = blackListedStackFrames.hasOwnProperty(frame) && blackListedStackFrames[frame];
+          let frameType =
+              blackListedStackFrames.hasOwnProperty(frame) && blackListedStackFrames[frame];
           if (frameType === FrameType.blackList) {
             frames.splice(i, 1);
             i--;
@@ -1320,7 +1320,8 @@ const Zone: ZoneType = (function(global: any) {
       error.stack = error.zoneAwareStack = frames.join('\n');
     }
     return error;
-  };
+  }
+
   // Copy the prototype so that instanceof operator works as expected
   ZoneAwareError.prototype = NativeError.prototype;
   ZoneAwareError[Zone.__symbol__('blacklistedStackFrames')] = blackListedStackFrames;
@@ -1332,8 +1333,12 @@ const Zone: ZoneType = (function(global: any) {
 
     // make sure that ZoneAwareError has the same property which forwards to NativeError.
     Object.defineProperty(ZoneAwareError, 'stackTraceLimit', {
-      get: function() { return NativeError.stackTraceLimit; },
-      set: function(value) { return NativeError.stackTraceLimit = value; }
+      get: function() {
+        return NativeError.stackTraceLimit;
+      },
+      set: function(value) {
+        return NativeError.stackTraceLimit = value;
+      }
     });
   }
 
@@ -1346,8 +1351,12 @@ const Zone: ZoneType = (function(global: any) {
   }
 
   Object.defineProperty(ZoneAwareError, 'prepareStackTrace', {
-    get: function() { return NativeError.prepareStackTrace; },
-    set: function(value) { return NativeError.prepareStackTrace = value; }
+    get: function() {
+      return NativeError.prepareStackTrace;
+    },
+    set: function(value) {
+      return NativeError.prepareStackTrace = value;
+    }
   });
 
   // Now we need to populet the `blacklistedStackFrames` as well as find the
@@ -1358,51 +1367,54 @@ const Zone: ZoneType = (function(global: any) {
   // find the frames of interest.
   let detectZone: Zone = Zone.current.fork({
     name: 'detect',
-    onInvoke: function(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                        delegate: Function, applyThis: any, applyArgs: any[], source: string): any {
+    onInvoke: function(
+        parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function,
+        applyThis: any, applyArgs: any[], source: string): any {
       // Here only so that it will show up in the stack frame so that it can be black listed.
       return parentZoneDelegate.invoke(targetZone, delegate, applyThis, applyArgs, source);
     },
-    onHandleError: function(parentZD: ZoneDelegate, current: Zone, target: Zone, error: any): boolean {
-      if (error.originalStack && Error === ZoneAwareError) {
-        let frames = error.originalStack.split(/\n/);
-        let runFrame = false, runGuardedFrame = false, runTaskFrame = false;
-        while (frames.length) {
-          let frame = frames.shift();
-          // On safari it is possible to have stack frame with no line number.
-          // This check makes sure that we don't filter frames on name only (must have linenumber)
-          if (/:\d+:\d+/.test(frame)) {
-            // Get rid of the path so that we don't accidintely find function name in path.
-            // In chrome the seperator is `(` and `@` in FF and safari
-            // Chrome: at Zone.run (zone.js:100)
-            // Chrome: at Zone.run (http://localhost:9876/base/build/lib/zone.js:100:24)
-            // FireFox: Zone.prototype.run@http://localhost:9876/base/build/lib/zone.js:101:24
-            // Safari: run@http://localhost:9876/base/build/lib/zone.js:101:24
-            let fnName: string = frame.split('(')[0].split('@')[0];
-            let frameType = FrameType.transition;
-            if (fnName.indexOf('ZoneAwareError') !== -1) {
-              zoneAwareFrame = frame;
-            }
-            if (fnName.indexOf('runGuarded') !== -1) {
-              runGuardedFrame = true;
-            } else if (fnName.indexOf('runTask') !== -1) {
-              runTaskFrame = true;
-            } else if (fnName.indexOf('run') !== -1) {
-              runFrame = true;
-            } else {
-              frameType = FrameType.blackList;
-            }
-            blackListedStackFrames[frame] = frameType;
-            // Once we find all of the frames we can stop looking.
-            if (runFrame && runGuardedFrame && runTaskFrame) {
-              ZoneAwareError[stackRewrite] = true;
-              break;
+    onHandleError: function(parentZD: ZoneDelegate, current: Zone, target: Zone, error: any):
+        boolean {
+          if (error.originalStack && Error === ZoneAwareError) {
+            let frames = error.originalStack.split(/\n/);
+            let runFrame = false, runGuardedFrame = false, runTaskFrame = false;
+            while (frames.length) {
+              let frame = frames.shift();
+              // On safari it is possible to have stack frame with no line number.
+              // This check makes sure that we don't filter frames on name only (must have
+              // linenumber)
+              if (/:\d+:\d+/.test(frame)) {
+                // Get rid of the path so that we don't accidintely find function name in path.
+                // In chrome the seperator is `(` and `@` in FF and safari
+                // Chrome: at Zone.run (zone.js:100)
+                // Chrome: at Zone.run (http://localhost:9876/base/build/lib/zone.js:100:24)
+                // FireFox: Zone.prototype.run@http://localhost:9876/base/build/lib/zone.js:101:24
+                // Safari: run@http://localhost:9876/base/build/lib/zone.js:101:24
+                let fnName: string = frame.split('(')[0].split('@')[0];
+                let frameType = FrameType.transition;
+                if (fnName.indexOf('ZoneAwareError') !== -1) {
+                  zoneAwareFrame = frame;
+                }
+                if (fnName.indexOf('runGuarded') !== -1) {
+                  runGuardedFrame = true;
+                } else if (fnName.indexOf('runTask') !== -1) {
+                  runTaskFrame = true;
+                } else if (fnName.indexOf('run') !== -1) {
+                  runFrame = true;
+                } else {
+                  frameType = FrameType.blackList;
+                }
+                blackListedStackFrames[frame] = frameType;
+                // Once we find all of the frames we can stop looking.
+                if (runFrame && runGuardedFrame && runTaskFrame) {
+                  ZoneAwareError[stackRewrite] = true;
+                  break;
+                }
+              }
             }
           }
+          return false;
         }
-      }
-      return false;
-    }
   }) as Zone;
   // carefully constructor a stack frame which contains all of the frames of interest which
   // need to be detected and blacklisted.

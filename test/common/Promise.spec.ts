@@ -338,7 +338,7 @@ describe(
         var setPrototypeOf = (Object as any).setPrototypeOf || function(obj, proto) {
           obj.__proto__ = proto;
           return obj;
-        }
+        };
 
         setPrototypeOf(MyPromise.prototype, Promise.prototype);
 
@@ -347,13 +347,17 @@ describe(
             reject('foo');
           });
 
-          return Promise.resolve().then(function() {
-            return myPromise;
-          }).then(function() {
-            throw new Error('Unexpected resolution');
-          }, function(result) {
-            expect(result).toBe('foo');
-          });
+          return Promise.resolve()
+              .then(function() {
+                return myPromise;
+              })
+              .then(
+                  function() {
+                    throw new Error('Unexpected resolution');
+                  },
+                  function(result) {
+                    expect(result).toBe('foo');
+                  });
         });
 
         it('should resolve if the Promise subclass resolves', function() {
@@ -361,11 +365,13 @@ describe(
             resolve('foo');
           });
 
-          return Promise.resolve().then(function() {
-            return myPromise;
-          }).then(function(result) {
-            expect(result).toBe('foo');
-          });
+          return Promise.resolve()
+              .then(function() {
+                return myPromise;
+              })
+              .then(function(result) {
+                expect(result).toBe('foo');
+              });
         });
       });
 

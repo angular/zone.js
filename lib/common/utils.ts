@@ -24,7 +24,7 @@ export function bindArguments(args: any[], source: string): any[] {
     }
   }
   return args;
-};
+}
 
 export function patchPrototype(prototype, fnNames) {
   const source = prototype.constructor['name'];
@@ -39,7 +39,7 @@ export function patchPrototype(prototype, fnNames) {
       })(delegate);
     }
   }
-};
+}
 
 export const isWebWorker: boolean =
     (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope);
@@ -122,7 +122,8 @@ interface NestedEventListener {
   listener?: EventListenerOrEventListenerObject;
 }
 
-declare type NestedEventListenerOrEventListenerObject = NestedEventListener | EventListener | EventListenerObject;
+declare type NestedEventListenerOrEventListenerObject =
+    NestedEventListener | EventListener | EventListenerObject;
 
 interface ListenerTaskMeta extends TaskData {
   useCapturing: boolean;
@@ -140,7 +141,8 @@ function findExistingRegisteredTask(
       const eventTask = eventTasks[i];
       const data = <ListenerTaskMeta>eventTask.data;
       const listener = <NestedEventListener>data.handler;
-      if ((data.handler === handler || listener.listener === handler) && data.useCapturing === capture && data.eventName === name) {
+      if ((data.handler === handler || listener.listener === handler) &&
+          data.useCapturing === capture && data.eventName === name) {
         if (remove) {
           eventTasks.splice(i, 1);
         }
@@ -151,11 +153,12 @@ function findExistingRegisteredTask(
   return null;
 }
 
-function findAllExistingRegisteredTasks(target: any, name: string, capture: boolean, remove: boolean): Task[] {
+function findAllExistingRegisteredTasks(
+    target: any, name: string, capture: boolean, remove: boolean): Task[] {
   const eventTasks: Task[] = target[EVENT_TASKS];
   if (eventTasks) {
     const result = [];
-    for (let i = eventTasks.length - 1; i >= 0; i --) {
+    for (let i = eventTasks.length - 1; i >= 0; i--) {
       const eventTask = eventTasks[i];
       const data = <ListenerTaskMeta>eventTask.data;
       if (data.eventName === name && data.useCapturing === capture) {
@@ -298,7 +301,7 @@ export function makeZoneAwareRemoveAllListeners(fnName: string, useCapturingPara
     // and we don't cancel Task either, because call native eventEmitter.removeAllListeners will
     // will do remove listener(cancelTask) for us
     target[symbol](eventName);
-  }
+  };
 }
 
 export function makeZoneAwareListeners(fnName: string) {
@@ -408,8 +411,9 @@ export function createNamedFn(name: string, delegate: (self: any, args: any[]) =
 }
 
 export function patchMethod(
-    target: any, name: string, patchFn: (delegate: Function, delegateName: string, name: string) =>
-                                   (self: any, args: any[]) => any): Function {
+    target: any, name: string,
+    patchFn: (delegate: Function, delegateName: string, name: string) => (self: any, args: any[]) =>
+        any): Function {
   let proto = target;
   while (proto && Object.getOwnPropertyNames(proto).indexOf(name) === -1) {
     proto = Object.getPrototypeOf(proto);

@@ -79,25 +79,25 @@ describe('nodejs EventEmitter', () => {
       expect(emitter.listeners('test')).toEqual([]);
     });
   });
-  it ('should prepend listener by order', () => {
+  it('should prepend listener by order', () => {
     zoneA.run(() => {
-        emitter.on('test', listenerA);
-        emitter.on('test', listenerB);
-        expect(emitter.listeners('test')).toEqual([listenerA, listenerB]);
-        emitter.emit('test');
-        expect(zoneResults).toEqual(['A', 'B']);
-        zoneResults = [];
+      emitter.on('test', listenerA);
+      emitter.on('test', listenerB);
+      expect(emitter.listeners('test')).toEqual([listenerA, listenerB]);
+      emitter.emit('test');
+      expect(zoneResults).toEqual(['A', 'B']);
+      zoneResults = [];
 
-        emitter.removeAllListeners('test');
+      emitter.removeAllListeners('test');
 
-        emitter.on('test', listenerA);
-        emitter.prependListener('test', listenerB);
-        expect(emitter.listeners('test')).toEqual([listenerB, listenerA]);
-        emitter.emit('test');
-        expect(zoneResults).toEqual(['B', 'A']);
+      emitter.on('test', listenerA);
+      emitter.prependListener('test', listenerB);
+      expect(emitter.listeners('test')).toEqual([listenerB, listenerA]);
+      emitter.emit('test');
+      expect(zoneResults).toEqual(['B', 'A']);
     });
   });
-  it ('should remove All listeners properly', () => {
+  it('should remove All listeners properly', () => {
     zoneA.run(() => {
       emitter.on('test', expectZoneA);
       emitter.on('test', expectZoneA);
@@ -105,7 +105,7 @@ describe('nodejs EventEmitter', () => {
       expect(emitter.listeners('test').length).toEqual(0);
     });
   });
-  it ('should remove All listeners properly even without a type parameter', () => {
+  it('should remove All listeners properly even without a type parameter', () => {
     zoneA.run(() => {
       emitter.on('test', shouldNotRun);
       emitter.on('test1', shouldNotRun);
@@ -114,24 +114,24 @@ describe('nodejs EventEmitter', () => {
       expect(emitter.listeners('test1').length).toEqual(0);
     });
   });
-  it ('should remove once listener after emit', () => {
+  it('should remove once listener after emit', () => {
     zoneA.run(() => {
       emitter.once('test', expectZoneA);
       emitter.emit('test', 'test value');
       expect(emitter.listeners('test').length).toEqual(0);
     });
   });
-  it ('should remove once listener properly before listener triggered', () => {
+  it('should remove once listener properly before listener triggered', () => {
     zoneA.run(() => {
       emitter.once('test', shouldNotRun);
       emitter.removeListener('test', shouldNotRun);
       emitter.emit('test');
     });
   });
-  it ('should trigger removeListener when remove listener', () => {
+  it('should trigger removeListener when remove listener', () => {
     zoneA.run(() => {
       emitter.on('removeListener', function(type, handler) {
-         zoneResults.push('remove' + type);
+        zoneResults.push('remove' + type);
       });
       emitter.on('newListener', function(type, handler) {
         zoneResults.push('new' + type);
@@ -141,7 +141,7 @@ describe('nodejs EventEmitter', () => {
       expect(zoneResults).toEqual(['newtest', 'removetest']);
     });
   });
-  it ('should trigger removeListener when remove all listeners with eventname ', () => {
+  it('should trigger removeListener when remove all listeners with eventname ', () => {
     zoneA.run(() => {
       emitter.on('removeListener', function(type, handler) {
         zoneResults.push('remove' + type);
@@ -153,7 +153,7 @@ describe('nodejs EventEmitter', () => {
       expect(emitter.listeners('removeListener').length).toBe(1);
     });
   });
-  it ('should trigger removeListener when remove all listeners without eventname', () => {
+  it('should trigger removeListener when remove all listeners without eventname', () => {
     zoneA.run(() => {
       emitter.on('removeListener', function(type, handler) {
         zoneResults.push('remove' + type);

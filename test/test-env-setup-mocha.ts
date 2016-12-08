@@ -2,8 +2,8 @@ import '../lib/mocha/mocha';
 
 ((context) => {
   context['jasmine'] = global['jasmine'] || {};
-  context['jasmine'].createSpy = function (spyName) {
-    let spy: any = function (...params) {
+  context['jasmine'].createSpy = function(spyName) {
+    let spy: any = function(...params) {
       spy.countCall++;
       spy.callArgs = params;
     };
@@ -55,25 +55,24 @@ import '../lib/mocha/mocha';
     return false;
   }
 
-  context['expect'] = function (expected) {
+  context['expect'] = function(expected) {
     return {
-      toBe: function (actual) {
+      toBe: function(actual) {
         if (expected !== actual) {
           throw new Error(`Expected ${expected} to be ${actual}`);
         }
       },
-      toEqual: function (actual) {
+      toEqual: function(actual) {
         if (!eq(expected, actual)) {
-
           throw new Error(`Expected ${expected} to be ${actual}`);
         }
       },
-      toBeDefined: function () {
+      toBeDefined: function() {
         if (!expected) {
           throw new Error(`Expected ${expected} to be defined`);
         }
       },
-      toThrow: function () {
+      toThrow: function() {
         try {
           expected();
         } catch (error) {
@@ -82,7 +81,7 @@ import '../lib/mocha/mocha';
 
         throw new Error(`Expected ${expected} to throw`);
       },
-      toThrowError: function (errorToBeThrow) {
+      toThrowError: function(errorToBeThrow) {
         try {
           expected();
         } catch (error) {
@@ -91,63 +90,64 @@ import '../lib/mocha/mocha';
 
         throw Error(`Expected ${expected} to throw: ${errorToBeThrow}`);
       },
-      toBeTruthy: function () {
+      toBeTruthy: function() {
         if (!expected) {
           throw new Error(`Expected ${expected} to be truthy`);
         }
       },
-      toContain: function (actual) {
+      toContain: function(actual) {
         if (expected.indexOf(actual) === -1) {
           throw new Error(`Expected ${expected} to contain ${actual}`);
         }
       },
-      toHaveBeenCalled: function () {
+      toHaveBeenCalled: function() {
         if (expected.countCall === 0) {
           throw new Error(`Expected ${expected} to been called`);
         }
       },
-      toHaveBeenCalledWith: function (...params) {
+      toHaveBeenCalledWith: function(...params) {
         if (!eq(expected.callArgs, params)) {
-          throw new Error(`Expected ${expected} to been called with ${expected.callArgs}, called with: ${params}`);
+          throw new Error(`Expected ${expected} to been called with ${expected.callArgs
+                          }, called with: ${params}`);
         }
       },
-      toMatch: function (actual) {
+      toMatch: function(actual) {
         if (!new RegExp(actual).test(expected)) {
           throw new Error(`Expected ${expected} to match ${actual}`);
         }
       },
       not: {
-        toBe: function (actual) {
+        toBe: function(actual) {
           if (expected === actual) {
             throw new Error(`Expected ${expected} not to be ${actual}`);
           }
         },
-        toHaveBeenCalled: function () {
+        toHaveBeenCalled: function() {
           if (expected.countCall > 0) {
             throw new Error(`Expected ${expected} to not been called`);
           }
         },
-        toThrow: function () {
+        toThrow: function() {
           try {
             expected();
           } catch (error) {
             throw new Error(`Expected ${expected} to not throw`);
           }
         },
-        toThrowError: function () {
+        toThrowError: function() {
           try {
             expected();
           } catch (error) {
             throw Error(`Expected ${expected} to not throw error`);
           }
         },
-        toBeGreaterThan: function (actual: number) {
+        toBeGreaterThan: function(actual: number) {
           if (expected > actual) {
             throw new Error(`Expected ${expected} not to be greater than ${actual}`);
           }
 
         },
-        toHaveBeenCalledWith: function (params) {
+        toHaveBeenCalledWith: function(params) {
           if (!eq(expected.callArgs, params)) {
             throw new Error(`Expected ${expected} to not been called with ${params}`);
           }

@@ -21,13 +21,13 @@ describe('ZoneAwareError', () => {
       let inside: Error;
       try {
         throw new Error('Outside');
-      } catch(e) {
+      } catch (e) {
         outside = e;
       }
-      innerZone.run(function insideRun () {
+      innerZone.run(function insideRun() {
         try {
           throw new Error('Inside');
-        } catch(e) {
+        } catch (e) {
           inside = e;
         }
       });
@@ -62,7 +62,7 @@ describe('ZoneAwareError', () => {
 
 function getRootZone() {
   let zone = Zone.current;
-  while(zone.parent) {
+  while (zone.parent) {
     zone = zone.parent;
   }
   return zone;
