@@ -1570,6 +1570,9 @@ function patchXHR(window) {
         return abortNative.apply(data.target, data.args);
     }
     var openNative = patchMethod(window.XMLHttpRequest.prototype, 'open', function () { return function (self, args) {
+        //to handle async if it is being used with any other library or windows.XMLHttpRequest.prototype with other library's
+        if(args[2]===undefined)
+            args[2]=true; 
         self[XHR_SYNC] = args[2] == false;
         return openNative.apply(self, args);
     }; });
