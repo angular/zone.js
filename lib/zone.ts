@@ -177,7 +177,7 @@ interface Zone {
    * @param source A unique debug location of the API being wrapped.
    * @returns {function(): *} A function which will invoke the `callback` through [Zone.runGuarded].
    */
-  wrap(callback: Function, source: string): Function;
+  wrap<F extends Function>(callback: F, source: string): F;
   /**
    * Invokes a function in a given zone.
    *
