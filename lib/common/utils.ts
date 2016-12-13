@@ -54,6 +54,15 @@ export const isBrowser: boolean =
 export function patchProperty(obj, prop) {
   const desc = Object.getOwnPropertyDescriptor(obj, prop) || {enumerable: true, configurable: true};
 
+  const originalDesc = Object.getOwnPropertyDescriptor(obj, 'original' + prop);
+  if (!originalDesc) {
+    Object.defineProperty(obj, 'original' + prop, {
+      enumerable: false,
+      configurable: true,
+      get: desc.get
+    });
+  }
+
   // A property descriptor cannot have getter/setter and be writable
   // deleting the writable and value properties avoids this error:
   //
@@ -89,6 +98,23 @@ export function patchProperty(obj, prop) {
   // The getter would return undefined for unassigned properties but the default value of an
   // unassigned property is null
   desc.get = function() {
+    let r = this[_prop] || null;
+    // result will be null when use inline event attribute,
+    // such as <button onclick="func();">OK</button>
+    // because the onclick function is internal raw uncompiled handler
+    // the onclick will be evaluated when first time event was triggered or
+    // the property is accessed, https://github.com/angular/zone.js/issues/525
+    // so we should use original native get to retrive the handler
+    if (r === null) {
+      var oriDesc = Object.getOwnPropertyDescriptor(obj, 'original' + prop);
+      if (oriDesc && oriDesc.get) {
+        r = oriDesc.get.apply(this, arguments);
+        if (r) {
+          desc.set.apply(this, [r]);
+          this.removeAttribute(prop);
+        }
+      }
+    }
     return this[_prop] || null;
   };
 
