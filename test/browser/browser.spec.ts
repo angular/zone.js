@@ -141,10 +141,6 @@ describe('Zone', function() {
           button.setAttribute('onclick', 'return');
           expect(button.onclick).not.toBeUndefined();
         });
-
-        button.dispatchEvent(clickEvent);
-
-        expect(hookSpy).toHaveBeenCalled();
       })
     });
   });
