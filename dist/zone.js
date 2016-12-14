@@ -828,7 +828,7 @@ function patchPrototype(prototype, fnNames) {
 
 var isWebWorker = (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope);
 var isNode = (typeof process !== 'undefined' && {}.toString.call(process) === '[object process]');
-var isBrowser = !isNode && !isWebWorker && !!(typeof window !== 'undefined' && window['HTMLElement']);
+var isBrowser = ('nw' in _global$1 || !isNode && !isWebWorker && !!(typeof window !== 'undefined' && window['HTMLElement']));
 function patchProperty(obj, prop) {
     var desc = Object.getOwnPropertyDescriptor(obj, prop) || { enumerable: true, configurable: true };
     // A property descriptor cannot have getter/setter and be writable
