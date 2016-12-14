@@ -55,7 +55,7 @@ export function patchProperty(obj, prop) {
   const desc = Object.getOwnPropertyDescriptor(obj, prop) || {enumerable: true, configurable: true};
 
   const originalDesc = Object.getOwnPropertyDescriptor(obj, 'original' + prop);
-  if (!originalDesc) {
+  if (!originalDesc && desc.get) {
     Object.defineProperty(obj, 'original' + prop, {
       enumerable: false,
       configurable: true,
@@ -106,7 +106,7 @@ export function patchProperty(obj, prop) {
     // the property is accessed, https://github.com/angular/zone.js/issues/525
     // so we should use original native get to retrive the handler
     if (r === null) {
-      var oriDesc = Object.getOwnPropertyDescriptor(obj, 'original' + prop);
+      let oriDesc = Object.getOwnPropertyDescriptor(obj, 'original' + prop);
       if (oriDesc && oriDesc.get) {
         r = oriDesc.get.apply(this, arguments);
         if (r) {
