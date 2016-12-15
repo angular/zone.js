@@ -6,6 +6,12 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+/*
+ * Suppress closure compiler errors about unknown 'global' variable
+ * @fileoverview
+ * @suppress {undefinedVars}
+ */
+
 /**
  * Zone is a mechanism for intercepting and keeping track of asynchronous work.
  *
@@ -540,7 +546,7 @@ type AmbientZone = Zone;
 type AmbientZoneDelegate = ZoneDelegate;
 
 const Zone: ZoneType = (function(global: any) {
-  if (global.Zone) {
+  if (global['Zone']) {
     throw new Error('Zone already loaded.');
   }
 
@@ -1214,8 +1220,8 @@ const Zone: ZoneType = (function(global: any) {
   ZoneAwarePromise['race'] = ZoneAwarePromise.race;
   ZoneAwarePromise['all'] = ZoneAwarePromise.all;
 
-  const NativePromise = global[__symbol__('Promise')] = global.Promise;
-  global.Promise = ZoneAwarePromise;
+  const NativePromise = global[__symbol__('Promise')] = global['Promise'];
+  global['Promise'] = ZoneAwarePromise;
   function patchThen(NativePromise) {
     const NativePromiseProtototype = NativePromise.prototype;
     const NativePromiseThen = NativePromiseProtototype[__symbol__('then')] =
@@ -1428,5 +1434,5 @@ const Zone: ZoneType = (function(global: any) {
   // Cause the error to extract the stack frames.
   detectZone.runTask(detectZone.scheduleMacroTask('detect', detectRunFn, null, () => null, null));
 
-  return global.Zone = Zone;
+  return global['Zone'] = Zone;
 })(typeof window === 'object' && window || typeof self === 'object' && self || global);
