@@ -139,7 +139,7 @@ describe('Zone', function() {
 
         zone.run(function() {
           button.setAttribute('onclick', 'return');
-          expect(button.onclick).not.toBe(undefined);
+          expect(button.onclick).not.toBe(null);
         });
       })
     });
