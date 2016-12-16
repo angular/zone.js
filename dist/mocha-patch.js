@@ -41,7 +41,7 @@
         it: Mocha.it
     };
     function modifyArguments(args, syncTest, asyncTest) {
-        var _loop_1 = function(i) {
+        var _loop_1 = function (i) {
             var arg = args[i];
             if (typeof arg === 'function') {
                 // The `done` callback is only passed through if the function expects at
@@ -50,7 +50,8 @@
                 // otherwise mocha will
                 // think that all functions are sync or async.
                 args[i] = (arg.length === 0) ? syncTest(arg) : asyncTest(arg);
-                // Mocha uses toString to view the test body in the result list, make sure we return the correct function body
+                // Mocha uses toString to view the test body in the result list, make sure we return the
+                // correct function body
                 args[i].toString = function () {
                     return arg.toString();
                 };
