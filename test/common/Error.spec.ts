@@ -16,6 +16,7 @@ describe('ZoneAwareError', () => {
     const myError = new MyError();
     expect(myError instanceof Error).toBe(true);
     expect(myError instanceof MyError).toBe(true);
+    expect(myError.stack).not.toBe(undefined);
   });
 
   it('should show zone names in stack frames and remove extra frames', () => {
