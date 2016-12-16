@@ -21,7 +21,7 @@
 
 
 var Zone$1 = (function (global) {
-    if (global.Zone) {
+    if (global['Zone']) {
         throw new Error('Zone already loaded.');
     }
     var Zone = (function () {
@@ -176,9 +176,9 @@ var Zone$1 = (function (global) {
             task.cancelFn = null;
             return value;
         };
-        Zone.__symbol__ = __symbol__;
         return Zone;
     }());
+    Zone.__symbol__ = __symbol__;
     
     var ZoneDelegate = (function () {
         function ZoneDelegate(zone, parentDelegate, zoneSpec) {
@@ -410,7 +410,7 @@ var Zone$1 = (function (global) {
                 }
             }
             while (_uncaughtPromiseErrors.length) {
-                var _loop_1 = function() {
+                var _loop_1 = function () {
                     var uncaughtPromiseError = _uncaughtPromiseErrors.shift();
                     try {
                         uncaughtPromiseError.zone.runGuarded(function () {
@@ -452,10 +452,8 @@ var Zone$1 = (function (global) {
     }
     function resolvePromise(promise, state, value) {
         if (promise[symbolState] === UNRESOLVED) {
-            if (value instanceof ZoneAwarePromise &&
-                value.hasOwnProperty(symbolState) &&
-                value.hasOwnProperty(symbolValue) &&
-                value[symbolState] !== UNRESOLVED) {
+            if (value instanceof ZoneAwarePromise && value.hasOwnProperty(symbolState) &&
+                value.hasOwnProperty(symbolValue) && value[symbolState] !== UNRESOLVED) {
                 clearRejectedNoCatch(value);
                 resolvePromise(promise, value[symbolState], value[symbolValue]);
             }
@@ -605,8 +603,8 @@ var Zone$1 = (function (global) {
     ZoneAwarePromise['reject'] = ZoneAwarePromise.reject;
     ZoneAwarePromise['race'] = ZoneAwarePromise.race;
     ZoneAwarePromise['all'] = ZoneAwarePromise.all;
-    var NativePromise = global[__symbol__('Promise')] = global.Promise;
-    global.Promise = ZoneAwarePromise;
+    var NativePromise = global[__symbol__('Promise')] = global['Promise'];
+    global['Promise'] = ZoneAwarePromise;
     function patchThen(NativePromise) {
         var NativePromiseProtototype = NativePromise.prototype;
         var NativePromiseThen = NativePromiseProtototype[__symbol__('then')] =
@@ -651,9 +649,8 @@ var Zone$1 = (function (global) {
         /// Skip this frame when printing out stack
         FrameType[FrameType["blackList"] = 0] = "blackList";
         /// This frame marks zone transition
-        FrameType[FrameType["trasition"] = 1] = "trasition";
+        FrameType[FrameType["transition"] = 1] = "transition";
     })(FrameType || (FrameType = {}));
-    
     var NativeError = global[__symbol__('Error')] = global.Error;
     // Store the frames which should be removed from the stack frames
     var blackListedStackFrames = {};
@@ -689,7 +686,7 @@ var Zone$1 = (function (global) {
                         frames_1.splice(i, 1);
                         i--;
                     }
-                    else if (frameType === FrameType.trasition) {
+                    else if (frameType === FrameType.transition) {
                         if (zoneFrame.parent) {
                             // This is the special frame where zone changed. Print and process it accordingly
                             frames_1[i] += " [" + zoneFrame.parent.zone.name + " => " + zoneFrame.zone.name + "]";
@@ -708,7 +705,6 @@ var Zone$1 = (function (global) {
         }
         return error;
     }
-    
     // Copy the prototype so that instanceof operator works as expected
     ZoneAwareError.prototype = NativeError.prototype;
     ZoneAwareError[Zone.__symbol__('blacklistedStackFrames')] = blackListedStackFrames;
@@ -718,10 +714,30 @@ var Zone$1 = (function (global) {
         NativeError.stackTraceLimit = Math.max(NativeError.stackTraceLimit, 15);
         // make sure that ZoneAwareError has the same property which forwards to NativeError.
         Object.defineProperty(ZoneAwareError, 'stackTraceLimit', {
-            get: function () { return NativeError.stackTraceLimit; },
-            set: function (value) { return NativeError.stackTraceLimit = value; }
+            get: function () {
+                return NativeError.stackTraceLimit;
+            },
+            set: function (value) {
+                return NativeError.stackTraceLimit = value;
+            }
         });
     }
+    if (NativeError.hasOwnProperty('captureStackTrace')) {
+        Object.defineProperty(ZoneAwareError, 'captureStackTrace', {
+            value: function (targetObject, constructorOpt) {
+                NativeError.captureStackTrace(targetObject, constructorOpt);
+            }
+        });
+    }
+    Object.defineProperty(ZoneAwareError, 'prepareStackTrace', {
+        get: function () {
+            return NativeError.prepareStackTrace;
+        },
+        set: function (value) {
+            return NativeError.prepareStackTrace = value;
+        }
+    });
+    // Now we need to populet the `blacklistedStackFrames` as well as find the
     // Now we need to populet the `blacklistedStackFrames` as well as find the
     // run/runGuraded/runTask frames. This is done by creating a detect zone and then threading
     // the execution through all of the above methods so that we can look at the stack trace and
@@ -739,7 +755,8 @@ var Zone$1 = (function (global) {
                 while (frames_2.length) {
                     var frame = frames_2.shift();
                     // On safari it is possible to have stack frame with no line number.
-                    // This check makes sure that we don't filter frames on name only (must have linenumber)
+                    // This check makes sure that we don't filter frames on name only (must have
+                    // linenumber)
                     if (/:\d+:\d+/.test(frame)) {
                         // Get rid of the path so that we don't accidintely find function name in path.
                         // In chrome the seperator is `(` and `@` in FF and safari
@@ -748,7 +765,7 @@ var Zone$1 = (function (global) {
                         // FireFox: Zone.prototype.run@http://localhost:9876/base/build/lib/zone.js:101:24
                         // Safari: run@http://localhost:9876/base/build/lib/zone.js:101:24
                         var fnName = frame.split('(')[0].split('@')[0];
-                        var frameType = FrameType.trasition;
+                        var frameType = FrameType.transition;
                         if (fnName.indexOf('ZoneAwareError') !== -1) {
                             zoneAwareFrame = frame;
                         }
@@ -787,7 +804,7 @@ var Zone$1 = (function (global) {
     };
     // Cause the error to extract the stack frames.
     detectZone.runTask(detectZone.scheduleMacroTask('detect', detectRunFn, null, function () { return null; }, null));
-    return global.Zone = Zone;
+    return global['Zone'] = Zone;
 })(typeof window === 'object' && window || typeof self === 'object' && self || global);
 
 /**
@@ -797,7 +814,7 @@ var Zone$1 = (function (global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var zoneSymbol = Zone['__symbol__'];
+var zoneSymbol = function (n) { return "__zone_symbol__" + n; };
 var _global$1 = typeof window === 'object' && window || typeof self === 'object' && self || global;
 function bindArguments(args, source) {
     for (var i = args.length - 1; i >= 0; i--) {
@@ -809,47 +826,9 @@ function bindArguments(args, source) {
 }
 
 
-
-
 var isNode = (typeof process !== 'undefined' && {}.toString.call(process) === '[object process]');
 
-function patchProperty(obj, prop) {
-    var desc = Object.getOwnPropertyDescriptor(obj, prop) || { enumerable: true, configurable: true };
-    // A property descriptor cannot have getter/setter and be writable
-    // deleting the writable and value properties avoids this error:
-    //
-    // TypeError: property descriptors must not specify a value or be writable when a
-    // getter or setter has been specified
-    delete desc.writable;
-    delete desc.value;
-    // substr(2) cuz 'onclick' -> 'click', etc
-    var eventName = prop.substr(2);
-    var _prop = '_' + prop;
-    desc.set = function (fn) {
-        if (this[_prop]) {
-            this.removeEventListener(eventName, this[_prop]);
-        }
-        if (typeof fn === 'function') {
-            var wrapFn = function (event) {
-                var result;
-                result = fn.apply(this, arguments);
-                if (result != undefined && !result)
-                    event.preventDefault();
-            };
-            this[_prop] = wrapFn;
-            this.addEventListener(eventName, wrapFn, false);
-        }
-        else {
-            this[_prop] = null;
-        }
-    };
-    // The getter would return undefined for unassigned properties but the default value of an
-    // unassigned property is null
-    desc.get = function () {
-        return this[_prop] || null;
-    };
-    Object.defineProperty(obj, prop, desc);
-}
+
 
 
 
@@ -864,7 +843,8 @@ function findExistingRegisteredTask(target, handler, name, capture, remove) {
             var eventTask = eventTasks[i];
             var data = eventTask.data;
             var listener = data.handler;
-            if ((data.handler === handler || listener.listener === handler) && data.useCapturing === capture && data.eventName === name) {
+            if ((data.handler === handler || listener.listener === handler) &&
+                data.useCapturing === capture && data.eventName === name) {
                 if (remove) {
                     eventTasks.splice(i, 1);
                 }
@@ -997,17 +977,24 @@ function makeZoneAwareRemoveAllListeners(fnName, useCapturingParam) {
     var symbol = zoneSymbol(fnName);
     var defaultUseCapturing = useCapturingParam ? false : undefined;
     return function zoneAwareRemoveAllListener(self, args) {
+        var target = self || _global$1;
+        if (args.length === 0) {
+            // remove all listeners without eventName
+            target[EVENT_TASKS] = [];
+            // we don't cancel Task either, because call native eventEmitter.removeAllListeners will
+            // will do remove listener(cancelTask) for us
+            target[symbol]();
+            return;
+        }
         var eventName = args[0];
         var useCapturing = args[1] || defaultUseCapturing;
-        var target = self || _global$1;
-        var eventTasks = findAllExistingRegisteredTasks(target, eventName, useCapturing, true);
-        if (eventTasks) {
-            for (var i = 0; i < eventTasks.length; i++) {
-                var eventTask = eventTasks[i];
-                eventTask.zone.cancelTask(eventTask);
-            }
-        }
-        target[symbol](eventName, useCapturing);
+        // call this function just remove the related eventTask from target[EVENT_TASKS]
+        findAllExistingRegisteredTasks(target, eventName, useCapturing, true);
+        // we don't need useCapturing here because useCapturing is just for DOM, and
+        // removeAllListeners should only be called by node eventEmitter
+        // and we don't cancel Task either, because call native eventEmitter.removeAllListeners will
+        // will do remove listener(cancelTask) for us
+        target[symbol](eventName);
     };
 }
 function makeZoneAwareListeners(fnName) {
@@ -1231,6 +1218,7 @@ if (shouldPatchGlobalTimers) {
     patchTimer(_global, set, clear, 'Interval');
     patchTimer(_global, set, clear, 'Immediate');
 }
+patchNextTick();
 // Crypto
 var crypto;
 try {
@@ -1255,7 +1243,7 @@ if (crypto) {
     crypto.pbkdf2 = function pbkdf2Zone() {
         var args = [];
         for (var _i = 0; _i < arguments.length; _i++) {
-            args[_i - 0] = arguments[_i];
+            args[_i] = arguments[_i];
         }
         var fn = args[args.length - 1];
         if (typeof fn === 'function') {
@@ -1287,6 +1275,29 @@ if (httpClient && httpClient.ClientRequest) {
             return new ClientRequest_1(options, zone.wrap(callback, 'http.ClientRequest'));
         }
     };
+}
+function patchNextTick() {
+    var setNative = null;
+    function scheduleTask(task) {
+        var args = task.data;
+        args[0] = function () {
+            task.invoke.apply(this, arguments);
+        };
+        setNative.apply(process, args);
+        return task;
+    }
+    setNative =
+        patchMethod(process, 'nextTick', function (delegate) { return function (self, args) {
+            if (typeof args[0] === 'function') {
+                var zone = Zone.current;
+                var task = zone.scheduleMicroTask('nextTick', args[0], args, scheduleTask);
+                return task;
+            }
+            else {
+                // cause an error by calling it directly.
+                return delegate.apply(process, args);
+            }
+        }; });
 }
 
 })));

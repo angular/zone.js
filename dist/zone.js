@@ -21,7 +21,7 @@
 
 
 var Zone$1 = (function (global) {
-    if (global.Zone) {
+    if (global['Zone']) {
         throw new Error('Zone already loaded.');
     }
     var Zone = (function () {
@@ -176,9 +176,9 @@ var Zone$1 = (function (global) {
             task.cancelFn = null;
             return value;
         };
-        Zone.__symbol__ = __symbol__;
         return Zone;
     }());
+    Zone.__symbol__ = __symbol__;
     
     var ZoneDelegate = (function () {
         function ZoneDelegate(zone, parentDelegate, zoneSpec) {
@@ -410,7 +410,7 @@ var Zone$1 = (function (global) {
                 }
             }
             while (_uncaughtPromiseErrors.length) {
-                var _loop_1 = function() {
+                var _loop_1 = function () {
                     var uncaughtPromiseError = _uncaughtPromiseErrors.shift();
                     try {
                         uncaughtPromiseError.zone.runGuarded(function () {
@@ -452,10 +452,8 @@ var Zone$1 = (function (global) {
     }
     function resolvePromise(promise, state, value) {
         if (promise[symbolState] === UNRESOLVED) {
-            if (value instanceof ZoneAwarePromise &&
-                value.hasOwnProperty(symbolState) &&
-                value.hasOwnProperty(symbolValue) &&
-                value[symbolState] !== UNRESOLVED) {
+            if (value instanceof ZoneAwarePromise && value.hasOwnProperty(symbolState) &&
+                value.hasOwnProperty(symbolValue) && value[symbolState] !== UNRESOLVED) {
                 clearRejectedNoCatch(value);
                 resolvePromise(promise, value[symbolState], value[symbolValue]);
             }
@@ -605,8 +603,8 @@ var Zone$1 = (function (global) {
     ZoneAwarePromise['reject'] = ZoneAwarePromise.reject;
     ZoneAwarePromise['race'] = ZoneAwarePromise.race;
     ZoneAwarePromise['all'] = ZoneAwarePromise.all;
-    var NativePromise = global[__symbol__('Promise')] = global.Promise;
-    global.Promise = ZoneAwarePromise;
+    var NativePromise = global[__symbol__('Promise')] = global['Promise'];
+    global['Promise'] = ZoneAwarePromise;
     function patchThen(NativePromise) {
         var NativePromiseProtototype = NativePromise.prototype;
         var NativePromiseThen = NativePromiseProtototype[__symbol__('then')] =
@@ -651,9 +649,8 @@ var Zone$1 = (function (global) {
         /// Skip this frame when printing out stack
         FrameType[FrameType["blackList"] = 0] = "blackList";
         /// This frame marks zone transition
-        FrameType[FrameType["trasition"] = 1] = "trasition";
+        FrameType[FrameType["transition"] = 1] = "transition";
     })(FrameType || (FrameType = {}));
-    
     var NativeError = global[__symbol__('Error')] = global.Error;
     // Store the frames which should be removed from the stack frames
     var blackListedStackFrames = {};
@@ -689,7 +686,7 @@ var Zone$1 = (function (global) {
                         frames_1.splice(i, 1);
                         i--;
                     }
-                    else if (frameType === FrameType.trasition) {
+                    else if (frameType === FrameType.transition) {
                         if (zoneFrame.parent) {
                             // This is the special frame where zone changed. Print and process it accordingly
                             frames_1[i] += " [" + zoneFrame.parent.zone.name + " => " + zoneFrame.zone.name + "]";
@@ -708,7 +705,6 @@ var Zone$1 = (function (global) {
         }
         return error;
     }
-    
     // Copy the prototype so that instanceof operator works as expected
     ZoneAwareError.prototype = NativeError.prototype;
     ZoneAwareError[Zone.__symbol__('blacklistedStackFrames')] = blackListedStackFrames;
@@ -718,10 +714,30 @@ var Zone$1 = (function (global) {
         NativeError.stackTraceLimit = Math.max(NativeError.stackTraceLimit, 15);
         // make sure that ZoneAwareError has the same property which forwards to NativeError.
         Object.defineProperty(ZoneAwareError, 'stackTraceLimit', {
-            get: function () { return NativeError.stackTraceLimit; },
-            set: function (value) { return NativeError.stackTraceLimit = value; }
+            get: function () {
+                return NativeError.stackTraceLimit;
+            },
+            set: function (value) {
+                return NativeError.stackTraceLimit = value;
+            }
         });
     }
+    if (NativeError.hasOwnProperty('captureStackTrace')) {
+        Object.defineProperty(ZoneAwareError, 'captureStackTrace', {
+            value: function (targetObject, constructorOpt) {
+                NativeError.captureStackTrace(targetObject, constructorOpt);
+            }
+        });
+    }
+    Object.defineProperty(ZoneAwareError, 'prepareStackTrace', {
+        get: function () {
+            return NativeError.prepareStackTrace;
+        },
+        set: function (value) {
+            return NativeError.prepareStackTrace = value;
+        }
+    });
+    // Now we need to populet the `blacklistedStackFrames` as well as find the
     // Now we need to populet the `blacklistedStackFrames` as well as find the
     // run/runGuraded/runTask frames. This is done by creating a detect zone and then threading
     // the execution through all of the above methods so that we can look at the stack trace and
@@ -739,7 +755,8 @@ var Zone$1 = (function (global) {
                 while (frames_2.length) {
                     var frame = frames_2.shift();
                     // On safari it is possible to have stack frame with no line number.
-                    // This check makes sure that we don't filter frames on name only (must have linenumber)
+                    // This check makes sure that we don't filter frames on name only (must have
+                    // linenumber)
                     if (/:\d+:\d+/.test(frame)) {
                         // Get rid of the path so that we don't accidintely find function name in path.
                         // In chrome the seperator is `(` and `@` in FF and safari
@@ -748,7 +765,7 @@ var Zone$1 = (function (global) {
                         // FireFox: Zone.prototype.run@http://localhost:9876/base/build/lib/zone.js:101:24
                         // Safari: run@http://localhost:9876/base/build/lib/zone.js:101:24
                         var fnName = frame.split('(')[0].split('@')[0];
-                        var frameType = FrameType.trasition;
+                        var frameType = FrameType.transition;
                         if (fnName.indexOf('ZoneAwareError') !== -1) {
                             zoneAwareFrame = frame;
                         }
@@ -787,7 +804,7 @@ var Zone$1 = (function (global) {
     };
     // Cause the error to extract the stack frames.
     detectZone.runTask(detectZone.scheduleMacroTask('detect', detectRunFn, null, function () { return null; }, null));
-    return global.Zone = Zone;
+    return global['Zone'] = Zone;
 })(typeof window === 'object' && window || typeof self === 'object' && self || global);
 
 /**
@@ -797,7 +814,7 @@ var Zone$1 = (function (global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var zoneSymbol = Zone['__symbol__'];
+var zoneSymbol = function (n) { return "__zone_symbol__" + n; };
 var _global$1 = typeof window === 'object' && window || typeof self === 'object' && self || global;
 function bindArguments(args, source) {
     for (var i = args.length - 1; i >= 0; i--) {
@@ -807,10 +824,9 @@ function bindArguments(args, source) {
     }
     return args;
 }
-
 function patchPrototype(prototype, fnNames) {
     var source = prototype.constructor['name'];
-    var _loop_1 = function(i) {
+    var _loop_1 = function (i) {
         var name_1 = fnNames[i];
         var delegate = prototype[name_1];
         if (delegate) {
@@ -825,7 +841,6 @@ function patchPrototype(prototype, fnNames) {
         _loop_1(i);
     }
 }
-
 var isWebWorker = (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope);
 var isNode = (typeof process !== 'undefined' && {}.toString.call(process) === '[object process]');
 var isBrowser = !isNode && !isWebWorker && !!(typeof window !== 'undefined' && window['HTMLElement']);
@@ -895,7 +910,8 @@ function findExistingRegisteredTask(target, handler, name, capture, remove) {
             var eventTask = eventTasks[i];
             var data = eventTask.data;
             var listener = data.handler;
-            if ((data.handler === handler || listener.listener === handler) && data.useCapturing === capture && data.eventName === name) {
+            if ((data.handler === handler || listener.listener === handler) &&
+                data.useCapturing === capture && data.eventName === name) {
                 if (remove) {
                     eventTasks.splice(i, 1);
                 }
@@ -1441,7 +1457,7 @@ var unboundKey = zoneSymbol('unbound');
 // for `onwhatever` properties and replace them with zone-bound functions
 // - Chrome (for now)
 function patchViaCapturingAllTheEvents() {
-    var _loop_1 = function(i) {
+    var _loop_1 = function (i) {
         var property = eventNames[i];
         var onproperty = 'on' + property;
         self.addEventListener(property, function (event) {
