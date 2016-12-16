@@ -11,6 +11,13 @@ describe('ZoneAwareError', () => {
   // and there is no point in running them.
   if (!Error['stackRewrite']) return;
 
+  it('should keep error prototype chain correctly', () => {
+    class MyError extends Error {}
+    const myError = new MyError();
+    expect(myError instanceof Error).toBe(true);
+    expect(myError instanceof MyError).toBe(true);
+  });
+
   it('should show zone names in stack frames and remove extra frames', () => {
     const rootZone = getRootZone();
     const innerZone = rootZone.fork({name: 'InnerZone'});
