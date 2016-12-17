@@ -344,18 +344,9 @@ const zoneAwareAddEventListener =
     makeZoneAwareAddListener(ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER);
 const zoneAwareRemoveEventListener = makeZoneAwareRemoveListener(REMOVE_EVENT_LISTENER);
 
-export function patchEventTargetMethods(obj: any): boolean {
-  if (obj && obj.addEventListener) {
-    patchMethod(obj, ADD_EVENT_LISTENER, () => zoneAwareAddEventListener);
-    patchMethod(obj, REMOVE_EVENT_LISTENER, () => zoneAwareRemoveEventListener);
-    return true;
-  } else {
-    return false;
-  }
-}
-
-export function patchEventTarget(obj: any, addFnName: string, removeFnName: string,
-                metaCreator: (self: any, args: any[]) => ListenerTaskMeta): boolean {
+export function patchEventTargetMethods(obj: any, addFnName: string = ADD_EVENT_LISTENER,
+                                 removeFnName: string = REMOVE_EVENT_LISTENER,
+    metaCreator: (self: any, args: any[]) => ListenerTaskMeta = defaultListenerMetaCreator): boolean {
   if (obj && obj[addFnName]) {
     patchMethod(obj, addFnName,
         () => makeZoneAwareAddListener(addFnName, removeFnName, true, false, false, metaCreator));
