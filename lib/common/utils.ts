@@ -65,23 +65,43 @@ export function patchProperty(obj, prop) {
   // substr(2) cuz 'onclick' -> 'click', etc
   const eventName = prop.substr(2);
   const _prop = '_' + prop;
+  let originFn: any
+
+  const patchFn = function (wrapFn: any, fn: any) {
+    if (wrapFn) {
+      Object.keys(wrapFn).forEach(key => {
+        if (fn) {
+          const propertyInWrapFn: any = wrapFn[key];
+          if (typeof propertyInWrapFn === 'funciton') {
+            fn[key] = propertyInWrapFn.bind(wrapFn);
+          } else {
+            fn[key] = propertyInWrapFn;
+          }
+        }
+      });
+    }
+  }
 
   desc.set = function(fn) {
+    originFn = fn;
     if (this[_prop]) {
       this.removeEventListener(eventName, this[_prop]);
     }
 
     if (typeof fn === 'function') {
-      const wrapFn = function(event) {
+      let wrapFn: (event: any) => void;
+      wrapFn = function(event: any) {
         let result;
+        patchFn(wrapFn, fn);
         result = fn.apply(this, arguments);
-
         if (result != undefined && !result) event.preventDefault();
       };
 
       this[_prop] = wrapFn;
       this.addEventListener(eventName, wrapFn, false);
     } else {
+      const wrapFn = this[_prop];
+      patchFn(wrapFn, originFn);
       this[_prop] = null;
     }
   };
