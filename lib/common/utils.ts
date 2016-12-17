@@ -118,14 +118,14 @@ const EVENT_TASKS = zoneSymbol('eventTasks');
 const ADD_EVENT_LISTENER = 'addEventListener';
 const REMOVE_EVENT_LISTENER = 'removeEventListener';
 
-interface NestedEventListener {
+export interface NestedEventListener {
   listener?: EventListenerOrEventListenerObject;
 }
 
-declare type NestedEventListenerOrEventListenerObject =
+export declare type NestedEventListenerOrEventListenerObject =
     NestedEventListener | EventListener | EventListenerObject;
 
-interface ListenerTaskMeta extends TaskData {
+export interface ListenerTaskMeta extends TaskData {
   useCapturing: boolean;
   eventName: string;
   handler: NestedEventListenerOrEventListenerObject;
