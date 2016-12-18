@@ -48,6 +48,8 @@ patchXHR(_global);
 
 const XHR_TASK = zoneSymbol('xhrTask');
 const XHR_SYNC = zoneSymbol('xhrSync');
+const XHR_LISTENER = zoneSymbol('xhrListener');
+const XHR_SCHEDULED = zoneSymbol('xhrScheduled');
 
 interface XHROptions extends TaskData {
   target: any;
@@ -62,19 +64,28 @@ function patchXHR(window: any) {
   }
 
   function scheduleTask(task: Task) {
+    self[XHR_SCHEDULED] = false;
     var data = <XHROptions>task.data;
-    data.target.addEventListener('readystatechange', () => {
+    // remove existing event listener
+    var listener = data.target[XHR_LISTENER];
+    if (listener) {
+        data.target.removeEventListener('readystatechange', listener);
+    }
+    var newListener = data.target[XHR_LISTENER] = () => {
       if (data.target.readyState === data.target.DONE) {
-        if (!data.aborted) {
+        if (!data.aborted && self[XHR_SCHEDULED]) {
           task.invoke();
         }
       }
-    });
+    };
+    data.target.addEventListener('readystatechange', newListener);
+
     var storedTask: Task = data.target[XHR_TASK];
     if (!storedTask) {
       data.target[XHR_TASK] = task;
     }
     sendNative.apply(data.target, data.args);
+    self[XHR_SCHEDULED] = true;
     return task;
   }
 
