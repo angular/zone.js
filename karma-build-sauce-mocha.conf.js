@@ -7,7 +7,6 @@
  */
 
 module.exports = function (config) {
-  require('./karma.conf')(config);
-  require('./karma-mocha.conf')(config);
+  require('./karma-dist-mocha.conf.js')(config);
   require('./sauce.conf')(config);
 };

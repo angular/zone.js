@@ -1,6 +1,6 @@
 
 module.exports = function (config) {
-  require('./karma.conf')(config);
+  require('./karma-build.conf.js')(config);
 
   config.plugins.push(require('karma-mocha'));
   config.frameworks.push('mocha');
