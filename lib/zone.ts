@@ -1312,13 +1312,14 @@ const Zone: ZoneType = (function(global: any) {
   function ZoneAwareError() {
     // Create an Error.
     let error: Error = NativeError.apply(this, arguments);
+    this.message = error.message;
 
     // Save original stack trace
-    error.originalStack = error.stack;
+    this.originalStack = error.stack;
 
     // Process the stack trace and rewrite the frames.
-    if (ZoneAwareError[stackRewrite] && error.originalStack) {
-      let frames: string[] = error.originalStack.split('\n');
+    if (ZoneAwareError[stackRewrite] && this.originalStack) {
+      let frames: string[] = this.originalStack.split('\n');
       let zoneFrame = _currentZoneFrame;
       let i = 0;
       // Find the first frame
@@ -1346,13 +1347,12 @@ const Zone: ZoneType = (function(global: any) {
           }
         }
       }
-      error.stack = error.zoneAwareStack = frames.join('\n');
+      this.stack = this.zoneAwareStack = frames.join('\n');
     }
-    return error;
-  }
+  };
 
   // Copy the prototype so that instanceof operator works as expected
-  ZoneAwareError.prototype = NativeError.prototype;
+  ZoneAwareError.prototype = Object.create(NativeError.prototype);
   ZoneAwareError[Zone.__symbol__('blacklistedStackFrames')] = blackListedStackFrames;
   ZoneAwareError[stackRewrite] = false;
 
