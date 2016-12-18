@@ -125,6 +125,23 @@ describe('Zone', function() {
         expect(hookSpy).toHaveBeenCalled();
         expect(eventListenerSpy).not.toHaveBeenCalled();
       });
+
+      it('should support inline event handler attributes', function() {
+        var hookSpy = jasmine.createSpy('hook');
+        var zone = rootZone.fork({
+          name: 'spy',
+          onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                           task: Task): any => {
+            hookSpy();
+            return parentZoneDelegate.scheduleTask(targetZone, task);
+          }
+        });
+
+        zone.run(function() {
+          button.setAttribute('onclick', 'return');
+          expect(button.onclick).not.toBe(null);
+        });
+      })
     });
   });
 });
