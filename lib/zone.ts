@@ -721,27 +721,35 @@ const Zone: ZoneType = (function(global: any) {
 
     private _forkDlgt: ZoneDelegate;
     private _forkZS: ZoneSpec;
+    private _forkCurrZone: Zone;
 
     private _interceptDlgt: ZoneDelegate;
     private _interceptZS: ZoneSpec;
+    private _interceptCurrZone: Zone;
 
     private _invokeDlgt: ZoneDelegate;
     private _invokeZS: ZoneSpec;
+    private _invokeCurrZone: Zone;
 
     private _handleErrorDlgt: ZoneDelegate;
     private _handleErrorZS: ZoneSpec;
+    private _handleErrorCurrZone: Zone;
 
     private _scheduleTaskDlgt: ZoneDelegate;
     private _scheduleTaskZS: ZoneSpec;
+    private _scheduleTaskCurrZone: Zone;
 
     private _invokeTaskDlgt: ZoneDelegate;
     private _invokeTaskZS: ZoneSpec;
+    private _invokeTaskCurrZone: Zone;
 
     private _cancelTaskDlgt: ZoneDelegate;
     private _cancelTaskZS: ZoneSpec;
+    private _cancelTaskCurrZone: Zone;
 
     private _hasTaskDlgt: ZoneDelegate;
     private _hasTaskZS: ZoneSpec;
+    private _hasTaskCurrZone: Zone;
 
     constructor(zone: Zone, parentDelegate: ZoneDelegate, zoneSpec: ZoneSpec) {
       this.zone = zone;
@@ -749,39 +757,54 @@ const Zone: ZoneType = (function(global: any) {
 
       this._forkZS = zoneSpec && (zoneSpec && zoneSpec.onFork ? zoneSpec : parentDelegate._forkZS);
       this._forkDlgt = zoneSpec && (zoneSpec.onFork ? parentDelegate : parentDelegate._forkDlgt);
+      this._forkCurrZone = zoneSpec && (zoneSpec.onFork ? this.zone : parentDelegate.zone);
 
       this._interceptZS =
           zoneSpec && (zoneSpec.onIntercept ? zoneSpec : parentDelegate._interceptZS);
       this._interceptDlgt =
           zoneSpec && (zoneSpec.onIntercept ? parentDelegate : parentDelegate._interceptDlgt);
+      this._interceptCurrZone =
+          zoneSpec && (zoneSpec.onIntercept ? this.zone : parentDelegate.zone);
 
       this._invokeZS = zoneSpec && (zoneSpec.onInvoke ? zoneSpec : parentDelegate._invokeZS);
       this._invokeDlgt =
           zoneSpec && (zoneSpec.onInvoke ? parentDelegate : parentDelegate._invokeDlgt);
+      this._invokeCurrZone =
+          zoneSpec && (zoneSpec.onInvoke ? this.zone : parentDelegate.zone);
 
       this._handleErrorZS =
           zoneSpec && (zoneSpec.onHandleError ? zoneSpec : parentDelegate._handleErrorZS);
       this._handleErrorDlgt =
           zoneSpec && (zoneSpec.onHandleError ? parentDelegate : parentDelegate._handleErrorDlgt);
+      this._handleErrorCurrZone =
+          zoneSpec && (zoneSpec.onHandleError ? this.zone : parentDelegate.zone);
 
       this._scheduleTaskZS =
           zoneSpec && (zoneSpec.onScheduleTask ? zoneSpec : parentDelegate._scheduleTaskZS);
       this._scheduleTaskDlgt =
           zoneSpec && (zoneSpec.onScheduleTask ? parentDelegate : parentDelegate._scheduleTaskDlgt);
+      this._scheduleTaskCurrZone =
+          zoneSpec && (zoneSpec.onScheduleTask ? this.zone : parentDelegate.zone);
 
       this._invokeTaskZS =
           zoneSpec && (zoneSpec.onInvokeTask ? zoneSpec : parentDelegate._invokeTaskZS);
       this._invokeTaskDlgt =
           zoneSpec && (zoneSpec.onInvokeTask ? parentDelegate : parentDelegate._invokeTaskDlgt);
+      this._invokeTaskCurrZone =
+          zoneSpec && (zoneSpec.onInvokeTask ? this.zone : parentDelegate.zone);
 
       this._cancelTaskZS =
           zoneSpec && (zoneSpec.onCancelTask ? zoneSpec : parentDelegate._cancelTaskZS);
       this._cancelTaskDlgt =
           zoneSpec && (zoneSpec.onCancelTask ? parentDelegate : parentDelegate._cancelTaskDlgt);
+      this._cancelTaskCurrZone =
+          zoneSpec && (zoneSpec.onCancelTask ? this.zone : parentDelegate.zone);
 
       this._hasTaskZS = zoneSpec && (zoneSpec.onHasTask ? zoneSpec : parentDelegate._hasTaskZS);
       this._hasTaskDlgt =
           zoneSpec && (zoneSpec.onHasTask ? parentDelegate : parentDelegate._hasTaskDlgt);
+      this._hasTaskCurrZone =
+          zoneSpec && (zoneSpec.onHasTask ? this.zone : parentDelegate.zone);
     }
 
     fork(targetZone: Zone, zoneSpec: ZoneSpec): AmbientZone {
@@ -792,7 +815,7 @@ const Zone: ZoneType = (function(global: any) {
     intercept(targetZone: Zone, callback: Function, source: string): Function {
       return this._interceptZS ?
           this._interceptZS.onIntercept(
-              this._interceptDlgt, this.zone, targetZone, callback, source) :
+              this._interceptDlgt, this._interceptCurrZone, targetZone, callback, source) :
           callback;
     }
 
@@ -800,13 +823,13 @@ const Zone: ZoneType = (function(global: any) {
         any {
       return this._invokeZS ?
           this._invokeZS.onInvoke(
-              this._invokeDlgt, this.zone, targetZone, callback, applyThis, applyArgs, source) :
+              this._invokeDlgt, this._invokeCurrZone, targetZone, callback, applyThis, applyArgs, source) :
           callback.apply(applyThis, applyArgs);
     }
 
     handleError(targetZone: Zone, error: any): boolean {
       return this._handleErrorZS ?
-          this._handleErrorZS.onHandleError(this._handleErrorDlgt, this.zone, targetZone, error) :
+          this._handleErrorZS.onHandleError(this._handleErrorDlgt, this._handleErrorCurrZone, targetZone, error) :
           true;
     }
 
@@ -814,7 +837,7 @@ const Zone: ZoneType = (function(global: any) {
       try {
         if (this._scheduleTaskZS) {
           return this._scheduleTaskZS.onScheduleTask(
-              this._scheduleTaskDlgt, this.zone, targetZone, task);
+              this._scheduleTaskDlgt, this._scheduleTaskCurrZone, targetZone, task);
         } else if (task.scheduleFn) {
           task.scheduleFn(task);
         } else if (task.type == 'microTask') {
@@ -834,7 +857,7 @@ const Zone: ZoneType = (function(global: any) {
       try {
         return this._invokeTaskZS ?
             this._invokeTaskZS.onInvokeTask(
-                this._invokeTaskDlgt, this.zone, targetZone, task, applyThis, applyArgs) :
+                this._invokeTaskDlgt, this._invokeTaskCurrZone, targetZone, task, applyThis, applyArgs) :
             task.callback.apply(applyThis, applyArgs);
       } finally {
         if (targetZone == this.zone && (task.type != 'eventTask') &&
@@ -847,7 +870,7 @@ const Zone: ZoneType = (function(global: any) {
     cancelTask(targetZone: Zone, task: Task): any {
       let value;
       if (this._cancelTaskZS) {
-        value = this._cancelTaskZS.onCancelTask(this._cancelTaskDlgt, this.zone, targetZone, task);
+        value = this._cancelTaskZS.onCancelTask(this._cancelTaskDlgt, this._cancelTaskCurrZone, targetZone, task);
       } else if (!task.cancelFn) {
         throw new Error('Task does not support cancellation, or is already canceled.');
       } else {
@@ -862,7 +885,7 @@ const Zone: ZoneType = (function(global: any) {
 
     hasTask(targetZone: Zone, isEmpty: HasTaskState) {
       return this._hasTaskZS &&
-          this._hasTaskZS.onHasTask(this._hasTaskDlgt, this.zone, targetZone, isEmpty);
+          this._hasTaskZS.onHasTask(this._hasTaskDlgt, this._hasTaskCurrZone, targetZone, isEmpty);
     }
 
     private _updateTaskCount(type: TaskType, count: number) {
