@@ -69,7 +69,7 @@ function patchXHR(window: any) {
     // remove existing event listener
     var listener = data.target[XHR_LISTENER];
     if (listener) {
-        data.target.removeEventListener('readystatechange', listener);
+      data.target.removeEventListener('readystatechange', listener);
     }
     var newListener = data.target[XHR_LISTENER] = () => {
       if (data.target.readyState === data.target.DONE) {
