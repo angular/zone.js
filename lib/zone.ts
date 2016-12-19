@@ -614,7 +614,7 @@ const Zone: ZoneType = (function(global: any) {
       return this._zoneDelegate.fork(this, zoneSpec);
     }
 
-    public wrap(callback: Function, source: string): Function {
+    public wrap<T extends Function>(callback: T, source: string): T {
       if (typeof callback !== 'function') {
         throw new Error('Expecting function got: ' + callback);
       }
@@ -622,11 +622,13 @@ const Zone: ZoneType = (function(global: any) {
       const zone: Zone = this;
       return function() {
         return zone.runGuarded(_callback, this, <any>arguments, source);
-      };
+      } as any as T;
     }
 
-    public run(
-        callback: Function, applyThis: any = null, applyArgs: any[] = null, source: string = null) {
+    public run(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): any;
+    public run<T>(
+        callback: (...args: any[]) => T, applyThis: any = null, applyArgs: any[] = null,
+        source: string = null): T {
       _currentZoneFrame = new ZoneFrame(_currentZoneFrame, this);
       try {
         return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
@@ -635,8 +637,10 @@ const Zone: ZoneType = (function(global: any) {
       }
     }
 
-    public runGuarded(
-        callback: Function, applyThis: any = null, applyArgs: any[] = null, source: string = null) {
+    public runGuarded(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): any;
+    public runGuarded<T>(
+        callback: (...args: any[]) => T, applyThis: any = null, applyArgs: any[] = null,
+        source: string = null) {
       _currentZoneFrame = new ZoneFrame(_currentZoneFrame, this);
       try {
         try {
@@ -652,7 +656,7 @@ const Zone: ZoneType = (function(global: any) {
     }
 
 
-    runTask(task: Task, applyThis?: any, applyArgs?: any) {
+    runTask(task: Task, applyThis?: any, applyArgs?: any): any {
       task.runCount++;
       if (task.zone != this)
         throw new Error(
