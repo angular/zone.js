@@ -41,23 +41,22 @@ describe('Zone', function() {
       var zone = Zone.current;
       var zoneA = zone.fork({
         name: 'A',
-        onInvoke: function(parentDelegate, currentZone, targetZone, callback, applyThis, applyArgs, source) {
+        onInvoke: function(
+            parentDelegate, currentZone, targetZone, callback, applyThis, applyArgs, source) {
           expect(currentZone.name).toEqual('A');
           return parentDelegate.invoke(targetZone, callback, applyThis, applyArgs, source);
         }
       });
       var zoneB = zoneA.fork({
         name: 'B',
-        onInvoke: function(parentDelegate, currentZone, targetZone, callback, applyThis, applyArgs, source) {
+        onInvoke: function(
+            parentDelegate, currentZone, targetZone, callback, applyThis, applyArgs, source) {
           expect(currentZone.name).toEqual('B');
           return parentDelegate.invoke(targetZone, callback, applyThis, applyArgs, source);
         }
       });
-      var zoneC = zoneB.fork({
-        name: 'C'
-      });
-      zoneC.run(function() {
-      });
+      var zoneC = zoneB.fork({name: 'C'});
+      zoneC.run(function() {});
     });
   });
 

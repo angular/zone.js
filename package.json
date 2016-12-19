@@ -39,6 +39,7 @@
     "@types/jasmine": "^2.2.33",
     "@types/node": "^6.0.38",
     "@types/systemjs": "^0.19.30",
+    "clang-format": "^1.0.46",
     "concurrently": "^2.2.0",
     "conventional-changelog": "^1.1.0",
     "es6-promise": "^3.0.2",

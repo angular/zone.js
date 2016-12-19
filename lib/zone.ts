@@ -769,8 +769,7 @@ const Zone: ZoneType = (function(global: any) {
       this._invokeZS = zoneSpec && (zoneSpec.onInvoke ? zoneSpec : parentDelegate._invokeZS);
       this._invokeDlgt =
           zoneSpec && (zoneSpec.onInvoke ? parentDelegate : parentDelegate._invokeDlgt);
-      this._invokeCurrZone =
-          zoneSpec && (zoneSpec.onInvoke ? this.zone : parentDelegate.zone);
+      this._invokeCurrZone = zoneSpec && (zoneSpec.onInvoke ? this.zone : parentDelegate.zone);
 
       this._handleErrorZS =
           zoneSpec && (zoneSpec.onHandleError ? zoneSpec : parentDelegate._handleErrorZS);
@@ -803,8 +802,7 @@ const Zone: ZoneType = (function(global: any) {
       this._hasTaskZS = zoneSpec && (zoneSpec.onHasTask ? zoneSpec : parentDelegate._hasTaskZS);
       this._hasTaskDlgt =
           zoneSpec && (zoneSpec.onHasTask ? parentDelegate : parentDelegate._hasTaskDlgt);
-      this._hasTaskCurrZone =
-          zoneSpec && (zoneSpec.onHasTask ? this.zone : parentDelegate.zone);
+      this._hasTaskCurrZone = zoneSpec && (zoneSpec.onHasTask ? this.zone : parentDelegate.zone);
     }
 
     fork(targetZone: Zone, zoneSpec: ZoneSpec): AmbientZone {
@@ -823,13 +821,15 @@ const Zone: ZoneType = (function(global: any) {
         any {
       return this._invokeZS ?
           this._invokeZS.onInvoke(
-              this._invokeDlgt, this._invokeCurrZone, targetZone, callback, applyThis, applyArgs, source) :
+              this._invokeDlgt, this._invokeCurrZone, targetZone, callback, applyThis, applyArgs,
+              source) :
           callback.apply(applyThis, applyArgs);
     }
 
     handleError(targetZone: Zone, error: any): boolean {
       return this._handleErrorZS ?
-          this._handleErrorZS.onHandleError(this._handleErrorDlgt, this._handleErrorCurrZone, targetZone, error) :
+          this._handleErrorZS.onHandleError(
+              this._handleErrorDlgt, this._handleErrorCurrZone, targetZone, error) :
           true;
     }
 
@@ -857,7 +857,8 @@ const Zone: ZoneType = (function(global: any) {
       try {
         return this._invokeTaskZS ?
             this._invokeTaskZS.onInvokeTask(
-                this._invokeTaskDlgt, this._invokeTaskCurrZone, targetZone, task, applyThis, applyArgs) :
+                this._invokeTaskDlgt, this._invokeTaskCurrZone, targetZone, task, applyThis,
+                applyArgs) :
             task.callback.apply(applyThis, applyArgs);
       } finally {
         if (targetZone == this.zone && (task.type != 'eventTask') &&
@@ -870,7 +871,8 @@ const Zone: ZoneType = (function(global: any) {
     cancelTask(targetZone: Zone, task: Task): any {
       let value;
       if (this._cancelTaskZS) {
-        value = this._cancelTaskZS.onCancelTask(this._cancelTaskDlgt, this._cancelTaskCurrZone, targetZone, task);
+        value = this._cancelTaskZS.onCancelTask(
+            this._cancelTaskDlgt, this._cancelTaskCurrZone, targetZone, task);
       } else if (!task.cancelFn) {
         throw new Error('Task does not support cancellation, or is already canceled.');
       } else {

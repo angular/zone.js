@@ -183,15 +183,16 @@ describe('XMLHttpRequest', function() {
     expect(XMLHttpRequest.DONE).toEqual(4);
   });
 
-  it('should work properly when send request multiple times on single xmlRequest instance', function() {
-    testZone.run(function() {
-      var req = new XMLHttpRequest();
-      req.open('get', '/', true);
-      req.send();
-      req.onloadend = function() {
-        req.open('get', '/', true);
-        req.send();
-      }
-    });
-  })
+  it('should work properly when send request multiple times on single xmlRequest instance',
+     function() {
+       testZone.run(function() {
+         var req = new XMLHttpRequest();
+         req.open('get', '/', true);
+         req.send();
+         req.onloadend = function() {
+           req.open('get', '/', true);
+           req.send();
+         }
+       });
+     })
 });

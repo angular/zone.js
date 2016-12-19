@@ -45,7 +45,8 @@ export const isWebWorker: boolean =
     (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope);
 
 export const isNode: boolean =
-    (!('nw' in _global) && typeof process !== 'undefined' && {}.toString.call(process) === '[object process]');
+    (!('nw' in _global) && typeof process !== 'undefined' &&
+     {}.toString.call(process) === '[object process]');
 
 export const isBrowser: boolean =
     !isNode && !isWebWorker && !!(typeof window !== 'undefined' && window['HTMLElement']);
@@ -56,11 +57,8 @@ export function patchProperty(obj, prop) {
 
   const originalDesc = Object.getOwnPropertyDescriptor(obj, 'original' + prop);
   if (!originalDesc && desc.get) {
-    Object.defineProperty(obj, 'original' + prop, {
-      enumerable: false,
-      configurable: true,
-      get: desc.get
-    });
+    Object.defineProperty(
+        obj, 'original' + prop, {enumerable: false, configurable: true, get: desc.get});
   }
 
   // A property descriptor cannot have getter/setter and be writable
@@ -144,9 +142,7 @@ const EVENT_TASKS = zoneSymbol('eventTasks');
 const ADD_EVENT_LISTENER = 'addEventListener';
 const REMOVE_EVENT_LISTENER = 'removeEventListener';
 
-export interface NestedEventListener {
-  listener?: EventListenerOrEventListenerObject;
-}
+export interface NestedEventListener { listener?: EventListenerOrEventListenerObject; }
 
 export declare type NestedEventListenerOrEventListenerObject =
     NestedEventListener | EventListener | EventListenerObject;
@@ -157,9 +153,10 @@ export interface ListenerTaskMeta extends TaskData {
   handler: NestedEventListenerOrEventListenerObject;
   target: any;
   name: string;
-  invokeAddFunc: (addFnSymbol: any, delegate: Task |
-     NestedEventListenerOrEventListenerObject) => any,
-  invokeRemoveFunc: (removeFnSymbol: any, delegate: Task | NestedEventListenerOrEventListenerObject) => any
+  invokeAddFunc: (addFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) => any,
+                                              invokeRemoveFunc:
+                                                  (removeFnSymbol: any, delegate: Task|
+                                                   NestedEventListenerOrEventListenerObject) => any
 }
 
 function findExistingRegisteredTask(
@@ -214,29 +211,34 @@ function attachRegisteredEvent(target: any, eventTask: Task, isPrepend: boolean)
   }
 }
 
-const defaultListenerMetaCreator = (self: any, args: any[]) => {
-   return {
-     useCapturing: args[2],
-     eventName: args[0],
-     handler: args[1],
-     target: self || _global,
-     name: args[0],
-     invokeAddFunc: function (addFnSymbol: any, delegate: Task | NestedEventListenerOrEventListenerObject) {
-         if (delegate && (<Task>delegate).invoke) {
-           return this.target[addFnSymbol](this.eventName, (<Task>delegate).invoke, this.useCapturing);
-         } else {
-           return this.target[addFnSymbol](this.eventName, delegate, this.useCapturing);
-         }
-     },
-     invokeRemoveFunc: function (removeFnSymbol:any, delegate: Task | NestedEventListenerOrEventListenerObject) {
-       if (delegate && (<Task>delegate).invoke) {
-         return this.target[removeFnSymbol](this.eventName, (<Task>delegate).invoke, this.useCapturing);
-       } else {
-         return this.target[removeFnSymbol](this.eventName, delegate, this.useCapturing);
-       }
-     }
-   };
-}
+const defaultListenerMetaCreator =
+    (self: any, args: any[]) => {
+      return {
+        useCapturing: args[2],
+        eventName: args[0],
+        handler: args[1],
+        target: self || _global,
+        name: args[0],
+        invokeAddFunc: function(
+            addFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) {
+          if (delegate && (<Task>delegate).invoke) {
+            return this.target[addFnSymbol](
+                this.eventName, (<Task>delegate).invoke, this.useCapturing);
+          } else {
+            return this.target[addFnSymbol](this.eventName, delegate, this.useCapturing);
+          }
+        },
+        invokeRemoveFunc: function(
+            removeFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) {
+          if (delegate && (<Task>delegate).invoke) {
+            return this.target[removeFnSymbol](
+                this.eventName, (<Task>delegate).invoke, this.useCapturing);
+          } else {
+            return this.target[removeFnSymbol](this.eventName, delegate, this.useCapturing);
+          }
+        }
+      };
+    }
 
 export function makeZoneAwareAddListener(
     addFnName: string, removeFnName: string, useCapturingParam: boolean = true,
@@ -289,8 +291,8 @@ export function makeZoneAwareAddListener(
     }
 
     if (!allowDuplicates) {
-      const eventTask: Task =
-          findExistingRegisteredTask(data.target, data.handler, data.eventName, data.useCapturing, false);
+      const eventTask: Task = findExistingRegisteredTask(
+          data.target, data.handler, data.eventName, data.useCapturing, false);
       if (eventTask) {
         // we already registered, so this will have noop.
         return data.invokeAddFunc(addFnSymbol, eventTask);
@@ -304,8 +306,9 @@ export function makeZoneAwareAddListener(
   };
 }
 
-export function makeZoneAwareRemoveListener(fnName: string, useCapturingParam: boolean = true,
-       metaCreator: (self: any, args: any[]) => ListenerTaskMeta = defaultListenerMetaCreator) {
+export function makeZoneAwareRemoveListener(
+    fnName: string, useCapturingParam: boolean = true,
+    metaCreator: (self: any, args: any[]) => ListenerTaskMeta = defaultListenerMetaCreator) {
   const symbol = zoneSymbol(fnName);
   const defaultUseCapturing = useCapturingParam ? false : undefined;
 
@@ -315,8 +318,8 @@ export function makeZoneAwareRemoveListener(fnName: string, useCapturingParam: b
     // - Inside a Web Worker, `this` is undefined, the context is `global`
     // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
     // see https://github.com/angular/zone.js/issues/190
-    const eventTask = findExistingRegisteredTask(data.target, data.handler, data.eventName,
-                      data.useCapturing, true);
+    const eventTask = findExistingRegisteredTask(
+        data.target, data.handler, data.eventName, data.useCapturing, true);
     if (eventTask) {
       eventTask.zone.cancelTask(eventTask);
     } else {
@@ -370,14 +373,16 @@ const zoneAwareAddEventListener =
     makeZoneAwareAddListener(ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER);
 const zoneAwareRemoveEventListener = makeZoneAwareRemoveListener(REMOVE_EVENT_LISTENER);
 
-export function patchEventTargetMethods(obj: any, addFnName: string = ADD_EVENT_LISTENER,
-                                 removeFnName: string = REMOVE_EVENT_LISTENER,
-    metaCreator: (self: any, args: any[]) => ListenerTaskMeta = defaultListenerMetaCreator): boolean {
+export function patchEventTargetMethods(
+    obj: any, addFnName: string = ADD_EVENT_LISTENER, removeFnName: string = REMOVE_EVENT_LISTENER,
+    metaCreator: (self: any, args: any[]) => ListenerTaskMeta =
+        defaultListenerMetaCreator): boolean {
   if (obj && obj[addFnName]) {
-    patchMethod(obj, addFnName,
+    patchMethod(
+        obj, addFnName,
         () => makeZoneAwareAddListener(addFnName, removeFnName, true, false, false, metaCreator));
-    patchMethod(obj, removeFnName,
-        () => makeZoneAwareRemoveListener(removeFnName, true, metaCreator));
+    patchMethod(
+        obj, removeFnName, () => makeZoneAwareRemoveListener(removeFnName, true, metaCreator));
     return true;
   } else {
     return false;
