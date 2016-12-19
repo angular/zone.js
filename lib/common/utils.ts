@@ -466,9 +466,8 @@ export function createNamedFn(name: string, delegate: (self: any, args: any[]) =
 }
 
 export function patchMethod(
-    target: any, name: string,
-    patchFn: (delegate: Function, delegateName: string, name: string) => (self: any, args: any[]) =>
-        any): Function {
+    target: any, name: string, patchFn: (delegate: Function, delegateName: string, name: string) =>
+                                   (self: any, args: any[]) => any): Function {
   let proto = target;
   while (proto && Object.getOwnPropertyNames(proto).indexOf(name) === -1) {
     proto = Object.getPrototypeOf(proto);
