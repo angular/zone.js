@@ -1366,6 +1366,7 @@ const Zone: ZoneType = (function(global: any) {
         this.stack = this.zoneAwareStack = frames.join('\n');
       } else {
         error.stack = error.zoneAwareStack = frames.join('\n');
+        error.originalStack = originalStack;
       }
     }
     return (this && this !== global) ? this : error;
