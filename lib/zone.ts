@@ -1318,14 +1318,29 @@ const Zone: ZoneType = (function(global: any) {
   function ZoneAwareError() {
     // Create an Error.
     let error: Error = NativeError.apply(this, arguments);
-    // copy all properties from native error except constructor
-    // should we change the ZoneAwareError's name?
-    let keys = Object.getOwnPropertyNames(NativeError.prototype);
-    keys.forEach(key => {
-      if (key !== 'constructor') {
-        this[key] = error[key];
-      }
-    });
+
+    this.name = error.name;
+    this.stack = error.stack;
+    this.message = error.message;
+    this.toString = error.toString;
+    if ((<any>error).description) {
+      this.description = (<any>error).description;
+    }
+    if ((<any>error).number) {
+      this.number = (<any>error).number;
+    }
+    if ((<any>error).fileName) {
+      this.fileName = (<any>error).fileName;
+    }
+    if ((<any>error).lineNumber) {
+      this.lineNumber = (<any>error).lineNumber;
+    }
+    if ((<any>error).columnNumber) {
+      this.columnNumber = (<any>error).columnNumber;
+    }
+    if ((<any>error).toSource) {
+      this.toSource = (<any>error).toSource;
+    }
 
     // Save original stack trace
     this.originalStack = error.stack;
