@@ -1310,7 +1310,6 @@ const Zone: ZoneType = (function(global: any) {
   let frameParserStrategy = null;
   const stackRewrite = 'stackRewrite';
 
-
   /**
    * This is ZoneAwareError which processes the stack frame and cleans up extra frames as well as
    * adds zone information to it.
@@ -1318,36 +1317,23 @@ const Zone: ZoneType = (function(global: any) {
   function ZoneAwareError() {
     // Create an Error.
     let error: Error = NativeError.apply(this, arguments);
-
-    this.name = error.name;
-    this.stack = error.stack;
-    this.message = error.message;
-    this.toString = error.toString;
-    if ((<any>error).description) {
-      this.description = (<any>error).description;
+    if (this && this !== global) {
+      let keys = Object.getOwnPropertyNames(NativeError.prototype);
+      keys.forEach(key => {
+        if (key !== 'constructor') {
+          this[key] = error[key];
+        }
+      });
     }
-    if ((<any>error).number) {
-      this.number = (<any>error).number;
-    }
-    if ((<any>error).fileName) {
-      this.fileName = (<any>error).fileName;
-    }
-    if ((<any>error).lineNumber) {
-      this.lineNumber = (<any>error).lineNumber;
-    }
-    if ((<any>error).columnNumber) {
-      this.columnNumber = (<any>error).columnNumber;
-    }
-    if ((<any>error).toSource) {
-      this.toSource = (<any>error).toSource;
-    }
-
     // Save original stack trace
-    this.originalStack = error.stack;
+    let originalStack = error.stack;
+    if (this && this !== global) {
+      this.originalStack = error.stack;
+    }
 
     // Process the stack trace and rewrite the frames.
-    if (ZoneAwareError[stackRewrite] && this.originalStack) {
-      let frames: string[] = this.originalStack.split('\n');
+    if (ZoneAwareError[stackRewrite] && originalStack) {
+      let frames: string[] = originalStack.split('\n');
       let zoneFrame = _currentZoneFrame;
       let i = 0;
       // Find the first frame
@@ -1375,9 +1361,13 @@ const Zone: ZoneType = (function(global: any) {
           }
         }
       }
-      this.stack = this.zoneAwareStack = frames.join('\n');
+      if (this && this !== global) {
+        this.stack = this.zoneAwareStack = frames.join('\n');
+      } else {
+        error.stack = error.zoneAwareStack = frames.join('\n');
+      }
     }
-    return this;
+    return (this && this !== global) ? this : error;
   };
 
   // Copy the prototype so that instanceof operator works as expected
