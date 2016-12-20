@@ -41,7 +41,7 @@
         it: Mocha.it
     };
     function modifyArguments(args, syncTest, asyncTest) {
-        var _loop_1 = function(i) {
+        var _loop_1 = function (i) {
             var arg = args[i];
             if (typeof arg === 'function') {
                 // The `done` callback is only passed through if the function expects at
