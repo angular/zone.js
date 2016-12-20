@@ -35,6 +35,7 @@ export function ifEnvSupports(test, block) {
 };
 
 function detectBrowser() {
+  const navigator = global['navigator'];
   if (!navigator) {
     return 'node';
   }
@@ -50,7 +51,7 @@ function detectBrowser() {
   }
   M = M[2] ? [M[1], M[2]] : [navigator.appName, navigator.appVersion, '-?'];
   if ((tem = ua.match(/version\/(\d+)/i)) != null) M.splice(1, 1, tem[1]);
-  return M.join(' ');
+  return M.join(' ').toLowerCase();
 }
 
 export const isChrome = detectBrowser().indexOf('chrome') !== -1;

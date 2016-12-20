@@ -1318,6 +1318,7 @@ const Zone: ZoneType = (function(global: any) {
     // Create an Error.
     let error: Error = NativeError.apply(this, arguments);
     if (this && this !== global) {
+      // copy all properties except constructor from native error
       let keys = Object.getOwnPropertyNames(NativeError.prototype);
       keys.forEach(key => {
         if (key !== 'constructor') {
