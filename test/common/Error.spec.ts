@@ -25,6 +25,7 @@ describe('ZoneAwareError', () => {
     class MyError1 extends Error {
       constructor() {
         const err: any = super('MyError1');
+        this.message = err.message;
       }
     }
     let myError1 = new MyError1();
