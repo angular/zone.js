@@ -1318,7 +1318,14 @@ const Zone: ZoneType = (function(global: any) {
   function ZoneAwareError() {
     // Create an Error.
     let error: Error = NativeError.apply(this, arguments);
-    this.message = error.message;
+    // copy all properties from native error except constructor
+    // should we change the ZoneAwareError's name?
+    let keys = Object.getOwnPropertyNames(NativeError.prototype);
+    keys.forEach(key => {
+      if (key !== 'constructor') {
+        this[key] = error[key];
+      }
+    });
 
     // Save original stack trace
     this.originalStack = error.stack;
@@ -1355,6 +1362,7 @@ const Zone: ZoneType = (function(global: any) {
       }
       this.stack = this.zoneAwareStack = frames.join('\n');
     }
+    return this;
   };
 
   // Copy the prototype so that instanceof operator works as expected
