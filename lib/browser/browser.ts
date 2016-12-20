@@ -8,6 +8,7 @@
 
 import {patchTimer} from '../common/timers';
 import {patchClass, patchMethod, patchPrototype, zoneSymbol} from '../common/utils';
+import {patchMatchMediaAddListener, patchMatchMediaRemoveListener} from './matchmedia';
 
 import {propertyPatch} from './define-property';
 import {eventTargetPatch} from './event-target';
@@ -138,4 +139,10 @@ function patchXHR(window: any) {
 /// GEO_LOCATION
 if (_global['navigator'] && _global['navigator'].geolocation) {
   patchPrototype(_global['navigator'].geolocation, ['getCurrentPosition', 'watchPosition']);
+}
+
+/// MATCH_MEDIA
+if (_global['MediaQueryList']) {
+  patchMatchMediaAddListener(_global['MediaQueryList'].prototype, ['addListener']);
+  patchMatchMediaRemoveListener(_global['MediaQueryList'].prototype, ['removeListener']);
 }
