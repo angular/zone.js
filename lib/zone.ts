@@ -1318,13 +1318,24 @@ const Zone: ZoneType = (function(global: any) {
   function ZoneAwareError() {
     // Create an Error.
     let error: Error = NativeError.apply(this, arguments);
-
+    if (this && this !== global) {
+      // copy all properties except constructor from native error
+      let keys = Object.getOwnPropertyNames(NativeError.prototype);
+      keys.forEach(key => {
+        if (key !== 'constructor') {
+          this[key] = error[key];
+        }
+      });
+    }
     // Save original stack trace
-    error.originalStack = error.stack;
+    let originalStack = error.stack;
+    if (this && this !== global) {
+      this.originalStack = error.stack;
+    }
 
     // Process the stack trace and rewrite the frames.
-    if (ZoneAwareError[stackRewrite] && error.originalStack) {
-      let frames: string[] = error.originalStack.split('\n');
+    if (ZoneAwareError[stackRewrite] && originalStack) {
+      let frames: string[] = originalStack.split('\n');
       let zoneFrame = _currentZoneFrame;
       let i = 0;
       // Find the first frame
@@ -1352,10 +1363,15 @@ const Zone: ZoneType = (function(global: any) {
           }
         }
       }
-      error.stack = error.zoneAwareStack = frames.join('\n');
+      if (this && this !== global) {
+        this.stack = this.zoneAwareStack = frames.join('\n');
+      } else {
+        error.stack = error.zoneAwareStack = frames.join('\n');
+        error.originalStack = originalStack;
+      }
     }
-    return error;
-  }
+    return (this && this !== global) ? this : error;
+  };
 
   // Copy the prototype so that instanceof operator works as expected
   ZoneAwareError.prototype = NativeError.prototype;
