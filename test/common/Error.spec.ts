@@ -49,7 +49,7 @@ describe('ZoneAwareError', () => {
     if (Object.prototype.hasOwnProperty.call(Error.prototype, 'fileName')) {
       expect((<any>myError).fileName).toContain('zone');
       expect((<any>myError).lineNumber).toBeGreaterThan(0);
-      expect((<any>myError).columnNumber).not.toBe(undefined);
+      expect((<any>myError).columnNumber).toBeGreaterThan(0);
     }
   });
 
