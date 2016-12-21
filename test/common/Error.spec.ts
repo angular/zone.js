@@ -6,8 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {isFirefox, isIE} from '../test-util';
-
 describe('ZoneAwareError', () => {
   // If the environment does not supports stack rewrites, then these tests will fail
   // and there is no point in running them.
@@ -44,13 +42,13 @@ describe('ZoneAwareError', () => {
 
   it('should have browser specified property', () => {
     let myError = new Error('myError');
-    if (isIE) {
+    if (Object.prototype.hasOwnProperty.call(Error.prototype, 'description')) {
       expect((<any>myError).description).toEqual('myError');
       expect((<any>myError).number).not.toBe(undefined);
     }
-    if (isFirefox) {
-      expect((<any>myError).fileName).not.toBe(undefined);
-      expect((<any>myError).lineNumber).not.toBe(undefined);
+    if (Object.prototype.hasOwnProperty.call(Error.prototype, 'fileName')) {
+      expect((<any>myError).fileName).toContain('zone');
+      expect((<any>myError).lineNumber).toBeGreaterThan(0);
       expect((<any>myError).columnNumber).not.toBe(undefined);
     }
   });
