@@ -1374,7 +1374,7 @@ const Zone: ZoneType = (function(global: any) {
   };
 
   // Copy the prototype so that instanceof operator works as expected
-  ZoneAwareError.prototype = NativeError.prototype;
+  ZoneAwareError.prototype = Object.create(NativeError.prototype);
   ZoneAwareError[Zone.__symbol__('blacklistedStackFrames')] = blackListedStackFrames;
   ZoneAwareError[stackRewrite] = false;
 
