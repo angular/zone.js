@@ -43,13 +43,12 @@ describe('ZoneAwareError', () => {
   it('should have browser specified property', () => {
     let myError = new Error('myError');
     if (Object.prototype.hasOwnProperty.call(Error.prototype, 'description')) {
+      // in IE, error has description property
       expect((<any>myError).description).toEqual('myError');
-      expect((<any>myError).number).not.toBe(undefined);
     }
     if (Object.prototype.hasOwnProperty.call(Error.prototype, 'fileName')) {
+      // in firefox, error has fileName property
       expect((<any>myError).fileName).toContain('zone');
-      expect((<any>myError).lineNumber).toBeGreaterThan(0);
-      expect((<any>myError).columnNumber).toBeGreaterThan(0);
     }
   });
 
