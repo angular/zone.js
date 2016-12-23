@@ -1310,71 +1310,65 @@ const Zone: ZoneType = (function(global: any) {
   let frameParserStrategy = null;
   const stackRewrite = 'stackRewrite';
 
+  const setPrototypeOf = Object.prototype['setPrototypeOf'] ? Object.prototype['setPrototypeOf'] :
+                                                              function(obj, proto) {
+                                                                obj.__proto__ = proto;
+                                                                return obj;
+                                                              }
 
-  /**
-   * This is ZoneAwareError which processes the stack frame and cleans up extra frames as well as
-   * adds zone information to it.
-   */
-  function ZoneAwareError() {
-    // Create an Error.
-    let error: Error = NativeError.apply(this, arguments);
-    if (this && this !== global) {
-      // copy all properties except constructor from native error
-      let keys = Object.getOwnPropertyNames(NativeError.prototype);
-      keys.forEach(key => {
-        if (key !== 'constructor') {
-          this[key] = error[key];
-        }
-      });
-    }
-    // Save original stack trace
-    let originalStack = error.stack;
-    if (this && this !== global) {
-      this.originalStack = error.stack;
-    }
 
-    // Process the stack trace and rewrite the frames.
-    if (ZoneAwareError[stackRewrite] && originalStack) {
-      let frames: string[] = originalStack.split('\n');
-      let zoneFrame = _currentZoneFrame;
-      let i = 0;
-      // Find the first frame
-      while (frames[i] !== zoneAwareFrame && i < frames.length) {
-        i++;
-      }
-      for (; i < frames.length && zoneFrame; i++) {
-        let frame = frames[i];
-        if (frame.trim()) {
-          let frameType =
-              blackListedStackFrames.hasOwnProperty(frame) && blackListedStackFrames[frame];
-          if (frameType === FrameType.blackList) {
-            frames.splice(i, 1);
-            i--;
-          } else if (frameType === FrameType.transition) {
-            if (zoneFrame.parent) {
-              // This is the special frame where zone changed. Print and process it accordingly
-              frames[i] += ` [${zoneFrame.parent.zone.name} => ${zoneFrame.zone.name}]`;
-              zoneFrame = zoneFrame.parent;
-            } else {
-              zoneFrame = null;
-            }
-          } else {
-            frames[i] += ` [${zoneFrame.zone.name}]`;
+      /**
+       * This is ZoneAwareError which processes the stack frame and cleans up extra frames as well
+       * as
+       * adds zone information to it.
+       */
+      function
+      ZoneAwareError() {
+        // Create an Error.
+        let error: Error = NativeError.apply(this, arguments);
+        // Save original stack trace
+        error.originalStack = error.stack;
+
+        // Process the stack trace and rewrite the frames.
+        if (ZoneAwareError[stackRewrite] && error.originalStack) {
+          let frames: string[] = error.originalStack.split('\n');
+          let zoneFrame = _currentZoneFrame;
+          let i = 0;
+          // Find the first frame
+          while (frames[i] !== zoneAwareFrame && i < frames.length) {
+            i++;
           }
+          for (; i < frames.length && zoneFrame; i++) {
+            let frame = frames[i];
+            if (frame.trim()) {
+              let frameType =
+                  blackListedStackFrames.hasOwnProperty(frame) && blackListedStackFrames[frame];
+              if (frameType === FrameType.blackList) {
+                frames.splice(i, 1);
+                i--;
+              } else if (frameType === FrameType.transition) {
+                if (zoneFrame.parent) {
+                  // This is the special frame where zone changed. Print and process it accordingly
+                  frames[i] += ` [${zoneFrame.parent.zone.name} => ${zoneFrame.zone.name}]`;
+                  zoneFrame = zoneFrame.parent;
+                } else {
+                  zoneFrame = null;
+                }
+              } else {
+                frames[i] += ` [${zoneFrame.zone.name}]`;
+              }
+            }
+          }
+          error.stack = error.zoneAwareStack = frames.join('\n');
         }
-      }
-      if (this && this !== global) {
-        this.stack = this.zoneAwareStack = frames.join('\n');
-      } else {
-        error.stack = error.zoneAwareStack = frames.join('\n');
-        error.originalStack = originalStack;
-      }
-    }
-    return (this && this !== global) ? this : error;
-  };
+        if (this && this !== global) {
+          error = setPrototypeOf(error, this.constructor.prototype);
+        }
+        return error;
+      };
 
   // Copy the prototype so that instanceof operator works as expected
-  ZoneAwareError.prototype = Object.create(NativeError.prototype);
+  ZoneAwareError.prototype = NativeError.prototype;
   ZoneAwareError[Zone.__symbol__('blacklistedStackFrames')] = blackListedStackFrames;
   ZoneAwareError[stackRewrite] = false;
 
