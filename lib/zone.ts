@@ -1316,6 +1316,9 @@ const Zone: ZoneType = (function(global: any) {
         obj.__proto__ = proto;
         return obj;
       };
+  const getPrototypeOf = Object.getPrototypeOf ? Object.getPrototypeOf : function(obj) {
+    return obj.__proto__ || obj.constructor.prototype;
+  };
 
   /**
    * This is ZoneAwareError which processes the stack frame and cleans up extra frames as well as
@@ -1363,7 +1366,7 @@ const Zone: ZoneType = (function(global: any) {
     // if this is valid, means not undefined
     // and not global (non-strict mode call Error())
     if (this && this !== global) {
-      error = setPrototypeOf(error, this.constructor.prototype);
+      error = setPrototypeOf(error, getPrototypeOf(this));
     }
     return error;
   }
