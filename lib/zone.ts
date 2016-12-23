@@ -1151,6 +1151,10 @@ const Zone: ZoneType = (function(global: any) {
   }
 
   class ZoneAwarePromise<R> implements Promise<R> {
+    static toString() {
+      return 'function ZoneAwarePromise() { [native code] }';
+    }
+
     static resolve<R>(value: R): Promise<R> {
       return resolvePromise(<ZoneAwarePromise<R>>new this(null), RESOLVED, value);
     }

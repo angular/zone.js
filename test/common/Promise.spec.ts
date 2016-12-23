@@ -55,6 +55,10 @@ describe(
         log = [];
       });
 
+      it('should pretend to be a native code', () => {
+        expect(String(Promise).indexOf('[native code]') >= 0).toBe(true);
+      });
+
       it('should make sure that new Promise is instance of Promise', () => {
         expect(Promise.resolve(123) instanceof Promise).toBe(true);
         expect(new Promise(() => null) instanceof Promise).toBe(true);
