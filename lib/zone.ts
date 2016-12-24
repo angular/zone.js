@@ -1311,8 +1311,8 @@ const Zone: ZoneType = (function(global: any) {
   const stackRewrite = 'stackRewrite';
 
   const setPrototypeOf =
-      Object.prototype['setPrototypeOf'] ? Object.prototype['setPrototypeOf'] : function(
-                                                                                    obj, proto) {
+      Object['setPrototypeOf'] ? Object['setPrototypeOf'] : function(
+                                                                obj, proto) {
         obj.__proto__ = proto;
         return obj;
       };

@@ -38,6 +38,8 @@ describe('ZoneAwareError', () => {
     expect(myError1.message).toEqual('myError');
     let myError2 = Error.call(global, 'myError');
     expect(myError2.message).toEqual('myError');
+    let myError3 = Error.call({}, 'myError');
+    expect(myError3.message).toEqual('myError');
   });
 
   it('should have browser specified property', () => {
