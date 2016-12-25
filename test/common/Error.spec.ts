@@ -28,7 +28,7 @@ describe('ZoneAwareError', () => {
     expect(myError2 instanceof Error).toBe(true);
     let myError3 = Error.call({}, 'myError');
     expect(myError3 instanceof Error).toBe(true);
-    let myError4 = Error.call({test:'test'}, 'myError');
+    let myError4 = Error.call({test: 'test'}, 'myError');
     expect(myError4 instanceof Error).toBe(true);
   });
 
