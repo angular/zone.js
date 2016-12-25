@@ -19,6 +19,19 @@ describe('ZoneAwareError', () => {
     expect(myError.stack).not.toBe(undefined);
   });
 
+  it('should instanceof error correctly', () => {
+    let myError = Error('myError');
+    expect(myError instanceof Error).toBe(true);
+    let myError1 = Error.call(undefined, 'myError');
+    expect(myError1 instanceof Error).toBe(true);
+    let myError2 = Error.call(global, 'myError');
+    expect(myError2 instanceof Error).toBe(true);
+    let myError3 = Error.call({}, 'myError');
+    expect(myError3 instanceof Error).toBe(true);
+    let myError4 = Error.call({test:'test'}, 'myError');
+    expect(myError4 instanceof Error).toBe(true);
+  });
+
   it('should return error itself from constructor', () => {
     class MyError1 extends Error {
       constructor() {

@@ -1364,7 +1364,8 @@ const Zone: ZoneType = (function(global: any) {
     }
     // if this is valid, means not undefined
     // and not global (non-strict mode call Error())
-    if (this && this !== global) {
+    // and it is an error not an unrelated object
+    if (this && this !== global && this instanceof Error) {
       error = setPrototypeOf(error, getPrototypeOf(this));
     }
     return error;
