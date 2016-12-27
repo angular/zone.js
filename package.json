@@ -16,7 +16,7 @@
   "scripts": {
     "changelog": "gulp changelog",
     "ci": "npm run lint && npm run format && npm run test:single && npm run test-node",
-    "format": "gulp format",
+    "format": "gulp format:enforce",
     "karma-jasmine": "karma start karma-build-jasmine.conf.js --single-run",
     "karma-jasmine:single": "npm run karma-jasmine && npm run ws-client",
     "lint": "tslint -c tslint.json 'test/**/*.ts' 'lib/**/*.ts'",
