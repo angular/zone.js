@@ -50,6 +50,7 @@
     "concurrently": "^2.2.0",
     "conventional-changelog": "^1.1.0",
     "es6-promise": "^3.0.2",
+    "ghooks": "^2.0.0",
     "gulp": "^3.8.11",
     "gulp-clang-format": "^1.0.23",
     "gulp-conventional-changelog": "^1.1.0",
