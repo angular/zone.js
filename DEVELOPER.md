@@ -23,3 +23,14 @@ Run the browser tests using Karma:
 Run the node.js tests:
 
 `npm run test-node`
+
+Before Commit
+------------
+
+Pre-commit hook will be executed and following check will
+automatically run before commit.
+
+- tslint
+- format:enforce (clang-format)
+- npm test (karma test)
+- test-node (node test)
