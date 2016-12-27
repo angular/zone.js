@@ -152,10 +152,9 @@ export interface ListenerTaskMeta extends TaskData {
   handler: NestedEventListenerOrEventListenerObject;
   target: any;
   name: string;
-  invokeAddFunc: (addFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) => any,
-                                              invokeRemoveFunc:
-                                                  (removeFnSymbol: any, delegate: Task|
-                                                   NestedEventListenerOrEventListenerObject) => any
+  invokeAddFunc: (addFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) => any;
+  invokeRemoveFunc:
+      (removeFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) => any;
 }
 
 function findExistingRegisteredTask(
@@ -210,34 +209,32 @@ function attachRegisteredEvent(target: any, eventTask: Task, isPrepend: boolean)
   }
 }
 
-const defaultListenerMetaCreator =
-    (self: any, args: any[]) => {
-      return {
-        useCapturing: args[2],
-        eventName: args[0],
-        handler: args[1],
-        target: self || _global,
-        name: args[0],
-        invokeAddFunc: function(
-            addFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) {
-          if (delegate && (<Task>delegate).invoke) {
-            return this.target[addFnSymbol](
-                this.eventName, (<Task>delegate).invoke, this.useCapturing);
-          } else {
-            return this.target[addFnSymbol](this.eventName, delegate, this.useCapturing);
-          }
-        },
-        invokeRemoveFunc: function(
-            removeFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) {
-          if (delegate && (<Task>delegate).invoke) {
-            return this.target[removeFnSymbol](
-                this.eventName, (<Task>delegate).invoke, this.useCapturing);
-          } else {
-            return this.target[removeFnSymbol](this.eventName, delegate, this.useCapturing);
-          }
-        }
-      };
+const defaultListenerMetaCreator = (self: any, args: any[]) => {
+  return {
+    useCapturing: args[2],
+    eventName: args[0],
+    handler: args[1],
+    target: self || _global,
+    name: args[0],
+    invokeAddFunc: function(
+        addFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) {
+      if (delegate && (<Task>delegate).invoke) {
+        return this.target[addFnSymbol](this.eventName, (<Task>delegate).invoke, this.useCapturing);
+      } else {
+        return this.target[addFnSymbol](this.eventName, delegate, this.useCapturing);
+      }
+    },
+    invokeRemoveFunc: function(
+        removeFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) {
+      if (delegate && (<Task>delegate).invoke) {
+        return this.target[removeFnSymbol](
+            this.eventName, (<Task>delegate).invoke, this.useCapturing);
+      } else {
+        return this.target[removeFnSymbol](this.eventName, delegate, this.useCapturing);
+      }
     }
+  };
+};
 
 export function makeZoneAwareAddListener(
     addFnName: string, removeFnName: string, useCapturingParam: boolean = true,

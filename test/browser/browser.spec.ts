@@ -141,7 +141,8 @@ describe('Zone', function() {
           button.setAttribute('onclick', 'return');
           expect(button.onclick).not.toBe(null);
         });
-      })
+      });
+
     });
   });
 });
