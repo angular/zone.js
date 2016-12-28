@@ -1,3 +1,11 @@
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+
 // Extra Mocha-specific typings to make sure typescript compiler is happy
 // Didn't want to add @types/mocha because of duplication in typings-file with @types/jasmine
 declare function suite(description: string, suiteFn: () => void): void;
