@@ -9,15 +9,16 @@
 import {ifEnvSupports} from '../test-util';
 
 describe('XMLHttpRequest', function() {
-  var testZone: Zone;
+  let testZone: Zone;
 
   beforeEach(() => {
     testZone = Zone.current.fork({name: 'test'});
   });
 
   it('should intercept XHRs and treat them as MacroTasks', function(done) {
-    var req: any;
-    var testZoneWithWtf = Zone.current.fork(Zone['wtfZoneSpec']).fork({name: 'TestZone'});
+    let req: XMLHttpRequest;
+    const testZoneWithWtf = Zone.current.fork(Zone['wtfZoneSpec']).fork({name: 'TestZone'});
+
     testZoneWithWtf.run(() => {
       req = new XMLHttpRequest();
       req.onload = () => {
@@ -38,17 +39,16 @@ describe('XMLHttpRequest', function() {
       req.open('get', '/', true);
       req.send();
 
-      var lastScheduled = wtfMock.log[wtfMock.log.length - 1];
+      const lastScheduled = wtfMock.log[wtfMock.log.length - 1];
       expect(lastScheduled).toMatch('# Zone:schedule:macroTask:XMLHttpRequest.send');
     }, null, null, 'unit-test');
   });
 
   it('should work with onreadystatechange', function(done) {
-    var req;
+    let req: XMLHttpRequest;
 
     testZone.run(function() {
       req = new XMLHttpRequest();
-      var firstCall = true;
       req.onreadystatechange = function() {
         // Make sure that the wrapCallback will only be called once
         req.onreadystatechange = null;
@@ -61,14 +61,14 @@ describe('XMLHttpRequest', function() {
     req.send();
   });
 
-  var supportsOnProgress = function() {
+  const supportsOnProgress = function() {
     return 'onprogress' in new XMLHttpRequest();
   };
   (<any>supportsOnProgress).message = 'XMLHttpRequest.onprogress';
 
   describe('onprogress', ifEnvSupports(supportsOnProgress, function() {
              it('should work with onprogress', function(done) {
-               var req;
+               let req: XMLHttpRequest;
                testZone.run(function() {
                  req = new XMLHttpRequest();
                  req.onprogress = function() {
@@ -84,11 +84,11 @@ describe('XMLHttpRequest', function() {
              });
 
              it('should allow canceling of an XMLHttpRequest', function(done) {
-               var spy = jasmine.createSpy('spy');
-               var req;
-               var pending = false;
+               const spy = jasmine.createSpy('spy');
+               let req: XMLHttpRequest;
+               let pending = false;
 
-               var trackingTestZone = Zone.current.fork({
+               const trackingTestZone = Zone.current.fork({
                  name: 'tracking test zone',
                  onHasTask: (delegate: ZoneDelegate, current: Zone, target: Zone,
                              hasTaskState: HasTaskState) => {
@@ -122,7 +122,7 @@ describe('XMLHttpRequest', function() {
              });
 
              it('should allow aborting an XMLHttpRequest after its completed', function(done) {
-               var req;
+               let req: XMLHttpRequest;
 
                testZone.run(function() {
                  req = new XMLHttpRequest();
@@ -144,7 +144,7 @@ describe('XMLHttpRequest', function() {
            }));
 
   it('should preserve other setters', function() {
-    var req = new XMLHttpRequest();
+    const req = new XMLHttpRequest();
     req.open('get', '/', true);
     req.send();
     try {
@@ -168,7 +168,7 @@ describe('XMLHttpRequest', function() {
           }
         })
         .run(() => {
-          var req = new XMLHttpRequest();
+          const req = new XMLHttpRequest();
           req.open('get', '/', false);
           req.send();
         });
@@ -186,7 +186,7 @@ describe('XMLHttpRequest', function() {
   it('should work properly when send request multiple times on single xmlRequest instance',
      function() {
        testZone.run(function() {
-         var req = new XMLHttpRequest();
+         const req = new XMLHttpRequest();
          req.open('get', '/', true);
          req.send();
          req.onloadend = function() {

@@ -14,7 +14,7 @@ describe('Microtasks', function() {
   }
 
   it('should execute microtasks enqueued in the root zone', function(done) {
-    var log = [];
+    const log = [];
 
     Zone.current.scheduleMicroTask('test', () => log.push(1), null, scheduleFn);
     Zone.current.scheduleMicroTask('test', () => log.push(2), null, scheduleFn);
@@ -27,7 +27,7 @@ describe('Microtasks', function() {
   });
 
   it('should correctly scheduleMacroTask microtasks vs macrotasks', function(done) {
-    var log = ['+root'];
+    const log = ['+root'];
 
     Zone.current.scheduleMicroTask('test', () => log.push('root.mit'), null, scheduleFn);
 
@@ -50,9 +50,9 @@ describe('Microtasks', function() {
   });
 
   it('should execute Promise wrapCallback in the zone where they are scheduled', function(done) {
-    var resolvedPromise = Promise.resolve(null);
+    const resolvedPromise = Promise.resolve(null);
 
-    var testZone = Zone.current.fork({name: ''});
+    const testZone = Zone.current.fork({name: ''});
 
     testZone.run(function() {
       resolvedPromise.then(function() {
@@ -65,12 +65,12 @@ describe('Microtasks', function() {
   it('should execute Promise wrapCallback in the zone where they are scheduled even if resolved ' +
          'in different zone.',
      function(done) {
-       var resolve;
-       var promise = new Promise(function(rs) {
+       let resolve;
+       const promise = new Promise(function(rs) {
          resolve = rs;
        });
 
-       var testZone = Zone.current.fork({name: 'test'});
+       const testZone = Zone.current.fork({name: 'test'});
 
        testZone.run(function() {
          promise.then(function() {
@@ -86,8 +86,8 @@ describe('Microtasks', function() {
 
   describe('Promise', function() {
     it('should go through scheduleTask', function(done) {
-      var called = false;
-      var testZone = Zone.current.fork({
+      let called = false;
+      const testZone = Zone.current.fork({
         name: 'test',
         onScheduleTask: function(delegate: ZoneDelegate, current: Zone, target: Zone, task: Task):
             Task {
@@ -106,4 +106,4 @@ describe('Microtasks', function() {
     });
   });
 });
-export var __something__;
+export let __something__;

@@ -10,8 +10,8 @@
  * Usage:
  *
  *  function supportsOnClick() {
- *    var div = document.createElement('div');
- *    var clickPropDesc = Object.getOwnPropertyDescriptor(div, 'onclick');
+ *    const div = document.createElement('div');
+ *    const clickPropDesc = Object.getOwnPropertyDescriptor(div, 'onclick');
  *    return !(EventTarget &&
  *             div instanceof EventTarget &&
  *             clickPropDesc && clickPropDesc.value === null);
@@ -23,7 +23,7 @@
  */
 export function ifEnvSupports(test, block) {
   return function() {
-    var message = (test.message || test.name || test);
+    const message = (test.message || test.name || test);
     if (typeof test === 'string' ? !!global[test] : test()) {
       block();
     } else {

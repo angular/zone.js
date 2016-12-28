@@ -9,7 +9,7 @@
 import {zoneSymbol} from '../../lib/common/utils';
 
 describe('Zone', function() {
-  var rootZone = Zone.current;
+  const rootZone = Zone.current;
 
   it('should have a name', function() {
     expect(Zone.current.name).toBeDefined();
@@ -25,8 +25,8 @@ describe('Zone', function() {
 
 
     it('should fire onError if a function run by a zone throws', function() {
-      var errorSpy = jasmine.createSpy('error');
-      var myZone = Zone.current.fork({name: 'spy', onHandleError: errorSpy});
+      const errorSpy = jasmine.createSpy('error');
+      const myZone = Zone.current.fork({name: 'spy', onHandleError: errorSpy});
 
       expect(errorSpy).not.toHaveBeenCalled();
 
@@ -38,8 +38,8 @@ describe('Zone', function() {
     });
 
     it('should send correct currentZone in hook method when in nested zone', function() {
-      var zone = Zone.current;
-      var zoneA = zone.fork({
+      const zone = Zone.current;
+      const zoneA = zone.fork({
         name: 'A',
         onInvoke: function(
             parentDelegate, currentZone, targetZone, callback, applyThis, applyArgs, source) {
@@ -47,7 +47,7 @@ describe('Zone', function() {
           return parentDelegate.invoke(targetZone, callback, applyThis, applyArgs, source);
         }
       });
-      var zoneB = zoneA.fork({
+      const zoneB = zoneA.fork({
         name: 'B',
         onInvoke: function(
             parentDelegate, currentZone, targetZone, callback, applyThis, applyArgs, source) {
@@ -55,15 +55,15 @@ describe('Zone', function() {
           return parentDelegate.invoke(targetZone, callback, applyThis, applyArgs, source);
         }
       });
-      var zoneC = zoneB.fork({name: 'C'});
+      const zoneC = zoneB.fork({name: 'C'});
       zoneC.run(function() {});
     });
   });
 
   it('should allow zones to be run from within another zone', function() {
-    var zone = Zone.current;
-    var zoneA = zone.fork({name: 'A'});
-    var zoneB = zone.fork({name: 'B'});
+    const zone = Zone.current;
+    const zoneA = zone.fork({name: 'A'});
+    const zoneB = zone.fork({name: 'B'});
 
     zoneA.run(function() {
       zoneB.run(function() {
@@ -86,10 +86,10 @@ describe('Zone', function() {
 
   describe('get', function() {
     it('should store properties', function() {
-      var testZone = Zone.current.fork({name: 'A', properties: {key: 'value'}});
+      const testZone = Zone.current.fork({name: 'A', properties: {key: 'value'}});
       expect(testZone.get('key')).toEqual('value');
       expect(testZone.getZoneWith('key')).toEqual(testZone);
-      var childZone = testZone.fork({name: 'B', properties: {key: 'override'}});
+      const childZone = testZone.fork({name: 'B', properties: {key: 'override'}});
       expect(testZone.get('key')).toEqual('value');
       expect(testZone.getZoneWith('key')).toEqual(testZone);
       expect(childZone.get('key')).toEqual('override');
@@ -99,8 +99,8 @@ describe('Zone', function() {
 
   describe('task', () => {
     function noop() {}
-    var log;
-    var zone: Zone = Zone.current.fork({
+    let log;
+    const zone: Zone = Zone.current.fork({
       name: 'parent',
       onHasTask: (delegate: ZoneDelegate, current: Zone, target: Zone, hasTaskState: HasTaskState):
                      void => {
@@ -119,7 +119,7 @@ describe('Zone', function() {
     });
 
     it('should prevent double cancellation', () => {
-      var task = zone.scheduleMacroTask('test', () => log.push('macroTask'), null, noop, noop);
+      const task = zone.scheduleMacroTask('test', () => log.push('macroTask'), null, noop, noop);
       zone.cancelTask(task);
       try {
         zone.cancelTask(task);
@@ -130,7 +130,7 @@ describe('Zone', function() {
 
     it('should not decrement counters on periodic tasks', () => {
       zone.run(() => {
-        var task = zone.scheduleMacroTask(
+        const task = zone.scheduleMacroTask(
             'test', () => log.push('macroTask'), {isPeriodic: true}, noop, noop);
         zone.runTask(task);
         zone.runTask(task);
@@ -150,7 +150,7 @@ describe('Zone', function() {
 
     it('should notify of queue status change', () => {
       zone.run(() => {
-        var z = Zone.current;
+        const z = Zone.current;
         z.runTask(z.scheduleMicroTask('test', () => log.push('microTask')));
         z.cancelTask(z.scheduleMacroTask('test', () => log.push('macroTask'), null, noop, noop));
         z.cancelTask(z.scheduleEventTask('test', () => log.push('eventTask'), null, noop, noop));
@@ -174,7 +174,7 @@ describe('Zone', function() {
 
     it('should notify of queue status change on parent task', () => {
       zone.fork({name: 'child'}).run(() => {
-        var z = Zone.current;
+        const z = Zone.current;
         z.runTask(z.scheduleMicroTask('test', () => log.push('microTask')));
       });
       expect(log).toEqual([
@@ -194,7 +194,7 @@ describe('Zone', function() {
       it('should throw when Promise has been patched', () => {
         class WrongPromise {}
 
-        var ZoneAwarePromise = global.Promise;
+        const ZoneAwarePromise = global.Promise;
         global.Promise = WrongPromise;
         try {
           expect(ZoneAwarePromise).toBeTruthy();
@@ -209,7 +209,7 @@ describe('Zone', function() {
   });
 
   describe('invoking tasks', () => {
-    var log;
+    let log;
     function noop() {}
 
 
@@ -218,12 +218,12 @@ describe('Zone', function() {
     });
 
     it('should not drain the microtask queue too early', () => {
-      var z = Zone.current;
-      var event = z.scheduleEventTask('test', () => log.push('eventTask'), null, noop, noop);
+      const z = Zone.current;
+      const event = z.scheduleEventTask('test', () => log.push('eventTask'), null, noop, noop);
 
       z.scheduleMicroTask('test', () => log.push('microTask'));
 
-      var macro = z.scheduleMacroTask('test', () => {
+      const macro = z.scheduleMacroTask('test', () => {
         event.invoke();
         // At this point, we should not have invoked the microtask.
         expect(log).toEqual(['eventTask']);
