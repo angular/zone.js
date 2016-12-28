@@ -29,7 +29,7 @@ import '../lib/mocha/mocha';
         return false;
       }
 
-      var isEqual = true;
+      let isEqual = true;
 
       for (let prop in a) {
         if (a.hasOwnProperty(prop)) {

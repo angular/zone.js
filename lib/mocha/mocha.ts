@@ -9,7 +9,7 @@
 'use strict';
 
 ((context: any) => {
-  var Mocha = context.Mocha;
+  const Mocha = context.Mocha;
 
   if (typeof Mocha === 'undefined') {
     throw new Error('Missing Mocha.js');

@@ -13,15 +13,15 @@ function windowPrototype() {
 }
 
 describe('Zone', function() {
-  var rootZone = Zone.current;
+  const rootZone = Zone.current;
 
   describe('hooks', function() {
     it('should allow you to override alert/prompt/confirm', function() {
-      var alertSpy = jasmine.createSpy('alert');
-      var promptSpy = jasmine.createSpy('prompt');
-      var confirmSpy = jasmine.createSpy('confirm');
-      var spies = {'alert': alertSpy, 'prompt': promptSpy, 'confirm': confirmSpy};
-      var myZone = Zone.current.fork({
+      const alertSpy = jasmine.createSpy('alert');
+      const promptSpy = jasmine.createSpy('prompt');
+      const confirmSpy = jasmine.createSpy('confirm');
+      const spies = {'alert': alertSpy, 'prompt': promptSpy, 'confirm': confirmSpy};
+      const myZone = Zone.current.fork({
         name: 'spy',
         onInvoke: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
                    callback: Function, applyThis: any, applyArgs: any[], source: string): any => {
@@ -45,8 +45,8 @@ describe('Zone', function() {
     });
 
     describe('eventListener hooks', function() {
-      var button;
-      var clickEvent;
+      let button;
+      let clickEvent;
 
       beforeEach(function() {
         button = document.createElement('button');
@@ -60,9 +60,9 @@ describe('Zone', function() {
       });
 
       it('should support addEventListener', function() {
-        var hookSpy = jasmine.createSpy('hook');
-        var eventListenerSpy = jasmine.createSpy('eventListener');
-        var zone = rootZone.fork({
+        const hookSpy = jasmine.createSpy('hook');
+        const eventListenerSpy = jasmine.createSpy('eventListener');
+        const zone = rootZone.fork({
           name: 'spy',
           onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
                            task: Task): any => {
@@ -82,9 +82,9 @@ describe('Zone', function() {
       });
 
       it('should support addEventListener on window', ifEnvSupports(windowPrototype, function() {
-           var hookSpy = jasmine.createSpy('hook');
-           var eventListenerSpy = jasmine.createSpy('eventListener');
-           var zone = rootZone.fork({
+           const hookSpy = jasmine.createSpy('hook');
+           const eventListenerSpy = jasmine.createSpy('eventListener');
+           const zone = rootZone.fork({
              name: 'spy',
              onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
                               task: Task): any => {
@@ -104,9 +104,9 @@ describe('Zone', function() {
          }));
 
       it('should support removeEventListener', function() {
-        var hookSpy = jasmine.createSpy('hook');
-        var eventListenerSpy = jasmine.createSpy('eventListener');
-        var zone = rootZone.fork({
+        const hookSpy = jasmine.createSpy('hook');
+        const eventListenerSpy = jasmine.createSpy('eventListener');
+        const zone = rootZone.fork({
           name: 'spy',
           onCancelTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
                          task: Task): any => {
@@ -127,8 +127,8 @@ describe('Zone', function() {
       });
 
       it('should support inline event handler attributes', function() {
-        var hookSpy = jasmine.createSpy('hook');
-        var zone = rootZone.fork({
+        const hookSpy = jasmine.createSpy('hook');
+        const zone = rootZone.fork({
           name: 'spy',
           onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
                            task: Task): any => {

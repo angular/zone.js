@@ -14,10 +14,10 @@ function supportsImports() {
 (<any>supportsImports).message = 'HTML Imports';
 
 describe('HTML Imports', ifEnvSupports(supportsImports, function() {
-           var testZone = Zone.current.fork({name: 'test'});
+           const testZone = Zone.current.fork({name: 'test'});
 
            it('should work with addEventListener', function(done) {
-             var link;
+             let link;
 
              testZone.run(function() {
                link = document.createElement('link');
@@ -34,8 +34,8 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function() {
            });
 
            function supportsOnEvents() {
-             var link = document.createElement('link');
-             var linkPropDesc = Object.getOwnPropertyDescriptor(link, 'onerror');
+             const link = document.createElement('link');
+             const linkPropDesc = Object.getOwnPropertyDescriptor(link, 'onerror');
              return !(linkPropDesc && linkPropDesc.value === null);
            }
            (<any>supportsOnEvents).message = 'Supports HTMLLinkElement#onxxx patching';
@@ -43,7 +43,7 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function() {
 
            ifEnvSupports(supportsOnEvents, function() {
              it('should work with onerror', function(done) {
-               var link;
+               let link;
 
                testZone.run(function() {
                  link = document.createElement('link');
@@ -60,7 +60,7 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function() {
              });
 
              it('should work with onload', function(done) {
-               var link;
+               let link;
 
                testZone.run(function() {
                  link = document.createElement('link');

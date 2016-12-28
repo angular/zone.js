@@ -7,7 +7,7 @@
  */
 
 import {zoneSymbol} from '../../lib/common/utils';
-var defineProperty = Object[zoneSymbol('defineProperty')] || Object.defineProperty;
+const defineProperty = Object[zoneSymbol('defineProperty')] || Object.defineProperty;
 
 describe('longStackTraceZone', function() {
   let log: Error[];
@@ -61,7 +61,7 @@ describe('longStackTraceZone', function() {
       });
     });
     setTimeout(() => {
-      var e = log[0];
+      const e = log[0];
       expect((e as any).longStack).toBeTruthy();
       done();
     });
@@ -93,4 +93,4 @@ describe('longStackTraceZone', function() {
   });
 });
 
-export var __something__;
+export let __something__;

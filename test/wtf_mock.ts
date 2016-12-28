@@ -8,9 +8,9 @@
 
 'use strict';
 (function(global) {
-  var log = [];
-  var logArgs = [];
-  var wtfMock = {
+  const log = [];
+  const logArgs = [];
+  const wtfMock = {
     log: log,
     logArgs: logArgs,
     reset: function() {
@@ -34,12 +34,12 @@
       },
       events: {
         createScope: function(signature, flags) {
-          var parts = signature.split('(');
-          var name = parts[0];
+          const parts = signature.split('(');
+          const name = parts[0];
           return function scopeFn() {
-            var args = [];
-            for (var i = arguments.length - 1; i >= 0; i--) {
-              var arg = arguments[i];
+            const args = [];
+            for (let i = arguments.length - 1; i >= 0; i--) {
+              const arg = arguments[i];
               if (arg !== undefined) {
                 args.unshift(__stringify(arg));
               }
@@ -54,12 +54,12 @@
           };
         },
         createInstance: function(signature, flags) {
-          var parts = signature.split('(');
-          var name = parts[0];
+          const parts = signature.split('(');
+          const name = parts[0];
           return function eventFn() {
-            var args = [];
-            for (var i = arguments.length - 1; i >= 0; i--) {
-              var arg = arguments[i];
+            const args = [];
+            for (let i = arguments.length - 1; i >= 0; i--) {
+              const arg = arguments[i];
               if (arg !== undefined) {
                 args.unshift(__stringify(arg));
               }
@@ -73,7 +73,7 @@
   };
 
   function __stringify(obj) {
-    var str = typeof obj == 'string' || !obj ? JSON.stringify(obj) : obj.toString();
+    let str = typeof obj == 'string' || !obj ? JSON.stringify(obj) : obj.toString();
     if (str == '[object Arguments]') {
       str = JSON.stringify(Array.prototype.slice.call(obj));
     } else if (str == '[object Object]') {
@@ -90,4 +90,4 @@
   (<any>global).wtf = wtfMock;
 })(typeof window === 'object' && window || typeof self === 'object' && self || global);
 
-declare var wtfMock: any;
+declare const wtfMock: any;

@@ -26,8 +26,8 @@ patchTimer(_global, 'request', 'cancel', 'AnimationFrame');
 patchTimer(_global, 'mozRequest', 'mozCancel', 'AnimationFrame');
 patchTimer(_global, 'webkitRequest', 'webkitCancel', 'AnimationFrame');
 
-for (var i = 0; i < blockingMethods.length; i++) {
-  var name = blockingMethods[i];
+for (let i = 0; i < blockingMethods.length; i++) {
+  const name = blockingMethods[i];
   patchMethod(_global, name, (delegate, symbol, name) => {
     return function(s: any, args: any[]) {
       return Zone.current.run(delegate, _global, args, name);
@@ -59,19 +59,19 @@ interface XHROptions extends TaskData {
 
 function patchXHR(window: any) {
   function findPendingTask(target: any) {
-    var pendingTask: Task = target[XHR_TASK];
+    const pendingTask: Task = target[XHR_TASK];
     return pendingTask;
   }
 
   function scheduleTask(task: Task) {
     self[XHR_SCHEDULED] = false;
-    var data = <XHROptions>task.data;
+    const data = <XHROptions>task.data;
     // remove existing event listener
-    var listener = data.target[XHR_LISTENER];
+    const listener = data.target[XHR_LISTENER];
     if (listener) {
       data.target.removeEventListener('readystatechange', listener);
     }
-    var newListener = data.target[XHR_LISTENER] = () => {
+    const newListener = data.target[XHR_LISTENER] = () => {
       if (data.target.readyState === data.target.DONE) {
         if (!data.aborted && self[XHR_SCHEDULED]) {
           task.invoke();
@@ -80,7 +80,7 @@ function patchXHR(window: any) {
     };
     data.target.addEventListener('readystatechange', newListener);
 
-    var storedTask: Task = data.target[XHR_TASK];
+    const storedTask: Task = data.target[XHR_TASK];
     if (!storedTask) {
       data.target[XHR_TASK] = task;
     }
@@ -92,37 +92,37 @@ function patchXHR(window: any) {
   function placeholderCallback() {}
 
   function clearTask(task: Task) {
-    var data = <XHROptions>task.data;
+    const data = <XHROptions>task.data;
     // Note - ideally, we would call data.target.removeEventListener here, but it's too late
     // to prevent it from firing. So instead, we store info for the event listener.
     data.aborted = true;
     return abortNative.apply(data.target, data.args);
   }
 
-  var openNative =
+  const openNative =
       patchMethod(window.XMLHttpRequest.prototype, 'open', () => function(self: any, args: any[]) {
         self[XHR_SYNC] = args[2] == false;
         return openNative.apply(self, args);
       });
 
-  var sendNative =
+  const sendNative =
       patchMethod(window.XMLHttpRequest.prototype, 'send', () => function(self: any, args: any[]) {
-        var zone = Zone.current;
+        const zone = Zone.current;
         if (self[XHR_SYNC]) {
           // if the XHR is sync there is no task to schedule, just execute the code.
           return sendNative.apply(self, args);
         } else {
-          var options: XHROptions =
+          const options: XHROptions =
               {target: self, isPeriodic: false, delay: null, args: args, aborted: false};
           return zone.scheduleMacroTask(
               'XMLHttpRequest.send', placeholderCallback, options, scheduleTask, clearTask);
         }
       });
 
-  var abortNative = patchMethod(
+  const abortNative = patchMethod(
       window.XMLHttpRequest.prototype, 'abort',
       (delegate: Function) => function(self: any, args: any[]) {
-        var task: Task = findPendingTask(self);
+        const task: Task = findPendingTask(self);
         if (task && typeof task.type == 'string') {
           // If the XHR has already completed, do nothing.
           if (task.cancelFn == null) {

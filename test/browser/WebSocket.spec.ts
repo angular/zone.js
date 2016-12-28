@@ -8,15 +8,15 @@
 
 import {ifEnvSupports} from '../test-util';
 
-var TIMEOUT = 5000;
+const TIMEOUT = 5000;
 
 if (!window['soucelabs']) {
   // SouceLabs does not support WebSockets; skip these tests
 
   describe('WebSocket', ifEnvSupports('WebSocket', function() {
-             var socket;
-             var TEST_SERVER_URL = 'ws://localhost:8001';
-             var testZone = Zone.current.fork({name: 'test'});
+             let socket;
+             const TEST_SERVER_URL = 'ws://localhost:8001';
+             const testZone = Zone.current.fork({name: 'test'});
 
 
              beforeEach(function(done) {
@@ -41,7 +41,7 @@ if (!window['soucelabs']) {
 
 
              it('should be patched in a Web Worker', done => {
-               var worker = new Worker('/base/build/test/ws-webworker-context.js');
+               const worker = new Worker('/base/build/test/ws-webworker-context.js');
                worker.onmessage = (e: MessageEvent) => {
                  expect(e.data).toBe('pass');
                  done();
@@ -61,7 +61,7 @@ if (!window['soucelabs']) {
 
 
              it('should respect removeEventListener', function(done) {
-               var log = '';
+               let log = '';
 
                function logOnMessage() {
                  log += 'a';
@@ -95,7 +95,7 @@ if (!window['soucelabs']) {
 
 
              it('should only allow one onmessage handler', function(done) {
-               var log = '';
+               let log = '';
 
                socket.onmessage = function() {
                  log += 'a';
@@ -114,7 +114,7 @@ if (!window['soucelabs']) {
 
 
              it('should handler removing onmessage', function(done) {
-               var log = '';
+               let log = '';
 
                socket.onmessage = function() {
                  log += 'a';

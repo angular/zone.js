@@ -46,7 +46,7 @@ class TaskTrackingZoneSpec implements ZoneSpec {
   onCancelTask(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
       any {
     const tasks = this.getTasksFor(task.type);
-    for (var i = 0; i < tasks.length; i++) {
+    for (let i = 0; i < tasks.length; i++) {
       if (tasks[i] == task) {
         tasks.splice(i, 1);
         break;
@@ -61,7 +61,7 @@ class TaskTrackingZoneSpec implements ZoneSpec {
     if (task.type === 'eventTask')
       return parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
     const tasks = this.getTasksFor(task.type);
-    for (var i = 0; i < tasks.length; i++) {
+    for (let i = 0; i < tasks.length; i++) {
       if (tasks[i] == task) {
         tasks.splice(i, 1);
         break;

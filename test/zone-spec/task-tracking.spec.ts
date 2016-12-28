@@ -72,4 +72,4 @@ describe('TaskTrackingZone', function() {
   });
 });
 
-export var __something__;
+export let __something__;

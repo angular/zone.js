@@ -14,7 +14,7 @@ function supportsGeolocation() {
 (<any>supportsGeolocation).message = 'Geolocation';
 
 describe('Geolocation', ifEnvSupports(supportsGeolocation, function() {
-           var testZone = Zone.current.fork({name: 'geotest'});
+           const testZone = Zone.current.fork({name: 'geotest'});
 
            it('should work for getCurrentPosition', function(done) {
              testZone.run(function() {
@@ -27,7 +27,7 @@ describe('Geolocation', ifEnvSupports(supportsGeolocation, function() {
 
            it('should work for watchPosition', function(done) {
              testZone.run(function() {
-               var watchId;
+               let watchId;
                watchId = navigator.geolocation.watchPosition(function(pos) {
                  expect(Zone.current).toBe(testZone);
                  navigator.geolocation.clearWatch(watchId);

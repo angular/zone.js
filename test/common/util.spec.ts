@@ -12,18 +12,18 @@ describe('utils', function() {
 
   describe('patchMethod', () => {
     it('should patch target where the method is defined', () => {
-      var args;
-      var self;
-      var Type = function() {};
-      var method = Type.prototype.method = function(..._args) {
+      let args;
+      let self;
+      const Type = function() {};
+      const method = Type.prototype.method = function(..._args) {
         args = _args;
         self = this;
         return 'OK';
       };
-      var delegateMethod;
-      var delegateSymbol;
+      let delegateMethod;
+      let delegateSymbol;
 
-      var instance = new Type();
+      const instance = new Type();
       expect(patchMethod(instance, 'method', (delegate, symbol, name) => {
         expect(name).toEqual('method');
         delegateMethod = delegate;
@@ -42,14 +42,14 @@ describe('utils', function() {
     });
 
     it('should not double patch', () => {
-      var Type = function() {};
-      var method = Type.prototype.method = function() {};
+      const Type = function() {};
+      const method = Type.prototype.method = function() {};
       patchMethod(Type.prototype, 'method', (delegate) => {
         return function(self, args: any[]) {
           return delegate.apply(self, ['patch', ...args]);
         };
       });
-      var pMethod = Type.prototype.method;
+      const pMethod = Type.prototype.method;
       expect(pMethod).not.toBe(method);
       patchMethod(Type.prototype, 'method', (delegate) => {
         return function(self, args) {
@@ -60,10 +60,10 @@ describe('utils', function() {
     });
 
     it('should have a method name in the stacktrace', () => {
-      var fn = function someOtherName() {
+      const fn = function someOtherName() {
         throw new Error('MyError');
       };
-      var target = {mySpecialMethodName: fn};
+      const target = {mySpecialMethodName: fn};
       patchMethod(target, 'mySpecialMethodName', (delegate: Function) => {
         return function(self, args) {
           return delegate();
@@ -80,4 +80,4 @@ describe('utils', function() {
   });
 
 });
-export var __something__;
+export let __something__;

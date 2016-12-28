@@ -91,7 +91,7 @@ function _tryDefineProperty(obj, prop, desc, originalConfigurableFlag) {
       try {
         return _defineProperty(obj, prop, desc);
       } catch (e) {
-        var descJson: string = null;
+        let descJson: string = null;
         try {
           descJson = JSON.stringify(desc);
         } catch (e) {

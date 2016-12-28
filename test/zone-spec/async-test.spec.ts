@@ -10,8 +10,8 @@ import '../../lib/zone-spec/async-test';
 import {ifEnvSupports} from '../test-util';
 
 describe('AsyncTestZoneSpec', function() {
-  var log;
-  var AsyncTestZoneSpec = Zone['AsyncTestZoneSpec'];
+  let log;
+  const AsyncTestZoneSpec = Zone['AsyncTestZoneSpec'];
 
   function finishCallback() {
     log.push('finish');
@@ -26,13 +26,13 @@ describe('AsyncTestZoneSpec', function() {
   });
 
   it('should call finish after zone is run', (done) => {
-    var finished = false;
-    var testZoneSpec = new AsyncTestZoneSpec(() => {
+    let finished = false;
+    const testZoneSpec = new AsyncTestZoneSpec(() => {
       expect(finished).toBe(true);
       done();
     }, failCallback, 'name');
 
-    var atz = Zone.current.fork(testZoneSpec);
+    const atz = Zone.current.fork(testZoneSpec);
 
     atz.run(function() {
       finished = true;
@@ -40,9 +40,9 @@ describe('AsyncTestZoneSpec', function() {
   });
 
   it('should call finish after a setTimeout is done', (done) => {
-    var finished = false;
+    let finished = false;
 
-    var testZoneSpec = new AsyncTestZoneSpec(
+    const testZoneSpec = new AsyncTestZoneSpec(
         () => {
           expect(finished).toBe(true);
           done();
@@ -52,7 +52,7 @@ describe('AsyncTestZoneSpec', function() {
         },
         'name');
 
-    var atz = Zone.current.fork(testZoneSpec);
+    const atz = Zone.current.fork(testZoneSpec);
 
     atz.run(function() {
       setTimeout(() => {
@@ -62,9 +62,9 @@ describe('AsyncTestZoneSpec', function() {
   });
 
   it('should call finish after microtasks are done', (done) => {
-    var finished = false;
+    let finished = false;
 
-    var testZoneSpec = new AsyncTestZoneSpec(
+    const testZoneSpec = new AsyncTestZoneSpec(
         () => {
           expect(finished).toBe(true);
           done();
@@ -74,7 +74,7 @@ describe('AsyncTestZoneSpec', function() {
         },
         'name');
 
-    var atz = Zone.current.fork(testZoneSpec);
+    const atz = Zone.current.fork(testZoneSpec);
 
     atz.run(function() {
       Promise.resolve().then(() => {
@@ -84,9 +84,9 @@ describe('AsyncTestZoneSpec', function() {
   });
 
   it('should call finish after both micro and macrotasks are done', (done) => {
-    var finished = false;
+    let finished = false;
 
-    var testZoneSpec = new AsyncTestZoneSpec(
+    const testZoneSpec = new AsyncTestZoneSpec(
         () => {
           expect(finished).toBe(true);
           done();
@@ -96,23 +96,23 @@ describe('AsyncTestZoneSpec', function() {
         },
         'name');
 
-    var atz = Zone.current.fork(testZoneSpec);
+    const atz = Zone.current.fork(testZoneSpec);
 
     atz.run(function() {
-      var deferred = new Promise((resolve, reject) => {
-                       setTimeout(() => {
-                         resolve();
-                       }, 10);
-                     }).then(() => {
+      new Promise((resolve) => {
+        setTimeout(() => {
+          resolve();
+        }, 10);
+      }).then(() => {
         finished = true;
       });
     });
   });
 
   it('should call finish after both macro and microtasks are done', (done) => {
-    var finished = false;
+    let finished = false;
 
-    var testZoneSpec = new AsyncTestZoneSpec(
+    const testZoneSpec = new AsyncTestZoneSpec(
         () => {
           expect(finished).toBe(true);
           done();
@@ -122,7 +122,7 @@ describe('AsyncTestZoneSpec', function() {
         },
         'name');
 
-    var atz = Zone.current.fork(testZoneSpec);
+    const atz = Zone.current.fork(testZoneSpec);
 
     atz.run(function() {
       Promise.resolve().then(() => {
@@ -134,7 +134,7 @@ describe('AsyncTestZoneSpec', function() {
   });
 
   describe('event tasks', ifEnvSupports('document', () => {
-             var button;
+             let button;
              beforeEach(function() {
                button = document.createElement('button');
                document.body.appendChild(button);
@@ -144,9 +144,9 @@ describe('AsyncTestZoneSpec', function() {
              });
 
              it('should call finish after an event task is done', (done) => {
-               var finished = false;
+               let finished = false;
 
-               var testZoneSpec = new AsyncTestZoneSpec(
+               const testZoneSpec = new AsyncTestZoneSpec(
                    () => {
                      expect(finished).toBe(true);
                      done();
@@ -156,14 +156,14 @@ describe('AsyncTestZoneSpec', function() {
                    },
                    'name');
 
-               var atz = Zone.current.fork(testZoneSpec);
+               const atz = Zone.current.fork(testZoneSpec);
 
                atz.run(function() {
                  button.addEventListener('click', () => {
                    finished = true;
                  });
 
-                 var clickEvent = document.createEvent('Event');
+                 const clickEvent = document.createEvent('Event');
                  clickEvent.initEvent('click', true, true);
 
                  button.dispatchEvent(clickEvent);
@@ -171,9 +171,9 @@ describe('AsyncTestZoneSpec', function() {
              });
 
              it('should call finish after an event task is done asynchronously', (done) => {
-               var finished = false;
+               let finished = false;
 
-               var testZoneSpec = new AsyncTestZoneSpec(
+               const testZoneSpec = new AsyncTestZoneSpec(
                    () => {
                      expect(finished).toBe(true);
                      done();
@@ -183,7 +183,7 @@ describe('AsyncTestZoneSpec', function() {
                    },
                    'name');
 
-               var atz = Zone.current.fork(testZoneSpec);
+               const atz = Zone.current.fork(testZoneSpec);
 
                atz.run(function() {
                  button.addEventListener('click', () => {
@@ -192,7 +192,7 @@ describe('AsyncTestZoneSpec', function() {
                    }, 10);
                  });
 
-                 var clickEvent = document.createEvent('Event');
+                 const clickEvent = document.createEvent('Event');
                  clickEvent.initEvent('click', true, true);
 
                  button.dispatchEvent(clickEvent);
@@ -202,10 +202,10 @@ describe('AsyncTestZoneSpec', function() {
 
   describe('XHRs', ifEnvSupports('XMLHttpRequest', () => {
              it('should wait for XHRs to complete', function(done) {
-               var req;
-               var finished = false;
+               let req;
+               let finished = false;
 
-               var testZoneSpec = new AsyncTestZoneSpec(
+               const testZoneSpec = new AsyncTestZoneSpec(
                    () => {
                      expect(finished).toBe(true);
                      done();
@@ -215,7 +215,7 @@ describe('AsyncTestZoneSpec', function() {
                    },
                    'name');
 
-               var atz = Zone.current.fork(testZoneSpec);
+               const atz = Zone.current.fork(testZoneSpec);
 
                atz.run(function() {
                  req = new XMLHttpRequest();
@@ -232,9 +232,9 @@ describe('AsyncTestZoneSpec', function() {
              });
 
              it('should fail if an xhr fails', function(done) {
-               var req;
+               let req;
 
-               var testZoneSpec = new AsyncTestZoneSpec(
+               const testZoneSpec = new AsyncTestZoneSpec(
                    () => {
                      done.fail('expected failCallback to be called');
                    },
@@ -244,7 +244,7 @@ describe('AsyncTestZoneSpec', function() {
                    },
                    'name');
 
-               var atz = Zone.current.fork(testZoneSpec);
+               const atz = Zone.current.fork(testZoneSpec);
 
                atz.run(function() {
                  req = new XMLHttpRequest();
@@ -260,7 +260,7 @@ describe('AsyncTestZoneSpec', function() {
            }));
 
   it('should fail if setInterval is used', (done) => {
-    var testZoneSpec = new AsyncTestZoneSpec(
+    const testZoneSpec = new AsyncTestZoneSpec(
         () => {
           done.fail('expected failCallback to be called');
         },
@@ -270,7 +270,7 @@ describe('AsyncTestZoneSpec', function() {
         },
         'name');
 
-    var atz = Zone.current.fork(testZoneSpec);
+    const atz = Zone.current.fork(testZoneSpec);
 
     atz.run(function() {
       setInterval(() => {}, 100);
@@ -278,7 +278,7 @@ describe('AsyncTestZoneSpec', function() {
   });
 
   it('should fail if an error is thrown asynchronously', (done) => {
-    var testZoneSpec = new AsyncTestZoneSpec(
+    const testZoneSpec = new AsyncTestZoneSpec(
         () => {
           done.fail('expected failCallback to be called');
         },
@@ -288,7 +288,7 @@ describe('AsyncTestZoneSpec', function() {
         },
         'name');
 
-    var atz = Zone.current.fork(testZoneSpec);
+    const atz = Zone.current.fork(testZoneSpec);
 
     atz.run(function() {
       setTimeout(() => {
@@ -298,7 +298,7 @@ describe('AsyncTestZoneSpec', function() {
   });
 
   it('should fail if a promise rejection is unhandled', (done) => {
-    var testZoneSpec = new AsyncTestZoneSpec(
+    const testZoneSpec = new AsyncTestZoneSpec(
         () => {
           done.fail('expected failCallback to be called');
         },
@@ -308,7 +308,7 @@ describe('AsyncTestZoneSpec', function() {
         },
         'name');
 
-    var atz = Zone.current.fork(testZoneSpec);
+    const atz = Zone.current.fork(testZoneSpec);
 
     atz.run(function() {
       Promise.reject('my reason');
@@ -317,4 +317,4 @@ describe('AsyncTestZoneSpec', function() {
   });
 });
 
-export var __something__;
+export let __something__;

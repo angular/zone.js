@@ -9,10 +9,10 @@
 import {ifEnvSupports} from '../test-util';
 
 describe('FileReader', ifEnvSupports('FileReader', function() {
-           var fileReader;
-           var blob;
-           var data = 'Hello, World!';
-           var testZone = Zone.current.fork({name: 'TestZone'});
+           let fileReader;
+           let blob;
+           const data = 'Hello, World!';
+           const testZone = Zone.current.fork({name: 'TestZone'});
 
            // Android 4.3's native browser doesn't implement add/RemoveEventListener for FileReader
            function supportsEventTargetFns() {
@@ -29,7 +29,7 @@ describe('FileReader', ifEnvSupports('FileReader', function() {
                blob = new Blob([data]);
              } catch (e) {
                // For hosts that don't support the Blob ctor (e.g. Android 4.3's native browser)
-               var blobBuilder = new global['WebKitBlobBuilder']();
+               const blobBuilder = new global['WebKitBlobBuilder']();
                blobBuilder.append(data);
 
                blob = blobBuilder.getBlob();
@@ -50,7 +50,7 @@ describe('FileReader', ifEnvSupports('FileReader', function() {
                       });
 
                       it('should remove listeners via removeEventListener', function(done) {
-                        var listenerSpy = jasmine.createSpy('listener');
+                        const listenerSpy = jasmine.createSpy('listener');
 
                         testZone.run(function() {
                           fileReader.addEventListener('loadstart', listenerSpy);
@@ -66,7 +66,7 @@ describe('FileReader', ifEnvSupports('FileReader', function() {
                     }));
 
            it('should bind onEventType listeners', function(done) {
-             var listenersCalled = 0;
+             let listenersCalled = 0;
 
              testZone.run(function() {
                fileReader.onloadstart = function() {
