@@ -192,7 +192,7 @@ describe('XMLHttpRequest', function() {
          req.onloadend = function() {
            req.open('get', '/', true);
            req.send();
-         }
+         };
        });
-     })
+     });
 });
