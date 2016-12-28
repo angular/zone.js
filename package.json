@@ -49,7 +49,7 @@
     "gulp-rename": "^1.2.2",
     "gulp-rollup": "^2.3.0",
     "gulp-tsc": "^1.1.4",
-    "gulp-tslint": "^6.1.2",
+    "gulp-tslint": "^7.0.1",
     "gulp-uglify": "^1.2.0",
     "gulp-util": "^3.0.7",
     "jasmine": "^2.4.1",
@@ -67,9 +67,10 @@
     "pump": "^1.0.1",
     "systemjs": "^0.19.37",
     "ts-loader": "^0.6.0",
-    "tslint": "^3.15.1",
+    "tslint": "^4.1.1",
     "tslint-eslint-rules": "^3.1.0",
     "typescript": "^2.0.2",
+    "vrsource-tslint-rules": "^4.0.0",
     "whatwg-fetch": "^2.0.1"
   }
 }
