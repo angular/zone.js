@@ -270,7 +270,7 @@ export function makeZoneAwareAddListener(
     } else if (data.handler && (<EventListenerObject>data.handler).handleEvent) {
       delegate = (event) => (<EventListenerObject>data.handler).handleEvent(event);
     }
-    var validZoneHandler = false;
+    let validZoneHandler = false;
     try {
       // In cross site contexts (such as WebDriver frameworks like Selenium),
       // accessing the handler object here will cause an exception to be thrown which

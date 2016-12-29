@@ -38,7 +38,7 @@ export function apply(_global: any) {
 
     return proxySocket;
   };
-  for (var prop in WS) {
+  for (const prop in WS) {
     _global.WebSocket[prop] = WS[prop];
   }
 }

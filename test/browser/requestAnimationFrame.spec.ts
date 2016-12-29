@@ -9,12 +9,12 @@
 import {ifEnvSupports} from '../test-util';
 
 describe('requestAnimationFrame', function() {
-  var functions =
+  const functions =
       ['requestAnimationFrame', 'webkitRequestAnimationFrame', 'mozRequestAnimationFrame'];
 
   functions.forEach(function(fnName) {
     describe(fnName, ifEnvSupports(fnName, function() {
-               var rAF = window[fnName];
+               const rAF = window[fnName];
 
                it('should be tolerant of invalid arguments', function() {
                  // rAF throws an error on invalid arguments, so expect that.
@@ -25,8 +25,8 @@ describe('requestAnimationFrame', function() {
 
                it('should bind to same zone when called recursively', function(done) {
                  Zone.current.fork({name: 'TestZone'}).run(() => {
-                   var frames = 0;
-                   var previousTimeStamp = 0;
+                   let frames = 0;
+                   let previousTimeStamp = 0;
 
                    function frameCallback(timestamp) {
                      expect(timestamp).toMatch(/^[\d.]+$/);

@@ -12,11 +12,11 @@ import {isNode, zoneSymbol} from '../../lib/common/utils';
 describe('setInterval', function() {
 
   it('should work with setInterval', function(done) {
-    var cancelId: any;
-    var testZone = Zone.current.fork(Zone['wtfZoneSpec']).fork({name: 'TestZone'});
+    let cancelId: any;
+    const testZone = Zone.current.fork(Zone['wtfZoneSpec']).fork({name: 'TestZone'});
     testZone.run(() => {
-      var id;
-      var intervalFn = function() {
+      let id;
+      const intervalFn = function() {
         expect(Zone.current.name).toEqual(('TestZone'));
         global[zoneSymbol('setTimeout')](function() {
           expect(wtfMock.log).toEqual([

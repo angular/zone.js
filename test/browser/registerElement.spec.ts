@@ -22,18 +22,15 @@ describe(
     'document.registerElement', ifEnvSupports(registerElement, function() {
 
       // register a custom element for each callback
-      var callbackNames = ['created', 'attached', 'detached', 'attributeChanged'];
-
-      var callbacks: any = {};
-
-      var testZone = Zone.current.fork({name: 'test'});
-
-      var customElements;
+      const callbackNames = ['created', 'attached', 'detached', 'attributeChanged'];
+      const callbacks: any = {};
+      const testZone = Zone.current.fork({name: 'test'});
+      let customElements;
 
       customElements = testZone.run(function() {
         callbackNames.map(function(callbackName) {
-          var fullCallbackName = callbackName + 'Callback';
-          var proto = Object.create(HTMLElement.prototype);
+          const fullCallbackName = callbackName + 'Callback';
+          const proto = Object.create(HTMLElement.prototype);
           proto[fullCallbackName] = function(arg) {
             callbacks[callbackName](arg);
           };
@@ -59,7 +56,7 @@ describe(
           done();
         };
 
-        var elt = document.createElement('x-attached');
+        const elt = document.createElement('x-attached');
         document.body.appendChild(elt);
         document.body.removeChild(elt);
       });
@@ -71,7 +68,7 @@ describe(
           done();
         };
 
-        var elt = document.createElement('x-detached');
+        const elt = document.createElement('x-detached');
         document.body.appendChild(elt);
         document.body.removeChild(elt);
       });
@@ -83,7 +80,7 @@ describe(
           done();
         };
 
-        var elt = document.createElement('x-attributechanged');
+        const elt = document.createElement('x-attributechanged');
         elt.id = 'bar';
       });
 
@@ -91,7 +88,7 @@ describe(
       it('should work with non-writable, non-configurable prototypes created with defineProperty',
          function(done) {
            testZone.run(function() {
-             var proto = Object.create(HTMLElement.prototype);
+             const proto = Object.create(HTMLElement.prototype);
 
              Object.defineProperty(
                  proto, 'createdCallback',
@@ -105,14 +102,14 @@ describe(
              }
            });
 
-           var elt = document.createElement('x-prop-desc');
+           const elt = document.createElement('x-prop-desc');
          });
 
 
       it('should work with non-writable, non-configurable prototypes created with defineProperties',
          function(done) {
            testZone.run(function() {
-             var proto = Object.create(HTMLElement.prototype);
+             const proto = Object.create(HTMLElement.prototype);
 
              Object.defineProperties(
                  proto,
@@ -126,13 +123,13 @@ describe(
              }
            });
 
-           var elt = document.createElement('x-props-desc');
+           const elt = document.createElement('x-props-desc');
          });
 
       it('should not throw with frozen prototypes ', function() {
         testZone.run(function() {
 
-          var proto = Object.create(HTMLElement.prototype, Object.freeze(<PropertyDescriptorMap>{
+          const proto = Object.create(HTMLElement.prototype, Object.freeze(<PropertyDescriptorMap>{
             createdCallback:
                 <PropertyDescriptor>{value: () => {}, writable: true, configurable: true}
           }));
@@ -149,9 +146,9 @@ describe(
 
       it('should check bind callback if not own property', function(done) {
         testZone.run(function() {
-          var originalProto = {createdCallback: checkZone};
+          const originalProto = {createdCallback: checkZone};
 
-          var secondaryProto = Object.create(originalProto);
+          const secondaryProto = Object.create(originalProto);
           expect(secondaryProto.createdCallback).toBe(originalProto.createdCallback);
 
           (<any>document).registerElement('x-inherited-callback', {prototype: secondaryProto});
@@ -162,7 +159,7 @@ describe(
             done();
           }
 
-          var elt = document.createElement('x-inherited-callback');
+          const elt = document.createElement('x-inherited-callback');
         });
       });
 

@@ -10,9 +10,9 @@ import '../../lib/zone-spec/sync-test';
 import {ifEnvSupports} from '../test-util';
 
 describe('SyncTestZoneSpec', () => {
-  var SyncTestZoneSpec = Zone['SyncTestZoneSpec'];
-  var testZoneSpec;
-  var syncTestZone;
+  const SyncTestZoneSpec = Zone['SyncTestZoneSpec'];
+  let testZoneSpec;
+  let syncTestZone;
 
   beforeEach(() => {
     testZoneSpec = new SyncTestZoneSpec('name');
@@ -38,9 +38,9 @@ describe('SyncTestZoneSpec', () => {
   describe('event tasks', ifEnvSupports('document', () => {
              it('should work with event tasks', () => {
                syncTestZone.run(() => {
-                 var button = document.createElement('button');
+                 const button = document.createElement('button');
                  document.body.appendChild(button);
-                 var x = 1;
+                 let x = 1;
                  try {
                    button.addEventListener('click', () => {
                      x++;
@@ -59,4 +59,4 @@ describe('SyncTestZoneSpec', () => {
            }));
 });
 
-export var __something__;
+export let __something__;

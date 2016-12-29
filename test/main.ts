@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-declare var __karma__: {
+declare const __karma__: {
   loaded: Function,
   start: Function,
   error: Function,
@@ -16,7 +16,7 @@ __karma__.loaded = function() {};
 (window as any).global = window;
 
 System.config({defaultJSExtensions: true});
-var browserPatchedPromise = null;
+let browserPatchedPromise = null;
 if (window[Zone['__symbol__']('setTimeout')]) {
   browserPatchedPromise = Promise.resolve('browserPatched');
 } else {

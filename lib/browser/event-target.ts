@@ -16,8 +16,8 @@ const NO_EVENT_TARGET =
 const EVENT_TARGET = 'EventTarget';
 
 export function eventTargetPatch(_global) {
-  var apis = [];
-  var isWtf = _global['wtf'];
+  let apis = [];
+  const isWtf = _global['wtf'];
   if (isWtf) {
     // Workaround for: https://github.com/google/tracing-framework/issues/555
     apis = WTF_ISSUE_555.split(',').map((v) => 'HTML' + v + 'Element').concat(NO_EVENT_TARGET);
@@ -29,8 +29,8 @@ export function eventTargetPatch(_global) {
     apis = NO_EVENT_TARGET;
   }
 
-  for (var i = 0; i < apis.length; i++) {
-    var type = _global[apis[i]];
+  for (let i = 0; i < apis.length; i++) {
+    const type = _global[apis[i]];
     patchEventTargetMethods(type && type.prototype);
   }
 }

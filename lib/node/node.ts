@@ -48,7 +48,7 @@ if (crypto) {
       return nativeRandomBytes(size);
     } else {
       let zone = Zone.current;
-      var source = crypto.constructor.name + '.randomBytes';
+      const source = crypto.constructor.name + '.randomBytes';
       return nativeRandomBytes(size, zone.wrap(callback, source));
     }
   }.bind(crypto);
@@ -58,7 +58,7 @@ if (crypto) {
     let fn = args[args.length - 1];
     if (typeof fn === 'function') {
       let zone = Zone.current;
-      var source = crypto.constructor.name + '.pbkdf2';
+      const source = crypto.constructor.name + '.pbkdf2';
       args[args.length - 1] = zone.wrap(fn, source);
       return nativePbkdf2(...args);
     } else {

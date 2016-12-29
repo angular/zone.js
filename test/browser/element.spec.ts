@@ -9,8 +9,7 @@
 import {ifEnvSupports} from '../test-util';
 
 describe('element', function() {
-
-  var button;
+  let button;
 
   beforeEach(function() {
     button = document.createElement('button');
@@ -24,12 +23,12 @@ describe('element', function() {
   // https://github.com/angular/zone.js/issues/190
   it('should work when addEventListener / removeEventListener are called in the global context',
      function() {
-       var clickEvent = document.createEvent('Event');
-       var callCount = 0;
+       const clickEvent = document.createEvent('Event');
+       let callCount = 0;
 
        clickEvent.initEvent('click', true, true);
 
-       var listener = function(event) {
+       const listener = function(event) {
          callCount++;
          expect(event).toBe(clickEvent);
        };
@@ -49,7 +48,7 @@ describe('element', function() {
      });
 
   it('should work with addEventListener when called with a function listener', function() {
-    var clickEvent = document.createEvent('Event');
+    const clickEvent = document.createEvent('Event');
     clickEvent.initEvent('click', true, true);
 
     button.addEventListener('click', function(event) {
@@ -60,7 +59,7 @@ describe('element', function() {
   });
 
   it('should not call microtasks early when an event is invoked', function(done) {
-    var log = '';
+    let log = '';
     button.addEventListener('click', () => {
       Zone.current.scheduleMicroTask('test', () => log += 'microtask;');
       log += 'click;';
@@ -93,7 +92,7 @@ describe('element', function() {
      * As an added measure we make sure that all jasmine tests always run in a task. See: jasmine.ts
      */
     global[Zone['__symbol__']('setTimeout')](() => {
-      var log = '';
+      let log = '';
       button.addEventListener('click', () => {
         Zone.current.scheduleMicroTask('test', () => log += 'microtask;');
         log += 'click;';
@@ -107,7 +106,7 @@ describe('element', function() {
 
   it('should work with addEventListener when called with an EventListener-implementing listener',
      function() {
-       var eventListener = {
+       const eventListener = {
          x: 5,
          handleEvent: function(event) {
            // Test that context is preserved
@@ -117,7 +116,7 @@ describe('element', function() {
          }
        };
 
-       var clickEvent = document.createEvent('Event');
+       const clickEvent = document.createEvent('Event');
        clickEvent.initEvent('click', true, true);
 
        button.addEventListener('click', eventListener);
@@ -126,8 +125,8 @@ describe('element', function() {
      });
 
   it('should respect removeEventListener when called with a function listener', function() {
-    var log = '';
-    var logFunction = function logFunction() {
+    let log = '';
+    const logFunction = function logFunction() {
       log += 'a';
     };
 
@@ -135,7 +134,7 @@ describe('element', function() {
     button.addEventListener('focus', logFunction);
     button.click();
     expect(log).toEqual('a');
-    var focusEvent = document.createEvent('Event');
+    const focusEvent = document.createEvent('Event');
     focusEvent.initEvent('focus', true, true);
     button.dispatchEvent(focusEvent);
     expect(log).toEqual('aa');
@@ -146,7 +145,7 @@ describe('element', function() {
   });
 
   it('should respect removeEventListener with an EventListener-implementing listener', function() {
-    var eventListener = {x: 5, handleEvent: jasmine.createSpy('handleEvent')};
+    const eventListener = {x: 5, handleEvent: jasmine.createSpy('handleEvent')};
 
     button.addEventListener('click', eventListener);
     button.removeEventListener('click', eventListener);
@@ -157,8 +156,8 @@ describe('element', function() {
   });
 
   it('should have no effect while calling addEventListener without listener', function() {
-    var onAddEventListenerSpy = jasmine.createSpy('addEventListener');
-    var eventListenerZone =
+    const onAddEventListenerSpy = jasmine.createSpy('addEventListener');
+    const eventListenerZone =
         Zone.current.fork({name: 'eventListenerZone', onScheduleTask: onAddEventListenerSpy});
     expect(function() {
       eventListenerZone.run(function() {
@@ -170,8 +169,8 @@ describe('element', function() {
   });
 
   it('should have no effect while calling removeEventListener without listener', function() {
-    var onAddEventListenerSpy = jasmine.createSpy('removeEventListener');
-    var eventListenerZone =
+    const onAddEventListenerSpy = jasmine.createSpy('removeEventListener');
+    const eventListenerZone =
         Zone.current.fork({name: 'eventListenerZone', onScheduleTask: onAddEventListenerSpy});
     expect(function() {
       eventListenerZone.run(function() {
@@ -184,8 +183,8 @@ describe('element', function() {
 
 
   it('should only add a listener once for a given set of arguments', function() {
-    var log = [];
-    var clickEvent = document.createEvent('Event');
+    const log = [];
+    const clickEvent = document.createEvent('Event');
 
     function listener() {
       log.push('listener');
@@ -207,8 +206,8 @@ describe('element', function() {
   });
 
   it('should correctly handler capturing versus nonCapturing eventListeners', function() {
-    var log = [];
-    var clickEvent = document.createEvent('Event');
+    const log = [];
+    const clickEvent = document.createEvent('Event');
 
     function capturingListener() {
       log.push('capturingListener');
@@ -229,8 +228,8 @@ describe('element', function() {
   });
 
   it('should correctly handler a listener that is both capturing and nonCapturing', function() {
-    var log = [];
-    var clickEvent = document.createEvent('Event');
+    const log = [];
+    const clickEvent = document.createEvent('Event');
 
     function listener() {
       log.push('listener');
@@ -254,8 +253,8 @@ describe('element', function() {
   describe('onclick', function() {
 
     function supportsOnClick() {
-      var div = document.createElement('div');
-      var clickPropDesc = Object.getOwnPropertyDescriptor(div, 'onclick');
+      const div = document.createElement('div');
+      const clickPropDesc = Object.getOwnPropertyDescriptor(div, 'onclick');
       return !(
           EventTarget && div instanceof EventTarget && clickPropDesc &&
           clickPropDesc.value === null);
@@ -265,7 +264,7 @@ describe('element', function() {
 
     ifEnvSupports(supportsOnClick, function() {
       it('should spawn new child zones', function() {
-        var run = false;
+        let run = false;
         button.onclick = function() {
           run = true;
         };
@@ -277,7 +276,7 @@ describe('element', function() {
 
 
     it('should only allow one onclick handler', function() {
-      var log = '';
+      let log = '';
       button.onclick = function() {
         log += 'a';
       };
@@ -291,7 +290,7 @@ describe('element', function() {
 
 
     it('should handler removing onclick', function() {
-      var log = '';
+      let log = '';
       button.onclick = function() {
         log += 'a';
       };
@@ -302,7 +301,7 @@ describe('element', function() {
     });
 
     it('should be able to deregister the same event twice', function() {
-      var listener = (event) => {};
+      const listener = (event) => {};
       document.body.addEventListener('click', listener, false);
       document.body.removeEventListener('click', listener, false);
       document.body.removeEventListener('click', listener, false);
@@ -310,7 +309,7 @@ describe('element', function() {
   });
 
   describe('onEvent default behavior', function() {
-    var checkbox;
+    let checkbox;
     beforeEach(function() {
       checkbox = document.createElement('input');
       checkbox.type = 'checkbox';

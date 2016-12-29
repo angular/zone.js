@@ -39,4 +39,4 @@ describe('jasmine', () => {
 
 });
 
-export var _something_so_that_i_am_treated_as_es6_module;
+export let _something_so_that_i_am_treated_as_es6_module;

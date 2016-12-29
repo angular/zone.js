@@ -8,8 +8,8 @@
 
 'use strict';
 (() => {
-  var __extends = function(d, b) {
-    for (var p in b)
+  const __extends = function(d, b) {
+    for (const p in b)
       if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() {
       this.constructor = d;

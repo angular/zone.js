@@ -15,7 +15,7 @@ class MicroTaskQueueZoneSpec implements ZoneSpec {
 
   flush() {
     while (this.queue.length) {
-      var task = this.queue.shift();
+      const task = this.queue.shift();
       task.invoke();
     }
   }
@@ -33,10 +33,10 @@ function flushMicrotasks() {
 describe(
     'Promise', ifEnvSupports('Promise', function() {
       if (!global.Promise) return;
-      var log: string[];
-      var queueZone: Zone;
-      var testZone: Zone;
-      var pZone: Zone;
+      let log: string[];
+      let queueZone: Zone;
+      let testZone: Zone;
+      let pZone: Zone;
 
       beforeEach(() => {
         testZone = Zone.current.fork({name: 'TestZone'});
@@ -53,6 +53,10 @@ describe(
         queueZone = Zone.current.fork(new MicroTaskQueueZoneSpec());
 
         log = [];
+      });
+
+      it('should pretend to be a native code', () => {
+        expect(String(Promise).indexOf('[native code]') >= 0).toBe(true);
       });
 
       it('should make sure that new Promise is instance of Promise', () => {
@@ -77,7 +81,7 @@ describe(
 
       it('should intercept scheduling of resolution and then', (done) => {
         pZone.run(() => {
-          var p: Promise<any> = new Promise(function(resolve, reject) {
+          let p: Promise<any> = new Promise(function(resolve, reject) {
             expect(resolve('RValue')).toBe(undefined);
           });
           expect(log).toEqual([]);
@@ -102,18 +106,18 @@ describe(
 
       it('should allow sync resolution of promises', () => {
         queueZone.run(() => {
-          var flush = Zone.current.get('flush');
-          var queue = Zone.current.get('queue');
-          var p = new Promise<string>(function(resolve, reject) {
-                    resolve('RValue');
-                  })
-                      .then((v: string) => {
-                        log.push(v);
-                        return 'second value';
-                      })
-                      .then((v: string) => {
-                        log.push(v);
-                      });
+          const flush = Zone.current.get('flush');
+          const queue = Zone.current.get('queue');
+          const p = new Promise<string>(function(resolve, reject) {
+                      resolve('RValue');
+                    })
+                        .then((v: string) => {
+                          log.push(v);
+                          return 'second value';
+                        })
+                        .then((v: string) => {
+                          log.push(v);
+                        });
           expect(queue.length).toEqual(1);
           expect(log).toEqual([]);
           flush();
@@ -123,18 +127,18 @@ describe(
 
       it('should allow sync resolution of promises returning promises', () => {
         queueZone.run(() => {
-          var flush = Zone.current.get('flush');
-          var queue = Zone.current.get('queue');
-          var p = new Promise<string>(function(resolve, reject) {
-                    resolve(Promise.resolve('RValue'));
-                  })
-                      .then((v: string) => {
-                        log.push(v);
-                        return Promise.resolve('second value');
-                      })
-                      .then((v: string) => {
-                        log.push(v);
-                      });
+          const flush = Zone.current.get('flush');
+          const queue = Zone.current.get('queue');
+          const p = new Promise<string>(function(resolve, reject) {
+                      resolve(Promise.resolve('RValue'));
+                    })
+                        .then((v: string) => {
+                          log.push(v);
+                          return Promise.resolve('second value');
+                        })
+                        .then((v: string) => {
+                          log.push(v);
+                        });
           expect(queue.length).toEqual(1);
           expect(log).toEqual([]);
           flush();
@@ -144,7 +148,7 @@ describe(
 
       describe('Promise API', function() {
         it('should work with .then', function(done) {
-          var resolve;
+          let resolve;
 
           testZone.run(function() {
             new Promise(function(resolveFn) {
@@ -159,7 +163,7 @@ describe(
         });
 
         it('should work with .catch', function(done) {
-          var reject;
+          let reject;
 
           testZone.run(function() {
             new Promise(function(resolveFn, rejectFn) {
@@ -176,7 +180,7 @@ describe(
 
         it('should work with Promise.resolve', () => {
           queueZone.run(() => {
-            var value = null;
+            let value = null;
             Promise.resolve('resolveValue').then((v) => value = v);
             expect(Zone.current.get('queue').length).toEqual(1);
             flushMicrotasks();
@@ -186,7 +190,7 @@ describe(
 
         it('should work with Promise.reject', () => {
           queueZone.run(() => {
-            var value = null;
+            let value = null;
             Promise.reject('rejectReason')['catch']((v) => value = v);
             expect(Zone.current.get('queue').length).toEqual(1);
             flushMicrotasks();
@@ -197,7 +201,7 @@ describe(
         describe('reject', () => {
           it('should reject promise', () => {
             queueZone.run(() => {
-              var value = null;
+              let value = null;
               Promise.reject('rejectReason')['catch']((v) => value = v);
               flushMicrotasks();
               expect(value).toEqual('rejectReason');
@@ -206,7 +210,7 @@ describe(
 
           it('should re-reject promise', () => {
             queueZone.run(() => {
-              var value = null;
+              let value = null;
               Promise.reject('rejectReason')['catch']((v) => {
                 throw v;
               })['catch']((v) => value = v);
@@ -217,7 +221,7 @@ describe(
 
           it('should reject and recover promise', () => {
             queueZone.run(() => {
-              var value = null;
+              let value = null;
               Promise.reject('rejectReason')['catch']((v) => v).then((v) => value = v);
               flushMicrotasks();
               expect(value).toEqual('rejectReason');
@@ -226,7 +230,7 @@ describe(
 
           it('should reject if chained promise does not catch promise', () => {
             queueZone.run(() => {
-              var value = null;
+              let value = null;
               Promise.reject('rejectReason')
                   .then((v) => fail('should not get here'))
                   .then(null, (v) => value = v);
@@ -236,10 +240,10 @@ describe(
           });
 
           it('should notify Zone.onError if no one catches promise', (done) => {
-            var promiseError: Error = null;
-            var zone: Zone = null;
-            var task: Task = null;
-            var error: Error = null;
+            let promiseError: Error = null;
+            let zone: Zone = null;
+            let task: Task = null;
+            let error: Error = null;
             queueZone
                 .fork({
                   name: 'promise-error',
@@ -278,7 +282,7 @@ describe(
         describe('Promise.race', () => {
           it('should reject the value', () => {
             queueZone.run(() => {
-              var value = null;
+              let value = null;
               (Promise as any).race([
                 Promise.reject('rejection1'), 'v1'
               ])['catch']((v) => value = v);
@@ -290,7 +294,7 @@ describe(
 
           it('should resolve the value', () => {
             queueZone.run(() => {
-              var value = null;
+              let value = null;
               (Promise as any).race([Promise.resolve('resolution'), 'v1']).then((v) => value = v);
               // expect(Zone.current.get('queue').length).toEqual(2);
               flushMicrotasks();
@@ -302,7 +306,7 @@ describe(
         describe('Promise.all', () => {
           it('should reject the value', () => {
             queueZone.run(() => {
-              var value = null;
+              let value = null;
               Promise.all([Promise.reject('rejection'), 'v1'])['catch']((v) => value = v);
               // expect(Zone.current.get('queue').length).toEqual(2);
               flushMicrotasks();
@@ -312,7 +316,7 @@ describe(
 
           it('should resolve the value', () => {
             queueZone.run(() => {
-              var value = null;
+              let value = null;
               Promise.all([Promise.resolve('resolution'), 'v1']).then((v) => value = v);
               // expect(Zone.current.get('queue').length).toEqual(2);
               flushMicrotasks();
@@ -335,7 +339,7 @@ describe(
           return this._promise.then.apply(this._promise, arguments);
         };
 
-        var setPrototypeOf = (Object as any).setPrototypeOf || function(obj, proto) {
+        const setPrototypeOf = (Object as any).setPrototypeOf || function(obj, proto) {
           obj.__proto__ = proto;
           return obj;
         };
@@ -343,7 +347,7 @@ describe(
         setPrototypeOf(MyPromise.prototype, Promise.prototype);
 
         it('should reject if the Promise subclass rejects', function() {
-          var myPromise = new MyPromise(function(resolve, reject) {
+          const myPromise = new MyPromise(function(resolve, reject) {
             reject('foo');
           });
 
@@ -361,7 +365,7 @@ describe(
         });
 
         it('should resolve if the Promise subclass resolves', function() {
-          var myPromise = new MyPromise(function(resolve, reject) {
+          const myPromise = new MyPromise(function(resolve, reject) {
             resolve('foo');
           });
 
@@ -379,7 +383,7 @@ describe(
                  it('should work for text response', function(done) {
                    testZone.run(function() {
                      global['fetch']('/base/test/assets/sample.json').then(function(response) {
-                       var fetchZone = Zone.current;
+                       const fetchZone = Zone.current;
                        expect(fetchZone).toBe(testZone);
 
                        response.text().then(function(text) {
@@ -394,7 +398,7 @@ describe(
                  it('should work for json response', function(done) {
                    testZone.run(function() {
                      global['fetch']('/base/test/assets/sample.json').then(function(response: any) {
-                       var fetchZone = Zone.current;
+                       const fetchZone = Zone.current;
                        expect(fetchZone).toBe(testZone);
 
                        response.json().then(function(obj: any) {
@@ -409,7 +413,7 @@ describe(
                  it('should work for blob response', function(done) {
                    testZone.run(function() {
                      global['fetch']('/base/test/assets/sample.json').then(function(response: any) {
-                       var fetchZone = Zone.current;
+                       const fetchZone = Zone.current;
                        expect(fetchZone).toBe(testZone);
 
                        // Android 4.3- doesn't support response.blob()
@@ -429,7 +433,7 @@ describe(
                  it('should work for arrayBuffer response', function(done) {
                    testZone.run(function() {
                      global['fetch']('/base/test/assets/sample.json').then(function(response: any) {
-                       var fetchZone = Zone.current;
+                       const fetchZone = Zone.current;
                        expect(fetchZone).toBe(testZone);
 
                        // Android 4.3- doesn't support response.arrayBuffer()
