@@ -20,7 +20,7 @@
     "karma-jasmine": "karma start karma-build-jasmine.conf.js",
     "karma-jasmine:single": "karma start karma-build-jasmine.conf.js --single-run",
     "karma-jasmine:autoclose": "npm run karma-jasmine:single && npm run ws-client",
-    "lint": "tslint -c tslint.json 'test/**/*.ts' 'lib/**/*.ts'",
+    "lint": "gulp lint",
     "prepublish": "tsc && gulp build",
     "ws-client": "node ./test/ws-client.js",
     "ws-server": "node ./test/ws-server.js",

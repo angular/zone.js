@@ -24,6 +24,18 @@ Run the node.js tests:
 
 `npm run test-node`
 
+Run tslint:
+
+`npm run lint`
+
+Run format with clang-format:
+
+`npm run format`
+
+Run all checks (lint/format/browser test/test-node):
+
+`npm run ci`
+
 Before Commit
 ------------
 
