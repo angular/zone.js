@@ -106,7 +106,7 @@
  * ### [EventTask]
  *
  * [EventTask]s represents a request to create a listener on an event. Unlike the other task
- * events may never be executed, but typically execute more then once. There is no queue of
+ * events may never be executed, but typically execute more than once. There is no queue of
  * events, rather their callbacks are unpredictable both in order and time.
  *
  *
