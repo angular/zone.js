@@ -6,10 +6,10 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-var ws = require('nodejs-websocket');
+const ws = require('nodejs-websocket');
 
 // simple echo server
-var server = ws.createServer(function (conn) {
+const server = ws.createServer(function (conn) {
   conn.on('text', function (str) {
     if (str === 'close') {
       server.close();

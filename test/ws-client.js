@@ -6,9 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-var ws = require('nodejs-websocket');
+const ws = require('nodejs-websocket');
 
-var conn = ws.connect('ws://localhost:8001', {}, function() {
+const conn = ws.connect('ws://localhost:8001', {}, function() {
     conn.send('close');
     conn.close();
 });
