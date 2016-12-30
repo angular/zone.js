@@ -51,7 +51,6 @@
     "concurrently": "^2.2.0",
     "conventional-changelog": "^1.1.0",
     "es6-promise": "^3.0.2",
-    "ghooks": "^2.0.0",
     "gulp": "^3.8.11",
     "gulp-clang-format": "^1.0.23",
     "gulp-conventional-changelog": "^1.1.0",
@@ -81,10 +80,5 @@
     "typescript": "^2.0.2",
     "vrsource-tslint-rules": "^4.0.0",
     "whatwg-fetch": "^2.0.1"
-  },
-  "config": {
-    "ghooks": {
-      "pre-commit": "echo \"Checking commit...\" && npm run ci"
-    }
   }
 }
