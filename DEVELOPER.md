@@ -53,7 +53,7 @@ You can run
 to do all those checks for you.
 You can also add the script into your git pre-commit hook
 
-`
+```
 echo -e 'exec npm run ci' > .git/hooks/pre-commit
-chmod u+x .git/hooks/pre-commit
-` 
+chmod u+x .git/hooks/pre-commit 
+```
