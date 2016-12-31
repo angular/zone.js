@@ -86,6 +86,10 @@ gulp.task('build/zone.min.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/browser/rollup-main.ts', 'zone.min.js', true, cb);
 });
 
+gulp.task('build/web-api.js', ['compile-esm'], function(cb) {
+    return generateScript('./lib/browser/web-api.ts', 'web-api.js', true, cb);
+});
+
 gulp.task('build/jasmine-patch.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/jasmine/jasmine.ts', 'jasmine-patch.js', false, cb);
 });
@@ -151,6 +155,7 @@ gulp.task('build', [
   'build/zone.js.d.ts',
   'build/zone.min.js',
   'build/zone-node.js',
+  'build/web-api.js',
   'build/jasmine-patch.js',
   'build/jasmine-patch.min.js',
   'build/mocha-patch.js',
