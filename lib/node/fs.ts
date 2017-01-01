@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {patchMethod} from '../common/utils';
+import {patchMacroTask} from '../common/utils';
 
 let fs;
 try {
@@ -27,35 +27,13 @@ const TO_PATCH_MACROTASK_METHODS = [
 if (fs) {
   TO_PATCH_MACROTASK_METHODS.filter(name => !!fs[name] && typeof fs[name] === 'function')
       .forEach(name => {
-        patchFsMacroTaskMethod(fs, name);
+        patchMacroTask(fs, name, (self: any, args: any[]) => {
+          return {
+            name: 'fs.' + name,
+            args: args,
+            callbackIndex: args.length > 0 ? args.length - 1 : -1,
+            target: self
+          };
+        });
       });
-}
-
-interface FileSystemOptions extends TaskData {
-  args: any[];
-}
-
-function patchFsMacroTaskMethod(fs: any, methodName: string) {
-  let setNative = null;
-
-  function scheduleTask(task: Task) {
-    const data = <FileSystemOptions>task.data;
-    data.args[data.args.length - 1] = function() {
-      task.invoke.apply(this, arguments);
-    };
-    setNative.apply(fs, data.args);
-    return task;
-  }
-
-  setNative = patchMethod(fs, methodName, (delegate: Function) => function(self: any, args: any[]) {
-    if (args.length > 0 && typeof args[args.length - 1] === 'function') {
-      const options: FileSystemOptions = {args: args};
-      const task = Zone.current.scheduleMacroTask(
-          'fs.' + methodName, args[args.length - 1], options, scheduleTask, null);
-      return task;
-    } else {
-      // cause an error by calling it directly.
-      return delegate.apply(fs, args);
-    }
-  });
 }
