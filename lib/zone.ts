@@ -1383,7 +1383,9 @@ const Zone: ZoneType = (function(global: any) {
 
   if (NativeError.hasOwnProperty('captureStackTrace')) {
     Object.defineProperty(ZoneAwareError, 'captureStackTrace', {
-      value: function(targetObject: Object, constructorOpt?: Function) {
+      // add named function here because we need to remove this
+      // stack frame when prepareStackTrace below
+      value: function zoneCaptureStackTrace(targetObject: Object, constructorOpt?: Function) {
         NativeError.captureStackTrace(targetObject, constructorOpt);
       }
     });
@@ -1394,7 +1396,23 @@ const Zone: ZoneType = (function(global: any) {
       return NativeError.prepareStackTrace;
     },
     set: function(value) {
-      return NativeError.prepareStackTrace = value;
+      if (!value || typeof value !== 'function') {
+        return NativeError.prepareStackTrace = value;
+      }
+      return NativeError.prepareStackTrace = function(error, structuredStackTrace) {
+        // remove additional stack information from ZoneAwareError.captureStackTrace
+        if (structuredStackTrace) {
+          for (let i = 0; i < structuredStackTrace.length; i++) {
+            const st = structuredStackTrace[i];
+            // remove the first function which name is value
+            if (st.getFunctionName() === 'zoneCaptureStackTrace') {
+              structuredStackTrace.splice(i, 1);
+              break;
+            }
+          }
+        }
+        return value.apply(this, [error, structuredStackTrace]);
+      };
     }
   });
 
