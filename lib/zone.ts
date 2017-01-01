@@ -962,6 +962,22 @@ const Zone: ZoneType = (function(global: any) {
         return Object.prototype.toString.call(this);
       }
     }
+
+    // add toJSON method to prevent cyclic error when
+    // call JSON.stringify(zoneTask)
+    public toJSON() {
+      return {
+        type: this.type,
+        source: this.source,
+        data: this.data,
+        zone: this.zone.name,
+        invoke: this.invoke,
+        scheduleFn: this.scheduleFn,
+        cancelFn: this.cancelFn,
+        runCount: this.runCount,
+        callback: this.callback
+      };
+    }
   }
 
   interface UncaughtPromiseError extends Error {
