@@ -1310,36 +1310,36 @@ const Zone: ZoneType = (function(global: any) {
   let frameParserStrategy = null;
   const stackRewrite = 'stackRewrite';
 
-  const assignAll = function (to, from) {
-      if (to == null) {
-        return to;
-      }
-
-      if (from != null) { // Skip over if undefined or null
-        let keys = Object.getOwnPropertyNames(from);
-        for (let i = 0; i < keys.length; i ++) {
-          const key = keys[i];
-          // Avoid bugs when hasOwnProperty is shadowed
-          if (Object.prototype.hasOwnProperty.call(from, key)) {
-            to[key] = from[key];
-          }
-        }
-
-        // copy all properties from prototype
-        // in Error, such as name/message is in Error's prototype
-        // but not enumerable, so we copy those properties through
-        // Error's prototype
-        let pkeys = Object.getOwnPropertyNames(Object.getPrototypeOf(from));
-        for (let i = 0; i < pkeys.length; i ++) {
-          const key = pkeys[i];
-          // skip constructor
-          if (key !== 'constructor') {
-            to[key] = from[key];
-          }
-        }
-      }
+  const assignAll = function(to, from) {
+    if (to == null) {
       return to;
-    };
+    }
+
+    if (from != null) {  // Skip over if undefined or null
+      let keys = Object.getOwnPropertyNames(from);
+      for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        // Avoid bugs when hasOwnProperty is shadowed
+        if (Object.prototype.hasOwnProperty.call(from, key)) {
+          to[key] = from[key];
+        }
+      }
+
+      // copy all properties from prototype
+      // in Error, such as name/message is in Error's prototype
+      // but not enumerable, so we copy those properties through
+      // Error's prototype
+      let pkeys = Object.getOwnPropertyNames(Object.getPrototypeOf(from));
+      for (let i = 0; i < pkeys.length; i++) {
+        const key = pkeys[i];
+        // skip constructor
+        if (key !== 'constructor') {
+          to[key] = from[key];
+        }
+      }
+    }
+    return to;
+  };
 
   /**
    * This is ZoneAwareError which processes the stack frame and cleans up extra frames as well as
@@ -1387,8 +1387,8 @@ const Zone: ZoneType = (function(global: any) {
     // if this is valid, means not undefined
     // and not global (non-strict mode call Error())
     // and it is an error not an unrelated object
-    if (this && this !== global && this instanceof Error
-      && Object.getPrototypeOf(this) !== NativeError.prototype && assignAll(this, error)) {
+    if (this && this !== global && this instanceof Error &&
+        Object.getPrototypeOf(this) !== NativeError.prototype && assignAll(this, error)) {
       return this;
     }
     return error;
