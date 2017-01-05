@@ -1329,9 +1329,9 @@ const Zone: ZoneType = (function(global: any) {
       // in Error, such as name/message is in Error's prototype
       // but not enumerable, so we copy those properties through
       // Error's prototype
-      let pkeys = Object.getOwnPropertyNames(Object.getPrototypeOf(from));
-      for (let i = 0; i < pkeys.length; i++) {
-        const key = pkeys[i];
+      let pKeys = Object.getOwnPropertyNames(Object.getPrototypeOf(from));
+      for (let i = 0; i < pKeys.length; i++) {
+        const key = pKeys[i];
         // skip constructor
         if (key !== 'constructor') {
           to[key] = from[key];
@@ -1346,6 +1346,13 @@ const Zone: ZoneType = (function(global: any) {
    * adds zone information to it.
    */
   function ZoneAwareError() {
+    // make sure we have a valid this
+    // if this is undefined(call Error without new) or this is global
+    // or this is some other objects, we should force to create a
+    // valid ZoneAwareError by call Object.create()
+    if (!(this instanceof ZoneAwareError)) {
+      return ZoneAwareError.apply(Object.create(ZoneAwareError.prototype), arguments);
+    }
     // Create an Error.
     let error: Error = NativeError.apply(this, arguments);
 
@@ -1384,14 +1391,8 @@ const Zone: ZoneType = (function(global: any) {
       }
       error.stack = error.zoneAwareStack = frames.join('\n');
     }
-    // if this is valid, means not undefined
-    // and not global (non-strict mode call Error())
-    // and it is an error not an unrelated object
-    if (this && this !== global && this instanceof Error &&
-        Object.getPrototypeOf(this) !== NativeError.prototype && assignAll(this, error)) {
-      return this;
-    }
-    return error;
+    assignAll(this, error);
+    return this;
   }
 
   // Copy the prototype so that instanceof operator works as expected
