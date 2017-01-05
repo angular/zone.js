@@ -1311,11 +1311,11 @@ const Zone: ZoneType = (function(global: any) {
   const stackRewrite = 'stackRewrite';
 
   const assignAll = function(to, from) {
-    if (to == null) {
+    if (!to) {
       return to;
     }
 
-    if (from != null) {  // Skip over if undefined or null
+    if (from) {
       let keys = Object.getOwnPropertyNames(from);
       for (let i = 0; i < keys.length; i++) {
         const key = keys[i];
@@ -1326,15 +1326,18 @@ const Zone: ZoneType = (function(global: any) {
       }
 
       // copy all properties from prototype
-      // in Error, such as name/message is in Error's prototype
+      // in Error, property such as name/message is in Error's prototype
       // but not enumerable, so we copy those properties through
       // Error's prototype
-      let pKeys = Object.getOwnPropertyNames(Object.getPrototypeOf(from));
-      for (let i = 0; i < pKeys.length; i++) {
-        const key = pKeys[i];
-        // skip constructor
-        if (key !== 'constructor') {
-          to[key] = from[key];
+      const proto = Object.getPrototypeOf(from);
+      if (proto) {
+        let pKeys = Object.getOwnPropertyNames(proto);
+        for (let i = 0; i < pKeys.length; i++) {
+          const key = pKeys[i];
+          // skip constructor
+          if (key !== 'constructor') {
+            to[key] = from[key];
+          }
         }
       }
     }
@@ -1391,8 +1394,7 @@ const Zone: ZoneType = (function(global: any) {
       }
       error.stack = error.zoneAwareStack = frames.join('\n');
     }
-    assignAll(this, error);
-    return this;
+    return assignAll(this, error);
   }
 
   // Copy the prototype so that instanceof operator works as expected
