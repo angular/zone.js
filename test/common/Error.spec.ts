@@ -11,6 +11,62 @@ describe('ZoneAwareError', () => {
   // and there is no point in running them.
   if (!Error['stackRewrite']) return;
 
+  it('should keep error prototype chain correctly', () => {
+    class MyError extends Error {}
+    const myError = new MyError();
+    expect(myError instanceof Error).toBe(true);
+    expect(myError instanceof MyError).toBe(true);
+    expect(myError.stack).not.toBe(undefined);
+  });
+
+  it('should instanceof error correctly', () => {
+    let myError = Error('myError');
+    expect(myError instanceof Error).toBe(true);
+    let myError1 = Error.call(undefined, 'myError');
+    expect(myError1 instanceof Error).toBe(true);
+    let myError2 = Error.call(global, 'myError');
+    expect(myError2 instanceof Error).toBe(true);
+    let myError3 = Error.call({}, 'myError');
+    expect(myError3 instanceof Error).toBe(true);
+    let myError4 = Error.call({test: 'test'}, 'myError');
+    expect(myError4 instanceof Error).toBe(true);
+  });
+
+  it('should return error itself from constructor', () => {
+    class MyError1 extends Error {
+      constructor() {
+        const err: any = super('MyError1');
+        this.message = err.message;
+      }
+    }
+    let myError1 = new MyError1();
+    expect(myError1.message).toEqual('MyError1');
+    expect(myError1.name).toEqual('Error');
+  });
+
+  it('should return error by calling error directly', () => {
+    let myError = Error('myError');
+    expect(myError.message).toEqual('myError');
+    let myError1 = Error.call(undefined, 'myError');
+    expect(myError1.message).toEqual('myError');
+    let myError2 = Error.call(global, 'myError');
+    expect(myError2.message).toEqual('myError');
+    let myError3 = Error.call({}, 'myError');
+    expect(myError3.message).toEqual('myError');
+  });
+
+  it('should have browser specified property', () => {
+    let myError = new Error('myError');
+    if (Object.prototype.hasOwnProperty.call(Error.prototype, 'description')) {
+      // in IE, error has description property
+      expect((<any>myError).description).toEqual('myError');
+    }
+    if (Object.prototype.hasOwnProperty.call(Error.prototype, 'fileName')) {
+      // in firefox, error has fileName property
+      expect((<any>myError).fileName).toContain('zone');
+    }
+  });
+
   it('should show zone names in stack frames and remove extra frames', () => {
     const rootZone = getRootZone();
     const innerZone = rootZone.fork({name: 'InnerZone'});

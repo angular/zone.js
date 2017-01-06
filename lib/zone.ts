@@ -1314,12 +1314,52 @@ const Zone: ZoneType = (function(global: any) {
   let frameParserStrategy = null;
   const stackRewrite = 'stackRewrite';
 
+  const assignAll = function(to, from) {
+    if (!to) {
+      return to;
+    }
+
+    if (from) {
+      let keys = Object.getOwnPropertyNames(from);
+      for (let i = 0; i < keys.length; i++) {
+        const key = keys[i];
+        // Avoid bugs when hasOwnProperty is shadowed
+        if (Object.prototype.hasOwnProperty.call(from, key)) {
+          to[key] = from[key];
+        }
+      }
+
+      // copy all properties from prototype
+      // in Error, property such as name/message is in Error's prototype
+      // but not enumerable, so we copy those properties through
+      // Error's prototype
+      const proto = Object.getPrototypeOf(from);
+      if (proto) {
+        let pKeys = Object.getOwnPropertyNames(proto);
+        for (let i = 0; i < pKeys.length; i++) {
+          const key = pKeys[i];
+          // skip constructor
+          if (key !== 'constructor') {
+            to[key] = from[key];
+          }
+        }
+      }
+    }
+    return to;
+  };
 
   /**
    * This is ZoneAwareError which processes the stack frame and cleans up extra frames as well as
    * adds zone information to it.
    */
   function ZoneAwareError() {
+    // make sure we have a valid this
+    // if this is undefined(call Error without new) or this is global
+    // or this is some other objects, we should force to create a
+    // valid ZoneAwareError by call Object.create()
+    if (!(this instanceof ZoneAwareError)) {
+      return ZoneAwareError.apply(Object.create(ZoneAwareError.prototype), arguments);
+    }
     // Create an Error.
     let error: Error = NativeError.apply(this, arguments);
 
@@ -1358,7 +1398,7 @@ const Zone: ZoneType = (function(global: any) {
       }
       error.stack = error.zoneAwareStack = frames.join('\n');
     }
-    return error;
+    return assignAll(this, error);
   }
 
   // Copy the prototype so that instanceof operator works as expected
@@ -1397,8 +1437,6 @@ const Zone: ZoneType = (function(global: any) {
       return NativeError.prepareStackTrace = value;
     }
   });
-
-  // Now we need to populet the `blacklistedStackFrames` as well as find the
 
   // Now we need to populet the `blacklistedStackFrames` as well as find the
   // run/runGuraded/runTask frames. This is done by creating a detect zone and then threading
