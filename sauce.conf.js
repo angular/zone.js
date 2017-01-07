@@ -76,7 +76,7 @@ module.exports = function (config) {
       platform: 'Windows 10',
       version: '13.10586'
     },
-    'SL_ANDROID4.1': {
+    /*'SL_ANDROID4.1': {
       base: 'SauceLabs',
       browserName: 'android',
       platform: 'Linux',
@@ -99,7 +99,7 @@ module.exports = function (config) {
       browserName: 'android',
       platform: 'Linux',
       version: '4.4'
-    },
+    },*/
     'SL_ANDROID5.1': {
       base: 'SauceLabs',
       browserName: 'android',
