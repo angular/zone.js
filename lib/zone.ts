@@ -97,7 +97,7 @@
  *
  * ### [TimerTask]
  *
- * [TimerTask]s represents work which will be done after some delay. (Sometimes the delay is
+ * [TimerTask]s represent work which will be done after some delay. (Sometimes the delay is
  * approximate such as on next available animation frame). Typically these methods include:
  * `setTimeout`, `setImmediate`, `setInterval`, `requestAnimationFrame`, and all browser specif
  * variants.
@@ -105,7 +105,7 @@
  *
  * ### [EventTask]
  *
- * [EventTask]s represents a request to create a listener on an event. Unlike the other task
+ * [EventTask]s represent a request to create a listener on an event. Unlike the other task
  * events may never be executed, but typically execute more than once. There is no queue of
  * events, rather their callbacks are unpredictable both in order and time.
  *
