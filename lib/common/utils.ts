@@ -481,3 +481,37 @@ export function patchMethod(
   }
   return delegate;
 }
+
+export interface MacroTaskMeta extends TaskData {
+  name: string;
+  target: any;
+  callbackIndex: number;
+  args: any[];
+}
+
+// TODO: support cancel task later if necessary
+export function patchMacroTask(
+    obj: any, funcName: string, metaCreator: (self: any, args: any[]) => MacroTaskMeta) {
+  let setNative = null;
+
+  function scheduleTask(task: Task) {
+    const data = <MacroTaskMeta>task.data;
+    data.args[data.callbackIndex] = function() {
+      task.invoke.apply(this, arguments);
+    };
+    setNative.apply(data.target, data.args);
+    return task;
+  }
+
+  setNative = patchMethod(obj, funcName, (delegate: Function) => function(self: any, args: any[]) {
+    const meta = metaCreator(self, args);
+    if (meta.callbackIndex >= 0 && typeof args[meta.callbackIndex] === 'function') {
+      const task = Zone.current.scheduleMacroTask(
+          meta.name, args[meta.callbackIndex], meta, scheduleTask, null);
+      return task;
+    } else {
+      // cause an error by calling it directly.
+      return delegate.apply(self, args);
+    }
+  });
+}
