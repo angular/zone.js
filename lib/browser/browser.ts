@@ -125,7 +125,10 @@ function patchXHR(window: any) {
         const task: Task = findPendingTask(self);
         if (task && typeof task.type == 'string') {
           // If the XHR has already completed, do nothing.
-          if (task.cancelFn == null) {
+          // If the XHR has already been aborted, do nothing.
+          // Fix #569, call abort multiple times before done will cause
+          // macroTask task count be negative number
+          if (task.cancelFn == null || (task.data && (<XHROptions>task.data).aborted)) {
             return;
           }
           task.zone.cancelTask(task);

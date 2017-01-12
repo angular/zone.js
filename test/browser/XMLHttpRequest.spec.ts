@@ -195,4 +195,18 @@ describe('XMLHttpRequest', function() {
          };
        });
      });
+
+  it('should keep taskcount correctly when abort was called multiple times before request is done',
+     function() {
+       testZone.run(function() {
+         const req = new XMLHttpRequest();
+         req.open('get', '/', true);
+         req.send();
+         req.addEventListener('readystatechange', function(ev) {
+           if (req.readyState >= 2) {
+             req.abort();
+           }
+         });
+       });
+     });
 });
