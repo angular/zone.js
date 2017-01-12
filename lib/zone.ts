@@ -1460,7 +1460,7 @@ const Zone: ZoneType = (function(global: any) {
         if (structuredStackTrace) {
           for (let i = 0; i < structuredStackTrace.length; i++) {
             const st = structuredStackTrace[i];
-            // remove the first function which name is value
+            // remove the first function which name is zoneCaptureStackTrace
             if (st.getFunctionName() === 'zoneCaptureStackTrace') {
               structuredStackTrace.splice(i, 1);
               break;
