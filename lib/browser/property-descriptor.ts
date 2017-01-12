@@ -56,7 +56,13 @@ function canPatchViaPropertyDescriptor() {
     if (desc && !desc.configurable) return false;
   }
 
+  // add enumerable and configurable here because in opera
+  // by default XMLHttpRequest.prototype.onreadystatechange is undefined
+  // without adding enumerable and configurable will cause onreadystatechange
+  // non-configurable
   Object.defineProperty(XMLHttpRequest.prototype, 'onreadystatechange', {
+    enumerable: true,
+    configurable: true,
     get: function() {
       return true;
     }
