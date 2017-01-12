@@ -231,6 +231,22 @@ describe('Zone', function() {
 
       macro.invoke();
     });
+
+    it('should convert task to json without cyclic error', () => {
+      const z = Zone.current;
+      const event = z.scheduleEventTask('test', () => {}, null, noop, noop);
+      const micro = z.scheduleMicroTask('test', () => {});
+      const macro = z.scheduleMacroTask('test', () => {}, null, noop, noop);
+      expect(function() {
+        JSON.stringify(event);
+      }).not.toThrow();
+      expect(function() {
+        JSON.stringify(micro);
+      }).not.toThrow();
+      expect(function() {
+        JSON.stringify(macro);
+      }).not.toThrow();
+    });
   });
 });
 
