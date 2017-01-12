@@ -360,6 +360,21 @@ var Zone$1 = (function (global) {
                 return Object.prototype.toString.call(this);
             }
         };
+        // add toJSON method to prevent cyclic error when
+        // call JSON.stringify(zoneTask)
+        ZoneTask.prototype.toJSON = function () {
+            return {
+                type: this.type,
+                source: this.source,
+                data: this.data,
+                zone: this.zone.name,
+                invoke: this.invoke,
+                scheduleFn: this.scheduleFn,
+                cancelFn: this.cancelFn,
+                runCount: this.runCount,
+                callback: this.callback
+            };
+        };
         return ZoneTask;
     }());
     var ZoneFrame = (function () {
@@ -539,6 +554,9 @@ var Zone$1 = (function (global) {
                 resolvePromise(promise, false, e);
             }
         }
+        ZoneAwarePromise.toString = function () {
+            return 'function ZoneAwarePromise() { [native code] }';
+        };
         ZoneAwarePromise.resolve = function (value) {
             return resolvePromise(new this(null), RESOLVED, value);
         };
@@ -673,11 +691,49 @@ var Zone$1 = (function (global) {
     // How should the stack frames be parsed.
     var frameParserStrategy = null;
     var stackRewrite = 'stackRewrite';
+    var assignAll = function (to, from) {
+        if (!to) {
+            return to;
+        }
+        if (from) {
+            var keys = Object.getOwnPropertyNames(from);
+            for (var i = 0; i < keys.length; i++) {
+                var key = keys[i];
+                // Avoid bugs when hasOwnProperty is shadowed
+                if (Object.prototype.hasOwnProperty.call(from, key)) {
+                    to[key] = from[key];
+                }
+            }
+            // copy all properties from prototype
+            // in Error, property such as name/message is in Error's prototype
+            // but not enumerable, so we copy those properties through
+            // Error's prototype
+            var proto = Object.getPrototypeOf(from);
+            if (proto) {
+                var pKeys = Object.getOwnPropertyNames(proto);
+                for (var i = 0; i < pKeys.length; i++) {
+                    var key = pKeys[i];
+                    // skip constructor
+                    if (key !== 'constructor') {
+                        to[key] = from[key];
+                    }
+                }
+            }
+        }
+        return to;
+    };
     /**
      * This is ZoneAwareError which processes the stack frame and cleans up extra frames as well as
      * adds zone information to it.
      */
     function ZoneAwareError() {
+        // make sure we have a valid this
+        // if this is undefined(call Error without new) or this is global
+        // or this is some other objects, we should force to create a
+        // valid ZoneAwareError by call Object.create()
+        if (!(this instanceof ZoneAwareError)) {
+            return ZoneAwareError.apply(Object.create(ZoneAwareError.prototype), arguments);
+        }
         // Create an Error.
         var error = NativeError.apply(this, arguments);
         // Save original stack trace
@@ -716,7 +772,7 @@ var Zone$1 = (function (global) {
             }
             error.stack = error.zoneAwareStack = frames_1.join('\n');
         }
-        return error;
+        return assignAll(this, error);
     }
     // Copy the prototype so that instanceof operator works as expected
     ZoneAwareError.prototype = NativeError.prototype;
@@ -737,7 +793,9 @@ var Zone$1 = (function (global) {
     }
     if (NativeError.hasOwnProperty('captureStackTrace')) {
         Object.defineProperty(ZoneAwareError, 'captureStackTrace', {
-            value: function (targetObject, constructorOpt) {
+            // add named function here because we need to remove this
+            // stack frame when prepareStackTrace below
+            value: function zoneCaptureStackTrace(targetObject, constructorOpt) {
                 NativeError.captureStackTrace(targetObject, constructorOpt);
             }
         });
@@ -747,10 +805,25 @@ var Zone$1 = (function (global) {
             return NativeError.prepareStackTrace;
         },
         set: function (value) {
-            return NativeError.prepareStackTrace = value;
+            if (!value || typeof value !== 'function') {
+                return NativeError.prepareStackTrace = value;
+            }
+            return NativeError.prepareStackTrace = function (error, structuredStackTrace) {
+                // remove additional stack information from ZoneAwareError.captureStackTrace
+                if (structuredStackTrace) {
+                    for (var i = 0; i < structuredStackTrace.length; i++) {
+                        var st = structuredStackTrace[i];
+                        // remove the first function which name is value
+                        if (st.getFunctionName() === 'zoneCaptureStackTrace') {
+                            structuredStackTrace.splice(i, 1);
+                            break;
+                        }
+                    }
+                }
+                return value.apply(this, [error, structuredStackTrace]);
+            };
         }
     });
-    // Now we need to populet the `blacklistedStackFrames` as well as find the
     // Now we need to populet the `blacklistedStackFrames` as well as find the
     // run/runGuraded/runTask frames. This is done by creating a detect zone and then threading
     // the execution through all of the above methods so that we can look at the stack trace and
@@ -1080,6 +1153,29 @@ function patchMethod(target, name, patchFn) {
     }
     return delegate;
 }
+// TODO: support cancel task later if necessary
+function patchMacroTask(obj, funcName, metaCreator) {
+    var setNative = null;
+    function scheduleTask(task) {
+        var data = task.data;
+        data.args[data.callbackIndex] = function () {
+            task.invoke.apply(this, arguments);
+        };
+        setNative.apply(data.target, data.args);
+        return task;
+    }
+    setNative = patchMethod(obj, funcName, function (delegate) { return function (self, args) {
+        var meta = metaCreator(self, args);
+        if (meta.callbackIndex >= 0 && typeof args[meta.callbackIndex] === 'function') {
+            var task = Zone.current.scheduleMacroTask(meta.name, args[meta.callbackIndex], meta, scheduleTask, null);
+            return task;
+        }
+        else {
+            // cause an error by calling it directly.
+            return delegate.apply(self, args);
+        }
+    }; });
+}
 
 /**
  * @license
@@ -1144,8 +1240,9 @@ try {
 }
 catch (err) {
 }
-// TODO(alxhub): Patch `watch` and `unwatchFile`.
-var TO_PATCH = [
+// watch, watchFile, unwatchFile has been patched
+// because EventEmitter has been patched
+var TO_PATCH_MACROTASK_METHODS = [
     'access', 'appendFile', 'chmod', 'chown', 'close', 'exists', 'fchmod',
     'fchown', 'fdatasync', 'fstat', 'fsync', 'ftruncate', 'futimes', 'lchmod',
     'lchown', 'link', 'lstat', 'mkdir', 'mkdtemp', 'open', 'read',
@@ -1153,12 +1250,16 @@ var TO_PATCH = [
     'symlink', 'truncate', 'unlink', 'utimes', 'write', 'writeFile',
 ];
 if (fs) {
-    TO_PATCH.filter(function (name) { return !!fs[name] && typeof fs[name] === 'function'; }).forEach(function (name) {
-        fs[name] = (function (delegate) {
-            return function () {
-                return delegate.apply(this, bindArguments(arguments, 'fs.' + name));
+    TO_PATCH_MACROTASK_METHODS.filter(function (name) { return !!fs[name] && typeof fs[name] === 'function'; })
+        .forEach(function (name) {
+        patchMacroTask(fs, name, function (self, args) {
+            return {
+                name: 'fs.' + name,
+                args: args,
+                callbackIndex: args.length > 0 ? args.length - 1 : -1,
+                target: self
             };
-        })(fs[name]);
+        });
     });
 }
 
