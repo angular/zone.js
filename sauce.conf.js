@@ -76,6 +76,8 @@ module.exports = function (config) {
       platform: 'Windows 10',
       version: '13.10586'
     },
+    /*
+     fix issue #584, Android 4.1~4.3 are not supported
     'SL_ANDROID4.1': {
       base: 'SauceLabs',
       browserName: 'android',
@@ -93,7 +95,7 @@ module.exports = function (config) {
       browserName: 'android',
       platform: 'Linux',
       version: '4.3'
-    },
+    },*/
     'SL_ANDROID4.4': {
       base: 'SauceLabs',
       browserName: 'android',
