@@ -101,14 +101,15 @@ export function patchProperty(obj, prop) {
     // because the onclick function is internal raw uncompiled handler
     // the onclick will be evaluated when first time event was triggered or
     // the property is accessed, https://github.com/angular/zone.js/issues/525
-    // so we should use original native get to retrive the handler
+    // so we should use original native get to retrieve the handler
     if (r === null) {
-      let oriDesc = Object.getOwnPropertyDescriptor(obj, 'original' + prop);
-      if (oriDesc && oriDesc.get) {
-        r = oriDesc.get.apply(this, arguments);
+      if (originalDesc && originalDesc.get) {
+        r = originalDesc.get.apply(this, arguments);
         if (r) {
           desc.set.apply(this, [r]);
-          this.removeAttribute(prop);
+          if (typeof this['removeAttribute'] === 'function') {
+            this.removeAttribute(prop);
+          }
         }
       }
     }

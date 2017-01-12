@@ -209,4 +209,15 @@ describe('XMLHttpRequest', function() {
          });
        });
      });
+
+  it('should not throw error when get XMLHttpRequest.prototype.onreadystatechange the first time',
+     function() {
+       const func = function() {
+         testZone.run(function() {
+           const req = new XMLHttpRequest();
+           req.onreadystatechange;
+         });
+       };
+       expect(func).not.toThrow();
+     });
 });
