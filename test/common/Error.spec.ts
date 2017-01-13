@@ -67,6 +67,46 @@ describe('ZoneAwareError', () => {
     }
   });
 
+  it('should not use child Error class get/set in ZoneAwareError constructor', () => {
+    // simulate @angular/facade/src/error.ts
+    class BaseError extends Error {
+      /** @internal **/
+      _nativeError: Error;
+
+      constructor(message: string) {
+        super(message);
+        const nativeError = new Error(message) as any as Error;
+        this._nativeError = nativeError;
+      }
+
+      get message() {
+        return this._nativeError.message;
+      }
+      set message(message) {
+        this._nativeError.message = message;
+      }
+      get name() {
+        return this._nativeError.name;
+      }
+      get stack() {
+        return (this._nativeError as any).stack;
+      }
+      set stack(value) {
+        (this._nativeError as any).stack = value;
+      }
+      toString() {
+        return this._nativeError.toString();
+      }
+    }
+
+    const func = () => {
+      const error = new BaseError('test');
+      expect(error.message).toEqual('test');
+    };
+
+    expect(func).not.toThrow();
+  });
+
   it('should show zone names in stack frames and remove extra frames', () => {
     const rootZone = getRootZone();
     const innerZone = rootZone.fork({name: 'InnerZone'});

@@ -682,7 +682,6 @@ const Zone: ZoneType = (function(global: any) {
       }
     }
 
-
     scheduleMicroTask(
         source: string, callback: Function, data?: TaskData,
         customSchedule?: (task: Task) => void): MicroTask {
@@ -1330,38 +1329,42 @@ const Zone: ZoneType = (function(global: any) {
   let frameParserStrategy = null;
   const stackRewrite = 'stackRewrite';
 
-  const assignAll = function(to, from) {
-    if (!to) {
-      return to;
-    }
-
-    if (from) {
-      let keys = Object.getOwnPropertyNames(from);
-      for (let i = 0; i < keys.length; i++) {
-        const key = keys[i];
-        // Avoid bugs when hasOwnProperty is shadowed
-        if (Object.prototype.hasOwnProperty.call(from, key)) {
-          to[key] = from[key];
-        }
+  const createProperty = function(key) {
+    return {
+      configurable: true,
+      enumerable: true,
+      get: function() {
+        return this[__symbol__('error')] ? this[__symbol__('error')][key] : this[__symbol__(key)];
+      },
+      set: function(value) {
+        this[__symbol__('error')] ? this[__symbol__('error')][key] = value :
+                                    this[__symbol__(key)] = value;
       }
+    };
+  };
 
-      // copy all properties from prototype
-      // in Error, property such as name/message is in Error's prototype
-      // but not enumerable, so we copy those properties through
-      // Error's prototype
-      const proto = Object.getPrototypeOf(from);
-      if (proto) {
-        let pKeys = Object.getOwnPropertyNames(proto);
-        for (let i = 0; i < pKeys.length; i++) {
-          const key = pKeys[i];
-          // skip constructor
-          if (key !== 'constructor') {
-            to[key] = from[key];
-          }
-        }
+  const createProperties = function(instance, proto) {
+    let props = Object.create(null);
+    let keys = Object.getOwnPropertyNames(instance);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      // Avoid bugs when hasOwnProperty is shadowed
+      if (Object.prototype.hasOwnProperty.call(instance, key)) {
+        props[key] = createProperty(key);
       }
     }
-    return to;
+    if (proto) {
+      let pKeys = Object.getOwnPropertyNames(proto);
+      for (let i = 0; i < pKeys.length; i++) {
+        const key = pKeys[i];
+        // skip constructor
+        if (key !== 'constructor') {
+          props[key] = createProperty(key);
+        }
+      }
+    }
+
+    return props;
   };
 
   /**
@@ -1378,6 +1381,7 @@ const Zone: ZoneType = (function(global: any) {
     }
     // Create an Error.
     let error: Error = NativeError.apply(this, arguments);
+    this[__symbol__('error')] = error;
 
     // Save original stack trace
     error.originalStack = error.stack;
@@ -1414,11 +1418,13 @@ const Zone: ZoneType = (function(global: any) {
       }
       error.stack = error.zoneAwareStack = frames.join('\n');
     }
-    return assignAll(this, error);
+    return this;
   }
 
   // Copy the prototype so that instanceof operator works as expected
-  ZoneAwareError.prototype = NativeError.prototype;
+  ZoneAwareError.prototype = Object.create(
+      NativeError.prototype, createProperties(new NativeError(), NativeError.prototype));
+
   ZoneAwareError[Zone.__symbol__('blacklistedStackFrames')] = blackListedStackFrames;
   ZoneAwareError[stackRewrite] = false;
 
