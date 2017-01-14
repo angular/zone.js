@@ -83,6 +83,14 @@ describe('Zone', function() {
     });
   });
 
+  describe('rootZone', function() {
+    it('should be able to get rootZone', function() {
+      Zone.current.fork({name: 'testZone'}).run(function() {
+        const rootZone = Zone.rootZone;
+        expect(rootZone.name).toEqual('<root>');
+      });
+    });
+  });
 
   describe('get', function() {
     it('should store properties', function() {
