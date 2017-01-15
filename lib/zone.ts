@@ -257,6 +257,11 @@ interface ZoneType {
    * Verify that Zone has been correctly patched. Specifically that Promise is zone aware.
    */
   assertZonePatched();
+
+  /**
+   *  Return the root zone.
+   */
+  root: Zone;
 }
 
 /**
@@ -564,6 +569,13 @@ const Zone: ZoneType = (function(global: any) {
       }
     }
 
+    static get root(): AmbientZone {
+      let zone = Zone.current;
+      while (zone.parent) {
+        zone = zone.parent;
+      }
+      return zone;
+    }
 
     static get current(): AmbientZone {
       return _currentZoneFrame.zone;
