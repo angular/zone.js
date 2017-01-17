@@ -33,6 +33,8 @@ See this video from ng-conf 2014 for a detailed explanation:
 * [strongloop/zone](https://github.com/strongloop/zone)
 * [vizone](https://github.com/gilbox/vizone) - control flow visualizer that uses zone.js
 
+## Promise A+ test passed
+[![Promises/A+ 1.1 compliant](https://promisesaplus.com/assets/logo-small.png)](https://promisesaplus.com/)
 
 ## License
 MIT

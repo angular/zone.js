@@ -15,7 +15,7 @@
   },
   "scripts": {
     "changelog": "gulp changelog",
-    "ci": "npm run lint && npm run format && npm run test:single && npm run test-node",
+    "ci": "npm run lint && npm run format && npm run promisetest && npm run test:single && npm run test-node",
     "format": "gulp format:enforce",
     "karma-jasmine": "karma start karma-build-jasmine.conf.js",
     "karma-jasmine:single": "karma start karma-build-jasmine.conf.js --single-run",
