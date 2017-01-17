@@ -1330,38 +1330,118 @@ const Zone: ZoneType = (function(global: any) {
   let frameParserStrategy = null;
   const stackRewrite = 'stackRewrite';
 
-  const assignAll = function(to, from) {
-    if (!to) {
-      return to;
+  // fix #595, create property descriptor
+  // for error properties
+  const createProperty = function(props, key) {
+    // if property is already defined, skip it.
+    if (props[key]) {
+      return;
     }
-
-    if (from) {
-      let keys = Object.getOwnPropertyNames(from);
-      for (let i = 0; i < keys.length; i++) {
-        const key = keys[i];
-        // Avoid bugs when hasOwnProperty is shadowed
-        if (Object.prototype.hasOwnProperty.call(from, key)) {
-          to[key] = from[key];
-        }
-      }
-
-      // copy all properties from prototype
-      // in Error, property such as name/message is in Error's prototype
-      // but not enumerable, so we copy those properties through
-      // Error's prototype
-      const proto = Object.getPrototypeOf(from);
-      if (proto) {
-        let pKeys = Object.getOwnPropertyNames(proto);
-        for (let i = 0; i < pKeys.length; i++) {
-          const key = pKeys[i];
-          // skip constructor
-          if (key !== 'constructor') {
-            to[key] = from[key];
+    // define a local property
+    // in case error property is not settable
+    const name = __symbol__(key);
+    props[key] = {
+      configurable: true,
+      enumerable: true,
+      get: function() {
+        // if local property has no value
+        // use internal error's property value
+        if (!this[name]) {
+          const error = this[__symbol__('error')];
+          if (error) {
+            this[name] = error[key];
           }
         }
+        return this[name];
+      },
+      set: function(value) {
+        // setter will set value to local property value
+        this[name] = value;
+      }
+    };
+  };
+
+  // fix #595, create property descriptor
+  // for error method properties
+  const createMethodProperty = function(props, key) {
+    if (props[key]) {
+      return;
+    }
+    props[key] = {
+      configurable: true,
+      enumerable: true,
+      writable: true,
+      value: function() {
+        const error = this[__symbol__('error')];
+        let errorMethod = (error && error[key]) || this[key];
+        if (errorMethod) {
+          return errorMethod.apply(error, arguments);
+        }
+      }
+    };
+  };
+
+  const createErrorProperties = function() {
+    const props = Object.create(null);
+
+    const error = new NativeError();
+    let keys = Object.getOwnPropertyNames(error);
+    for (let i = 0; i < keys.length; i++) {
+      const key = keys[i];
+      // Avoid bugs when hasOwnProperty is shadowed
+      if (Object.prototype.hasOwnProperty.call(error, key)) {
+        createProperty(props, key);
       }
     }
-    return to;
+
+    const proto = NativeError.prototype;
+    if (proto) {
+      let pKeys = Object.getOwnPropertyNames(proto);
+      for (let i = 0; i < pKeys.length; i++) {
+        const key = pKeys[i];
+        // skip constructor
+        if (key !== 'constructor' && key !== 'toString' && key !== 'toSource') {
+          createProperty(props, key);
+        }
+      }
+    }
+
+    // some other properties are not
+    // in NativeError
+    createProperty(props, 'originalStack');
+    createProperty(props, 'zoneAwareStack');
+
+    // define toString, toSource as method property
+    createMethodProperty(props, 'toString');
+    createMethodProperty(props, 'toSource');
+    return props;
+  };
+
+  const errorProperties = createErrorProperties();
+
+  // for derived Error class which extends ZoneAwareError
+  // we should not override the derived class's property
+  // so we create a new props object only copy the properties
+  // from errorProperties which not exist in derived Error's prototype
+  const getErrorPropertiesForPrototype = function(prototype) {
+    // if the prototype is ZoneAwareError.prototype
+    // we just return the prebuilt errorProperties.
+    if (prototype === ZoneAwareError.prototype) {
+      return errorProperties;
+    }
+    const newProps = Object.create(null);
+    const cKeys = Object.getOwnPropertyNames(errorProperties);
+    const keys = Object.getOwnPropertyNames(prototype);
+    cKeys.forEach(cKey => {
+      if (keys.filter(key => {
+                return key === cKey;
+              })
+              .length === 0) {
+        newProps[cKey] = errorProperties[cKey];
+      }
+    });
+
+    return newProps;
   };
 
   /**
@@ -1378,6 +1458,7 @@ const Zone: ZoneType = (function(global: any) {
     }
     // Create an Error.
     let error: Error = NativeError.apply(this, arguments);
+    this[__symbol__('error')] = error;
 
     // Save original stack trace
     error.originalStack = error.stack;
@@ -1414,7 +1495,10 @@ const Zone: ZoneType = (function(global: any) {
       }
       error.stack = error.zoneAwareStack = frames.join('\n');
     }
-    return assignAll(this, error);
+    // use defineProperties here instead of copy property value
+    // because of issue #595 which will break angular2.
+    Object.defineProperties(this, getErrorPropertiesForPrototype(Object.getPrototypeOf(this)));
+    return this;
   }
 
   // Copy the prototype so that instanceof operator works as expected

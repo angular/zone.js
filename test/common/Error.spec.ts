@@ -6,6 +6,75 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+// simulate @angular/facade/src/error.ts
+class BaseError extends Error {
+  /** @internal **/
+  _nativeError: Error;
+
+  constructor(message: string) {
+    super(message);
+    const nativeError = new Error(message) as any as Error;
+    this._nativeError = nativeError;
+  }
+
+  get message() {
+    return this._nativeError.message;
+  }
+  set message(message) {
+    this._nativeError.message = message;
+  }
+  get name() {
+    return this._nativeError.name;
+  }
+  get stack() {
+    return (this._nativeError as any).stack;
+  }
+  set stack(value) {
+    (this._nativeError as any).stack = value;
+  }
+  toString() {
+    return this._nativeError.toString();
+  }
+}
+
+class WrappedError extends BaseError {
+  originalError: any;
+
+  constructor(message: string, error: any) {
+    super(`${message} caused by: ${error instanceof Error ? error.message : error}`);
+    this.originalError = error;
+  }
+
+  get stack() {
+    return ((this.originalError instanceof Error ? this.originalError : this._nativeError) as any)
+        .stack;
+  }
+}
+
+class TestError extends WrappedError {
+  constructor(message: string, error: any) {
+    super(`${message} caused by: ${error instanceof Error ? error.message : error}`, error);
+  }
+
+  get message() {
+    return 'test ' + this.originalError.message;
+  }
+}
+
+class TestMessageError extends WrappedError {
+  constructor(message: string, error: any) {
+    super(`${message} caused by: ${error instanceof Error ? error.message : error}`, error);
+  }
+
+  get message() {
+    return 'test ' + this.originalError.message;
+  }
+
+  set message(value) {
+    this.originalError.message = value;
+  }
+}
+
 describe('ZoneAwareError', () => {
   // If the environment does not supports stack rewrites, then these tests will fail
   // and there is no point in running them.
@@ -65,6 +134,27 @@ describe('ZoneAwareError', () => {
       // in firefox, error has fileName property
       expect((<any>myError).fileName).toContain('zone');
     }
+  });
+
+  it('should not use child Error class get/set in ZoneAwareError constructor', () => {
+    const func = () => {
+      const error = new BaseError('test');
+      expect(error.message).toEqual('test');
+    };
+
+    expect(func).not.toThrow();
+  });
+
+  it('should behave correctly with wrapped error', () => {
+    const error = new TestError('originalMessage', new Error('error message'));
+    expect(error.message).toEqual('test error message');
+    error.originalError.message = 'new error message';
+    expect(error.message).toEqual('test new error message');
+
+    const error1 = new TestMessageError('originalMessage', new Error('error message'));
+    expect(error1.message).toEqual('test error message');
+    error1.message = 'new error message';
+    expect(error1.message).toEqual('test new error message');
   });
 
   it('should show zone names in stack frames and remove extra frames', () => {
