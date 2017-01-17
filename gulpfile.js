@@ -241,14 +241,25 @@ gulp.task('format', () => {
 
 // Update the changelog with the latest changes
 gulp.task('changelog', () => {
-    const conventionalChangelog = require('gulp-conventional-changelog');
+  const conventionalChangelog = require('gulp-conventional-changelog');
 
-    return gulp.src('CHANGELOG.md')
-        .pipe(conventionalChangelog({preset: 'angular', releaseCount: 1}, {
-            // Conventional Changelog Context
-            // We have to manually set version number so it doesn't get prefixed with `v`
-            // See https://github.com/conventional-changelog/conventional-changelog-core/issues/10
-            currentTag: require('./package.json').version
-        }))
-        .pipe(gulp.dest('./'));
+  return gulp.src('CHANGELOG.md')
+    .pipe(conventionalChangelog({preset: 'angular', releaseCount: 1}, {
+       // Conventional Changelog Context
+       // We have to manually set version number so it doesn't get prefixed with `v`
+       // See https://github.com/conventional-changelog/conventional-changelog-core/issues/10
+       currentTag: require('./package.json').version
+    }))
+    .pipe(gulp.dest('./'));
+});
+
+// run promise aplus test
+gulp.task('promisetest', ['build/zone-node.js'], (cb) => {
+    const promisesAplusTests = require('promises-aplus-tests');
+    const adapter = require('./promise-adapter');
+    promisesAplusTests(adapter, { reporter: "dot" }, function (err) {
+      if (err) {
+        cb(err);
+      }
+    });
 });

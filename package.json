@@ -22,6 +22,7 @@
     "karma-jasmine:autoclose": "npm run karma-jasmine:single && npm run ws-client",
     "lint": "gulp lint",
     "prepublish": "tsc && gulp build",
+    "promisetest": "gulp promisetest",
     "ws-client": "node ./test/ws-client.js",
     "ws-server": "node ./test/ws-server.js",
     "tsc": "tsc",
