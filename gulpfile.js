@@ -86,8 +86,12 @@ gulp.task('build/zone.min.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/browser/rollup-main.ts', 'zone.min.js', true, cb);
 });
 
-gulp.task('build/web-api.js', ['compile-esm'], function(cb) {
-    return generateScript('./lib/browser/web-api.ts', 'web-api.js', true, cb);
+gulp.task('build/webapis-media-query.js', ['compile-esm'], function(cb) {
+    return generateScript('./lib/browser/webapis-media-query.ts', 'webapis-media-query.js', true, cb);
+});
+
+gulp.task('build/webapis-notification.js', ['compile-esm'], function(cb) {
+    return generateScript('./lib/browser/webapis-notification.ts', 'webapis-notification.js', true, cb);
 });
 
 gulp.task('build/jasmine-patch.js', ['compile-esm'], function(cb) {
@@ -155,7 +159,8 @@ gulp.task('build', [
   'build/zone.js.d.ts',
   'build/zone.min.js',
   'build/zone-node.js',
-  'build/web-api.js',
+  'build/webapis-media-query.js',
+  'build/webapis-notification.js',
   'build/jasmine-patch.js',
   'build/jasmine-patch.min.js',
   'build/mocha-patch.js',
