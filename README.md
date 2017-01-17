@@ -8,9 +8,10 @@ Implements _Zones_ for JavaScript, inspired by [Dart](https://www.dartlang.org/a
 > If you're using zone.js via unpkg please provide a query param `?main=browser`  
 `https://unpkg.com/zone.js?main=browser`  
 > If you're using the following library, make sure you import them first 
-> 1. 'newrelic' as it patches global.Promise before zone,js does
-> 2. 'async-listener' as it patches global.setTimeout, global.setInterval before zone,js does
-> 3. 'continuation-local-storage' as it uses async-listener 
+
+> * 'newrelic' as it patches global.Promise before zone,js does
+> * 'async-listener' as it patches global.setTimeout, global.setInterval before zone,js does
+> * 'continuation-local-storage' as it uses async-listener 
 
 # NEW Zone.js POST-v0.6.0
 
