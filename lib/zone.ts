@@ -12,6 +12,11 @@
  * @suppress {undefinedVars}
  */
 
+var probePromise = window['probePromise'] ||
+                   (() => console.log('probePromise() not present'));
+probePromise('before zone.js init');
+
+
 /**
  * Zone is a mechanism for intercepting and keeping track of asynchronous work.
  *
@@ -1623,5 +1628,7 @@ const Zone: ZoneType = (function(global: any) {
   // Cause the error to extract the stack frames.
   detectZone.runTask(detectZone.scheduleMacroTask('detect', detectRunFn, null, () => null, null));
 
-  return global['Zone'] = Zone;
+  global['Zone'] = Zone;
+  probePromise('after zone.js init');
+  return Zone;
 })(typeof window === 'object' && window || typeof self === 'object' && self || global);
