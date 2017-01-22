@@ -79,7 +79,7 @@ function rewriteDescriptor(obj, prop, desc) {
 function _tryDefineProperty(obj, prop, desc, originalConfigurableFlag) {
   try {
     return _defineProperty(obj, prop, desc);
-  } catch (e) {
+  } catch (error) {
     if (desc.configurable) {
       // In case of errors, when the configurable flag was likely set by rewriteDescriptor(), let's
       // retry with the original flag value
@@ -90,18 +90,18 @@ function _tryDefineProperty(obj, prop, desc, originalConfigurableFlag) {
       }
       try {
         return _defineProperty(obj, prop, desc);
-      } catch (e) {
+      } catch (error) {
         let descJson: string = null;
         try {
           descJson = JSON.stringify(desc);
-        } catch (e) {
+        } catch (error) {
           descJson = descJson.toString();
         }
         console.log(`Attempting to configure '${prop}' with descriptor '${descJson
-                    }' on object '${obj}' and got error, giving up: ${e}`);
+                    }' on object '${obj}' and got error, giving up: ${error}`);
       }
     } else {
-      throw e;
+      throw error;
     }
   }
 }
