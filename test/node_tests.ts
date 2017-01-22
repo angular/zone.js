@@ -10,3 +10,4 @@ import './node/events.spec';
 import './node/fs.spec';
 import './node/process.spec';
 import './node/Error.spec';
+import './node/crypto.spec';
