@@ -6,12 +6,12 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {isBrowser} from '../common/utils';
+import {isBrowser, isMix} from '../common/utils';
 
 import {_redefineProperty} from './define-property';
 
 export function registerElementPatch(_global: any) {
-  if (!isBrowser || !('registerElement' in (<any>_global).document)) {
+  if ((!isBrowser && !isMix) || !('registerElement' in (<any>_global).document)) {
     return;
   }
 
