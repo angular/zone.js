@@ -17,9 +17,14 @@ describe('setInterval', function() {
     testZone.run(() => {
       let id;
       let intervalCount = 0;
+      let timeoutRunning = false;
       const intervalFn = function() {
         intervalCount++;
         expect(Zone.current.name).toEqual(('TestZone'));
+        if (timeoutRunning) {
+          return;
+        }
+        timeoutRunning = true;
         global[zoneSymbol('setTimeout')](function() {
           const intervalUnitLog = [
             '> Zone:invokeTask:setInterval("<root>::ProxyZone::WTF::TestZone")',
