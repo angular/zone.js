@@ -1050,8 +1050,8 @@ const Zone: ZoneType = (function(global: any) {
           const task = queue[i];
           try {
             task.zone.runTask(task, null, null);
-          } catch (e) {
-            consoleError(e);
+          } catch (error) {
+            consoleError(error);
           }
         }
       }
@@ -1062,8 +1062,8 @@ const Zone: ZoneType = (function(global: any) {
             uncaughtPromiseError.zone.runGuarded(() => {
               throw uncaughtPromiseError;
             });
-          } catch (e) {
-            consoleError(e);
+          } catch (error) {
+            consoleError(error);
           }
         }
       }
@@ -1122,8 +1122,8 @@ const Zone: ZoneType = (function(global: any) {
             throw new Error(
                 'Uncaught (in promise): ' + value +
                 (value && value.stack ? '\n' + value.stack : ''));
-          } catch (e) {
-            const error: UncaughtPromiseError = e;
+          } catch (err) {
+            const error: UncaughtPromiseError = err;
             error.rejection = value;
             error.promise = promise;
             error.zone = Zone.current;
@@ -1240,8 +1240,8 @@ const Zone: ZoneType = (function(global: any) {
       promise[symbolValue] = [];  // queue;
       try {
         executor && executor(makeResolver(promise, RESOLVED), makeResolver(promise, REJECTED));
-      } catch (e) {
-        resolvePromise(promise, false, e);
+      } catch (error) {
+        resolvePromise(promise, false, error);
       }
     }
 
@@ -1291,7 +1291,7 @@ const Zone: ZoneType = (function(global: any) {
       try {
         // In MS Edge this throws
         fetchPromise = global['fetch']();
-      } catch (e) {
+      } catch (error) {
         // In Chrome this throws instead.
         fetchPromise = global['fetch']('about:blank');
       }
