@@ -41,10 +41,11 @@ Before Commit
 
 Please make sure you pass all following checks before commit 
 
-- tslint
-- format:enforce (clang-format)
-- npm test (karma test)
-- test-node (node test)
+- gulp lint (tslint) 
+- gulp format:enforce (clang-format)
+- gulp promisetest (promise a+ test)
+- npm test (karma browser test)
+- gulp test-node (node test)
 
 You can run 
 
