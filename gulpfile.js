@@ -82,6 +82,11 @@ gulp.task('build/zone.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/browser/rollup-main.ts', 'zone.js', false, cb);
 });
 
+// Zone for electron/nw environment.
+gulp.task('build/zone-mix.js', ['compile-esm'], function(cb) {
+    return generateScript('./lib/mix/rollup-mix.ts', 'zone-mix.js', false, cb);
+});
+
 gulp.task('build/zone.min.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/browser/rollup-main.ts', 'zone.min.js', true, cb);
 });
@@ -161,6 +166,7 @@ gulp.task('build', [
   'build/zone-node.js',
   'build/webapis-media-query.js',
   'build/webapis-notification.js',
+  'build/zone-mix.js',
   'build/jasmine-patch.js',
   'build/jasmine-patch.min.js',
   'build/mocha-patch.js',
