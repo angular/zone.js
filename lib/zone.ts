@@ -627,7 +627,7 @@ const Zone: ZoneType = (function(global: any) {
 
     public run(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): any;
     public run<T>(
-        callback: (...args: any[]) => T, applyThis: any = null, applyArgs: any[] = null,
+        callback: (...args: any[]) => T, applyThis: any = undefined, applyArgs: any[] = null,
         source: string = null): T {
       _currentZoneFrame = new ZoneFrame(_currentZoneFrame, this);
       try {
@@ -1050,8 +1050,8 @@ const Zone: ZoneType = (function(global: any) {
           const task = queue[i];
           try {
             task.zone.runTask(task, null, null);
-          } catch (e) {
-            consoleError(e);
+          } catch (error) {
+            consoleError(error);
           }
         }
       }
@@ -1062,15 +1062,14 @@ const Zone: ZoneType = (function(global: any) {
             uncaughtPromiseError.zone.runGuarded(() => {
               throw uncaughtPromiseError;
             });
-          } catch (e) {
-            consoleError(e);
+          } catch (error) {
+            consoleError(error);
           }
         }
       }
       _isDrainingMicrotaskQueue = false;
     }
   }
-
 
   function isThenable(value: any): boolean {
     return value && value.then;
@@ -1094,20 +1093,65 @@ const Zone: ZoneType = (function(global: any) {
 
   function makeResolver(promise: ZoneAwarePromise<any>, state: boolean): (value: any) => void {
     return (v) => {
-      resolvePromise(promise, state, v);
+      try {
+        resolvePromise(promise, state, v);
+      } catch (err) {
+        resolvePromise(promise, false, err);
+      }
       // Do not return value or you will break the Promise spec.
     };
   }
 
+  const once = function() {
+    let wasCalled = false;
+
+    return function wrapper(wrappedFunction) {
+      return function() {
+        if (wasCalled) {
+          return;
+        }
+        wasCalled = true;
+        wrappedFunction.apply(null, arguments);
+      };
+    };
+  };
+
+  // Promise Resolution
   function resolvePromise(
       promise: ZoneAwarePromise<any>, state: boolean, value: any): ZoneAwarePromise<any> {
+    const onceWrapper = once();
+    if (promise === value) {
+      throw new TypeError('Promise resolved with itself');
+    }
     if (promise[symbolState] === UNRESOLVED) {
-      if (value instanceof ZoneAwarePromise && value.hasOwnProperty(symbolState) &&
-          value.hasOwnProperty(symbolValue) && value[symbolState] !== UNRESOLVED) {
+      // should only get value.then once based on promise spec.
+      let then = null;
+      try {
+        if (typeof value === 'object' || typeof value === 'function') {
+          then = value && value.then;
+        }
+      } catch (err) {
+        onceWrapper(() => {
+          resolvePromise(promise, false, err);
+        })();
+        return promise;
+      }
+      // if (value instanceof ZoneAwarePromise) {
+      if (state !== REJECTED && value instanceof ZoneAwarePromise &&
+          value.hasOwnProperty(symbolState) && value.hasOwnProperty(symbolValue) &&
+          value[symbolState] !== UNRESOLVED) {
         clearRejectedNoCatch(<Promise<any>>value);
         resolvePromise(promise, value[symbolState], value[symbolValue]);
-      } else if (isThenable(value)) {
-        value.then(makeResolver(promise, state), makeResolver(promise, false));
+      } else if (state !== REJECTED && typeof then === 'function') {
+        try {
+          then.apply(value, [
+            onceWrapper(makeResolver(promise, state)), onceWrapper(makeResolver(promise, false))
+          ]);
+        } catch (err) {
+          onceWrapper(() => {
+            resolvePromise(promise, false, err);
+          })();
+        }
       } else {
         promise[symbolState] = state;
         const queue = promise[symbolValue];
@@ -1122,8 +1166,8 @@ const Zone: ZoneType = (function(global: any) {
             throw new Error(
                 'Uncaught (in promise): ' + value +
                 (value && value.stack ? '\n' + value.stack : ''));
-          } catch (e) {
-            const error: UncaughtPromiseError = e;
+          } catch (err) {
+            const error: UncaughtPromiseError = err;
             error.rejection = value;
             error.promise = promise;
             error.zone = Zone.current;
@@ -1150,16 +1194,16 @@ const Zone: ZoneType = (function(global: any) {
     }
   }
 
-
   function scheduleResolveOrReject<R, U>(
       promise: ZoneAwarePromise<any>, zone: AmbientZone, chainPromise: ZoneAwarePromise<any>,
       onFulfilled?: (value: R) => U, onRejected?: (error: any) => U): void {
     clearRejectedNoCatch(promise);
-    const delegate =
-        promise[symbolState] ? onFulfilled || forwardResolution : onRejected || forwardRejection;
+    const delegate = promise[symbolState] ?
+        (typeof onFulfilled === 'function') ? onFulfilled : forwardResolution :
+        (typeof onRejected === 'function') ? onRejected : forwardRejection;
     zone.scheduleMicroTask(source, () => {
       try {
-        resolvePromise(chainPromise, true, zone.run(delegate, null, [promise[symbolValue]]));
+        resolvePromise(chainPromise, true, zone.run(delegate, undefined, [promise[symbolValue]]));
       } catch (error) {
         resolvePromise(chainPromise, false, error);
       }
@@ -1240,8 +1284,8 @@ const Zone: ZoneType = (function(global: any) {
       promise[symbolValue] = [];  // queue;
       try {
         executor && executor(makeResolver(promise, RESOLVED), makeResolver(promise, REJECTED));
-      } catch (e) {
-        resolvePromise(promise, false, e);
+      } catch (error) {
+        resolvePromise(promise, false, error);
       }
     }
 
@@ -1291,7 +1335,7 @@ const Zone: ZoneType = (function(global: any) {
       try {
         // In MS Edge this throws
         fetchPromise = global['fetch']();
-      } catch (e) {
+      } catch (error) {
         // In Chrome this throws instead.
         fetchPromise = global['fetch']('about:blank');
       }
