@@ -1029,6 +1029,11 @@ const Zone: ZoneType = (function(global: any) {
   }
 
   function consoleError(e: any) {
+    const zoneConsoleError = Zone[__symbol__('consoleError')];
+    if (zoneConsoleError && typeof zoneConsoleError === 'function') {
+      zoneConsoleError(e);
+      return;
+    }
     const rejection = e && e.rejection;
     if (rejection) {
       console.error(

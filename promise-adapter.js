@@ -1,4 +1,7 @@
 require('./dist/zone-node.js');
+Zone['__zone_symbol__consoleError'] = function(error) {
+  // ignore unchaught error output.
+}
 
 module.exports.deferred = function() {
   const p = {};
