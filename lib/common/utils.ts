@@ -50,6 +50,10 @@ export const isNode: boolean =
 export const isBrowser: boolean =
     !isNode && !isWebWorker && !!(typeof window !== 'undefined' && window['HTMLElement']);
 
+// we are in electron of nw, so we are both browser and nodejs
+export const isMix: boolean = typeof process !== 'undefined' &&
+    {}.toString.call(process) === '[object process]' && !isWebWorker &&
+    !!(typeof window !== 'undefined' && window['HTMLElement']);
 
 export function patchProperty(obj, prop) {
   const desc = Object.getOwnPropertyDescriptor(obj, prop) || {enumerable: true, configurable: true};
@@ -277,7 +281,7 @@ export function makeZoneAwareAddListener(
       // accessing the handler object here will cause an exception to be thrown which
       // will fail tests prematurely.
       validZoneHandler = data.handler && data.handler.toString() === '[object FunctionWrapper]';
-    } catch (e) {
+    } catch (error) {
       // Returning nothing here is fine, because objects in a cross-site context are unusable
       return;
     }
@@ -454,7 +458,7 @@ export function patchClass(className) {
 export function createNamedFn(name: string, delegate: (self: any, args: any[]) => any): Function {
   try {
     return (Function('f', `return function ${name}(){return f(this, arguments)}`))(delegate);
-  } catch (e) {
+  } catch (error) {
     // if we fail, we must be CSP, just return delegate.
     return function() {
       return delegate(this, <any>arguments);

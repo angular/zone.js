@@ -82,6 +82,11 @@ gulp.task('build/zone.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/browser/rollup-main.ts', 'zone.js', false, cb);
 });
 
+// Zone for electron/nw environment.
+gulp.task('build/zone-mix.js', ['compile-esm'], function(cb) {
+    return generateScript('./lib/mix/rollup-mix.ts', 'zone-mix.js', false, cb);
+});
+
 gulp.task('build/zone.min.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/browser/rollup-main.ts', 'zone.min.js', true, cb);
 });
@@ -161,6 +166,7 @@ gulp.task('build', [
   'build/zone-node.js',
   'build/webapis-media-query.js',
   'build/webapis-notification.js',
+  'build/zone-mix.js',
   'build/jasmine-patch.js',
   'build/jasmine-patch.min.js',
   'build/mocha-patch.js',
@@ -246,14 +252,25 @@ gulp.task('format', () => {
 
 // Update the changelog with the latest changes
 gulp.task('changelog', () => {
-    const conventionalChangelog = require('gulp-conventional-changelog');
+  const conventionalChangelog = require('gulp-conventional-changelog');
 
-    return gulp.src('CHANGELOG.md')
-        .pipe(conventionalChangelog({preset: 'angular', releaseCount: 1}, {
-            // Conventional Changelog Context
-            // We have to manually set version number so it doesn't get prefixed with `v`
-            // See https://github.com/conventional-changelog/conventional-changelog-core/issues/10
-            currentTag: require('./package.json').version
-        }))
-        .pipe(gulp.dest('./'));
+  return gulp.src('CHANGELOG.md')
+    .pipe(conventionalChangelog({preset: 'angular', releaseCount: 1}, {
+       // Conventional Changelog Context
+       // We have to manually set version number so it doesn't get prefixed with `v`
+       // See https://github.com/conventional-changelog/conventional-changelog-core/issues/10
+       currentTag: require('./package.json').version
+    }))
+    .pipe(gulp.dest('./'));
+});
+
+// run promise aplus test
+gulp.task('promisetest', ['build/zone-node.js'], (cb) => {
+    const promisesAplusTests = require('promises-aplus-tests');
+    const adapter = require('./promise-adapter');
+    promisesAplusTests(adapter, { reporter: "dot" }, function (err) {
+      if (err) {
+        cb(err);
+      }
+    });
 });
