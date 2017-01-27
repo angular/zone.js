@@ -73,7 +73,6 @@
     "karma-sourcemap-loader": "^0.3.6",
     "mocha": "^3.1.2",
     "nodejs-websocket": "^1.2.0",
-    "probepromise-zone.js": "git+https://github.com/MichaelBuerge/probePromise-zone.js.git",
     "promises-aplus-tests": "^2.1.2",
     "pump": "^1.0.1",
     "systemjs": "^0.19.37",
