@@ -1344,7 +1344,7 @@ const Zone: ZoneType = (function(global: any) {
       if (!Ctor[symbolThenPatched]) {
         patchThen(Ctor);
       }
-      return ZoneAwarePromise.resolve(resultPromise);
+      return resultPromise;
     }
   }
 
