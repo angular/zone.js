@@ -1325,10 +1325,9 @@ const Zone: ZoneType = (function(global: any) {
     proto[symbolThen] = originalThen;
 
     Ctor.prototype.then = function(onResolve, onReject) {
-      let wrapped = new ZoneAwarePromise(
-          (resolve, reject) => {
-            originalThen.call(this, resolve, reject);
-          });
+      let wrapped = new ZoneAwarePromise((resolve, reject) => {
+        originalThen.call(this, resolve, reject);
+      });
       return wrapped.then(onResolve, onReject);
     };
     Ctor[symbolThenPatched] = true;
@@ -1340,12 +1339,12 @@ const Zone: ZoneType = (function(global: any) {
       if (resultPromise instanceof ZoneAwarePromise) {
         return resultPromise;
       }
-      let Ctor = resultPromise.constructor
+      let Ctor = resultPromise.constructor;
       if (!Ctor[symbolThenPatched]) {
         patchThen(Ctor);
       }
       return resultPromise;
-    }
+    };
   }
 
   if (NativePromise) {
