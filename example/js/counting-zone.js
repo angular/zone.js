@@ -2,24 +2,26 @@
  * See example/counting.html
  */
 
-Zone.countingZone = {
-
+Zone['countingZoneSpec'] = {
+  name: 'counterZone',
   // setTimeout
-  '+enqueueTask': function () {
+  onScheduleTask: function (delegate, current, target, task) {
     this.data.count += 1;
+    delegate.scheduleTask(target, task);
   },
 
   // fires when...
   // - clearTimeout
   // - setTimeout finishes
-  '-dequeueTask': function () {
+  onInvokeTask: function (delegate, current, target, task, applyThis, applyArgs) {
+    delegate.invokeTask(target, task, applyThis, applyArgs);
     this.data.count -= 1;
   },
 
-  '+afterTask': function () {
+  onHasTask: function (delegate, current, target, hasTask) {
     if (this.data.count === 0 && !this.data.flushed) {
       this.data.flushed = true;
-      this.run(this.onFlush);
+      target.run(this.onFlush);
     }
   },
 
