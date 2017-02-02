@@ -1319,13 +1319,13 @@ const Zone: ZoneType = (function(global: any) {
   const symbolThenPatched = __symbol__('thenPatched');
 
   function patchThen(Ctor) {
-    let proto = Ctor.prototype;
-    let originalThen = proto.then;
+    const proto = Ctor.prototype;
+    const originalThen = proto.then;
     // Keep a reference to the original method.
     proto[symbolThen] = originalThen;
 
     Ctor.prototype.then = function(onResolve, onReject) {
-      let wrapped = new ZoneAwarePromise((resolve, reject) => {
+      const wrapped = new ZoneAwarePromise((resolve, reject) => {
         originalThen.call(this, resolve, reject);
       });
       return wrapped.then(onResolve, onReject);
