@@ -52,8 +52,11 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
             return task;
           }
           // Node.js must additionally support the ref and unref functions.
-          const handle = (<TimerOptions>task.data).handleId;
-          if ((<any>handle).ref && (<any>handle).unref) {
+          const handle: any = (<TimerOptions>task.data).handleId;
+          // check whether handle is null, because some polyfill or browser
+          // may return undefined from setTimeout/setInterval/setImmediate/requestAnimationFrame
+          if (handle && handle.ref && handle.unref && typeof handle.ref === 'function' &&
+              typeof handle.unref === 'function') {
             (<any>task).ref = (<any>handle).ref.bind(handle);
             (<any>task).unref = (<any>handle).unref.bind(handle);
           }
