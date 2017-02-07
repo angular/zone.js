@@ -6,6 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import {zoneSymbol} from '../../lib/common/utils';
+
 describe('process related test', () => {
   let zoneA, result;
   beforeEach(() => {
@@ -60,6 +62,40 @@ describe('process related test', () => {
       expect(result[1]).toEqual(
           {callback: 'invokeTask', targetZone: 'zoneTick', task: 'process.nextTick'});
       done();
+    });
+  });
+  it('should support window.addEventListener(unhandledrejection)', function(done) {
+    const hookSpy = jasmine.createSpy('hook');
+    Zone[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
+    Zone.current.fork({name: 'promise'}).run(function() {
+      process.on('unhandledRejection', function(reason, promise) {
+        hookSpy(promise, reason.message);
+      });
+      const p = new Promise((resolve, reject) => {
+        throw new Error('promise error');
+      });
+
+      setTimeout(function() {
+        expect(hookSpy).toHaveBeenCalledWith(p, 'promise error');
+        done();
+      }, 10);
+    });
+  });
+
+  it('should support window.addEventListener(rejectionHandled)', function(done) {
+    Zone[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
+    Zone.current.fork({name: 'promise'}).run(function() {
+      process.on('rejectionHandled', function(promise) {
+        expect(promise).toEqual(p);
+        done();
+      });
+      const p = new Promise((resolve, reject) => {
+        throw new Error('promise error');
+      });
+
+      setTimeout(function() {
+        p.catch(reason => {});
+      }, 10);
     });
   });
 });

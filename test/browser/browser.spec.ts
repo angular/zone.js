@@ -6,10 +6,15 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import {zoneSymbol} from '../../lib/common/utils';
 import {ifEnvSupports} from '../test-util';
 
 function windowPrototype() {
   return !!(global['Window'] && global['Window'].prototype);
+}
+
+function promiseUnhandleRejectionSupport() {
+  return !!global['PromiseRejectionEvent'];
 }
 
 describe('Zone', function() {
@@ -140,6 +145,52 @@ describe('Zone', function() {
         zone.run(function() {
           button.setAttribute('onclick', 'return');
           expect(button.onclick).not.toBe(null);
+        });
+      });
+
+      it('should support window.addEventListener(unhandledrejection)', function(done) {
+        if (!promiseUnhandleRejectionSupport()) {
+          done();
+          return;
+        }
+        Zone[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
+        rootZone.fork({name: 'promise'}).run(function() {
+          const listener = (evt: any) => {
+            expect(evt.type).toEqual('unhandledrejection');
+            expect(evt.promise.constructor.name).toEqual('Promise');
+            expect(evt.reason.message).toBe('promise error');
+            window.removeEventListener('unhandledrejection', listener);
+            done();
+          };
+          window.addEventListener('unhandledrejection', listener);
+          new Promise((resolve, reject) => {
+            throw new Error('promise error');
+          });
+        });
+      });
+
+      it('should support window.addEventListener(rejectionhandled)', function(done) {
+        if (!promiseUnhandleRejectionSupport()) {
+          done();
+          return;
+        }
+        Zone[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
+        rootZone.fork({name: 'promise'}).run(function() {
+          const listener = (evt: any) => {
+            window.removeEventListener('unhandledrejection', listener);
+            p.catch(reason => {});
+          };
+          window.addEventListener('unhandledrejection', listener);
+
+          window.addEventListener('rejectionhandled', (evt: any) => {
+            expect(evt.type).toEqual('rejectionhandled');
+            expect(evt.promise.constructor.name).toEqual('Promise');
+            expect(evt.reason.message).toBe('promise error');
+            done();
+          });
+          const p = new Promise((resolve, reject) => {
+            throw new Error('promise error');
+          });
         });
       });
     });

@@ -7,7 +7,7 @@
  */
 
 import {patchTimer} from '../common/timers';
-import {patchClass, patchMethod, patchPrototype, zoneSymbol} from '../common/utils';
+import {findEventTask, patchClass, patchMethod, patchPrototype, zoneSymbol} from '../common/utils';
 
 import {propertyPatch} from './define-property';
 import {eventTargetPatch} from './event-target';
@@ -141,4 +141,27 @@ function patchXHR(window: any) {
 /// GEO_LOCATION
 if (_global['navigator'] && _global['navigator'].geolocation) {
   patchPrototype(_global['navigator'].geolocation, ['getCurrentPosition', 'watchPosition']);
+}
+
+// handle unhandled promise rejection
+function findPromiseRejectionHandler(evtName: string) {
+  return function(e: any) {
+    const eventTask = findEventTask(_global, evtName);
+    if (eventTask) {
+      // windows has added unhandledrejection event listener
+      // trigger the event listener
+      const PromiseRejectionEvent = _global['PromiseRejectionEvent'];
+      if (PromiseRejectionEvent) {
+        const evt = new PromiseRejectionEvent(evtName, {promise: e.promise, reason: e.rejection});
+        eventTask.invoke(evt);
+      }
+    }
+  };
+}
+
+if (_global['PromiseRejectionEvent']) {
+  Zone[zoneSymbol('unhandledPromiseRejectionHandler')] =
+      findPromiseRejectionHandler('unhandledrejection');
+
+  Zone[zoneSymbol('rejectionHandledHandler')] = findPromiseRejectionHandler('rejectionhandled');
 }

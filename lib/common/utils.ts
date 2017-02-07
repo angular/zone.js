@@ -527,6 +527,7 @@ export interface MicroTaskMeta extends TaskData {
   callbackIndex: number;
   args: any[];
 }
+
 export function patchMicroTask(
     obj: any, funcName: string, metaCreator: (self: any, args: any[]) => MicroTaskMeta) {
   let setNative = null;
@@ -551,4 +552,19 @@ export function patchMicroTask(
       return delegate.apply(self, args);
     }
   });
+}
+
+export function findEventTask(target: any, evtName: string) {
+  const eventTasks: Task[] = target[zoneSymbol('eventTasks')];
+  if (eventTasks) {
+    for (let i = 0; i < eventTasks.length; i++) {
+      const eventTask = eventTasks[i];
+      const data = eventTask.data;
+      const eventName = data && (<any>data).eventName;
+      if (eventName === evtName) {
+        return eventTask;
+      }
+    }
+  }
+  return undefined;
 }
