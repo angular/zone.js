@@ -1325,38 +1325,46 @@ const Zone: ZoneType = (function(global: any) {
   ZoneAwarePromise['race'] = ZoneAwarePromise.race;
   ZoneAwarePromise['all'] = ZoneAwarePromise.all;
 
-  const NativePromise = global[__symbol__('Promise')] = global['Promise'];
+  const NativePromise = global[symbolPromise] = global['Promise'];
   global['Promise'] = ZoneAwarePromise;
-  function patchThen(NativePromise) {
-    const NativePromiseProtototype = NativePromise.prototype;
-    const NativePromiseThen = NativePromiseProtototype[__symbol__('then')] =
-        NativePromiseProtototype.then;
-    NativePromiseProtototype.then = function(onResolve, onReject) {
-      const nativePromise = this;
-      return new ZoneAwarePromise((resolve, reject) => {
-               NativePromiseThen.call(nativePromise, resolve, reject);
-             })
-          .then(onResolve, onReject);
+
+  const symbolThenPatched = __symbol__('thenPatched');
+
+  function patchThen(Ctor) {
+    const proto = Ctor.prototype;
+    const originalThen = proto.then;
+    // Keep a reference to the original method.
+    proto[symbolThen] = originalThen;
+
+    Ctor.prototype.then = function(onResolve, onReject) {
+      const wrapped = new ZoneAwarePromise((resolve, reject) => {
+        originalThen.call(this, resolve, reject);
+      });
+      return wrapped.then(onResolve, onReject);
+    };
+    Ctor[symbolThenPatched] = true;
+  }
+
+  function zoneify(fn) {
+    return function() {
+      let resultPromise = fn.apply(this, arguments);
+      if (resultPromise instanceof ZoneAwarePromise) {
+        return resultPromise;
+      }
+      let Ctor = resultPromise.constructor;
+      if (!Ctor[symbolThenPatched]) {
+        patchThen(Ctor);
+      }
+      return resultPromise;
     };
   }
 
   if (NativePromise) {
     patchThen(NativePromise);
-    if (typeof global['fetch'] !== 'undefined') {
-      let fetchPromise: Promise<any>;
-      try {
-        // In MS Edge this throws
-        fetchPromise = global['fetch']();
-      } catch (error) {
-        // In Chrome this throws instead.
-        fetchPromise = global['fetch']('about:blank');
-      }
-      // ignore output to prevent error;
-      fetchPromise.then(() => null, () => null);
-      if (fetchPromise.constructor != NativePromise &&
-          fetchPromise.constructor != ZoneAwarePromise) {
-        patchThen(fetchPromise.constructor);
-      }
+
+    let fetch = global['fetch'];
+    if (typeof fetch == 'function') {
+      global['fetch'] = zoneify(fetch);
     }
   }
 
