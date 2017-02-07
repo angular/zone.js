@@ -83,6 +83,30 @@ describe('Zone', function() {
     });
   });
 
+  describe('run out side of current zone', function() {
+    it('should be able to get root zone', function() {
+      Zone.current.fork({name: 'testZone'}).run(function() {
+        expect(Zone.root.name).toEqual('<root>');
+      });
+    });
+
+    it('should be able to get run under rootZone', function() {
+      Zone.current.fork({name: 'testZone'}).run(function() {
+        Zone.root.run(() => {
+          expect(Zone.current.name).toEqual('<root>');
+        });
+      });
+    });
+
+    it('should be able to get run outside of current zone', function() {
+      Zone.current.fork({name: 'testZone'}).run(function() {
+        Zone.root.fork({name: 'newTestZone'}).run(() => {
+          expect(Zone.current.name).toEqual('newTestZone');
+          expect(Zone.current.parent.name).toEqual('<root>');
+        });
+      });
+    });
+  });
 
   describe('get', function() {
     it('should store properties', function() {
