@@ -56,8 +56,9 @@ describe('process related test', () => {
     setTimeout(() => {
       expect(result.length).toBe(3);
       expect(result[0]).toEqual(
-          {callback: 'scheduleTask', targetZone: 'zoneTick', task: 'nextTick'});
-      expect(result[1]).toEqual({callback: 'invokeTask', targetZone: 'zoneTick', task: 'nextTick'});
+          {callback: 'scheduleTask', targetZone: 'zoneTick', task: 'process.nextTick'});
+      expect(result[1]).toEqual(
+          {callback: 'invokeTask', targetZone: 'zoneTick', task: 'process.nextTick'});
       done();
     });
   });
