@@ -114,10 +114,10 @@ describe('setTimeout', function() {
       const spy = jasmine.createSpy('spy');
       const task: Task = <any>setTimeout(spy, 0);
       const cancelId: number = <any>task;
-      clearTimeout(0 + cancelId);
+      clearTimeout(cancelId);
       setTimeout(function() {
         expect(spy).not.toHaveBeenCalled();
-        expect(task.runCount).toEqual(-1);
+        expect(task.runCount).toEqual(0);
         done();
       }, 1);
     });
