@@ -276,6 +276,12 @@ interface ZoneSpec {
   name: string;
 
   /**
+   * Is the spec is Orphan Spec, by default orphan is false
+   * If Orphan is true, than the spec will not call parent zone delegate's callback
+   */
+  isOrphan?: boolean;
+
+  /**
    * A set of properties to be associated with Zone. Use [Zone.get] to retrive them.
    */
   properties?: {[key: string]: any};
@@ -729,6 +735,8 @@ const Zone: ZoneType = (function(global: any) {
   class ZoneDelegate implements AmbientZoneDelegate {
     public zone: Zone;
 
+    private _isOrphan: boolean = false;
+
     private _taskCounts: {microTask: number,
                           macroTask: number,
                           eventTask: number} = {microTask: 0, macroTask: 0, eventTask: 0};
@@ -771,63 +779,69 @@ const Zone: ZoneType = (function(global: any) {
       this.zone = zone;
       this._parentDelegate = parentDelegate;
 
-      this._forkZS = zoneSpec && (zoneSpec && zoneSpec.onFork ? zoneSpec : parentDelegate._forkZS);
+      this._isOrphan = zoneSpec ? zoneSpec.isOrphan : false;
+
+      this._forkZS =
+          zoneSpec && ((zoneSpec.onFork || this._isOrphan) ? zoneSpec : parentDelegate._forkZS);
       this._forkDlgt = zoneSpec && (zoneSpec.onFork ? parentDelegate : parentDelegate._forkDlgt);
       this._forkCurrZone = zoneSpec && (zoneSpec.onFork ? this.zone : parentDelegate.zone);
 
-      this._interceptZS =
-          zoneSpec && (zoneSpec.onIntercept ? zoneSpec : parentDelegate._interceptZS);
+      this._interceptZS = zoneSpec &&
+          ((zoneSpec.onIntercept || this._isOrphan) ? zoneSpec : parentDelegate._interceptZS);
       this._interceptDlgt =
           zoneSpec && (zoneSpec.onIntercept ? parentDelegate : parentDelegate._interceptDlgt);
       this._interceptCurrZone =
           zoneSpec && (zoneSpec.onIntercept ? this.zone : parentDelegate.zone);
 
-      this._invokeZS = zoneSpec && (zoneSpec.onInvoke ? zoneSpec : parentDelegate._invokeZS);
+      this._invokeZS =
+          zoneSpec && ((zoneSpec.onInvoke || this._isOrphan) ? zoneSpec : parentDelegate._invokeZS);
       this._invokeDlgt =
           zoneSpec && (zoneSpec.onInvoke ? parentDelegate : parentDelegate._invokeDlgt);
       this._invokeCurrZone = zoneSpec && (zoneSpec.onInvoke ? this.zone : parentDelegate.zone);
 
-      this._handleErrorZS =
-          zoneSpec && (zoneSpec.onHandleError ? zoneSpec : parentDelegate._handleErrorZS);
+      this._handleErrorZS = zoneSpec &&
+          ((zoneSpec.onHandleError || this._isOrphan) ? zoneSpec : parentDelegate._handleErrorZS);
       this._handleErrorDlgt =
           zoneSpec && (zoneSpec.onHandleError ? parentDelegate : parentDelegate._handleErrorDlgt);
       this._handleErrorCurrZone =
           zoneSpec && (zoneSpec.onHandleError ? this.zone : parentDelegate.zone);
 
-      this._scheduleTaskZS =
-          zoneSpec && (zoneSpec.onScheduleTask ? zoneSpec : parentDelegate._scheduleTaskZS);
+      this._scheduleTaskZS = zoneSpec &&
+          ((zoneSpec.onScheduleTask || this._isOrphan) ? zoneSpec : parentDelegate._scheduleTaskZS);
       this._scheduleTaskDlgt =
           zoneSpec && (zoneSpec.onScheduleTask ? parentDelegate : parentDelegate._scheduleTaskDlgt);
       this._scheduleTaskCurrZone =
           zoneSpec && (zoneSpec.onScheduleTask ? this.zone : parentDelegate.zone);
 
-      this._invokeTaskZS =
-          zoneSpec && (zoneSpec.onInvokeTask ? zoneSpec : parentDelegate._invokeTaskZS);
+      this._invokeTaskZS = zoneSpec &&
+          ((zoneSpec.onInvokeTask || this._isOrphan) ? zoneSpec : parentDelegate._invokeTaskZS);
       this._invokeTaskDlgt =
           zoneSpec && (zoneSpec.onInvokeTask ? parentDelegate : parentDelegate._invokeTaskDlgt);
       this._invokeTaskCurrZone =
           zoneSpec && (zoneSpec.onInvokeTask ? this.zone : parentDelegate.zone);
 
-      this._cancelTaskZS =
-          zoneSpec && (zoneSpec.onCancelTask ? zoneSpec : parentDelegate._cancelTaskZS);
+      this._cancelTaskZS = zoneSpec &&
+          ((zoneSpec.onCancelTask || this._isOrphan) ? zoneSpec : parentDelegate._cancelTaskZS);
       this._cancelTaskDlgt =
           zoneSpec && (zoneSpec.onCancelTask ? parentDelegate : parentDelegate._cancelTaskDlgt);
       this._cancelTaskCurrZone =
           zoneSpec && (zoneSpec.onCancelTask ? this.zone : parentDelegate.zone);
 
-      this._hasTaskZS = zoneSpec && (zoneSpec.onHasTask ? zoneSpec : parentDelegate._hasTaskZS);
+      this._hasTaskZS = zoneSpec &&
+          ((zoneSpec.onHasTask || this._isOrphan) ? zoneSpec : parentDelegate._hasTaskZS);
       this._hasTaskDlgt =
           zoneSpec && (zoneSpec.onHasTask ? parentDelegate : parentDelegate._hasTaskDlgt);
       this._hasTaskCurrZone = zoneSpec && (zoneSpec.onHasTask ? this.zone : parentDelegate.zone);
     }
 
     fork(targetZone: Zone, zoneSpec: ZoneSpec): AmbientZone {
-      return this._forkZS ? this._forkZS.onFork(this._forkDlgt, this.zone, targetZone, zoneSpec) :
-                            new Zone(targetZone, zoneSpec);
+      return (this._forkZS && this._forkZS.onFork) ?
+          this._forkZS.onFork(this._forkDlgt, this.zone, targetZone, zoneSpec) :
+          new Zone(targetZone, zoneSpec);
     }
 
     intercept(targetZone: Zone, callback: Function, source: string): Function {
-      return this._interceptZS ?
+      return (this._interceptZS && this._interceptZS.onIntercept) ?
           this._interceptZS.onIntercept(
               this._interceptDlgt, this._interceptCurrZone, targetZone, callback, source) :
           callback;
@@ -835,7 +849,7 @@ const Zone: ZoneType = (function(global: any) {
 
     invoke(targetZone: Zone, callback: Function, applyThis: any, applyArgs: any[], source: string):
         any {
-      return this._invokeZS ?
+      return (this._invokeZS && this._invokeZS.onInvoke) ?
           this._invokeZS.onInvoke(
               this._invokeDlgt, this._invokeCurrZone, targetZone, callback, applyThis, applyArgs,
               source) :
@@ -843,7 +857,7 @@ const Zone: ZoneType = (function(global: any) {
     }
 
     handleError(targetZone: Zone, error: any): boolean {
-      return this._handleErrorZS ?
+      return (this._handleErrorZS && this._handleErrorZS.onHandleError) ?
           this._handleErrorZS.onHandleError(
               this._handleErrorDlgt, this._handleErrorCurrZone, targetZone, error) :
           true;
@@ -851,7 +865,7 @@ const Zone: ZoneType = (function(global: any) {
 
     scheduleTask(targetZone: Zone, task: Task): Task {
       try {
-        if (this._scheduleTaskZS) {
+        if (this._scheduleTaskZS && this._scheduleTaskZS.onScheduleTask) {
           return this._scheduleTaskZS.onScheduleTask(
               this._scheduleTaskDlgt, this._scheduleTaskCurrZone, targetZone, task);
         } else if (task.scheduleFn) {
@@ -871,7 +885,7 @@ const Zone: ZoneType = (function(global: any) {
 
     invokeTask(targetZone: Zone, task: Task, applyThis: any, applyArgs: any): any {
       try {
-        return this._invokeTaskZS ?
+        return (this._invokeTaskZS && this._invokeTaskZS.onInvokeTask) ?
             this._invokeTaskZS.onInvokeTask(
                 this._invokeTaskDlgt, this._invokeTaskCurrZone, targetZone, task, applyThis,
                 applyArgs) :
@@ -886,7 +900,7 @@ const Zone: ZoneType = (function(global: any) {
 
     cancelTask(targetZone: Zone, task: Task): any {
       let value;
-      if (this._cancelTaskZS) {
+      if (this._cancelTaskZS && this._cancelTaskZS.onCancelTask) {
         value = this._cancelTaskZS.onCancelTask(
             this._cancelTaskDlgt, this._cancelTaskCurrZone, targetZone, task);
       } else if (!task.cancelFn) {
@@ -902,7 +916,7 @@ const Zone: ZoneType = (function(global: any) {
     }
 
     hasTask(targetZone: Zone, isEmpty: HasTaskState) {
-      return this._hasTaskZS &&
+      return this._hasTaskZS && this._hasTaskZS.onHasTask &&
           this._hasTaskZS.onHasTask(this._hasTaskDlgt, this._hasTaskCurrZone, targetZone, isEmpty);
     }
 
@@ -923,7 +937,7 @@ const Zone: ZoneType = (function(global: any) {
         try {
           this.hasTask(this.zone, isEmpty);
         } finally {
-          if (this._parentDelegate) {
+          if (this._parentDelegate && !this._isOrphan) {
             this._parentDelegate._updateTaskCount(type, count);
           }
         }

@@ -19,5 +19,6 @@ import './zone-spec/sync-test.spec';
 import './zone-spec/fake-async-test.spec';
 import './zone-spec/proxy.spec';
 import './zone-spec/task-tracking.spec';
+import './zone-spec/orphan.spec';
 
 Error.stackTraceLimit = Number.POSITIVE_INFINITY;
