@@ -12,9 +12,10 @@ const defineProperty = Object[zoneSymbol('defineProperty')] || Object.defineProp
 describe('longStackTraceZone', function() {
   let log: Error[];
   let lstz: Zone;
+  let longStackTraceZoneSpec = Zone['longStackTraceZoneSpec'];
 
   beforeEach(function() {
-    lstz = Zone.current.fork(Zone['longStackTraceZoneSpec']).fork({
+    lstz = Zone.current.fork(longStackTraceZoneSpec).fork({
       name: 'long-stack-trace-zone-test',
       onHandleError: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
                       error: any): boolean => {
@@ -67,7 +68,7 @@ describe('longStackTraceZone', function() {
     });
   });
 
-  it('should produce long stack traces when reject in promise', function(done) {
+  it('should produce long stack traces when has uncaught error in promise', function(done) {
     lstz.runGuarded(function() {
       setTimeout(function() {
         setTimeout(function() {
@@ -87,6 +88,28 @@ describe('longStackTraceZone', function() {
               expect(e).toBe(null);
             }
           }, 0);
+        }, 0);
+      }, 0);
+    });
+  });
+
+  it('should produce long stack traces when has handled error in promise', function(done) {
+    Zone.root.run(() => {
+      console.log('test begin');
+    });
+    lstz.runGuarded(function() {
+      setTimeout(function() {
+        setTimeout(function() {
+          let promise = new Promise(function(resolve, reject) {
+            setTimeout(function() {
+              reject(new Error('Hello Promise'));
+            }, 0);
+          });
+          promise.catch(function(error) {
+            expect(longStackTraceZoneSpec.getLongStackTrace(error).split('Elapsed: ').length)
+                .toBe(4);
+            done();
+          });
         }, 0);
       }, 0);
     });

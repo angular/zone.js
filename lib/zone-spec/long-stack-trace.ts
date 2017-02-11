@@ -6,6 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import {zoneSymbol} from '../common/utils';
+
 const NEWLINE = '\n';
 const SEP = '  -------------  ';
 const IGNORE_FRAMES = [];
@@ -73,6 +75,18 @@ function renderLongStackTrace(frames: LongStackTrace[], stack: string): string {
 Zone['longStackTraceZoneSpec'] = <ZoneSpec>{
   name: 'long-stack-trace',
   longStackTraceLimit: 10,  // Max number of task to keep the stack trace for.
+
+  getLongStackTrace: function(error: Error): string {
+    if (!error) {
+      return undefined;
+    }
+    const task = error[zoneSymbol('currentTask')];
+    const trace = task && task.data && task.data[creationTrace];
+    if (!trace) {
+      return error.stack;
+    }
+    return renderLongStackTrace(trace, error.stack);
+  },
 
   onScheduleTask: function(
       parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task): any {
