@@ -554,17 +554,18 @@ export function patchMicroTask(
   });
 }
 
-export function findEventTask(target: any, evtName: string) {
+export function findEventTask(target: any, evtName: string): Task[] {
   const eventTasks: Task[] = target[zoneSymbol('eventTasks')];
+  const result: Task[] = [];
   if (eventTasks) {
     for (let i = 0; i < eventTasks.length; i++) {
       const eventTask = eventTasks[i];
       const data = eventTask.data;
       const eventName = data && (<any>data).eventName;
       if (eventName === evtName) {
-        return eventTask;
+        result.push(eventTask);
       }
     }
   }
-  return undefined;
+  return result;
 }

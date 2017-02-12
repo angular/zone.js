@@ -146,8 +146,8 @@ if (_global['navigator'] && _global['navigator'].geolocation) {
 // handle unhandled promise rejection
 function findPromiseRejectionHandler(evtName: string) {
   return function(e: any) {
-    const eventTask = findEventTask(_global, evtName);
-    if (eventTask) {
+    const eventTasks = findEventTask(_global, evtName);
+    eventTasks.forEach(eventTask => {
       // windows has added unhandledrejection event listener
       // trigger the event listener
       const PromiseRejectionEvent = _global['PromiseRejectionEvent'];
@@ -155,7 +155,7 @@ function findPromiseRejectionHandler(evtName: string) {
         const evt = new PromiseRejectionEvent(evtName, {promise: e.promise, reason: e.rejection});
         eventTask.invoke(evt);
       }
-    }
+    });
   };
 }
 

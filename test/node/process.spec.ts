@@ -22,7 +22,7 @@ describe('process related test', () => {
       });
     });
   });
-  it('process.nextTick should be excuted before macroTask and promise', (done) => {
+  it('process.nextTick should be executed before macroTask and promise', (done) => {
     zoneA.run(function() {
       setTimeout(() => {
         result.push('timeout');
@@ -64,13 +64,16 @@ describe('process related test', () => {
       done();
     });
   });
-  it('should support window.addEventListener(unhandledrejection)', function(done) {
+
+  it('should support process.on(unhandledRejection)', function(done) {
     const hookSpy = jasmine.createSpy('hook');
     Zone[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
     Zone.current.fork({name: 'promise'}).run(function() {
-      process.on('unhandledRejection', function(reason, promise) {
+      const listener = function(reason, promise) {
         hookSpy(promise, reason.message);
-      });
+        process.removeListener('unhandledRejection', listener);
+      };
+      process.on('unhandledRejection', listener);
       const p = new Promise((resolve, reject) => {
         throw new Error('promise error');
       });
@@ -82,19 +85,47 @@ describe('process related test', () => {
     });
   });
 
-  it('should support window.addEventListener(rejectionHandled)', function(done) {
+  it('should support process.on(rejectionHandled)', function(done) {
     Zone[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
     Zone.current.fork({name: 'promise'}).run(function() {
-      process.on('rejectionHandled', function(promise) {
+      const listener = function(promise) {
         expect(promise).toEqual(p);
+        process.removeListener('rejectionHandled', listener);
         done();
-      });
+      };
+      process.on('rejectionHandled', listener);
       const p = new Promise((resolve, reject) => {
         throw new Error('promise error');
       });
 
       setTimeout(function() {
         p.catch(reason => {});
+      }, 10);
+    });
+  });
+
+  it('should support multiple process.on(unhandledRejection)', function(done) {
+    const hookSpy = jasmine.createSpy('hook');
+    Zone[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
+    Zone.current.fork({name: 'promise'}).run(function() {
+      const listener1 = function(reason, promise) {
+        hookSpy(promise, reason.message);
+        process.removeListener('unhandledRejection', listener1);
+      };
+      const listener2 = function(reason, promise) {
+        hookSpy(promise, reason.message);
+        process.removeListener('unhandledRejection', listener2);
+      };
+      process.on('unhandledRejection', listener1);
+      process.on('unhandledRejection', listener2);
+      const p = new Promise((resolve, reject) => {
+        throw new Error('promise error');
+      });
+
+      setTimeout(function() {
+        expect(hookSpy.calls.count()).toBe(2);
+        expect(hookSpy.calls.allArgs()).toEqual([[p, 'promise error'], [p, 'promise error']]);
+        done();
       }, 10);
     });
   });

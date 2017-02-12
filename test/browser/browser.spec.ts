@@ -193,6 +193,34 @@ describe('Zone', function() {
           });
         });
       });
+
+      it('should support multiple window.addEventListener(unhandledrejection)', function(done) {
+        if (!promiseUnhandleRejectionSupport()) {
+          done();
+          return;
+        }
+        Zone[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
+        rootZone.fork({name: 'promise'}).run(function() {
+          const listener1 = (evt: any) => {
+            expect(evt.type).toEqual('unhandledrejection');
+            expect(evt.promise.constructor.name).toEqual('Promise');
+            expect(evt.reason.message).toBe('promise error');
+            window.removeEventListener('unhandledrejection', listener1);
+          };
+          const listener2 = (evt: any) => {
+            expect(evt.type).toEqual('unhandledrejection');
+            expect(evt.promise.constructor.name).toEqual('Promise');
+            expect(evt.reason.message).toBe('promise error');
+            window.removeEventListener('unhandledrejection', listener2);
+            done();
+          };
+          window.addEventListener('unhandledrejection', listener1);
+          window.addEventListener('unhandledrejection', listener2);
+          new Promise((resolve, reject) => {
+            throw new Error('promise error');
+          });
+        });
+      });
     });
   });
 });
