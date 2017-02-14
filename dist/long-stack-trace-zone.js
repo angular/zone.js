@@ -36,8 +36,8 @@ function getStacktraceWithCaughtError() {
     try {
         throw getStacktraceWithUncaughtError();
     }
-    catch (e) {
-        return e;
+    catch (error) {
+        return error;
     }
 }
 // Some implementations of exception handling don't create a stack trace if the exception
@@ -107,7 +107,7 @@ Zone['longStackTraceZoneSpec'] = {
                     stackSetSucceeded = true;
                 }
             }
-            catch (e) {
+            catch (err) {
             }
             var longStack = stackSetSucceeded ?
                 null :
@@ -116,14 +116,14 @@ Zone['longStackTraceZoneSpec'] = {
                 try {
                     stackSetSucceeded = error.stack = longStack;
                 }
-                catch (e) {
+                catch (err) {
                 }
             }
             if (!stackSetSucceeded) {
                 try {
                     stackSetSucceeded = error.longStack = longStack;
                 }
-                catch (e) {
+                catch (err) {
                 }
             }
         }
