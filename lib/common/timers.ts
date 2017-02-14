@@ -71,7 +71,8 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
       patchMethod(window, cancelName, (delegate: Function) => function(self: any, args: any[]) {
         const task: Task = typeof args[0] === 'number' ? tasksByHandleId[args[0]] : args[0];
         if (task && typeof task.type === 'string') {
-          if (task.cancelFn && task.data.isPeriodic || task.runCount === 0) {
+          if (task.state !== 'notScheduled' &&
+              (task.cancelFn && task.data.isPeriodic || task.runCount === 0)) {
             // Do not cancel already canceled functions
             task.zone.cancelTask(task);
           }

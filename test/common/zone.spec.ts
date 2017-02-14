@@ -148,7 +148,8 @@ describe('Zone', function() {
       try {
         zone.cancelTask(task);
       } catch (e) {
-        expect(e.message).toContain('already canceled');
+        expect(e.message).toContain(
+            'macroTask \'test\': can not transition to \'canceling\', expecting state \'scheduled\' or \'running\', was \'notScheduled\'.');
       }
     });
 
@@ -207,6 +208,94 @@ describe('Zone', function() {
         'microTask',
         {microTask: false, macroTask: false, eventTask: false, change: 'microTask', zone: 'child'},
         {microTask: false, macroTask: false, eventTask: false, change: 'microTask', zone: 'parent'},
+      ]);
+    });
+
+    it('should allow overriding of the Zone in task', () => {
+      expect(Zone.current).not.toBe(zone);
+      let taskZone = null;
+      const callback = () => {
+        taskZone = Zone.current;
+      };
+      const customSchedule = (task: Task) => {};
+      const customCancel = (task: Task) => {};
+      const testZone = Zone.current.fork({
+        name: 'testZone',
+        onScheduleTask: (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                            Task => {
+                              task.zone = zone;
+                              return delegate.scheduleTask(targetZone, task);
+                            }
+      });
+      const task =
+          testZone.scheduleMacroTask('test1', callback, null, customSchedule, customCancel);
+      task.zone.runTask(task);
+      expect(taskZone).toBe(zone);
+    });
+
+    it('should allow rescheduling a task on a separate zone', () => {
+      const log = [];
+      const zone = Zone.current.fork({
+        name: 'test-root',
+        onHasTask:
+            (delegate: ZoneDelegate, current: Zone, target: Zone, hasTaskState: HasTaskState) => {
+              hasTaskState['zone'] = target.name;
+              log.push(hasTaskState);
+            }
+      });
+      const left = zone.fork({name: 'left'});
+      const right = zone.fork({
+        name: 'right',
+        onScheduleTask: (delegate: ZoneDelegate, current: Zone, target: Zone, task: Task): Task => {
+          log.push(
+              {pos: 'before', method: 'onScheduleTask', zone: current.name, task: task.zone.name});
+          // Cancel the current scheduling of the task
+          task.cancelScheduleRequest();
+          // reschedule on a different zone.
+          task = left.scheduleTask(task);
+          log.push(
+              {pos: 'after', method: 'onScheduleTask', zone: current.name, task: task.zone.name});
+          return task;
+        }
+      });
+      const rchild = right.fork({
+        name: 'rchild',
+        onScheduleTask: (delegate: ZoneDelegate, current: Zone, target: Zone, task: Task): Task => {
+          log.push(
+              {pos: 'before', method: 'onScheduleTask', zone: current.name, task: task.zone.name});
+          task = delegate.scheduleTask(target, task);
+          log.push(
+              {pos: 'after', method: 'onScheduleTask', zone: current.name, task: task.zone.name});
+          expect((task as any)._zoneDelegates.map((zd) => zd.zone.name)).toEqual([
+            'left', 'test-root', 'ProxyZone'
+          ]);
+          return task;
+        }
+      });
+
+      const task = rchild.scheduleMacroTask('testTask', () => log.push('WORK'), {}, noop, noop);
+      expect(task.zone).toEqual(left);
+      log.push(task.zone.name);
+      task.invoke();
+      expect(log).toEqual([
+        {pos: 'before', method: 'onScheduleTask', zone: 'rchild', task: 'rchild'},
+        {pos: 'before', method: 'onScheduleTask', zone: 'right', task: 'rchild'},
+        {microTask: false, macroTask: true, eventTask: false, change: 'macroTask', zone: 'left'}, {
+          microTask: false,
+          macroTask: true,
+          eventTask: false,
+          change: 'macroTask',
+          zone: 'test-root'
+        },
+        {pos: 'after', method: 'onScheduleTask', zone: 'right', task: 'left'},
+        {pos: 'after', method: 'onScheduleTask', zone: 'rchild', task: 'left'}, 'left', 'WORK',
+        {microTask: false, macroTask: false, eventTask: false, change: 'macroTask', zone: 'left'}, {
+          microTask: false,
+          macroTask: false,
+          eventTask: false,
+          change: 'macroTask',
+          zone: 'test-root'
+        }
       ]);
     });
 
