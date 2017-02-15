@@ -259,21 +259,22 @@ describe('AsyncTestZoneSpec', function() {
              });
            }));
 
-  it('should fail if setInterval is used', (done) => {
+  it('should not fail if setInterval is used and canceled', (done) => {
     const testZoneSpec = new AsyncTestZoneSpec(
         () => {
-          done.fail('expected failCallback to be called');
+          done();
         },
         (err) => {
-          expect(err).toEqual('Cannot use setInterval from within an async zone test.');
-          done();
+          done.fail('async zone called failCallback unexpectedly');
         },
         'name');
 
     const atz = Zone.current.fork(testZoneSpec);
 
     atz.run(function() {
-      setInterval(() => {}, 100);
+      let id = setInterval(() => {
+        clearInterval(id);
+      }, 100);
     });
   });
 
