@@ -8,7 +8,7 @@
 /**
  * Suppress closure compiler errors about unknown 'Zone' variable
  * @fileoverview
- * @suppress {undefinedVars}
+ * @suppress {undefinedVars,globalThis}
  */
 
 // Hack since TypeScript isn't compiling this for a worker.
