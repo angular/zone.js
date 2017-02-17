@@ -73,8 +73,8 @@ function patchProcess() {
 // handle unhandled promise rejection
 function findProcessPromiseRejectionHandler(evtName: string) {
   return function(e: any) {
-    const eventTask = findEventTask(process, evtName);
-    if (eventTask) {
+    const eventTasks = findEventTask(process, evtName);
+    eventTasks.forEach(eventTask => {
       // process has added unhandledrejection event listener
       // trigger the event listener
       if (evtName === 'unhandledRejection') {
@@ -82,7 +82,7 @@ function findProcessPromiseRejectionHandler(evtName: string) {
       } else if (evtName === 'rejectionHandled') {
         eventTask.invoke(e.promise);
       }
-    }
+    });
   };
 }
 
