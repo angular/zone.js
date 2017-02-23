@@ -74,7 +74,7 @@ export function patchProperty(obj, prop) {
 
   // substr(2) cuz 'onclick' -> 'click', etc
   const eventName = prop.substr(2);
-  const _prop = '_' + prop;
+  const _prop = zoneSymbol('_' + prop);
 
   desc.set = function(fn) {
     if (this[_prop]) {
