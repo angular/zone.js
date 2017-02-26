@@ -466,9 +466,9 @@ type HasTaskState = {
 type TaskType = 'microTask'|'macroTask'|'eventTask';
 
 /**
- * Task type: `notScheduled`, `scheduling`, `scheduled`, `running`, `canceling`.
+ * Task type: `notScheduled`, `scheduling`, `scheduled`, `running`, `canceling`, 'unknown'.
  */
-type TaskState = 'notScheduled'|'scheduling'|'scheduled'|'running'|'canceling';
+type TaskState = 'notScheduled'|'scheduling'|'scheduled'|'running'|'canceling'|'unknown';
 
 
 /**
@@ -514,7 +514,7 @@ interface Task {
   type: TaskType;
 
   /**
-   * Task state: `notScheduled`, `scheduling`, `scheduled`, `running`, `canceling`.
+   * Task state: `notScheduled`, `scheduling`, `scheduled`, `running`, `canceling`, `unknown`.
    */
   state: TaskState;
 
@@ -559,7 +559,7 @@ interface Task {
    * @type {Zone} The zone which will be used to invoke the `callback`. The Zone is captured
    * at the time of Task creation.
    */
-  zone: Zone;
+  readonly zone: Zone;
 
   /**
    * Number of times the task has been executed, or -1 if canceled.
@@ -614,7 +614,7 @@ const Zone: ZoneType = (function(global: any) {
   const NO_ZONE = {name: 'NO ZONE'};
   const notScheduled: 'notScheduled' = 'notScheduled', scheduling: 'scheduling' = 'scheduling',
                       scheduled: 'scheduled' = 'scheduled', running: 'running' = 'running',
-                      canceling: 'canceling' = 'canceling';
+                      canceling: 'canceling' = 'canceling', unknown: 'unknown' = 'unknown';
   const microTask: 'microTask' = 'microTask', macroTask: 'macroTask' = 'macroTask',
                    eventTask: 'eventTask' = 'eventTask';
 
@@ -754,17 +754,17 @@ const Zone: ZoneType = (function(global: any) {
           }
         }
       } finally {
-        if (task.type == eventTask || (task.data && task.data.isPeriodic)) {
-          // if the task's state is notScheduled, then it has already been cancelled
-          // we should not reset the state to scheduled
-          if (task.state !== notScheduled) {
+        // if the task's state is notScheduled or unknown, then it has already been cancelled
+        // we should not reset the state to scheduled
+        if (task.state !== notScheduled && task.state !== unknown) {
+          if (task.type == eventTask || (task.data && task.data.isPeriodic)) {
             reEntryGuard && (task as ZoneTask<any>)._transitionTo(scheduled, running);
+          } else {
+            task.runCount = 0;
+            this._updateTaskCount(task as ZoneTask<any>, -1);
+            reEntryGuard &&
+                (task as ZoneTask<any>)._transitionTo(notScheduled, running, notScheduled);
           }
-        } else {
-          task.runCount = 0;
-          this._updateTaskCount(task as ZoneTask<any>, -1);
-          reEntryGuard &&
-              (task as ZoneTask<any>)._transitionTo(notScheduled, running, notScheduled);
         }
         _currentZoneFrame = _currentZoneFrame.parent;
         _currentTask = previousTask;
@@ -772,11 +772,32 @@ const Zone: ZoneType = (function(global: any) {
     }
 
     scheduleTask<T extends Task>(task: T): T {
+      if (task.zone && task.zone !== this) {
+        // check if the task was rescheduled, the newZone
+        // should not be the children of the original zone
+        let newZone: any = this;
+        while (newZone) {
+          if (newZone === task.zone) {
+            throw Error(`can not reschedule task to ${this
+                            .name} which is descendants of the original zone ${task.zone.name}`);
+          }
+          newZone = newZone.parent;
+        }
+      }
       (task as any as ZoneTask<any>)._transitionTo(scheduling, notScheduled);
       const zoneDelegates: ZoneDelegate[] = [];
       (task as any as ZoneTask<any>)._zoneDelegates = zoneDelegates;
-      task.zone = this;
-      task = this._zoneDelegate.scheduleTask(this, task) as T;
+      (task as any as ZoneTask<any>)._zone = this;
+      try {
+        task = this._zoneDelegate.scheduleTask(this, task) as T;
+      } catch (err) {
+        // should set task's state to unknown when scheduleTask throw error
+        // because the err may from reschedule, so the fromState maybe notScheduled
+        (task as any as ZoneTask<any>)._transitionTo(unknown, scheduling, notScheduled);
+        // TODO: @JiaLiPassion, should we check the result from handleError?
+        this._zoneDelegate.handleError(this, err);
+        throw err;
+      }
       if ((task as any as ZoneTask<any>)._zoneDelegates === zoneDelegates) {
         // we have to check because internally the delegate can reschedule the task.
         this._updateTaskCount(task as any as ZoneTask<any>, 1);
@@ -809,8 +830,19 @@ const Zone: ZoneType = (function(global: any) {
     }
 
     cancelTask(task: Task): any {
+      if (task.zone != this)
+        throw new Error(
+            'A task can only be cancelled in the zone of creation! (Creation: ' +
+            (task.zone || NO_ZONE).name + '; Execution: ' + this.name + ')');
       (task as ZoneTask<any>)._transitionTo(canceling, scheduled, running);
-      this._zoneDelegate.cancelTask(this, task);
+      try {
+        this._zoneDelegate.cancelTask(this, task);
+      } catch (err) {
+        // if error occurs when cancelTask, transit the state to unknown
+        (task as ZoneTask<any>)._transitionTo(unknown, canceling);
+        this._zoneDelegate.handleError(this, err);
+        throw err;
+      }
       this._updateTaskCount(task as ZoneTask<any>, -1);
       (task as ZoneTask<any>)._transitionTo(notScheduled, canceling);
       task.runCount = 0;
@@ -1025,14 +1057,23 @@ const Zone: ZoneType = (function(global: any) {
         value = this._cancelTaskZS.onCancelTask(
             this._cancelTaskDlgt, this._cancelTaskCurrZone, targetZone, task);
       } else {
+        if (!task.cancelFn) {
+          throw Error('Task is not cancelable');
+        }
         value = task.cancelFn(task);
       }
       return value;
     }
 
     hasTask(targetZone: Zone, isEmpty: HasTaskState) {
-      return this._hasTaskZS &&
-          this._hasTaskZS.onHasTask(this._hasTaskDlgt, this._hasTaskCurrZone, targetZone, isEmpty);
+      // hasTask should not throw error so other ZoneDelegate
+      // can still trigger hasTask callback
+      try {
+        return this._hasTaskZS &&
+            this._hasTaskZS.onHasTask(
+                this._hasTaskDlgt, this._hasTaskCurrZone, targetZone, isEmpty);
+      } catch (err) {
+      }
     }
 
     _updateTaskCount(type: TaskType, count: number) {
@@ -1064,7 +1105,7 @@ const Zone: ZoneType = (function(global: any) {
     public data: TaskData;
     public scheduleFn: (task: Task) => void;
     public cancelFn: (task: Task) => void;
-    public zone: Zone = null;
+    _zone: Zone = null;
     public runCount: number = 0;
     _zoneDelegates: ZoneDelegate[] = null;
     _state: TaskState = 'notScheduled';
@@ -1091,6 +1132,10 @@ const Zone: ZoneType = (function(global: any) {
           _numberOfNestedTaskFrames--;
         }
       };
+    }
+
+    get zone(): Zone {
+      return this._zone;
     }
 
     get state(): TaskState {

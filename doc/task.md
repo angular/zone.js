@@ -39,7 +39,7 @@ EventTask will go back to scheduled state after invoked(running state), and will
 Such as setTimeout/XMLHttpRequest, their lifecycle(state transition)
 looks like this.
 
-![onetime-MacroTask](onetime-macrotask.png "onetime MacroTask")
+![non-periodical-macroTask](non-periodical-macrotask.png "non periodical macroTask")
 
 ZoneSpec's onHasTask callback will be triggered when the first macroTask were scheduled or the 
 last macroTask was invoked or cancelled.

@@ -8,6 +8,7 @@
 
 import './common/microtasks.spec';
 import './common/zone.spec';
+import './common/task.spec';
 import './common/util.spec';
 import './common/Promise.spec';
 import './common/Error.spec';
