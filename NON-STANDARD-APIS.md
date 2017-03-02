@@ -13,6 +13,48 @@ But there are still a lot of non standard APIs are not patched by default, such 
 
 ## Currently supported non standard node APIs
 
+## Currently supported non standard common APIs
+
+* bluebird promise
+
+Browser Usage: 
+
+```
+  <script src="zone.js"></script>
+  <script src="bluebird.js"></script>
+  <script src="zone-bluebird.js"></script>
+  <script>
+  Zone[Zone['__symbol__']('bluebird')](Promise);
+  </script>
+```
+
+After those steps, window.Promise will become a ZoneAware Bluebird Promise.
+
+Node Usage:
+
+```
+require('zone-node.js');
+const Bluebird = require('bluebird');
+require('zone-bluebird.js');
+Zone[Zone['__symbol__']('bluebird')](Bluebird);
+```
+
+In NodeJS environment, you can choose to use Bluebird Promise as global.Promise
+or use ZoneAwarePromise as global.Promise.
+
+To run the jasmine test cases of bluebird
+
+```
+  npm install bluebird
+```
+
+then modify test/node_tests.ts
+remove the comment of the following line
+
+```
+//import './extra/bluebird.spec';
+```
+
 ## Usage
 
 By default, those APIs' support will not be loaded in zone.js or zone-node.js,

@@ -18,15 +18,18 @@ describe('ZoneAwareError', () => {
   });
 
   it('should support prepareStackTrace', () => {
+    const originalPrepareStackTrace = (<any>Error).prepareStackTrace;
     (<any>Error).prepareStackTrace = function(error, stack) {
       return stack;
     };
     let obj: any = new Object();
     Error.captureStackTrace(obj);
     expect(obj.stack[0].getFileName()).not.toBeUndefined();
+    (<any>Error).prepareStackTrace = originalPrepareStackTrace;
   });
 
   it('should not add additional stacktrace from Zone when use prepareStackTrace', () => {
+    const originalPrepareStackTrace = (<any>Error).prepareStackTrace;
     (<any>Error).prepareStackTrace = function(error, stack) {
       return stack;
     };
@@ -36,5 +39,6 @@ describe('ZoneAwareError', () => {
     obj.stack.forEach(function(st) {
       expect(st.getFunctionName()).not.toEqual('zoneCaptureStackTrace');
     });
+    (<any>Error).prepareStackTrace = originalPrepareStackTrace;
   });
 });
