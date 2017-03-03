@@ -21,3 +21,4 @@ import './browser/WebSocket.spec';
 import './browser/XMLHttpRequest.spec';
 import './browser/MediaQuery.spec';
 import './mocha-patch.spec';
+import './jasmine-patch.spec';

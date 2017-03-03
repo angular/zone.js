@@ -30,6 +30,8 @@ describe('jasmine', () => {
     itZone = Zone.current;
   });
 
+  it('should cope with pending tests, which have no test body');
+
   afterEach(() => {
     let zone = Zone.current;
     expect(zone.name).toEqual('ProxyZone');
