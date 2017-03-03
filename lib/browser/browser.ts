@@ -73,7 +73,9 @@ function patchXHR(window: any) {
     }
     const newListener = data.target[XHR_LISTENER] = () => {
       if (data.target.readyState === data.target.DONE) {
-        if (!data.aborted && self[XHR_SCHEDULED]) {
+        // sometimes on some browsers XMLHttpRequest will fire onreadystatechange with
+        // readyState=4 multiple times, so we need to check task state here
+        if (!data.aborted && self[XHR_SCHEDULED] && task.state === 'scheduled') {
           task.invoke();
         }
       }
