@@ -89,11 +89,11 @@
     // The `done` callback is only passed through if the function expects at least one argument.
     // Note we have to make a function with correct number of arguments, otherwise jasmine will
     // think that all functions are sync or async.
-    return (testBody.length == 0) ? function() {
-      return testProxyZone.run(testBody, this);
-    } : function(done) {
+    return testBody && (testBody.length ? function(done) {
       return testProxyZone.run(testBody, this, [done]);
-    };
+    } : function() {
+      return testProxyZone.run(testBody, this);
+    });
   }
   interface QueueRunner {
     execute(): void;
