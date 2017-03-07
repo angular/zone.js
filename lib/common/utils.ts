@@ -569,3 +569,6 @@ export function findEventTask(target: any, evtName: string): Task[] {
   }
   return result;
 }
+
+Zone[zoneSymbol('patchEventTargetMethods')] = patchEventTargetMethods;
+Zone[zoneSymbol('patchOnProperties')] = patchOnProperties;
