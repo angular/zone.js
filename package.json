@@ -48,7 +48,7 @@
     "@types/jasmine": "^2.2.33",
     "@types/node": "^6.0.38",
     "@types/systemjs": "^0.19.30",
-    "clang-format": "^1.0.46",
+    "clang-format": "1.0.46",
     "concurrently": "^2.2.0",
     "conventional-changelog": "^1.1.0",
     "es6-promise": "^3.0.2",
@@ -79,7 +79,7 @@
     "ts-loader": "^0.6.0",
     "tslint": "^4.1.1",
     "tslint-eslint-rules": "^3.1.0",
-    "typescript": "^2.0.2",
+    "typescript": "2.1.x",
     "vrsource-tslint-rules": "^4.0.0",
     "whatwg-fetch": "^2.0.1"
   }
