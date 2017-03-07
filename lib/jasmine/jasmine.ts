@@ -90,10 +90,10 @@
     // Note we have to make a function with correct number of arguments, otherwise jasmine will
     // think that all functions are sync or async.
     return testBody && (testBody.length ? function(done) {
-      return testProxyZone.run(testBody, this, [done]);
-    } : function() {
-      return testProxyZone.run(testBody, this);
-    });
+             return testProxyZone.run(testBody, this, [done]);
+           } : function() {
+             return testProxyZone.run(testBody, this);
+           });
   }
   interface QueueRunner {
     execute(): void;
