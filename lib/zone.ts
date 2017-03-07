@@ -754,7 +754,11 @@ const Zone: ZoneType = (function(global: any) {
         }
       } finally {
         if (task.type == eventTask || (task.data && task.data.isPeriodic)) {
-          reEntryGuard && (task as ZoneTask)._transitionTo(scheduled, running, notScheduled);
+          // if the task's state is notScheduled, then it has already been cancelled
+          // we should not reset the state to scheduled
+          if (task.state !== notScheduled) {
+            reEntryGuard && (task as ZoneTask)._transitionTo(scheduled, running);
+          }
         } else {
           task.runCount = 0;
           this._updateTaskCount(task as ZoneTask, -1);

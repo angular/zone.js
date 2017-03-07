@@ -299,6 +299,30 @@ describe('Zone', function() {
       ]);
     });
 
+    it('period task should not transit to scheduled state after being cancelled in running state',
+       () => {
+         const zone = Zone.current.fork({name: 'testZone'});
+
+         const task = zone.scheduleMacroTask('testPeriodTask', () => {
+           zone.cancelTask(task);
+         }, {isPeriodic: true}, () => {}, () => {});
+
+         task.invoke();
+         expect(task.state).toBe('notScheduled');
+       });
+
+    it('event task should not transit to scheduled state after being cancelled in running state',
+       () => {
+         const zone = Zone.current.fork({name: 'testZone'});
+
+         const task = zone.scheduleEventTask('testEventTask', () => {
+           zone.cancelTask(task);
+         }, null, () => {}, () => {});
+
+         task.invoke();
+         expect(task.state).toBe('notScheduled');
+       });
+
     describe('assert ZoneAwarePromise', () => {
       it('should not throw when all is OK', () => {
         Zone.assertZonePatched();
