@@ -1102,7 +1102,6 @@ const Zone: ZoneType = (function(global: any) {
           this._zoneDelegates = null;
         }
       } else {
-        debugger;
         throw new Error(
             `${this.type} '${this.source}': can not transition to '${toState
                                         }', expecting state '${fromState1}'${fromState2 ?
