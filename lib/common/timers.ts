@@ -24,8 +24,11 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
   function scheduleTask(task: Task) {
     const data = <TimerOptions>task.data;
     data.args[0] = function() {
-      task.invoke.apply(this, arguments);
-      delete tasksByHandleId[data.handleId];
+      try {
+        task.invoke.apply(this, arguments);
+      } finally {
+        delete tasksByHandleId[data.handleId];
+      }
     };
     data.handleId = setNative.apply(window, data.args);
     tasksByHandleId[data.handleId] = task;
