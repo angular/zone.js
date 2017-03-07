@@ -569,3 +569,15 @@ export function findEventTask(target: any, evtName: string): Task[] {
   }
   return result;
 }
+
+Zone[zoneSymbol('patchEventTargetMethods')] = patchEventTargetMethods;
+Zone[zoneSymbol('patchMicroTask')] = patchMicroTask;
+Zone[zoneSymbol('patchMacroTask')] = patchMacroTask;
+Zone[zoneSymbol('patchClass')] = patchClass;
+Zone[zoneSymbol('patchProperty')] = patchProperty;
+Zone[zoneSymbol('patchOnProperties')] = patchOnProperties;
+Zone[zoneSymbol('isNode')] = isNode;
+Zone[zoneSymbol('isBrowser')] = isBrowser;
+Zone[zoneSymbol('isMix')] = isMix;
+Zone[zoneSymbol('isWebWorker')] = isWebWorker;
+Zone[zoneSymbol('findEventTask')] = findEventTask;
