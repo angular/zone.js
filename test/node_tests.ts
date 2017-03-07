@@ -12,3 +12,7 @@ import './node/process.spec';
 import './node/Error.spec';
 import './node/crypto.spec';
 import './node/http.spec';
+
+// before test bluebird, must run npm install bluebird first.
+// then remove the comment below
+// import './extra/bluebird.spec';
