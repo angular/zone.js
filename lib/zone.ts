@@ -1744,6 +1744,25 @@ const Zone: ZoneType = (function(global: any) {
   ZoneAwareError[Zone.__symbol__('blacklistedStackFrames')] = blackListedStackFrames;
   ZoneAwareError[stackRewrite] = false;
 
+  // those properties need special handling
+  const specialPropertyNames = ['stackTraceLimit', 'captureStackTrace', 'prepareStackTrace'];
+  // those properties of NativeError should be set to ZoneAwareError
+  const nativeErrorProperties = Object.keys(NativeError);
+  if (nativeErrorProperties) {
+    nativeErrorProperties.forEach(prop => {
+      if (specialPropertyNames.filter(sp => sp === prop).length === 0) {
+        Object.defineProperty(ZoneAwareError, prop, {
+          get: function() {
+            return NativeError[prop];
+          },
+          set: function(value) {
+            NativeError[prop] = value;
+          }
+        });
+      }
+    });
+  }
+
   if (NativeError.hasOwnProperty('stackTraceLimit')) {
     // Extend default stack limit as we will be removing few frames.
     NativeError.stackTraceLimit = Math.max(NativeError.stackTraceLimit, 15);

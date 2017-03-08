@@ -157,6 +157,18 @@ describe('ZoneAwareError', () => {
     expect(error1.message).toEqual('test new error message');
   });
 
+  it('should copy customized NativeError properties to ZoneAwareError', () => {
+    const spy = jasmine.createSpy('errorCustomFunction');
+    const NativeError = global[Zone['__symbol__']('Error')];
+    NativeError.customFunction = function(args) {
+      spy(args);
+    };
+    expect(Error['customProperty']).toBe('customProperty');
+    expect(typeof Error['customFunction']).toBe('function');
+    Error['customFunction']('test');
+    expect(spy).toHaveBeenCalledWith('test');
+  });
+
   it('should show zone names in stack frames and remove extra frames', () => {
     const rootZone = getRootZone();
     const innerZone = rootZone.fork({name: 'InnerZone'});
