@@ -1332,6 +1332,12 @@ const Zone: ZoneType = (function(global: any) {
         const queue = promise[symbolValue];
         promise[symbolValue] = value;
 
+        // record task information in value when error occurs, so we can
+        // do some additional work such as render longStackTrace
+        if (state === REJECTED && value) {
+          value[__symbol__('currentTask')] = Zone.currentTask;
+        }
+
         for (let i = 0; i < queue.length;) {
           scheduleResolveOrReject(promise, queue[i++], queue[i++], queue[i++], queue[i++]);
         }
