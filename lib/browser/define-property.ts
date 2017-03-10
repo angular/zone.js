@@ -12,8 +12,8 @@ import {zoneSymbol} from '../common/utils';
  * things like redefining `createdCallback` on an element.
  */
 
-const _defineProperty = Object[zoneSymbol('defineProperty')] = Object.defineProperty;
-const _getOwnPropertyDescriptor = Object[zoneSymbol('getOwnPropertyDescriptor')] =
+const _defineProperty = (Object as any)[zoneSymbol('defineProperty')] = Object.defineProperty;
+const _getOwnPropertyDescriptor = (Object as any)[zoneSymbol('getOwnPropertyDescriptor')] =
     Object.getOwnPropertyDescriptor;
 const _create = Object.create;
 const unconfigurablesKey = zoneSymbol('unconfigurables');
@@ -37,7 +37,7 @@ export function propertyPatch() {
     return obj;
   };
 
-  Object.create = <any>function(obj, proto) {
+  Object.create = <any>function(obj: any, proto: any) {
     if (typeof proto === 'object' && !Object.isFrozen(proto)) {
       Object.keys(proto).forEach(function(prop) {
         proto[prop] = rewriteDescriptor(obj, prop, proto[prop]);
@@ -55,17 +55,17 @@ export function propertyPatch() {
   };
 };
 
-export function _redefineProperty(obj, prop, desc) {
+export function _redefineProperty(obj: any, prop: string, desc: any) {
   const originalConfigurableFlag = desc.configurable;
   desc = rewriteDescriptor(obj, prop, desc);
   return _tryDefineProperty(obj, prop, desc, originalConfigurableFlag);
 };
 
-function isUnconfigurable(obj, prop) {
+function isUnconfigurable(obj: any, prop: any) {
   return obj && obj[unconfigurablesKey] && obj[unconfigurablesKey][prop];
 }
 
-function rewriteDescriptor(obj, prop, desc) {
+function rewriteDescriptor(obj: any, prop: string, desc: any) {
   desc.configurable = true;
   if (!desc.configurable) {
     if (!obj[unconfigurablesKey]) {
@@ -76,7 +76,7 @@ function rewriteDescriptor(obj, prop, desc) {
   return desc;
 }
 
-function _tryDefineProperty(obj, prop, desc, originalConfigurableFlag) {
+function _tryDefineProperty(obj: any, prop: string, desc: any, originalConfigurableFlag: any) {
   try {
     return _defineProperty(obj, prop, desc);
   } catch (error) {

@@ -9,7 +9,7 @@
 import {zoneSymbol} from '../../lib/common/utils';
 
 describe('process related test', () => {
-  let zoneA, result;
+  let zoneA: Zone, result: any[];
   beforeEach(() => {
     zoneA = Zone.current.fork({name: 'zoneA'});
     result = [];
@@ -67,9 +67,9 @@ describe('process related test', () => {
 
   it('should support process.on(unhandledRejection)', function(done) {
     const hookSpy = jasmine.createSpy('hook');
-    Zone[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
+    (Zone as any)[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
     Zone.current.fork({name: 'promise'}).run(function() {
-      const listener = function(reason, promise) {
+      const listener = function(reason: any, promise: any) {
         hookSpy(promise, reason.message);
         process.removeListener('unhandledRejection', listener);
       };
@@ -86,9 +86,9 @@ describe('process related test', () => {
   });
 
   it('should support process.on(rejectionHandled)', function(done) {
-    Zone[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
+    (Zone as any)[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
     Zone.current.fork({name: 'promise'}).run(function() {
-      const listener = function(promise) {
+      const listener = function(promise: any) {
         expect(promise).toEqual(p);
         process.removeListener('rejectionHandled', listener);
         done();
@@ -106,13 +106,13 @@ describe('process related test', () => {
 
   it('should support multiple process.on(unhandledRejection)', function(done) {
     const hookSpy = jasmine.createSpy('hook');
-    Zone[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
+    (Zone as any)[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
     Zone.current.fork({name: 'promise'}).run(function() {
-      const listener1 = function(reason, promise) {
+      const listener1 = function(reason: any, promise: any) {
         hookSpy(promise, reason.message);
         process.removeListener('unhandledRejection', listener1);
       };
-      const listener2 = function(reason, promise) {
+      const listener2 = function(reason: any, promise: any) {
         hookSpy(promise, reason.message);
         process.removeListener('unhandledRejection', listener2);
       };

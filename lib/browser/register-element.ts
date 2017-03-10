@@ -19,7 +19,7 @@ export function registerElementPatch(_global: any) {
   const callbacks =
       ['createdCallback', 'attachedCallback', 'detachedCallback', 'attributeChangedCallback'];
 
-  (<any>document).registerElement = function(name, opts) {
+  (<any>document).registerElement = function(name: any, opts: any) {
     if (opts && opts.prototype) {
       callbacks.forEach(function(callback) {
         const source = 'Document.registerElement::' + callback;

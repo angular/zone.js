@@ -7,12 +7,12 @@
  */
 
 import {zoneSymbol} from '../../lib/common/utils';
-const defineProperty = Object[zoneSymbol('defineProperty')] || Object.defineProperty;
+const defineProperty = (Object as any)[zoneSymbol('defineProperty')] || Object.defineProperty;
 
 describe('longStackTraceZone', function() {
   let log: Error[];
   let lstz: Zone;
-  let longStackTraceZoneSpec = Zone['longStackTraceZoneSpec'];
+  let longStackTraceZoneSpec = (Zone as any)['longStackTraceZoneSpec'];
 
   beforeEach(function() {
     lstz = Zone.current.fork(longStackTraceZoneSpec).fork({
@@ -52,7 +52,7 @@ describe('longStackTraceZone', function() {
     defineProperty(error, 'stack', {
       configurable: false,
       get: () => 'someStackTrace',
-      set: (v) => {
+      set: (v: any) => {
         throw new Error('no writes');
       }
     });
@@ -113,5 +113,3 @@ describe('longStackTraceZone', function() {
     });
   });
 });
-
-export let __something__;

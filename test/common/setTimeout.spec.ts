@@ -7,13 +7,14 @@
  */
 
 import {isNode, zoneSymbol} from '../../lib/common/utils';
+declare const global: any;
 
 describe('setTimeout', function() {
   it('should intercept setTimeout', function(done) {
     let cancelId: any;
-    const testZone = Zone.current.fork(Zone['wtfZoneSpec']).fork({name: 'TestZone'});
+    const testZone = Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({name: 'TestZone'});
     testZone.run(() => {
-      let id;
+      let id: number;
       const timeoutFn = function() {
         expect(Zone.current.name).toEqual(('TestZone'));
         global[zoneSymbol('setTimeout')](function() {
@@ -39,7 +40,7 @@ describe('setTimeout', function() {
       id = JSON.stringify((<MacroTask>cancelId).data, function replaceTimer(key, value) {
         if (key == 'handleId' && typeof value == 'object') return value.constructor.name;
         return value;
-      });
+      }) as any as number;
       expect(wtfMock.log).toEqual([
         '# Zone:fork("<root>::ProxyZone::WTF", "TestZone")',
         '> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")',
@@ -49,7 +50,7 @@ describe('setTimeout', function() {
   });
 
   it('should allow canceling of fns registered with setTimeout', function(done) {
-    const testZone = Zone.current.fork(Zone['wtfZoneSpec']).fork({name: 'TestZone'});
+    const testZone = Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({name: 'TestZone'});
     testZone.run(() => {
       const spy = jasmine.createSpy('spy');
       const cancelId = setTimeout(spy, 0);
@@ -62,7 +63,7 @@ describe('setTimeout', function() {
   });
 
   it('should allow cancelation of fns registered with setTimeout after invocation', function(done) {
-    const testZone = Zone.current.fork(Zone['wtfZoneSpec']).fork({name: 'TestZone'});
+    const testZone = Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({name: 'TestZone'});
     testZone.run(() => {
       const spy = jasmine.createSpy('spy');
       const cancelId = setTimeout(spy, 0);
@@ -86,7 +87,7 @@ describe('setTimeout', function() {
 
   it('should allow cancelation of fns registered with setTimeout during invocation',
      function(done) {
-       const testZone = Zone.current.fork(Zone['wtfZoneSpec']).fork({name: 'TestZone'});
+       const testZone = Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({name: 'TestZone'});
        testZone.run(() => {
          const cancelId = setTimeout(function() {
            clearTimeout(cancelId);
@@ -109,7 +110,7 @@ describe('setTimeout', function() {
       return;
     }
 
-    const testZone = Zone.current.fork(Zone['wtfZoneSpec']).fork({name: 'TestZone'});
+    const testZone = Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({name: 'TestZone'});
     testZone.run(() => {
       const spy = jasmine.createSpy('spy');
       const task: Task = <any>setTimeout(spy, 0);

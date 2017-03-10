@@ -35,7 +35,7 @@ ifEnvSupports('Mocha', function() {
     });
 
     try {
-      Zone.current.scheduleMicroTask('dontallow', () => null);
+      Zone.current.scheduleMicroTask('dontallow', () => null as void);
     } catch (e) {
       throwOnAsync = true;
     }

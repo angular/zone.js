@@ -8,7 +8,7 @@
 
 import {patchMacroTask} from '../common/utils';
 
-let fs;
+let fs: any;
 try {
   fs = require('fs');
 } catch (err) {

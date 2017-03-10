@@ -12,7 +12,9 @@
  */
 
 // Hack since TypeScript isn't compiling this for a worker.
-declare const WorkerGlobalScope;
+declare const WorkerGlobalScope: any;
+declare const window: any;
+
 export const zoneSymbol: (name: string) => string = (n) => `__zone_symbol__${n}`;
 const _global = typeof window === 'object' && window || typeof self === 'object' && self || global;
 
@@ -25,7 +27,7 @@ export function bindArguments(args: any[], source: string): any[] {
   return args;
 }
 
-export function patchPrototype(prototype, fnNames) {
+export function patchPrototype(prototype: any, fnNames: string[]) {
   const source = prototype.constructor['name'];
   for (let i = 0; i < fnNames.length; i++) {
     const name = fnNames[i];
@@ -55,7 +57,7 @@ export const isMix: boolean = typeof process !== 'undefined' &&
     {}.toString.call(process) === '[object process]' && !isWebWorker &&
     !!(typeof window !== 'undefined' && window['HTMLElement']);
 
-export function patchProperty(obj, prop) {
+export function patchProperty(obj: any, prop: string) {
   const desc = Object.getOwnPropertyDescriptor(obj, prop) || {enumerable: true, configurable: true};
 
   const originalDesc = Object.getOwnPropertyDescriptor(obj, 'original' + prop);
@@ -82,7 +84,7 @@ export function patchProperty(obj, prop) {
     }
 
     if (typeof fn === 'function') {
-      const wrapFn = function(event) {
+      const wrapFn = function(event: Event) {
         let result;
         result = fn.apply(this, arguments);
 
@@ -365,8 +367,8 @@ export function makeZoneAwareListeners(fnName: string) {
       return [];
     }
     return target[EVENT_TASKS]
-        .filter(task => task.data.eventName === eventName)
-        .map(task => task.data.handler);
+        .filter((task: Task) => (task.data as any)['eventName'] === eventName)
+        .map((task: Task) => (task.data as any)['handler']);
   };
 }
 
@@ -393,7 +395,7 @@ export function patchEventTargetMethods(
 const originalInstanceKey = zoneSymbol('originalInstance');
 
 // wrap some native API on `window`
-export function patchClass(className) {
+export function patchClass(className: string) {
   const OriginalClass = _global[className];
   if (!OriginalClass) return;
 
@@ -497,7 +499,7 @@ export interface MacroTaskMeta extends TaskData {
 // TODO: @JiaLiPassion, support cancel task later if necessary
 export function patchMacroTask(
     obj: any, funcName: string, metaCreator: (self: any, args: any[]) => MacroTaskMeta) {
-  let setNative = null;
+  let setNative: Function = null;
 
   function scheduleTask(task: Task) {
     const data = <MacroTaskMeta>task.data;
@@ -530,7 +532,7 @@ export interface MicroTaskMeta extends TaskData {
 
 export function patchMicroTask(
     obj: any, funcName: string, metaCreator: (self: any, args: any[]) => MicroTaskMeta) {
-  let setNative = null;
+  let setNative: Function = null;
 
   function scheduleTask(task: Task) {
     const data = <MacroTaskMeta>task.data;
@@ -570,5 +572,5 @@ export function findEventTask(target: any, evtName: string): Task[] {
   return result;
 }
 
-Zone[zoneSymbol('patchEventTargetMethods')] = patchEventTargetMethods;
-Zone[zoneSymbol('patchOnProperties')] = patchOnProperties;
+(Zone as any)[zoneSymbol('patchEventTargetMethods')] = patchEventTargetMethods;
+(Zone as any)[zoneSymbol('patchOnProperties')] = patchOnProperties;

@@ -14,8 +14,8 @@ interface TimerOptions extends TaskData {
 }
 
 export function patchTimer(window: any, setName: string, cancelName: string, nameSuffix: string) {
-  let setNative = null;
-  let clearNative = null;
+  let setNative: Function = null;
+  let clearNative: Function = null;
   setName += nameSuffix;
   cancelName += nameSuffix;
 

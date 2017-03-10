@@ -10,6 +10,7 @@ import '../../lib/browser/webapis-media-query';
 
 import {zoneSymbol} from '../../lib/common/utils';
 import {ifEnvSupports} from '../test-util';
+declare const global: any;
 
 function supportMediaQuery() {
   const _global =
@@ -21,7 +22,7 @@ describe('test mediaQuery patch', ifEnvSupports(supportMediaQuery, () => {
            it('test whether addListener is patched', () => {
              const mqList = window.matchMedia('min-width:500px');
              if (mqList && mqList['addListener']) {
-               expect(mqList[zoneSymbol('addListener')]).toBeTruthy();
+               expect((mqList as any)[zoneSymbol('addListener')]).toBeTruthy();
              }
            });
          }));

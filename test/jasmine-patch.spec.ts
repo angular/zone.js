@@ -8,7 +8,7 @@
 
 import {ifEnvSupports} from './test-util';
 
-ifEnvSupports(() => jasmine && jasmine['Spec'], () => {
+ifEnvSupports(() => jasmine && (jasmine as any)['Spec'], () => {
   beforeEach(() => {
     // assert that each jasmine run has a task, so that drainMicrotask works properly.
     expect(Zone.currentTask).toBeTruthy();
@@ -20,7 +20,7 @@ ifEnvSupports(() => jasmine && jasmine['Spec'], () => {
     let itZone: Zone = null;
     const syncZone = Zone.current;
     try {
-      Zone.current.scheduleMicroTask('dontallow', () => null);
+      Zone.current.scheduleMicroTask('dontallow', () => null as void);
     } catch (e) {
       throwOnAsync = true;
     }

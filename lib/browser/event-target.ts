@@ -15,7 +15,7 @@ const NO_EVENT_TARGET =
         .split(',');
 const EVENT_TARGET = 'EventTarget';
 
-export function eventTargetPatch(_global) {
+export function eventTargetPatch(_global: any) {
   let apis = [];
   const isWtf = _global['wtf'];
   if (isWtf) {

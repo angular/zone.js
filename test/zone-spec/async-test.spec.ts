@@ -10,8 +10,8 @@ import '../../lib/zone-spec/async-test';
 import {ifEnvSupports} from '../test-util';
 
 describe('AsyncTestZoneSpec', function() {
-  let log;
-  const AsyncTestZoneSpec = Zone['AsyncTestZoneSpec'];
+  let log: string[];
+  const AsyncTestZoneSpec = (Zone as any)['AsyncTestZoneSpec'];
 
   function finishCallback() {
     log.push('finish');
@@ -134,7 +134,7 @@ describe('AsyncTestZoneSpec', function() {
   });
 
   describe('event tasks', ifEnvSupports('document', () => {
-             let button;
+             let button: HTMLButtonElement;
              beforeEach(function() {
                button = document.createElement('button');
                document.body.appendChild(button);
@@ -202,7 +202,7 @@ describe('AsyncTestZoneSpec', function() {
 
   describe('XHRs', ifEnvSupports('XMLHttpRequest', () => {
              it('should wait for XHRs to complete', function(done) {
-               let req;
+               let req: XMLHttpRequest;
                let finished = false;
 
                const testZoneSpec = new AsyncTestZoneSpec(
@@ -210,7 +210,7 @@ describe('AsyncTestZoneSpec', function() {
                      expect(finished).toBe(true);
                      done();
                    },
-                   (err) => {
+                   (err: Error) => {
                      done.fail('async zone called failCallback unexpectedly');
                    },
                    'name');
@@ -232,13 +232,13 @@ describe('AsyncTestZoneSpec', function() {
              });
 
              it('should fail if an xhr fails', function(done) {
-               let req;
+               let req: XMLHttpRequest;
 
                const testZoneSpec = new AsyncTestZoneSpec(
                    () => {
                      done.fail('expected failCallback to be called');
                    },
-                   (err) => {
+                   (err: Error) => {
                      expect(err.message).toEqual('bad url failure');
                      done();
                    },
@@ -264,7 +264,7 @@ describe('AsyncTestZoneSpec', function() {
         () => {
           done();
         },
-        (err) => {
+        (err: Error) => {
           done.fail('async zone called failCallback unexpectedly');
         },
         'name');
@@ -283,7 +283,7 @@ describe('AsyncTestZoneSpec', function() {
         () => {
           done.fail('expected failCallback to be called');
         },
-        (err) => {
+        (err: Error) => {
           expect(err.message).toEqual('my error');
           done();
         },
@@ -303,7 +303,7 @@ describe('AsyncTestZoneSpec', function() {
         () => {
           done.fail('expected failCallback to be called');
         },
-        (err) => {
+        (err: Error) => {
           expect(err.message).toEqual('Uncaught (in promise): my reason');
           done();
         },
@@ -317,5 +317,3 @@ describe('AsyncTestZoneSpec', function() {
 
   });
 });
-
-export let __something__;

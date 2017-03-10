@@ -19,8 +19,8 @@
     throw new Error('Missing Zone.js');
   }
 
-  const ProxyZoneSpec = Zone['ProxyZoneSpec'];
-  const SyncTestZoneSpec = Zone['SyncTestZoneSpec'];
+  const ProxyZoneSpec = (Zone as any)['ProxyZoneSpec'];
+  const SyncTestZoneSpec = (Zone as any)['SyncTestZoneSpec'];
 
   if (!ProxyZoneSpec) {
     throw new Error('Missing ProxyZoneSpec');
@@ -34,7 +34,7 @@
 
   const rootZone = Zone.current;
   const syncZone = rootZone.fork(new SyncTestZoneSpec('Mocha.describe'));
-  let testZone = null;
+  let testZone: Zone = null;
   const suiteZone = rootZone.fork(new ProxyZoneSpec());
 
   const mochaOriginal = {
@@ -68,7 +68,7 @@
   }
 
   function wrapDescribeInZone(args: IArguments): any[] {
-    const syncTest: any = function(fn) {
+    const syncTest: any = function(fn: Function) {
       return function() {
         return syncZone.run(fn, this, arguments as any as any[]);
       };
@@ -78,13 +78,13 @@
   }
 
   function wrapTestInZone(args: IArguments): any[] {
-    const asyncTest = function(fn) {
-      return function(done) {
+    const asyncTest = function(fn: Function) {
+      return function(done: Function) {
         return testZone.run(fn, this, [done]);
       };
     };
 
-    const syncTest: any = function(fn) {
+    const syncTest: any = function(fn: Function) {
       return function() {
         return testZone.run(fn, this);
       };
@@ -94,20 +94,20 @@
   }
 
   function wrapSuiteInZone(args: IArguments): any[] {
-    const asyncTest = function(fn) {
-      return function(done) {
+    const asyncTest = function(fn: Function) {
+      return function(done: Function) {
         return suiteZone.run(fn, this, [done]);
       };
     };
 
-    const syncTest: any = function(fn) {
+    const syncTest: any = function(fn: Function) {
       return function() {
         return suiteZone.run(fn, this);
       };
     };
 
     return modifyArguments(args, syncTest, asyncTest);
-  };
+  }
 
   context.describe = context.suite = Mocha.describe = function() {
     return mochaOriginal.describe.apply(this, wrapDescribeInZone(arguments));
@@ -150,14 +150,14 @@
   };
 
   ((originalRunTest, originalRun) => {
-    Mocha.Runner.prototype.runTest = function(fn) {
+    Mocha.Runner.prototype.runTest = function(fn: Function) {
       Zone.current.scheduleMicroTask('mocha.forceTask', () => {
         originalRunTest.call(this, fn);
       });
     };
 
-    Mocha.Runner.prototype.run = function(fn) {
-      this.on('test', (e) => {
+    Mocha.Runner.prototype.run = function(fn: Function) {
+      this.on('test', (e: any) => {
         if (Zone.current !== rootZone) {
           throw new Error('Unexpected zone: ' + Zone.current.name);
         }

@@ -75,4 +75,4 @@ class AsyncTestZoneSpec implements ZoneSpec {
 
 // Export the class so that new instances can be created with proper
 // constructor params.
-Zone['AsyncTestZoneSpec'] = AsyncTestZoneSpec;
+(Zone as any)['AsyncTestZoneSpec'] = AsyncTestZoneSpec;

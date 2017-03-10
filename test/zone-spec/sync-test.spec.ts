@@ -10,9 +10,9 @@ import '../../lib/zone-spec/sync-test';
 import {ifEnvSupports} from '../test-util';
 
 describe('SyncTestZoneSpec', () => {
-  const SyncTestZoneSpec = Zone['SyncTestZoneSpec'];
+  const SyncTestZoneSpec = (Zone as any)['SyncTestZoneSpec'];
   let testZoneSpec;
-  let syncTestZone;
+  let syncTestZone: Zone;
 
   beforeEach(() => {
     testZoneSpec = new SyncTestZoneSpec('name');
@@ -58,5 +58,3 @@ describe('SyncTestZoneSpec', () => {
              });
            }));
 });
-
-export let __something__;

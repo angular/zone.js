@@ -10,6 +10,7 @@ import '../../lib/browser/webapis-notification';
 
 import {zoneSymbol} from '../../lib/common/utils';
 import {ifEnvSupports} from '../test-util';
+declare const window: any;
 
 function notificationSupport() {
   const desc = window['Notification'] &&

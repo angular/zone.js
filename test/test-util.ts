@@ -21,7 +21,8 @@
  *
  *  ifEnvSupports(supportsOnClick, function() { ... });
  */
-export function ifEnvSupports(test, block) {
+declare const global: any;
+export function ifEnvSupports(test: any, block: Function) {
   return function() {
     const message = (test.message || test.name || test);
     if (typeof test === 'string' ? !!global[test] : test()) {

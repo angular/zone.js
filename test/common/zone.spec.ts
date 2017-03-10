@@ -121,12 +121,12 @@ describe('Zone', function() {
 
   describe('task', () => {
     function noop() {}
-    let log;
+    let log: any[];
     const zone: Zone = Zone.current.fork({
       name: 'parent',
       onHasTask: (delegate: ZoneDelegate, current: Zone, target: Zone, hasTaskState: HasTaskState):
                      void => {
-                       hasTaskState['zone'] = target.name;
+                       (hasTaskState as any)['zone'] = target.name;
                        log.push(hasTaskState);
                      },
       onScheduleTask: (delegate: ZoneDelegate, current: Zone, target: Zone, task: Task) => {
@@ -232,12 +232,12 @@ describe('Zone', function() {
     });
 
     it('should allow rescheduling a task on a separate zone', () => {
-      const log = [];
+      const log: any[] = [];
       const zone = Zone.current.fork({
         name: 'test-root',
         onHasTask:
             (delegate: ZoneDelegate, current: Zone, target: Zone, hasTaskState: HasTaskState) => {
-              hasTaskState['zone'] = target.name;
+              (hasTaskState as any)['zone'] = target.name;
               log.push(hasTaskState);
             }
       });
@@ -264,7 +264,7 @@ describe('Zone', function() {
           task = delegate.scheduleTask(target, task);
           log.push(
               {pos: 'after', method: 'onScheduleTask', zone: current.name, task: task.zone.name});
-          expect((task as any)._zoneDelegates.map((zd) => zd.zone.name)).toEqual([
+          expect((task as any)._zoneDelegates.map((zd: ZoneDelegate) => zd.zone.name)).toEqual([
             'left', 'test-root', 'ProxyZone'
           ]);
           return task;
@@ -344,7 +344,7 @@ describe('Zone', function() {
   });
 
   describe('invoking tasks', () => {
-    let log;
+    let log: string[];
     function noop() {}
 
 

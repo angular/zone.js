@@ -7,9 +7,11 @@
  */
 
 import {ifEnvSupports} from '../test-util';
+declare const global: any;
+
 
 describe('MutationObserver', ifEnvSupports('MutationObserver', function() {
-           let elt;
+           let elt: HTMLDivElement;
            const testZone = Zone.current.fork({name: 'test'});
 
            beforeEach(function() {
@@ -32,7 +34,7 @@ describe('MutationObserver', ifEnvSupports('MutationObserver', function() {
            });
 
            it('should only dequeue upon disconnect if something is observed', function() {
-             let ob;
+             let ob: MutationObserver;
              let flag = false;
              const elt = document.createElement('div');
              const childZone = Zone.current.fork({
@@ -55,7 +57,7 @@ describe('WebKitMutationObserver', ifEnvSupports('WebKitMutationObserver', funct
            const testZone = Zone.current.fork({name: 'test'});
 
            it('should run observers within the zone', function(done) {
-             let elt;
+             let elt: HTMLDivElement;
 
              testZone.run(function() {
                elt = document.createElement('div');

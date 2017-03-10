@@ -8,24 +8,24 @@
 
 'use strict';
 (() => {
-  const __extends = function(d, b) {
+  const __extends = function(d: any, b: any) {
     for (const p in b)
       if (b.hasOwnProperty(p)) d[p] = b[p];
     function __() {
       this.constructor = d;
     }
-    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new __());
+    d.prototype = b === null ? Object.create(b) : (__.prototype = b.prototype, new (__ as any)());
   };
   // Patch jasmine's describe/it/beforeEach/afterEach functions so test code always runs
   // in a testZone (ProxyZone). (See: angular/zone.js#91 & angular/angular#10503)
   if (!Zone) throw new Error('Missing: zone.js');
   if (typeof jasmine == 'undefined') throw new Error('Missing: jasmine.js');
-  if (jasmine['__zone_patch__'])
+  if ((jasmine as any)['__zone_patch__'])
     throw new Error('\'jasmine\' has already been patched with \'Zone\'.');
-  jasmine['__zone_patch__'] = true;
+  (jasmine as any)['__zone_patch__'] = true;
 
-  const SyncTestZoneSpec: {new (name: string): ZoneSpec} = Zone['SyncTestZoneSpec'];
-  const ProxyZoneSpec: {new (): ZoneSpec} = Zone['ProxyZoneSpec'];
+  const SyncTestZoneSpec: {new (name: string): ZoneSpec} = (Zone as any)['SyncTestZoneSpec'];
+  const ProxyZoneSpec: {new (): ZoneSpec} = (Zone as any)['ProxyZoneSpec'];
   if (!SyncTestZoneSpec) throw new Error('Missing: SyncTestZoneSpec');
   if (!ProxyZoneSpec) throw new Error('Missing: ProxyZoneSpec');
 
@@ -47,7 +47,7 @@
   let testProxyZone: Zone = null;
 
   // Monkey patch all of the jasmine DSL so that each function runs in appropriate zone.
-  const jasmineEnv = jasmine.getEnv();
+  const jasmineEnv: any = jasmine.getEnv();
   ['describe', 'xdescribe', 'fdescribe'].forEach((methodName) => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
     jasmineEnv[methodName] = function(description: string, specDefinitions: Function) {
@@ -89,7 +89,7 @@
     // The `done` callback is only passed through if the function expects at least one argument.
     // Note we have to make a function with correct number of arguments, otherwise jasmine will
     // think that all functions are sync or async.
-    return testBody && (testBody.length ? function(done) {
+    return testBody && (testBody.length ? function(done: Function) {
              return testProxyZone.run(testBody, this, [done]);
            } : function() {
              return testProxyZone.run(testBody, this);
@@ -101,8 +101,8 @@
   interface QueueRunnerAttrs {
     queueableFns: {fn: Function}[];
     onComplete: () => void;
-    clearStack: (fn) => void;
-    onException: (error) => void;
+    clearStack: (fn: any) => void;
+    onException: (error: any) => void;
     catchException: () => boolean;
     userContext: any;
     timeout: {setTimeout: Function, clearTimeout: Function};
@@ -112,7 +112,7 @@
   const QueueRunner = (jasmine as any).QueueRunner as {new (attrs: QueueRunnerAttrs): QueueRunner};
   (jasmine as any).QueueRunner = (function(_super) {
     __extends(ZoneQueueRunner, _super);
-    function ZoneQueueRunner(attrs) {
+    function ZoneQueueRunner(attrs: {onComplete: Function}) {
       attrs.onComplete = ((fn) => () => {
         // All functions are done, clear the test zone.
         testProxyZone = null;

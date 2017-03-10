@@ -13,23 +13,25 @@
     if (!_global['MediaQueryList']) {
       return;
     }
-    const patchEventTargetMethods = Zone[Zone['__symbol__']('patchEventTargetMethods')];
+    const patchEventTargetMethods =
+        (Zone as any)[(Zone as any)['__symbol__']('patchEventTargetMethods')];
     patchEventTargetMethods(
-        _global['MediaQueryList'].prototype, 'addListener', 'removeListener', (self, args) => {
+        _global['MediaQueryList'].prototype, 'addListener', 'removeListener',
+        (self: any, args: any[]) => {
           return {
             useCapturing: false,
             eventName: 'mediaQuery',
             handler: args[0],
             target: self || _global,
             name: 'mediaQuery',
-            invokeAddFunc: function(addFnSymbol: any, delegate) {
+            invokeAddFunc: function(addFnSymbol: any, delegate: any) {
               if (delegate && (<Task>delegate).invoke) {
                 return this.target[addFnSymbol]((<Task>delegate).invoke);
               } else {
                 return this.target[addFnSymbol](delegate);
               }
             },
-            invokeRemoveFunc: function(removeFnSymbol: any, delegate) {
+            invokeRemoveFunc: function(removeFnSymbol: any, delegate: any) {
               if (delegate && (<Task>delegate).invoke) {
                 return this.target[removeFnSymbol]((<Task>delegate).invoke);
               } else {

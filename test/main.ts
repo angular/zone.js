@@ -17,7 +17,7 @@ __karma__.loaded = function() {};
 
 System.config({defaultJSExtensions: true});
 let browserPatchedPromise = null;
-if (window[Zone['__symbol__']('setTimeout')]) {
+if ((window as any)[(Zone as any)['__symbol__']('setTimeout')]) {
   browserPatchedPromise = Promise.resolve('browserPatched');
 } else {
   // this means that Zone has not patched the browser yet, which means we must be running in

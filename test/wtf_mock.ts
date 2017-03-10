@@ -8,8 +8,8 @@
 
 'use strict';
 (function(global) {
-  const log = [];
-  const logArgs = [];
+  const log: string[] = [];
+  const logArgs: any[][] = [];
   const wtfMock = {
     log: log,
     logArgs: logArgs,
@@ -18,10 +18,10 @@
       logArgs.length = 0;
     },
     trace: {
-      leaveScope: function(scope, returnValue) {
+      leaveScope: function(scope: any, returnValue: any) {
         return scope(returnValue);
       },
-      beginTimeRange: function(type, action) {
+      beginTimeRange: function(type: any, action: any) {
         logArgs.push([]);
         log.push('>>> ' + type + '[' + action + ']');
         return function() {
@@ -29,11 +29,11 @@
           log.push('<<< ' + type);
         };
       },
-      endTimeRange: function(range) {
+      endTimeRange: function(range: Function) {
         range();
       },
       events: {
-        createScope: function(signature, flags) {
+        createScope: function(signature: string, flags: any) {
           const parts = signature.split('(');
           const name = parts[0];
           return function scopeFn() {
@@ -46,14 +46,14 @@
             }
             log.push('> ' + name + '(' + args.join(', ') + ')');
             logArgs.push(args);
-            return function(retValue) {
+            return function(retValue: any) {
               log.push('< ' + name + (retValue == undefined ? '' : ' => ' + retValue));
               logArgs.push(retValue);
               return retValue;
             };
           };
         },
-        createInstance: function(signature, flags) {
+        createInstance: function(signature: string, flags: any) {
           const parts = signature.split('(');
           const name = parts[0];
           return function eventFn() {
@@ -72,7 +72,7 @@
     }
   };
 
-  function __stringify(obj) {
+  function __stringify(obj: any): string {
     let str = typeof obj == 'string' || !obj ? JSON.stringify(obj) : obj.toString();
     if (str == '[object Arguments]') {
       str = JSON.stringify(Array.prototype.slice.call(obj));

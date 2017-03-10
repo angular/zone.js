@@ -16,9 +16,9 @@ export function apply(_global: any) {
   if (!(<any>_global).EventTarget) {
     patchEventTargetMethods(WS.prototype);
   }
-  (<any>_global).WebSocket = function(a, b) {
+  (<any>_global).WebSocket = function(a: any, b: any) {
     const socket = arguments.length > 1 ? new WS(a, b) : new WS(a);
-    let proxySocket;
+    let proxySocket: any;
 
     // Safari 7.0 has non-configurable own 'onmessage' and friends properties on the socket instance
     const onmessageDesc = Object.getOwnPropertyDescriptor(socket, 'onmessage');

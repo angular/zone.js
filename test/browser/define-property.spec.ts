@@ -9,7 +9,7 @@
 describe('defineProperty', function() {
 
   it('should not throw when defining length on an array', function() {
-    const someArray = [];
+    const someArray: any[] = [];
     expect(() => Object.defineProperty(someArray, 'length', {value: 2, writable: false}))
         .not.toThrow();
   });

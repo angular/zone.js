@@ -36,7 +36,7 @@ patchProcess();
 handleUnhandledPromiseRejection();
 
 // Crypto
-let crypto;
+let crypto: any;
 try {
   crypto = require('crypto');
 } catch (err) {
@@ -87,9 +87,9 @@ function findProcessPromiseRejectionHandler(evtName: string) {
 }
 
 function handleUnhandledPromiseRejection() {
-  Zone[zoneSymbol('unhandledPromiseRejectionHandler')] =
+  (Zone as any)[zoneSymbol('unhandledPromiseRejectionHandler')] =
       findProcessPromiseRejectionHandler('unhandledRejection');
 
-  Zone[zoneSymbol('rejectionHandledHandler')] =
+  (Zone as any)[zoneSymbol('rejectionHandledHandler')] =
       findProcessPromiseRejectionHandler('rejectionHandled');
 }
