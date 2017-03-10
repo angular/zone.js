@@ -27,18 +27,18 @@ function getStacktraceWithUncaughtError(): Error {
 function getStacktraceWithCaughtError(): Error {
   try {
     throw getStacktraceWithUncaughtError();
-  } catch (error) {
-    return error;
+  } catch (err) {
+    return err;
   }
 }
 
 // Some implementations of exception handling don't create a stack trace if the exception
 // isn't thrown, however it's faster not to actually throw the exception.
 const error = getStacktraceWithUncaughtError();
-const coughtError = getStacktraceWithCaughtError();
+const caughtError = getStacktraceWithCaughtError();
 const getStacktrace = error.stack ?
     getStacktraceWithUncaughtError :
-    (coughtError.stack ? getStacktraceWithCaughtError : getStacktraceWithUncaughtError);
+    (caughtError.stack ? getStacktraceWithCaughtError : getStacktraceWithUncaughtError);
 
 function getFrames(error: Error): string[] {
   return error.stack ? error.stack.split(NEWLINE) : [];
@@ -77,6 +77,19 @@ function renderLongStackTrace(frames: LongStackTrace[], stack: string): string {
 Zone['longStackTraceZoneSpec'] = <ZoneSpec>{
   name: 'long-stack-trace',
   longStackTraceLimit: 10,  // Max number of task to keep the stack trace for.
+  // add a getLongStackTrace method in spec to
+  // handle handled reject promise error.
+  getLongStackTrace: function(error: Error): string {
+    if (!error) {
+      return undefined;
+    }
+    const task = error[Zone['__symbol__']('currentTask')];
+    const trace = task && task.data && task.data[creationTrace];
+    if (!trace) {
+      return error.stack;
+    }
+    return renderLongStackTrace(trace, error.stack);
+  },
 
   onScheduleTask: function(
       parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task): any {
