@@ -7,11 +7,12 @@
  */
 
 import '../lib/mocha/mocha';
+declare const global: any;
 
-((context) => {
+((context: any) => {
   context['jasmine'] = global['jasmine'] || {};
-  context['jasmine'].createSpy = function(spyName) {
-    let spy: any = function(...params) {
+  context['jasmine'].createSpy = function(spyName: string) {
+    let spy: any = function(...params: any[]) {
       spy.countCall++;
       spy.callArgs = params;
     };
@@ -21,7 +22,7 @@ import '../lib/mocha/mocha';
     return spy;
   };
 
-  function eq(a, b) {
+  function eq(a: any, b: any) {
     if (a === b) {
       return true;
     } else if (Array.isArray(a) && Array.isArray(b)) {
@@ -63,14 +64,14 @@ import '../lib/mocha/mocha';
     return false;
   }
 
-  context['expect'] = function(expected) {
+  context['expect'] = function(expected: any) {
     return {
-      toBe: function(actual) {
+      toBe: function(actual: any) {
         if (expected !== actual) {
           throw new Error(`Expected ${expected} to be ${actual}`);
         }
       },
-      toEqual: function(actual) {
+      toEqual: function(actual: any) {
         if (!eq(expected, actual)) {
           throw new Error(`Expected ${expected} to be ${actual}`);
         }
@@ -89,7 +90,7 @@ import '../lib/mocha/mocha';
 
         throw new Error(`Expected ${expected} to throw`);
       },
-      toThrowError: function(errorToBeThrow) {
+      toThrowError: function(errorToBeThrow: any) {
         try {
           expected();
         } catch (error) {
@@ -103,7 +104,7 @@ import '../lib/mocha/mocha';
           throw new Error(`Expected ${expected} to be truthy`);
         }
       },
-      toContain: function(actual) {
+      toContain: function(actual: any) {
         if (expected.indexOf(actual) === -1) {
           throw new Error(`Expected ${expected} to contain ${actual}`);
         }
@@ -113,19 +114,19 @@ import '../lib/mocha/mocha';
           throw new Error(`Expected ${expected} to been called`);
         }
       },
-      toHaveBeenCalledWith: function(...params) {
+      toHaveBeenCalledWith: function(...params: any[]) {
         if (!eq(expected.callArgs, params)) {
           throw new Error(`Expected ${expected} to been called with ${expected.callArgs
                           }, called with: ${params}`);
         }
       },
-      toMatch: function(actual) {
+      toMatch: function(actual: any) {
         if (!new RegExp(actual).test(expected)) {
           throw new Error(`Expected ${expected} to match ${actual}`);
         }
       },
       not: {
-        toBe: function(actual) {
+        toBe: function(actual: any) {
           if (expected === actual) {
             throw new Error(`Expected ${expected} not to be ${actual}`);
           }
@@ -155,7 +156,7 @@ import '../lib/mocha/mocha';
           }
 
         },
-        toHaveBeenCalledWith: function(params) {
+        toHaveBeenCalledWith: function(params: any[]) {
           if (!eq(expected.callArgs, params)) {
             throw new Error(`Expected ${expected} to not been called with ${params}`);
           }

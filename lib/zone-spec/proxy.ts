@@ -136,4 +136,4 @@ class ProxyZoneSpec implements ZoneSpec {
 
 // Export the class so that new instances can be created with proper
 // constructor params.
-Zone['ProxyZoneSpec'] = ProxyZoneSpec;
+(Zone as any)['ProxyZoneSpec'] = ProxyZoneSpec;

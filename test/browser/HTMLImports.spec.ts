@@ -17,7 +17,7 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function() {
            const testZone = Zone.current.fork({name: 'test'});
 
            it('should work with addEventListener', function(done) {
-             let link;
+             let link: HTMLLinkElement;
 
              testZone.run(function() {
                link = document.createElement('link');
@@ -43,7 +43,7 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function() {
 
            ifEnvSupports(supportsOnEvents, function() {
              it('should work with onerror', function(done) {
-               let link;
+               let link: HTMLLinkElement;
 
                testZone.run(function() {
                  link = document.createElement('link');
@@ -60,7 +60,7 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function() {
              });
 
              it('should work with onload', function(done) {
-               let link;
+               let link: HTMLLinkElement;
 
                testZone.run(function() {
                  link = document.createElement('link');

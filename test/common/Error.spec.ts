@@ -78,7 +78,7 @@ class TestMessageError extends WrappedError {
 describe('ZoneAwareError', () => {
   // If the environment does not supports stack rewrites, then these tests will fail
   // and there is no point in running them.
-  if (!Error['stackRewrite']) return;
+  if (!(Error as any)['stackRewrite']) return;
 
   it('should keep error prototype chain correctly', () => {
     class MyError extends Error {}
@@ -159,13 +159,13 @@ describe('ZoneAwareError', () => {
 
   it('should copy customized NativeError properties to ZoneAwareError', () => {
     const spy = jasmine.createSpy('errorCustomFunction');
-    const NativeError = global[Zone['__symbol__']('Error')];
-    NativeError.customFunction = function(args) {
+    const NativeError = (global as any)[(Zone as any)['__symbol__']('Error')];
+    NativeError.customFunction = function(args: any) {
       spy(args);
     };
-    expect(Error['customProperty']).toBe('customProperty');
-    expect(typeof Error['customFunction']).toBe('function');
-    Error['customFunction']('test');
+    expect((Error as any)['customProperty']).toBe('customProperty');
+    expect(typeof(Error as any)['customFunction']).toBe('function');
+    (Error as any)['customFunction']('test');
     expect(spy).toHaveBeenCalledWith('test');
   });
 

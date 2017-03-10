@@ -9,7 +9,8 @@
 import {EventEmitter} from 'events';
 
 describe('nodejs EventEmitter', () => {
-  let zone, zoneA, zoneB, emitter, expectZoneACount, zoneResults;
+  let zone: Zone, zoneA: Zone, zoneB: Zone, emitter: EventEmitter, expectZoneACount: number,
+      zoneResults: string[];
   beforeEach(() => {
     zone = Zone.current;
     zoneA = zone.fork({name: 'A'});
@@ -21,7 +22,7 @@ describe('nodejs EventEmitter', () => {
     zoneResults = [];
   });
 
-  function expectZoneA(value) {
+  function expectZoneA(value: string) {
     expectZoneACount++;
     expect(Zone.current).toBe(zoneA);
     expect(value).toBe('test value');
@@ -130,10 +131,10 @@ describe('nodejs EventEmitter', () => {
   });
   it('should trigger removeListener when remove listener', () => {
     zoneA.run(() => {
-      emitter.on('removeListener', function(type, handler) {
+      emitter.on('removeListener', function(type: string, handler: any) {
         zoneResults.push('remove' + type);
       });
-      emitter.on('newListener', function(type, handler) {
+      emitter.on('newListener', function(type: string, handler: any) {
         zoneResults.push('new' + type);
       });
       emitter.on('test', shouldNotRun);
@@ -143,7 +144,7 @@ describe('nodejs EventEmitter', () => {
   });
   it('should trigger removeListener when remove all listeners with eventname ', () => {
     zoneA.run(() => {
-      emitter.on('removeListener', function(type, handler) {
+      emitter.on('removeListener', function(type: string, handler: any) {
         zoneResults.push('remove' + type);
       });
       emitter.on('test', shouldNotRun);
@@ -155,7 +156,7 @@ describe('nodejs EventEmitter', () => {
   });
   it('should trigger removeListener when remove all listeners without eventname', () => {
     zoneA.run(() => {
-      emitter.on('removeListener', function(type, handler) {
+      emitter.on('removeListener', function(type: string, handler: any) {
         zoneResults.push('remove' + type);
       });
       emitter.on('test', shouldNotRun);

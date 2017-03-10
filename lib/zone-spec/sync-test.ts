@@ -32,4 +32,4 @@ class SyncTestZoneSpec implements ZoneSpec {
 
 // Export the class so that new instances can be created with proper
 // constructor params.
-Zone['SyncTestZoneSpec'] = SyncTestZoneSpec;
+(Zone as any)['SyncTestZoneSpec'] = SyncTestZoneSpec;

@@ -7,6 +7,7 @@
  */
 
 import {ifEnvSupports} from '../test-util';
+declare const window: any;
 
 describe('requestAnimationFrame', function() {
   const functions =
@@ -28,7 +29,7 @@ describe('requestAnimationFrame', function() {
                    let frames = 0;
                    let previousTimeStamp = 0;
 
-                   function frameCallback(timestamp) {
+                   function frameCallback(timestamp: number) {
                      expect(timestamp).toMatch(/^[\d.]+$/);
                      // expect previous <= current
                      expect(previousTimeStamp).not.toBeGreaterThan(timestamp);

@@ -8,8 +8,10 @@
 
 import '../../lib/zone-spec/task-tracking';
 
+declare const global: any;
+
 describe('TaskTrackingZone', function() {
-  let _TaskTrackingZoneSpec: typeof TaskTrackingZoneSpec = Zone['TaskTrackingZoneSpec'];
+  let _TaskTrackingZoneSpec: typeof TaskTrackingZoneSpec = (Zone as any)['TaskTrackingZoneSpec'];
   let taskTrackingZoneSpec: TaskTrackingZoneSpec = null;
   let taskTrackingZone: Zone;
 
@@ -64,12 +66,10 @@ describe('TaskTrackingZone', function() {
 
   it('should capture task creation stacktrace', (done) => {
     taskTrackingZone.run(() => {
-      const task = setTimeout(() => {
+      const task: any = setTimeout(() => {
         done();
       }) as any as Task;
       expect(task['creationLocation']).toBeTruthy();
     });
   });
 });
-
-export let __something__;

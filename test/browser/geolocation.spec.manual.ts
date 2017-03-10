@@ -27,7 +27,7 @@ describe('Geolocation', ifEnvSupports(supportsGeolocation, function() {
 
            it('should work for watchPosition', function(done) {
              testZone.run(function() {
-               let watchId;
+               let watchId: number;
                watchId = navigator.geolocation.watchPosition(function(pos) {
                  expect(Zone.current).toBe(testZone);
                  navigator.geolocation.clearWatch(watchId);

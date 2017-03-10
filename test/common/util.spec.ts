@@ -14,17 +14,19 @@ describe('utils', function() {
     it('should patch target where the method is defined', () => {
       let args;
       let self;
-      const Type = function() {};
-      const method = Type.prototype.method = function(..._args) {
-        args = _args;
-        self = this;
-        return 'OK';
-      };
-      let delegateMethod;
-      let delegateSymbol;
+      class Type {
+        method(..._args: any[]) {
+          args = _args;
+          self = this;
+          return 'OK';
+        }
+      }
+      const method = Type.prototype.method;
+      let delegateMethod: Function;
+      let delegateSymbol: string;
 
       const instance = new Type();
-      expect(patchMethod(instance, 'method', (delegate, symbol, name) => {
+      expect(patchMethod(instance, 'method', (delegate: Function, symbol: string, name: string) => {
         expect(name).toEqual('method');
         delegateMethod = delegate;
         delegateSymbol = symbol;
@@ -38,7 +40,7 @@ describe('utils', function() {
       expect(self).toBe(instance);
       expect(delegateMethod).toBe(method);
       expect(delegateSymbol).toEqual(zoneSymbol('method'));
-      expect(Type.prototype[delegateSymbol]).toBe(method);
+      expect((Type.prototype as any)[delegateSymbol]).toBe(method);
     });
 
     it('should not double patch', () => {
@@ -80,4 +82,3 @@ describe('utils', function() {
   });
 
 });
-export let __something__;

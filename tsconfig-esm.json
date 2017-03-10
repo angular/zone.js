@@ -2,7 +2,9 @@
   "compilerOptions": {
     "module": "es2015",
     "target": "es5",
-    "noImplicitAny": false,
+    "noImplicitAny": true,
+    "noImplicitReturns": false,
+    "noImplicitThis": false,
     "outDir": "build-esm",
     "inlineSourceMap": false,
     "inlineSources": false,

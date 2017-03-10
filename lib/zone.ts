@@ -295,7 +295,7 @@ interface ZoneType {
   /**
    * Verify that Zone has been correctly patched. Specifically that Promise is zone aware.
    */
-  assertZonePatched();
+  assertZonePatched(): void;
 
   /**
    *  Return the root zone.
@@ -1192,7 +1192,7 @@ const Zone: ZoneType = (function(global: any) {
   }
 
   function consoleError(e: any) {
-    if (Zone[__symbol__('ignoreConsoleErrorUncaughtError')]) {
+    if ((Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')]) {
       return;
     }
     const rejection = e && e.rejection;
@@ -1209,7 +1209,7 @@ const Zone: ZoneType = (function(global: any) {
   function handleUnhandledRejection(e: any) {
     consoleError(e);
     try {
-      const handler = Zone[__symbol__('unhandledPromiseRejectionHandler')];
+      const handler = (Zone as any)[__symbol__('unhandledPromiseRejectionHandler')];
       if (handler && typeof handler === 'function') {
         handler.apply(this, [e]);
       }
@@ -1263,7 +1263,7 @@ const Zone: ZoneType = (function(global: any) {
   const symbolState: string = __symbol__('state');
   const symbolValue: string = __symbol__('value');
   const source: string = 'Promise.then';
-  const UNRESOLVED = null;
+  const UNRESOLVED: null = null;
   const RESOLVED = true;
   const REJECTED = false;
   const REJECTED_NO_CATCH = 0;
@@ -1282,7 +1282,7 @@ const Zone: ZoneType = (function(global: any) {
   const once = function() {
     let wasCalled = false;
 
-    return function wrapper(wrappedFunction) {
+    return function wrapper(wrappedFunction: Function) {
       return function() {
         if (wasCalled) {
           return;
@@ -1300,7 +1300,7 @@ const Zone: ZoneType = (function(global: any) {
     if (promise === value) {
       throw new TypeError('Promise resolved with itself');
     }
-    if (promise[symbolState] === UNRESOLVED) {
+    if ((promise as any)[symbolState] === UNRESOLVED) {
       // should only get value.then once based on promise spec.
       let then = null;
       try {
@@ -1316,9 +1316,9 @@ const Zone: ZoneType = (function(global: any) {
       // if (value instanceof ZoneAwarePromise) {
       if (state !== REJECTED && value instanceof ZoneAwarePromise &&
           value.hasOwnProperty(symbolState) && value.hasOwnProperty(symbolValue) &&
-          value[symbolState] !== UNRESOLVED) {
+          (value as any)[symbolState] !== UNRESOLVED) {
         clearRejectedNoCatch(<Promise<any>>value);
-        resolvePromise(promise, value[symbolState], value[symbolValue]);
+        resolvePromise(promise, (value as any)[symbolState], (value as any)[symbolValue]);
       } else if (state !== REJECTED && typeof then === 'function') {
         try {
           then.apply(value, [
@@ -1330,21 +1330,21 @@ const Zone: ZoneType = (function(global: any) {
           })();
         }
       } else {
-        promise[symbolState] = state;
-        const queue = promise[symbolValue];
-        promise[symbolValue] = value;
+        (promise as any)[symbolState] = state;
+        const queue = (promise as any)[symbolValue];
+        (promise as any)[symbolValue] = value;
 
         // record task information in value when error occurs, so we can
         // do some additional work such as render longStackTrace
         if (state === REJECTED && value instanceof Error) {
-          value[__symbol__('currentTask')] = Zone.currentTask;
+          (value as any)[__symbol__('currentTask')] = Zone.currentTask;
         }
 
         for (let i = 0; i < queue.length;) {
           scheduleResolveOrReject(promise, queue[i++], queue[i++], queue[i++], queue[i++]);
         }
         if (queue.length == 0 && state == REJECTED) {
-          promise[symbolState] = REJECTED_NO_CATCH;
+          (promise as any)[symbolState] = REJECTED_NO_CATCH;
           try {
             throw new Error(
                 'Uncaught (in promise): ' + value +
@@ -1366,20 +1366,20 @@ const Zone: ZoneType = (function(global: any) {
   }
 
   function clearRejectedNoCatch(promise: ZoneAwarePromise<any>): void {
-    if (promise[symbolState] === REJECTED_NO_CATCH) {
+    if ((promise as any)[symbolState] === REJECTED_NO_CATCH) {
       // if the promise is rejected no catch status
       // and queue.length > 0, means there is a error handler
       // here to handle the rejected promise, we should trigger
       // windows.rejectionhandled eventHandler or nodejs rejectionHandled
       // eventHandler
       try {
-        const handler = Zone[__symbol__('rejectionHandledHandler')];
+        const handler = (Zone as any)[__symbol__('rejectionHandledHandler')];
         if (handler && typeof handler === 'function') {
-          handler.apply(this, [{rejection: promise[symbolValue], promise: promise}]);
+          handler.apply(this, [{rejection: (promise as any)[symbolValue], promise: promise}]);
         }
       } catch (err) {
       }
-      promise[symbolState] = REJECTED;
+      (promise as any)[symbolState] = REJECTED;
       for (let i = 0; i < _uncaughtPromiseErrors.length; i++) {
         if (promise === _uncaughtPromiseErrors[i].promise) {
           _uncaughtPromiseErrors.splice(i, 1);
@@ -1392,12 +1392,13 @@ const Zone: ZoneType = (function(global: any) {
       promise: ZoneAwarePromise<any>, zone: AmbientZone, chainPromise: ZoneAwarePromise<any>,
       onFulfilled?: (value: R) => U, onRejected?: (error: any) => U): void {
     clearRejectedNoCatch(promise);
-    const delegate = promise[symbolState] ?
+    const delegate = (promise as any)[symbolState] ?
         (typeof onFulfilled === 'function') ? onFulfilled : forwardResolution :
         (typeof onRejected === 'function') ? onRejected : forwardRejection;
     zone.scheduleMicroTask(source, () => {
       try {
-        resolvePromise(chainPromise, true, zone.run(delegate, undefined, [promise[symbolValue]]));
+        resolvePromise(
+            chainPromise, true, zone.run(delegate, undefined, [(promise as any)[symbolValue]]));
       } catch (error) {
         resolvePromise(chainPromise, false, error);
       }
@@ -1423,10 +1424,10 @@ const Zone: ZoneType = (function(global: any) {
       let promise: any = new this((res, rej) => {
         [resolve, reject] = [res, rej];
       });
-      function onResolve(value) {
+      function onResolve(value: any) {
         promise && (promise = null || resolve(value));
       }
-      function onReject(error) {
+      function onReject(error: any) {
         promise && (promise = null || reject(error));
       }
 
@@ -1439,7 +1440,7 @@ const Zone: ZoneType = (function(global: any) {
       return promise;
     }
 
-    static all<R>(values): Promise<R> {
+    static all<R>(values: any): Promise<R> {
       let resolve: (v: any) => void;
       let reject: (v: any) => void;
       let promise = new this((res, rej) => {
@@ -1447,13 +1448,13 @@ const Zone: ZoneType = (function(global: any) {
         reject = rej;
       });
       let count = 0;
-      const resolvedValues = [];
+      const resolvedValues: any[] = [];
       for (let value of values) {
         if (!isThenable(value)) {
           value = this.resolve(value);
         }
         value.then(
-            ((index) => (value) => {
+            ((index) => (value: any) => {
               resolvedValues[index] = value;
               count--;
               if (!count) {
@@ -1474,8 +1475,8 @@ const Zone: ZoneType = (function(global: any) {
       if (!(promise instanceof ZoneAwarePromise)) {
         throw new Error('Must be an instanceof Promise.');
       }
-      promise[symbolState] = UNRESOLVED;
-      promise[symbolValue] = [];  // queue;
+      (promise as any)[symbolState] = UNRESOLVED;
+      (promise as any)[symbolValue] = [];  // queue;
       try {
         executor && executor(makeResolver(promise, RESOLVED), makeResolver(promise, REJECTED));
       } catch (error) {
@@ -1488,8 +1489,8 @@ const Zone: ZoneType = (function(global: any) {
         onRejected?: (error: any) => U | PromiseLike<U>): Promise<R> {
       const chainPromise: Promise<R> = new (this.constructor as typeof ZoneAwarePromise)(null);
       const zone = Zone.current;
-      if (this[symbolState] == UNRESOLVED) {
-        (<any[]>this[symbolValue]).push(zone, chainPromise, onFulfilled, onRejected);
+      if ((this as any)[symbolState] == UNRESOLVED) {
+        (<any[]>(this as any)[symbolValue]).push(zone, chainPromise, onFulfilled, onRejected);
       } else {
         scheduleResolveOrReject(this, zone, chainPromise, onFulfilled, onRejected);
       }
@@ -1512,22 +1513,22 @@ const Zone: ZoneType = (function(global: any) {
 
   const symbolThenPatched = __symbol__('thenPatched');
 
-  function patchThen(Ctor) {
+  function patchThen(Ctor: Function) {
     const proto = Ctor.prototype;
     const originalThen = proto.then;
     // Keep a reference to the original method.
     proto[symbolThen] = originalThen;
 
-    Ctor.prototype.then = function(onResolve, onReject) {
+    Ctor.prototype.then = function(onResolve: any, onReject: any) {
       const wrapped = new ZoneAwarePromise((resolve, reject) => {
         originalThen.call(this, resolve, reject);
       });
       return wrapped.then(onResolve, onReject);
     };
-    Ctor[symbolThenPatched] = true;
+    (Ctor as any)[symbolThenPatched] = true;
   }
 
-  function zoneify(fn) {
+  function zoneify(fn: Function) {
     return function() {
       let resultPromise = fn.apply(this, arguments);
       if (resultPromise instanceof ZoneAwarePromise) {
@@ -1551,7 +1552,7 @@ const Zone: ZoneType = (function(global: any) {
   }
 
   // This is not part of public API, but it is usefull for tests, so we expose it.
-  Promise[Zone.__symbol__('uncaughtPromiseErrors')] = _uncaughtPromiseErrors;
+  (Promise as any)[Zone.__symbol__('uncaughtPromiseErrors')] = _uncaughtPromiseErrors;
 
   /*
    * This code patches Error so that:
@@ -1578,7 +1579,7 @@ const Zone: ZoneType = (function(global: any) {
 
   // fix #595, create property descriptor
   // for error properties
-  const createProperty = function(props, key) {
+  const createProperty = function(props: {[k: string]: any}, key: string) {
     // if property is already defined, skip it.
     if (props[key]) {
       return;
@@ -1600,7 +1601,7 @@ const Zone: ZoneType = (function(global: any) {
         }
         return this[name];
       },
-      set: function(value) {
+      set: function(value: any) {
         // setter will set value to local property value
         this[name] = value;
       }
@@ -1609,7 +1610,7 @@ const Zone: ZoneType = (function(global: any) {
 
   // fix #595, create property descriptor
   // for error method properties
-  const createMethodProperty = function(props, key) {
+  const createMethodProperty = function(props: {[k: string]: any}, key: string) {
     if (props[key]) {
       return;
     }
@@ -1669,7 +1670,7 @@ const Zone: ZoneType = (function(global: any) {
   // we should not override the derived class's property
   // so we create a new props object only copy the properties
   // from errorProperties which not exist in derived Error's prototype
-  const getErrorPropertiesForPrototype = function(prototype) {
+  const getErrorPropertiesForPrototype = function(prototype: any) {
     // if the prototype is ZoneAwareError.prototype
     // we just return the prebuilt errorProperties.
     if (prototype === ZoneAwareError.prototype) {
@@ -1710,7 +1711,7 @@ const Zone: ZoneType = (function(global: any) {
     error.originalStack = error.stack;
 
     // Process the stack trace and rewrite the frames.
-    if (ZoneAwareError[stackRewrite] && error.originalStack) {
+    if ((ZoneAwareError as any)[stackRewrite] && error.originalStack) {
       let frames: string[] = error.originalStack.split('\n');
       let zoneFrame = _currentZoneFrame;
       let i = 0;
@@ -1749,8 +1750,8 @@ const Zone: ZoneType = (function(global: any) {
 
   // Copy the prototype so that instanceof operator works as expected
   ZoneAwareError.prototype = NativeError.prototype;
-  ZoneAwareError[Zone.__symbol__('blacklistedStackFrames')] = blackListedStackFrames;
-  ZoneAwareError[stackRewrite] = false;
+  (ZoneAwareError as any)[Zone.__symbol__('blacklistedStackFrames')] = blackListedStackFrames;
+  (ZoneAwareError as any)[stackRewrite] = false;
 
   // those properties need special handling
   const specialPropertyNames = ['stackTraceLimit', 'captureStackTrace', 'prepareStackTrace'];
@@ -1804,7 +1805,8 @@ const Zone: ZoneType = (function(global: any) {
       if (!value || typeof value !== 'function') {
         return NativeError.prepareStackTrace = value;
       }
-      return NativeError.prepareStackTrace = function(error, structuredStackTrace) {
+      return NativeError.prepareStackTrace = function(
+                 error: Error, structuredStackTrace: {getFunctionName: Function}[]) {
         // remove additional stack information from ZoneAwareError.captureStackTrace
         if (structuredStackTrace) {
           for (let i = 0; i < structuredStackTrace.length; i++) {
@@ -1867,7 +1869,7 @@ const Zone: ZoneType = (function(global: any) {
                 blackListedStackFrames[frame] = frameType;
                 // Once we find all of the frames we can stop looking.
                 if (runFrame && runGuardedFrame && runTaskFrame) {
-                  ZoneAwareError[stackRewrite] = true;
+                  (ZoneAwareError as any)[stackRewrite] = true;
                   break;
                 }
               }

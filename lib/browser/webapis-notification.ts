@@ -18,7 +18,7 @@
     if (!desc || !desc.configurable) {
       return;
     }
-    const patchOnProperties = Zone[Zone['__symbol__']('patchOnProperties')];
+    const patchOnProperties = (Zone as any)[(Zone as any)['__symbol__']('patchOnProperties')];
     patchOnProperties(Notification.prototype, null);
   }
 })(typeof window === 'object' && window || typeof self === 'object' && self || global);

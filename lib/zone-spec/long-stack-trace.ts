@@ -12,7 +12,7 @@
 
 const NEWLINE = '\n';
 const SEP = '  -------------  ';
-const IGNORE_FRAMES = [];
+const IGNORE_FRAMES: string[] = [];
 const creationTrace = '__creationTrace__';
 
 class LongStackTrace {
@@ -74,7 +74,7 @@ function renderLongStackTrace(frames: LongStackTrace[], stack: string): string {
   return longTrace.join(NEWLINE);
 }
 
-Zone['longStackTraceZoneSpec'] = <ZoneSpec>{
+(Zone as any)['longStackTraceZoneSpec'] = <ZoneSpec>{
   name: 'long-stack-trace',
   longStackTraceLimit: 10,  // Max number of task to keep the stack trace for.
   // add a getLongStackTrace method in spec to
@@ -83,7 +83,7 @@ Zone['longStackTraceZoneSpec'] = <ZoneSpec>{
     if (!error) {
       return undefined;
     }
-    const task = error[Zone['__symbol__']('currentTask')];
+    const task = (error as any)[(Zone as any)['__symbol__']('currentTask')];
     const trace = task && task.data && task.data[creationTrace];
     if (!trace) {
       return error.stack;
@@ -94,13 +94,13 @@ Zone['longStackTraceZoneSpec'] = <ZoneSpec>{
   onScheduleTask: function(
       parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task): any {
     const currentTask = Zone.currentTask;
-    let trace = currentTask && currentTask.data && currentTask.data[creationTrace] || [];
+    let trace = currentTask && currentTask.data && (currentTask.data as any)[creationTrace] || [];
     trace = [new LongStackTrace()].concat(trace);
     if (trace.length > this.longStackTraceLimit) {
       trace.length = this.longStackTraceLimit;
     }
     if (!task.data) task.data = {};
-    task.data[creationTrace] = trace;
+    (task.data as any)[creationTrace] = trace;
     return parentZoneDelegate.scheduleTask(targetZone, task);
   },
 

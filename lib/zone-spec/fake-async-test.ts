@@ -86,7 +86,7 @@
     private _microtasks: Function[] = [];
     private _lastError: Error = null;
     private _uncaughtPromiseErrors: {rejection: any}[] =
-        Promise[Zone['__symbol__']('uncaughtPromiseErrors')];
+        (Promise as any)[(Zone as any)['__symbol__']('uncaughtPromiseErrors')];
 
     pendingPeriodicTimers: number[] = [];
     pendingTimers: number[] = [];
@@ -97,7 +97,7 @@
 
     private _fnAndFlush(fn: Function, completers: {onSuccess?: Function, onError?: Function}):
         Function {
-      return (...args): boolean => {
+      return (...args: any[]): boolean => {
         fn.apply(global, args);
 
         if (this._lastError === null) {  // Success
@@ -159,9 +159,9 @@
       this._scheduler.removeScheduledFunctionWithId(id);
     }
 
-    private _setInterval(fn: Function, interval: number, ...args): number {
+    private _setInterval(fn: Function, interval: number, ...args: any[]): number {
       let id = this._scheduler.nextId;
-      let completers = {onSuccess: null, onError: this._dequeuePeriodicTimer(id)};
+      let completers = {onSuccess: null as Function, onError: this._dequeuePeriodicTimer(id)};
       let cb = this._fnAndFlush(fn, completers);
 
       // Use the callback created above to requeue on success.
@@ -224,11 +224,11 @@
           switch (task.source) {
             case 'setTimeout':
               task.data['handleId'] =
-                  this._setTimeout(task.invoke, task.data['delay'], task.data['args']);
+                  this._setTimeout(task.invoke, task.data['delay'], (task.data as any)['args']);
               break;
             case 'setInterval':
               task.data['handleId'] =
-                  this._setInterval(task.invoke, task.data['delay'], task.data['args']);
+                  this._setInterval(task.invoke, task.data['delay'], (task.data as any)['args']);
               break;
             case 'XMLHttpRequest.send':
               throw new Error('Cannot make XHRs from within a fake async test.');
@@ -264,5 +264,5 @@
 
   // Export the class so that new instances can be created with proper
   // constructor params.
-  Zone['FakeAsyncTestZoneSpec'] = FakeAsyncTestZoneSpec;
+  (Zone as any)['FakeAsyncTestZoneSpec'] = FakeAsyncTestZoneSpec;
 })(typeof window === 'object' && window || typeof self === 'object' && self || global);

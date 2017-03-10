@@ -11,16 +11,16 @@
 // on your local environment
 
 describe('bluebird promise', () => {
-  let BluebirdPromise;
+  let BluebirdPromise: any;
   beforeAll(() => {
     BluebirdPromise = require('bluebird');
     // import bluebird patch
     require('../../lib/extra/bluebird');
-    const patchBluebird = Zone[Zone['__symbol__']('bluebird')];
+    const patchBluebird = (Zone as any)[(Zone as any)['__symbol__']('bluebird')];
     patchBluebird(BluebirdPromise);
   });
 
-  let log;
+  let log: string[];
 
   const zone = Zone.root.fork({
     name: 'bluebird',
@@ -40,7 +40,7 @@ describe('bluebird promise', () => {
 
   it('bluebird promise then method should be in zone and treated as microTask', (done) => {
     zone.run(() => {
-      const p = new BluebirdPromise((resolve, reject) => {
+      const p = new BluebirdPromise((resolve: any, reject: any) => {
         setTimeout(() => {
           resolve('test');
         }, 0);
@@ -56,7 +56,7 @@ describe('bluebird promise', () => {
 
   it('bluebird promise catch method should be in zone and treated as microTask', (done) => {
     zone.run(() => {
-      const p = new BluebirdPromise((resolve, reject) => {
+      const p = new BluebirdPromise((resolve: any, reject: any) => {
         setTimeout(() => {
           reject('test');
         }, 0);
@@ -73,7 +73,7 @@ describe('bluebird promise', () => {
   it('bluebird promise spread method should be in zone', (done) => {
     zone.run(() => {
       BluebirdPromise.all([BluebirdPromise.resolve('test1'), BluebirdPromise.resolve('test2')])
-          .spread((r1, r2) => {
+          .spread((r1: string, r2: string) => {
             expect(r1).toEqual('test1');
             expect(r2).toEqual('test2');
             expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
@@ -86,7 +86,7 @@ describe('bluebird promise', () => {
 
   it('bluebird promise finally method should be in zone', (done) => {
     zone.run(() => {
-      const p = new BluebirdPromise((resolve, reject) => {
+      const p = new BluebirdPromise((resolve: any, reject: any) => {
         setTimeout(() => {
           resolve('test');
         }, 0);
@@ -105,7 +105,7 @@ describe('bluebird promise', () => {
       BluebirdPromise
           .join(
               BluebirdPromise.resolve('test1'), BluebirdPromise.resolve('test2'),
-              (r1, r2) => {
+              (r1: string, r2: string) => {
                 expect(r1).toEqual('test1');
                 expect(r2).toEqual('test2');
                 expect(Zone.current.name).toEqual('bluebird');
@@ -125,7 +125,7 @@ describe('bluebird promise', () => {
           .try(() => {
             throw new Error('promise error');
           })
-          .catch((err) => {
+          .catch((err: Error) => {
             expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
             expect(log.filter(item => item === 'invoke bluebird task bluebird').length).toBe(1);
             expect(Zone.current.name).toEqual('bluebird');
@@ -141,7 +141,7 @@ describe('bluebird promise', () => {
           .method(() => {
             return 'test';
           })()
-          .then((result) => {
+          .then((result: string) => {
             expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
             expect(log.filter(item => item === 'invoke bluebird task bluebird').length).toBe(1);
             expect(Zone.current.name).toEqual('bluebird');
@@ -153,7 +153,7 @@ describe('bluebird promise', () => {
 
   it('bluebird promise resolve method should be in zone', (done) => {
     zone.run(() => {
-      BluebirdPromise.resolve('test').then((result) => {
+      BluebirdPromise.resolve('test').then((result: string) => {
         expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
         expect(log.filter(item => item === 'invoke bluebird task bluebird').length).toBe(1);
         expect(Zone.current.name).toEqual('bluebird');
@@ -165,7 +165,7 @@ describe('bluebird promise', () => {
 
   it('bluebird promise reject method should be in zone', (done) => {
     zone.run(() => {
-      BluebirdPromise.reject('error').catch((error) => {
+      BluebirdPromise.reject('error').catch((error: Error) => {
         expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
         expect(log.filter(item => item === 'invoke bluebird task bluebird').length).toBe(1);
         expect(Zone.current.name).toEqual('bluebird');
@@ -178,7 +178,7 @@ describe('bluebird promise', () => {
   it('bluebird promise all method should be in zone', (done) => {
     zone.run(() => {
       BluebirdPromise.all([BluebirdPromise.resolve('test1'), BluebirdPromise.resolve('test2')])
-          .then((r) => {
+          .then((r: string[]) => {
             expect(r[0]).toEqual('test1');
             expect(r[1]).toEqual('test2');
             expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
@@ -193,7 +193,7 @@ describe('bluebird promise', () => {
     zone.run(() => {
       BluebirdPromise
           .props({test1: BluebirdPromise.resolve('test1'), test2: BluebirdPromise.resolve('test2')})
-          .then((r) => {
+          .then((r: any) => {
             expect(r.test1).toEqual('test1');
             expect(r.test2).toEqual('test2');
             expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
@@ -207,7 +207,7 @@ describe('bluebird promise', () => {
   it('bluebird promise any method should be in zone', (done) => {
     zone.run(() => {
       BluebirdPromise.any([BluebirdPromise.resolve('test1'), BluebirdPromise.resolve('test2')])
-          .then((r) => {
+          .then((r: any) => {
             expect(r).toEqual('test1');
             expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
             expect(log.filter(item => item === 'invoke bluebird task bluebird').length).toBe(1);
@@ -220,7 +220,7 @@ describe('bluebird promise', () => {
   it('bluebird promise some method should be in zone', (done) => {
     zone.run(() => {
       BluebirdPromise.some([BluebirdPromise.resolve('test1'), BluebirdPromise.resolve('test2')], 1)
-          .then((r) => {
+          .then((r: any) => {
             expect(r.length).toBe(1);
             expect(r[0]).toEqual('test1');
             expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
@@ -236,10 +236,10 @@ describe('bluebird promise', () => {
       BluebirdPromise
           .map(
               ['test1', 'test2'],
-              (value) => {
+              (value: any) => {
                 return BluebirdPromise.resolve(value);
               })
-          .then((r) => {
+          .then((r: string[]) => {
             expect(r.length).toBe(2);
             expect(r[0]).toEqual('test1');
             expect(r[1]).toEqual('test2');
@@ -256,10 +256,10 @@ describe('bluebird promise', () => {
       BluebirdPromise
           .reduce(
               [1, 2],
-              (total, value) => {
+              (total: string, value: string) => {
                 return BluebirdPromise.resolve(total + value);
               })
-          .then((r) => {
+          .then((r: number) => {
             expect(r).toBe(3);
             expect(log.filter(item => item === 'schedule bluebird task bluebird').length)
                 .toBeTruthy();
@@ -276,11 +276,11 @@ describe('bluebird promise', () => {
       BluebirdPromise
           .filter(
               [1, 2, 3],
-              (value) => {
+              (value: number) => {
                 return value % 2 === 0 ? BluebirdPromise.resolve(true) :
                                          BluebirdPromise.resolve(false);
               })
-          .then((r) => {
+          .then((r: number[]) => {
             expect(r[0]).toBe(2);
             expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
             expect(log.filter(item => item === 'invoke bluebird task bluebird').length).toBe(1);
@@ -294,7 +294,8 @@ describe('bluebird promise', () => {
     zone.run(() => {
       const arr = [1, 2, 3];
       BluebirdPromise.each(
-          BluebirdPromise.map(arr, (item) => BluebirdPromise.resolve(item)), (r, idx) => {
+          BluebirdPromise.map(arr, (item: number) => BluebirdPromise.resolve(item)),
+          (r: number[], idx: number) => {
             expect(r[idx] === arr[idx]);
             expect(log.filter(item => item === 'schedule bluebird task bluebird').length)
                 .toBeTruthy();
@@ -310,7 +311,8 @@ describe('bluebird promise', () => {
     zone.run(() => {
       const arr = [1, 2, 3];
       BluebirdPromise.mapSeries(
-          BluebirdPromise.map(arr, (item) => BluebirdPromise.resolve(item)), (r, idx) => {
+          BluebirdPromise.map(arr, (item: number) => BluebirdPromise.resolve(item)),
+          (r: number[], idx: number) => {
             expect(r[idx] === arr[idx]);
             expect(log.filter(item => item === 'schedule bluebird task bluebird').length)
                 .toBeTruthy();
@@ -325,7 +327,7 @@ describe('bluebird promise', () => {
   it('bluebird promise race method should be in zone', (done) => {
     zone.run(() => {
       BluebirdPromise.race([BluebirdPromise.resolve('test1'), BluebirdPromise.resolve('test2')])
-          .then((r) => {
+          .then((r: string) => {
             expect(r).toEqual('test1');
             expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
             expect(log.filter(item => item === 'invoke bluebird task bluebird').length).toBe(1);
@@ -337,7 +339,7 @@ describe('bluebird promise', () => {
 
   it('bluebird promise using/disposer method should be in zone', (done) => {
     zone.run(() => {
-      const p = new BluebirdPromise((resolve, reject) => {
+      const p = new BluebirdPromise((resolve: Function, reject: any) => {
         setTimeout(() => {
           resolve('test');
         }, 0);
@@ -349,7 +351,7 @@ describe('bluebird promise', () => {
       BluebirdPromise
           .using(
               disposer,
-              (v) => {
+              (v: string) => {
                 p.leakObj.push(v);
               })
           .then(() => {
@@ -372,7 +374,7 @@ describe('bluebird promise', () => {
 
     const promiseFunc = BluebirdPromise.promisify(func);
     zone.run(() => {
-      promiseFunc().then((r) => {
+      promiseFunc().then((r: string) => {
         expect(Zone.current.name).toEqual('bluebird');
         expect(r).toBe('test');
         expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
@@ -398,15 +400,16 @@ describe('bluebird promise', () => {
 
     const promiseObj = BluebirdPromise.promisifyAll(obj);
     zone.run(() => {
-      BluebirdPromise.all([promiseObj.func1Async(), promiseObj.func2Async()]).then((r) => {
-        expect(Zone.current.name).toEqual('bluebird');
-        expect(r[0]).toBe('test1');
-        expect(r[1]).toBe('test2');
-        // using will generate several promise inside
-        expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(2);
-        expect(log.filter(item => item === 'invoke bluebird task bluebird').length).toBe(2);
-        done();
-      });
+      BluebirdPromise.all([promiseObj.func1Async(), promiseObj.func2Async()])
+          .then((r: string[]) => {
+            expect(Zone.current.name).toEqual('bluebird');
+            expect(r[0]).toBe('test1');
+            expect(r[1]).toBe('test2');
+            // using will generate several promise inside
+            expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(2);
+            expect(log.filter(item => item === 'invoke bluebird task bluebird').length).toBe(2);
+            done();
+          });
     });
   });
 
@@ -418,7 +421,7 @@ describe('bluebird promise', () => {
     };
 
     zone.run(() => {
-      BluebirdPromise.fromCallback(resolver).then((r) => {
+      BluebirdPromise.fromCallback(resolver).then((r: string) => {
         expect(Zone.current.name).toEqual('bluebird');
         expect(r).toBe('test');
         expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
@@ -430,7 +433,7 @@ describe('bluebird promise', () => {
 
   it('bluebird promise asCallback method should be in zone', (done) => {
     zone.run(() => {
-      BluebirdPromise.resolve('test').asCallback((err, r) => {
+      BluebirdPromise.resolve('test').asCallback((err: Error, r: string) => {
         expect(Zone.current.name).toEqual('bluebird');
         expect(r).toBe('test');
         done();
@@ -440,7 +443,7 @@ describe('bluebird promise', () => {
 
   it('bluebird promise delay method should be in zone', (done) => {
     zone.run(() => {
-      BluebirdPromise.resolve('test').delay(10).then((r) => {
+      BluebirdPromise.resolve('test').delay(10).then((r: string) => {
         expect(Zone.current.name).toEqual('bluebird');
         expect(r).toBe('test');
         expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(2);
@@ -452,13 +455,13 @@ describe('bluebird promise', () => {
 
   it('bluebird promise timeout method should be in zone', (done) => {
     zone.run(() => {
-      new BluebirdPromise((resolve, reject) => {
+      new BluebirdPromise((resolve: any, reject: any) => {
         setTimeout(() => {
           resolve('test');
         }, 10);
       })
           .timeout(100)
-          .then((r) => {
+          .then((r: string) => {
             expect(Zone.current.name).toEqual('bluebird');
             expect(r).toBe('test');
             expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
@@ -470,7 +473,7 @@ describe('bluebird promise', () => {
 
   it('bluebird promise tap method should be in zone', (done) => {
     zone.run(() => {
-      const p = new BluebirdPromise((resolve, reject) => {
+      const p = new BluebirdPromise((resolve: any, reject: any) => {
         setTimeout(() => {
           resolve('test');
         }, 0);
@@ -489,15 +492,15 @@ describe('bluebird promise', () => {
       BluebirdPromise
           .map(
               ['test1', 'test2'],
-              (value) => {
+              (value: any) => {
                 return BluebirdPromise.resolve(value);
               })
           .call(
               'shift',
-              (value) => {
+              (value: any) => {
                 return value;
               })
-          .then((r) => {
+          .then((r: string) => {
             expect(r).toEqual('test1');
             expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
             expect(log.filter(item => item === 'invoke bluebird task bluebird').length).toBe(1);
@@ -509,7 +512,7 @@ describe('bluebird promise', () => {
 
   it('bluebird promise get method should be in zone', (done) => {
     zone.run(() => {
-      BluebirdPromise.resolve(['test1', 'test2']).get(-1).then((r) => {
+      BluebirdPromise.resolve(['test1', 'test2']).get(-1).then((r: string) => {
         expect(r).toEqual('test2');
         expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
         expect(log.filter(item => item === 'invoke bluebird task bluebird').length).toBe(1);
@@ -521,7 +524,7 @@ describe('bluebird promise', () => {
 
   it('bluebird promise return method should be in zone', (done) => {
     zone.run(() => {
-      BluebirdPromise.resolve().return ('test1').then((r) => {
+      BluebirdPromise.resolve().return ('test1').then((r: string) => {
         expect(r).toEqual('test1');
         expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
         expect(log.filter(item => item === 'invoke bluebird task bluebird').length).toBe(1);
@@ -533,7 +536,7 @@ describe('bluebird promise', () => {
 
   it('bluebird promise throw method should be in zone', (done) => {
     zone.run(() => {
-      BluebirdPromise.resolve().throw('test1').catch((r) => {
+      BluebirdPromise.resolve().throw('test1').catch((r: string) => {
         expect(r).toEqual('test1');
         expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
         expect(log.filter(item => item === 'invoke bluebird task bluebird').length).toBe(1);
@@ -545,7 +548,7 @@ describe('bluebird promise', () => {
 
   it('bluebird promise catchReturn method should be in zone', (done) => {
     zone.run(() => {
-      BluebirdPromise.reject().catchReturn('test1').then((r) => {
+      BluebirdPromise.reject().catchReturn('test1').then((r: string) => {
         expect(r).toEqual('test1');
         expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
         expect(log.filter(item => item === 'invoke bluebird task bluebird').length).toBe(1);
@@ -557,7 +560,7 @@ describe('bluebird promise', () => {
 
   it('bluebird promise catchThrow method should be in zone', (done) => {
     zone.run(() => {
-      BluebirdPromise.reject().catchThrow('test1').catch((r) => {
+      BluebirdPromise.reject().catchThrow('test1').catch((r: string) => {
         expect(r).toEqual('test1');
         expect(log.filter(item => item === 'schedule bluebird task bluebird').length).toBe(1);
         expect(log.filter(item => item === 'invoke bluebird task bluebird').length).toBe(1);
@@ -574,7 +577,7 @@ describe('bluebird promise', () => {
           .all(promises.map(promise => {
             return promise.reflect();
           }))
-          .each((r) => {
+          .each((r: any) => {
             if (r.isFulfilled()) {
               expect(r.value()).toEqual('test1');
             } else {

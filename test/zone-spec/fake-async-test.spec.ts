@@ -10,9 +10,9 @@ import '../../lib/zone-spec/fake-async-test';
 import {ifEnvSupports} from '../test-util';
 
 describe('FakeAsyncTestZoneSpec', () => {
-  let FakeAsyncTestZoneSpec = Zone['FakeAsyncTestZoneSpec'];
-  let testZoneSpec;
-  let fakeAsyncTestZone;
+  let FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
+  let testZoneSpec: any;
+  let fakeAsyncTestZone: Zone;
 
   beforeEach(() => {
     testZoneSpec = new FakeAsyncTestZoneSpec('name');
@@ -82,7 +82,7 @@ describe('FakeAsyncTestZoneSpec', () => {
 
     it('should run chained thens', () => {
       fakeAsyncTestZone.run(() => {
-        let log = [];
+        let log: number[] = [];
 
         Promise.resolve(null).then((_) => log.push(1)).then((_) => log.push(2));
 
@@ -95,7 +95,7 @@ describe('FakeAsyncTestZoneSpec', () => {
 
     it('should run Promise created in Promise', () => {
       fakeAsyncTestZone.run(() => {
-        let log = [];
+        let log: number[] = [];
 
         Promise.resolve(null).then((_) => {
           log.push(1);
@@ -236,12 +236,12 @@ describe('FakeAsyncTestZoneSpec', () => {
     it('should be able to cancel periodic timers from a callback', () => {
       fakeAsyncTestZone.run(() => {
         let cycles = 0;
-        let id;
+        let id: number;
 
         id = setInterval(() => {
           cycles++;
           clearInterval(id);
-        }, 10);
+        }, 10) as any as number;
 
         testZoneSpec.tick(10);
         expect(cycles).toEqual(1);
@@ -253,7 +253,7 @@ describe('FakeAsyncTestZoneSpec', () => {
 
     it('should process microtasks before timers', () => {
       fakeAsyncTestZone.run(() => {
-        let log = [];
+        let log: string[] = [];
 
         Promise.resolve(null).then((_) => log.push('microtask'));
 
@@ -270,7 +270,7 @@ describe('FakeAsyncTestZoneSpec', () => {
 
     it('should process micro-tasks created in timers before next timers', () => {
       fakeAsyncTestZone.run(() => {
-        let log = [];
+        let log: string[] = [];
 
         Promise.resolve(null).then((_) => log.push('microtask'));
 

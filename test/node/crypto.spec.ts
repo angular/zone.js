@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 describe('crypto test', () => {
-  let crypto = null;
+  let crypto: any = null;
 
   try {
     crypto = require('crypto');
@@ -20,14 +20,15 @@ describe('crypto test', () => {
     }
     const zoneASpec = {
       name: 'A',
-      onScheduleTask: (delegate, currentZone, targetZone, task): Task => {
-        return delegate.scheduleTask(targetZone, task);
-      }
+      onScheduleTask: (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                          Task => {
+                            return delegate.scheduleTask(targetZone, task);
+                          }
     };
     const zoneA = Zone.current.fork(zoneASpec);
     spyOn(zoneASpec, 'onScheduleTask').and.callThrough();
     zoneA.run(() => {
-      crypto.randomBytes(256, (err, buf) => {
+      crypto.randomBytes(256, (err: Error, buf: any) => {
         expect(err).toBeFalsy();
         expect(zoneASpec.onScheduleTask).toHaveBeenCalled();
         expect(buf.length).toBe(256);
@@ -42,16 +43,17 @@ describe('crypto test', () => {
       done();
       return;
     }
-    const zoneASpec = {
+    const zoneASpec: ZoneSpec = {
       name: 'A',
-      onScheduleTask: (delegate, currentZone, targetZone, task): Task => {
-        return delegate.scheduleTask(targetZone, task);
-      }
+      onScheduleTask: (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                          Task => {
+                            return delegate.scheduleTask(targetZone, task);
+                          }
     };
     const zoneA = Zone.current.fork(zoneASpec);
     spyOn(zoneASpec, 'onScheduleTask').and.callThrough();
     zoneA.run(() => {
-      crypto.pbkdf2('secret', 'salt', 100000, 512, 'sha512', (err, key) => {
+      crypto.pbkdf2('secret', 'salt', 100000, 512, 'sha512', (err: Error, key: any) => {
         expect(err).toBeFalsy();
         expect(zoneASpec.onScheduleTask).toHaveBeenCalled();
         expect(key.toString('hex'))

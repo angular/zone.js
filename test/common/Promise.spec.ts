@@ -7,6 +7,7 @@
  */
 
 import {ifEnvSupports} from '../test-util';
+declare const global: any;
 
 class MicroTaskQueueZoneSpec implements ZoneSpec {
   name: string = 'MicroTaskQueue';
@@ -148,7 +149,7 @@ describe(
 
       describe('Promise API', function() {
         it('should work with .then', function(done) {
-          let resolve;
+          let resolve: Function = null;
 
           testZone.run(function() {
             new Promise(function(resolveFn) {
@@ -163,7 +164,7 @@ describe(
         });
 
         it('should work with .catch', function(done) {
-          let reject;
+          let reject: () => void = null;
 
           testZone.run(function() {
             new Promise(function(resolveFn, rejectFn) {
@@ -266,14 +267,14 @@ describe(
                   Promise.reject(error);
                   expect(promiseError).toBe(null);
                 });
-            setTimeout(() => null);
+            setTimeout((): void => null);
             setTimeout(() => {
               expect(promiseError.message)
                   .toBe(
                       'Uncaught (in promise): ' + error + (error.stack ? '\n' + error.stack : ''));
-              expect(promiseError['rejection']).toBe(error);
-              expect(promiseError['zone']).toBe(zone);
-              expect(promiseError['task']).toBe(task);
+              expect((promiseError as any)['rejection']).toBe(error);
+              expect((promiseError as any)['zone']).toBe(zone);
+              expect((promiseError as any)['task']).toBe(task);
               done();
             });
           });
@@ -285,7 +286,7 @@ describe(
               let value = null;
               (Promise as any).race([
                 Promise.reject('rejection1'), 'v1'
-              ])['catch']((v) => value = v);
+              ])['catch']((v: any) => value = v);
               // expect(Zone.current.get('queue').length).toEqual(2);
               flushMicrotasks();
               expect(value).toEqual('rejection1');
@@ -295,7 +296,9 @@ describe(
           it('should resolve the value', () => {
             queueZone.run(() => {
               let value = null;
-              (Promise as any).race([Promise.resolve('resolution'), 'v1']).then((v) => value = v);
+              (Promise as any)
+                  .race([Promise.resolve('resolution'), 'v1'])
+                  .then((v: any) => value = v);
               // expect(Zone.current.get('queue').length).toEqual(2);
               flushMicrotasks();
               expect(value).toEqual('resolution');
@@ -307,7 +310,7 @@ describe(
           it('should reject the value', () => {
             queueZone.run(() => {
               let value = null;
-              Promise.all([Promise.reject('rejection'), 'v1'])['catch']((v) => value = v);
+              Promise.all([Promise.reject('rejection'), 'v1'])['catch']((v: any) => value = v);
               // expect(Zone.current.get('queue').length).toEqual(2);
               flushMicrotasks();
               expect(value).toEqual('rejection');
@@ -317,7 +320,7 @@ describe(
           it('should resolve the value', () => {
             queueZone.run(() => {
               let value = null;
-              Promise.all([Promise.resolve('resolution'), 'v1']).then((v) => value = v);
+              Promise.all([Promise.resolve('resolution'), 'v1']).then((v: any) => value = v);
               // expect(Zone.current.get('queue').length).toEqual(2);
               flushMicrotasks();
               expect(value).toEqual(['resolution', 'v1']);
@@ -327,19 +330,22 @@ describe(
       });
 
       describe('Promise subclasses', function() {
-        function MyPromise(init) {
-          this._promise = new Promise(init);
+        class MyPromise {
+          private _promise: Promise<any>;
+          constructor(init: any) {
+            this._promise = new Promise(init);
+          }
+
+          catch() {
+            return this._promise.catch.apply(this._promise, arguments);
+          };
+
+          then() {
+            return this._promise.then.apply(this._promise, arguments);
+          };
         }
 
-        MyPromise.prototype.catch = function _catch() {
-          return this._promise.catch.apply(this._promise, arguments);
-        };
-
-        MyPromise.prototype.then = function then() {
-          return this._promise.then.apply(this._promise, arguments);
-        };
-
-        const setPrototypeOf = (Object as any).setPrototypeOf || function(obj, proto) {
+        const setPrototypeOf = (Object as any).setPrototypeOf || function(obj: any, proto: any) {
           obj.__proto__ = proto;
           return obj;
         };
@@ -347,7 +353,7 @@ describe(
         setPrototypeOf(MyPromise.prototype, Promise.prototype);
 
         it('should reject if the Promise subclass rejects', function() {
-          const myPromise = new MyPromise(function(resolve, reject) {
+          const myPromise = new MyPromise(function(resolve: any, reject: any): void {
             reject('foo');
           });
 
@@ -365,7 +371,7 @@ describe(
         });
 
         it('should resolve if the Promise subclass resolves', function() {
-          const myPromise = new MyPromise(function(resolve, reject) {
+          const myPromise = new MyPromise(function(resolve: any, reject: Function) {
             resolve('foo');
           });
 
@@ -382,11 +388,11 @@ describe(
       describe('fetch', ifEnvSupports('fetch', function() {
                  it('should work for text response', function(done) {
                    testZone.run(function() {
-                     global['fetch']('/base/test/assets/sample.json').then(function(response) {
+                     global['fetch']('/base/test/assets/sample.json').then(function(response: any) {
                        const fetchZone = Zone.current;
                        expect(fetchZone).toBe(testZone);
 
-                       response.text().then(function(text) {
+                       response.text().then(function(text: string) {
                          expect(Zone.current).toBe(fetchZone);
                          expect(text.trim()).toEqual('{"hello": "world"}');
                          done();
@@ -418,7 +424,7 @@ describe(
 
                        // Android 4.3- doesn't support response.blob()
                        if (response.blob) {
-                         response.blob().then(function(blob) {
+                         response.blob().then(function(blob: any) {
                            expect(Zone.current).toBe(fetchZone);
                            expect(blob instanceof Blob).toEqual(true);
                            done();
@@ -438,7 +444,7 @@ describe(
 
                        // Android 4.3- doesn't support response.arrayBuffer()
                        if (response.arrayBuffer) {
-                         response.arrayBuffer().then(function(blob) {
+                         response.arrayBuffer().then(function(blob: any) {
                            expect(Zone.current).toBe(fetchZone);
                            expect(blob instanceof ArrayBuffer).toEqual(true);
                            done();

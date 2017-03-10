@@ -8,6 +8,7 @@
 
 import {zoneSymbol} from '../../lib/common/utils';
 import {ifEnvSupports} from '../test-util';
+declare const global: any;
 
 function windowPrototype() {
   return !!(global['Window'] && global['Window'].prototype);
@@ -25,7 +26,8 @@ describe('Zone', function() {
       const alertSpy = jasmine.createSpy('alert');
       const promptSpy = jasmine.createSpy('prompt');
       const confirmSpy = jasmine.createSpy('confirm');
-      const spies = {'alert': alertSpy, 'prompt': promptSpy, 'confirm': confirmSpy};
+      const spies: {[k: string]:
+                        Function} = {'alert': alertSpy, 'prompt': promptSpy, 'confirm': confirmSpy};
       const myZone = Zone.current.fork({
         name: 'spy',
         onInvoke: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
@@ -50,8 +52,8 @@ describe('Zone', function() {
     });
 
     describe('eventListener hooks', function() {
-      let button;
-      let clickEvent;
+      let button: HTMLButtonElement;
+      let clickEvent: Event;
 
       beforeEach(function() {
         button = document.createElement('button');
@@ -153,7 +155,7 @@ describe('Zone', function() {
           done();
           return;
         }
-        Zone[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
+        (Zone as any)[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
         rootZone.fork({name: 'promise'}).run(function() {
           const listener = (evt: any) => {
             expect(evt.type).toEqual('unhandledrejection');
@@ -174,7 +176,7 @@ describe('Zone', function() {
           done();
           return;
         }
-        Zone[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
+        (Zone as any)[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
         rootZone.fork({name: 'promise'}).run(function() {
           const listener = (evt: any) => {
             window.removeEventListener('unhandledrejection', listener);
@@ -199,7 +201,7 @@ describe('Zone', function() {
           done();
           return;
         }
-        Zone[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
+        (Zone as any)[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
         rootZone.fork({name: 'promise'}).run(function() {
           const listener1 = (evt: any) => {
             expect(evt.type).toEqual('unhandledrejection');

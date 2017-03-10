@@ -37,7 +37,7 @@ class TaskTrackingZoneSpec implements ZoneSpec {
 
   onScheduleTask(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
       Task {
-    task['creationLocation'] = new Error(`Task '${task.type}' from '${task.source}'.`);
+    (task as any)['creationLocation'] = new Error(`Task '${task.type}' from '${task.source}'.`);
     const tasks = this.getTasksFor(task.type);
     tasks.push(task);
     return parentZoneDelegate.scheduleTask(targetZone, task);
@@ -79,4 +79,4 @@ class TaskTrackingZoneSpec implements ZoneSpec {
 
 // Export the class so that new instances can be created with proper
 // constructor params.
-Zone['TaskTrackingZoneSpec'] = TaskTrackingZoneSpec;
+(Zone as any)['TaskTrackingZoneSpec'] = TaskTrackingZoneSpec;

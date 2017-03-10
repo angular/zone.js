@@ -17,7 +17,8 @@ describe('XMLHttpRequest', function() {
 
   it('should intercept XHRs and treat them as MacroTasks', function(done) {
     let req: XMLHttpRequest;
-    const testZoneWithWtf = Zone.current.fork(Zone['wtfZoneSpec']).fork({name: 'TestZone'});
+    const testZoneWithWtf =
+        Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({name: 'TestZone'});
 
     testZoneWithWtf.run(() => {
       req = new XMLHttpRequest();
@@ -157,7 +158,7 @@ describe('XMLHttpRequest', function() {
   });
 
   it('should work with synchronous XMLHttpRequest', function() {
-    const log = [];
+    const log: HasTaskState[] = [];
     Zone.current
         .fork({
           name: 'sync-xhr-test',

@@ -7,10 +7,11 @@
  */
 
 import {ifEnvSupports} from '../test-util';
+declare const global: any;
 
 describe('FileReader', ifEnvSupports('FileReader', function() {
-           let fileReader;
-           let blob;
+           let fileReader: FileReader;
+           let blob: Blob;
            const data = 'Hello, World!';
            const testZone = Zone.current.fork({name: 'TestZone'});
 

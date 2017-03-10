@@ -7,7 +7,7 @@
  */
 
 'use strict';
-(function(global) {
+(function(global: any) {
   const NativeError = global['Error'];
   NativeError.customProperty = 'customProperty';
   NativeError.customFunction = function() {};
