@@ -1,3 +1,14 @@
+<a name="0.8.0"></a>
+# [0.8.0](https://github.com/angular/zone.js/compare/v0.7.8...0.8.0) (2017-03-10)
+
+
+
+### Features
+
+* Upgrade TypeScript to v2.2.1
+
+
+
 <a name="0.7.8"></a>
 ## [0.7.8](https://github.com/angular/zone.js/compare/v0.7.6...0.7.8) (2017-03-10)
 
