@@ -212,9 +212,43 @@ interface Zone {
      * @returns {*}
      */
     runTask(task: Task, applyThis?: any, applyArgs?: any): any;
+    /**
+     * Schedule a MicroTask.
+     *
+     * @param source
+     * @param callback
+     * @param data
+     * @param customSchedule
+     */
     scheduleMicroTask(source: string, callback: Function, data?: TaskData, customSchedule?: (task: Task) => void): MicroTask;
+    /**
+     * Schedule a MacroTask.
+     *
+     * @param source
+     * @param callback
+     * @param data
+     * @param customSchedule
+     * @param customCancel
+     */
     scheduleMacroTask(source: string, callback: Function, data: TaskData, customSchedule: (task: Task) => void, customCancel: (task: Task) => void): MacroTask;
+    /**
+     * Schedule an EventTask.
+     *
+     * @param source
+     * @param callback
+     * @param data
+     * @param customSchedule
+     * @param customCancel
+     */
     scheduleEventTask(source: string, callback: Function, data: TaskData, customSchedule: (task: Task) => void, customCancel: (task: Task) => void): EventTask;
+    /**
+     * Schedule an existing Task.
+     *
+     * Useful for rescheduling a task which was already canceled.
+     *
+     * @param task
+     */
+    scheduleTask<T extends Task>(task: T): T;
     /**
      * Allows the zone to intercept canceling of scheduled Task.
      *
@@ -241,6 +275,10 @@ interface ZoneType {
      * Verify that Zone has been correctly patched. Specifically that Promise is zone aware.
      */
     assertZonePatched(): any;
+    /**
+     *  Return the root zone.
+     */
+    root: Zone;
 }
 /**
  * Provides a way to configure the interception of zone events.
@@ -382,6 +420,10 @@ declare type HasTaskState = {
  */
 declare type TaskType = string;
 /**
+ * Task type: `notScheduled`, `scheduling`, `scheduled`, `running`, `canceling`.
+ */
+declare type TaskState = string;
+/**
  */
 interface TaskData {
     /**
@@ -419,6 +461,10 @@ interface Task {
      * Task type: `microTask`, `macroTask`, `eventTask`.
      */
     type: TaskType;
+    /**
+     * Task state: `notScheduled`, `scheduling`, `scheduled`, `running`, `canceling`.
+     */
+    state: TaskState;
     /**
      * Debug string representing the API which requested the scheduling of the task.
      */
@@ -459,6 +505,12 @@ interface Task {
      * Number of times the task has been executed, or -1 if canceled.
      */
     runCount: number;
+    /**
+     * Cancel the scheduling request. This method can be called from `ZoneSpec.onScheduleTask` to
+     * cancel the current scheduling interception. Once canceled the task can be discarted or
+     * rescheduled using `Zone.scheduleTask` on a different zone.
+     */
+    cancelScheduleRequest(): void;
 }
 interface MicroTask extends Task {
 }

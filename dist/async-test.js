@@ -6,9 +6,9 @@
 * found in the LICENSE file at https://angular.io/license
 */
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory() :
-    typeof define === 'function' && define.amd ? define(factory) :
-    (factory());
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory() :
+	typeof define === 'function' && define.amd ? define(factory) :
+	(factory());
 }(this, (function () { 'use strict';
 
 /**
@@ -60,13 +60,6 @@ var AsyncTestZoneSpec = (function () {
             this._alreadyErrored = true;
         }
         return false;
-    };
-    AsyncTestZoneSpec.prototype.onScheduleTask = function (delegate, currentZone, targetZone, task) {
-        if (task.type == 'macroTask' && task.source == 'setInterval') {
-            this._failCallback('Cannot use setInterval from within an async zone test.');
-            return;
-        }
-        return delegate.scheduleTask(targetZone, task);
     };
     AsyncTestZoneSpec.prototype.onHasTask = function (delegate, current, target, hasTaskState) {
         delegate.hasTask(target, hasTaskState);

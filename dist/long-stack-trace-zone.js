@@ -6,9 +6,9 @@
 * found in the LICENSE file at https://angular.io/license
 */
 (function (global, factory) {
-    typeof exports === 'object' && typeof module !== 'undefined' ? factory() :
-    typeof define === 'function' && define.amd ? define(factory) :
-    (factory());
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory() :
+	typeof define === 'function' && define.amd ? define(factory) :
+	(factory());
 }(this, (function () { 'use strict';
 
 /**
@@ -17,6 +17,10 @@
  *
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @fileoverview
+ * @suppress {globalThis}
  */
 var NEWLINE = '\n';
 var SEP = '  -------------  ';
@@ -36,17 +40,17 @@ function getStacktraceWithCaughtError() {
     try {
         throw getStacktraceWithUncaughtError();
     }
-    catch (e) {
-        return e;
+    catch (err) {
+        return err;
     }
 }
 // Some implementations of exception handling don't create a stack trace if the exception
 // isn't thrown, however it's faster not to actually throw the exception.
 var error = getStacktraceWithUncaughtError();
-var coughtError = getStacktraceWithCaughtError();
+var caughtError = getStacktraceWithCaughtError();
 var getStacktrace = error.stack ?
     getStacktraceWithUncaughtError :
-    (coughtError.stack ? getStacktraceWithCaughtError : getStacktraceWithUncaughtError);
+    (caughtError.stack ? getStacktraceWithCaughtError : getStacktraceWithUncaughtError);
 function getFrames(error) {
     return error.stack ? error.stack.split(NEWLINE) : [];
 }
@@ -77,6 +81,19 @@ function renderLongStackTrace(frames, stack) {
 Zone['longStackTraceZoneSpec'] = {
     name: 'long-stack-trace',
     longStackTraceLimit: 10,
+    // add a getLongStackTrace method in spec to
+    // handle handled reject promise error.
+    getLongStackTrace: function (error) {
+        if (!error) {
+            return undefined;
+        }
+        var task = error[Zone['__symbol__']('currentTask')];
+        var trace = task && task.data && task.data[creationTrace];
+        if (!trace) {
+            return error.stack;
+        }
+        return renderLongStackTrace(trace, error.stack);
+    },
     onScheduleTask: function (parentZoneDelegate, currentZone, targetZone, task) {
         var currentTask = Zone.currentTask;
         var trace = currentTask && currentTask.data && currentTask.data[creationTrace] || [];
@@ -107,7 +124,7 @@ Zone['longStackTraceZoneSpec'] = {
                     stackSetSucceeded = true;
                 }
             }
-            catch (e) {
+            catch (err) {
             }
             var longStack = stackSetSucceeded ?
                 null :
@@ -116,14 +133,14 @@ Zone['longStackTraceZoneSpec'] = {
                 try {
                     stackSetSucceeded = error.stack = longStack;
                 }
-                catch (e) {
+                catch (err) {
                 }
             }
             if (!stackSetSucceeded) {
                 try {
                     stackSetSucceeded = error.longStack = longStack;
                 }
-                catch (e) {
+                catch (err) {
                 }
             }
         }
