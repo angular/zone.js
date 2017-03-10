@@ -5,8 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import {NestedEventListenerOrEventListenerObject, patchEventTargetMethods} from '../common/utils';
-
 ((_global: any) => {
   // patch MediaQuery
   patchMediaQuery(_global);
@@ -15,6 +13,7 @@ import {NestedEventListenerOrEventListenerObject, patchEventTargetMethods} from 
     if (!_global['MediaQueryList']) {
       return;
     }
+    const patchEventTargetMethods = Zone[Zone['__symbol__']('patchEventTargetMethods')];
     patchEventTargetMethods(
         _global['MediaQueryList'].prototype, 'addListener', 'removeListener', (self, args) => {
           return {
@@ -23,16 +22,14 @@ import {NestedEventListenerOrEventListenerObject, patchEventTargetMethods} from 
             handler: args[0],
             target: self || _global,
             name: 'mediaQuery',
-            invokeAddFunc: function(
-                addFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) {
+            invokeAddFunc: function(addFnSymbol: any, delegate) {
               if (delegate && (<Task>delegate).invoke) {
                 return this.target[addFnSymbol]((<Task>delegate).invoke);
               } else {
                 return this.target[addFnSymbol](delegate);
               }
             },
-            invokeRemoveFunc: function(
-                removeFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) {
+            invokeRemoveFunc: function(removeFnSymbol: any, delegate) {
               if (delegate && (<Task>delegate).invoke) {
                 return this.target[removeFnSymbol]((<Task>delegate).invoke);
               } else {

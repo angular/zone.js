@@ -92,11 +92,19 @@ gulp.task('build/zone.min.js', ['compile-esm'], function(cb) {
 });
 
 gulp.task('build/webapis-media-query.js', ['compile-esm'], function(cb) {
-    return generateScript('./lib/browser/webapis-media-query.ts', 'webapis-media-query.js', true, cb);
+    return generateScript('./lib/browser/webapis-media-query.ts', 'webapis-media-query.js', false, cb);
+});
+
+gulp.task('build/webapis-media-query.min.js', ['compile-esm'], function(cb) {
+    return generateScript('./lib/browser/webapis-media-query.ts', 'webapis-media-query.min.js', true, cb);
 });
 
 gulp.task('build/webapis-notification.js', ['compile-esm'], function(cb) {
-    return generateScript('./lib/browser/webapis-notification.ts', 'webapis-notification.js', true, cb);
+    return generateScript('./lib/browser/webapis-notification.ts', 'webapis-notification.js', false, cb);
+});
+
+gulp.task('build/webapis-notification.min.js', ['compile-esm'], function(cb) {
+    return generateScript('./lib/browser/webapis-notification.ts', 'webapis-notification.min.js', true, cb);
 });
 
 gulp.task('build/bluebird.js', ['compile-esm'], function(cb) {
@@ -173,7 +181,9 @@ gulp.task('build', [
   'build/zone.min.js',
   'build/zone-node.js',
   'build/webapis-media-query.js',
+  'build/webapis-media-query.min.js',
   'build/webapis-notification.js',
+  'build/webapis-notification.min.js',
   'build/zone-mix.js',
   'build/bluebird.js',
   'build/bluebird.min.js',

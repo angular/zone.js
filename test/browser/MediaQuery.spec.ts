@@ -21,7 +21,7 @@ describe('test mediaQuery patch', ifEnvSupports(supportMediaQuery, () => {
            it('test whether addListener is patched', () => {
              const mqList = window.matchMedia('min-width:500px');
              if (mqList && mqList['addListener']) {
-               expect(mqList[zoneSymbol('addListener')]).not.toBe(undefined);
+               expect(mqList[zoneSymbol('addListener')]).toBeTruthy();
              }
            });
          }));
