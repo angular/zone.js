@@ -274,7 +274,7 @@ interface ZoneType {
     /**
      * Verify that Zone has been correctly patched. Specifically that Promise is zone aware.
      */
-    assertZonePatched(): any;
+    assertZonePatched(): void;
     /**
      *  Return the root zone.
      */
@@ -418,11 +418,11 @@ declare type HasTaskState = {
 /**
  * Task type: `microTask`, `macroTask`, `eventTask`.
  */
-declare type TaskType = string;
+declare type TaskType = 'microTask' | 'macroTask' | 'eventTask';
 /**
  * Task type: `notScheduled`, `scheduling`, `scheduled`, `running`, `canceling`.
  */
-declare type TaskState = string;
+declare type TaskState = 'notScheduled' | 'scheduling' | 'scheduled' | 'running' | 'canceling';
 /**
  */
 interface TaskData {
@@ -513,10 +513,13 @@ interface Task {
     cancelScheduleRequest(): void;
 }
 interface MicroTask extends Task {
+    type: 'microTask';
 }
 interface MacroTask extends Task {
+    type: 'macroTask';
 }
 interface EventTask extends Task {
+    type: 'eventTask';
 }
 /**
  * Extend the Error with additional fields for rewritten stack frames

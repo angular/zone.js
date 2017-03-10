@@ -18,7 +18,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-
 var Zone$1 = (function (global) {
     if (global['Zone']) {
         throw new Error('Zone already loaded.');
@@ -182,7 +181,8 @@ var Zone$1 = (function (global) {
                 else {
                     task.runCount = 0;
                     this._updateTaskCount(task, -1);
-                    reEntryGuard && task._transitionTo(notScheduled, running, notScheduled);
+                    reEntryGuard &&
+                        task._transitionTo(notScheduled, running, notScheduled);
                 }
                 _currentZoneFrame = _currentZoneFrame.parent;
                 _currentTask = previousTask;
@@ -229,9 +229,9 @@ var Zone$1 = (function (global) {
                 zoneDelegates[i]._updateTaskCount(task.type, count);
             }
         };
-        Zone.__symbol__ = __symbol__;
         return Zone;
     }());
+    Zone.__symbol__ = __symbol__;
     var DELEGATE_ZS = {
         name: '',
         onHasTask: function (delegate, _, target, hasTaskState) {
@@ -240,9 +240,7 @@ var Zone$1 = (function (global) {
         onScheduleTask: function (delegate, _, target, task) {
             return delegate.scheduleTask(target, task);
         },
-        onInvokeTask: function (delegate, _, target, task, applyThis, applyArgs) {
-            return delegate.invokeTask(target, task, applyThis, applyArgs);
-        },
+        onInvokeTask: function (delegate, _, target, task, applyThis, applyArgs) { return delegate.invokeTask(target, task, applyThis, applyArgs); },
         onCancelTask: function (delegate, _, target, task) {
             return delegate.cancelTask(target, task);
         }
@@ -551,7 +549,7 @@ var Zone$1 = (function (global) {
                 }
             }
             while (_uncaughtPromiseErrors.length) {
-                var _loop_1 = function() {
+                var _loop_1 = function () {
                     var uncaughtPromiseError = _uncaughtPromiseErrors.shift();
                     try {
                         uncaughtPromiseError.zone.runGuarded(function () {
@@ -844,9 +842,9 @@ var Zone$1 = (function (global) {
     }
     if (NativePromise) {
         patchThen(NativePromise);
-        var fetch = global['fetch'];
-        if (typeof fetch == 'function') {
-            global['fetch'] = zoneify(fetch);
+        var fetch_1 = global['fetch'];
+        if (typeof fetch_1 == 'function') {
+            global['fetch'] = zoneify(fetch_1);
         }
     }
     // This is not part of public API, but it is usefull for tests, so we expose it.
@@ -1181,7 +1179,7 @@ var Zone$1 = (function (global) {
  * @fileoverview
  * @suppress {undefinedVars,globalThis}
  */
-var zoneSymbol = function (n) { return ("__zone_symbol__" + n); };
+var zoneSymbol = function (n) { return "__zone_symbol__" + n; };
 var _global$1 = typeof window === 'object' && window || typeof self === 'object' && self || global;
 
 
@@ -1460,8 +1458,8 @@ function makeZoneAwareListeners(fnName) {
             return [];
         }
         return target[EVENT_TASKS]
-            .filter(function (task) { return task.data.eventName === eventName; })
-            .map(function (task) { return task.data.handler; });
+            .filter(function (task) { return task.data['eventName'] === eventName; })
+            .map(function (task) { return task.data['handler']; });
     };
 }
 var zoneAwareAddEventListener = makeZoneAwareAddListener(ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER);
