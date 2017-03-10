@@ -410,7 +410,7 @@ interface ZoneSpec {
   onHasTask?:
       (delegate: ZoneDelegate, current: Zone, target: Zone, hasTaskState: HasTaskState) => void;
 }
-;
+
 
 /**
  *  A delegate when intercepting zone operations.
@@ -463,13 +463,12 @@ type HasTaskState = {
 /**
  * Task type: `microTask`, `macroTask`, `eventTask`.
  */
-type TaskType = string; /* TS v1.8 => "microTask" | "macroTask" | "eventTask" */
+type TaskType = 'microTask'|'macroTask'|'eventTask';
 
 /**
  * Task type: `notScheduled`, `scheduling`, `scheduled`, `running`, `canceling`.
  */
-type TaskState =
-    string; /* TS v1.8 => "notScheduled", "scheduling", "scheduled", "running", "canceling" */
+type TaskState = 'notScheduled'|'scheduling'|'scheduled'|'running'|'canceling';
 
 
 /**
@@ -576,15 +575,15 @@ interface Task {
 }
 
 interface MicroTask extends Task {
-  /* TS v1.8 => type: 'microTask'; */
+  type: 'microTask';
 }
 
 interface MacroTask extends Task {
-  /* TS v1.8 => type: 'macroTask'; */
+  type: 'macroTask';
 }
 
 interface EventTask extends Task {
-  /* TS v1.8 => type: 'eventTask'; */
+  type: 'eventTask';
 }
 
 /**
@@ -613,9 +612,11 @@ const Zone: ZoneType = (function(global: any) {
   }
 
   const NO_ZONE = {name: 'NO ZONE'};
-  const notScheduled = 'notScheduled', scheduling = 'scheduling', scheduled = 'scheduled',
-        running = 'running', canceling = 'canceling';
-  const microTask = 'microTask', macroTask = 'macroTask', eventTask = 'eventTask';
+  const notScheduled: 'notScheduled' = 'notScheduled', scheduling: 'scheduling' = 'scheduling',
+                      scheduled: 'scheduled' = 'scheduled', running: 'running' = 'running',
+                      canceling: 'canceling' = 'canceling';
+  const microTask: 'microTask' = 'microTask', macroTask: 'macroTask' = 'macroTask',
+                   eventTask: 'eventTask' = 'eventTask';
 
   class Zone implements AmbientZone {
     static __symbol__: (name: string) => string = __symbol__;
@@ -736,7 +737,7 @@ const Zone: ZoneType = (function(global: any) {
             'A task can only be run in the zone of creation! (Creation: ' +
             (task.zone || NO_ZONE).name + '; Execution: ' + this.name + ')');
       const reEntryGuard = task.state != running;
-      reEntryGuard && (task as ZoneTask)._transitionTo(running, scheduled);
+      reEntryGuard && (task as ZoneTask<any>)._transitionTo(running, scheduled);
       task.runCount++;
       const previousTask = _currentTask;
       _currentTask = task;
@@ -757,12 +758,13 @@ const Zone: ZoneType = (function(global: any) {
           // if the task's state is notScheduled, then it has already been cancelled
           // we should not reset the state to scheduled
           if (task.state !== notScheduled) {
-            reEntryGuard && (task as ZoneTask)._transitionTo(scheduled, running);
+            reEntryGuard && (task as ZoneTask<any>)._transitionTo(scheduled, running);
           }
         } else {
           task.runCount = 0;
-          this._updateTaskCount(task as ZoneTask, -1);
-          reEntryGuard && (task as ZoneTask)._transitionTo(notScheduled, running, notScheduled);
+          this._updateTaskCount(task as ZoneTask<any>, -1);
+          reEntryGuard &&
+              (task as ZoneTask<any>)._transitionTo(notScheduled, running, notScheduled);
         }
         _currentZoneFrame = _currentZoneFrame.parent;
         _currentTask = previousTask;
@@ -770,17 +772,17 @@ const Zone: ZoneType = (function(global: any) {
     }
 
     scheduleTask<T extends Task>(task: T): T {
-      (task as any as ZoneTask)._transitionTo(scheduling, notScheduled);
+      (task as any as ZoneTask<any>)._transitionTo(scheduling, notScheduled);
       const zoneDelegates: ZoneDelegate[] = [];
-      (task as any as ZoneTask)._zoneDelegates = zoneDelegates;
+      (task as any as ZoneTask<any>)._zoneDelegates = zoneDelegates;
       task.zone = this;
       task = this._zoneDelegate.scheduleTask(this, task) as T;
-      if ((task as any as ZoneTask)._zoneDelegates === zoneDelegates) {
+      if ((task as any as ZoneTask<any>)._zoneDelegates === zoneDelegates) {
         // we have to check because internally the delegate can reschedule the task.
-        this._updateTaskCount(task as any as ZoneTask, 1);
+        this._updateTaskCount(task as any as ZoneTask<any>, 1);
       }
-      if ((task as any as ZoneTask).state == scheduling) {
-        (task as any as ZoneTask)._transitionTo(scheduled, scheduling);
+      if ((task as any as ZoneTask<any>).state == scheduling) {
+        (task as any as ZoneTask<any>)._transitionTo(scheduled, scheduling);
       }
       return task;
     }
@@ -807,15 +809,15 @@ const Zone: ZoneType = (function(global: any) {
     }
 
     cancelTask(task: Task): any {
-      (task as ZoneTask)._transitionTo(canceling, scheduled, running);
+      (task as ZoneTask<any>)._transitionTo(canceling, scheduled, running);
       this._zoneDelegate.cancelTask(this, task);
-      this._updateTaskCount(task as ZoneTask, -1);
-      (task as ZoneTask)._transitionTo(notScheduled, canceling);
+      this._updateTaskCount(task as ZoneTask<any>, -1);
+      (task as ZoneTask<any>)._transitionTo(notScheduled, canceling);
       task.runCount = 0;
       return task;
     }
 
-    private _updateTaskCount(task: ZoneTask, count: number) {
+    private _updateTaskCount(task: ZoneTask<any>, count: number) {
       const zoneDelegates = task._zoneDelegates;
       if (count == -1) {
         task._zoneDelegates = null;
@@ -989,14 +991,14 @@ const Zone: ZoneType = (function(global: any) {
     }
 
     scheduleTask(targetZone: Zone, task: Task): Task {
-      let returnTask: ZoneTask = task as ZoneTask;
+      let returnTask: ZoneTask<any> = task as ZoneTask<any>;
       if (this._scheduleTaskZS) {
         if (this._hasTaskZS) {
           returnTask._zoneDelegates.push(this._hasTaskDlgtOwner);
         }
         returnTask = this._scheduleTaskZS.onScheduleTask(
-            this._scheduleTaskDlgt, this._scheduleTaskCurrZone, targetZone, task) as ZoneTask;
-        if (!returnTask) returnTask = task as ZoneTask;
+            this._scheduleTaskDlgt, this._scheduleTaskCurrZone, targetZone, task) as ZoneTask<any>;
+        if (!returnTask) returnTask = task as ZoneTask<any>;
       } else {
         if (task.scheduleFn) {
           task.scheduleFn(task);
@@ -1054,8 +1056,8 @@ const Zone: ZoneType = (function(global: any) {
   }
 
 
-  class ZoneTask implements Task {
-    public type: TaskType;
+  class ZoneTask<T extends TaskType> implements Task {
+    public type: T;
     public source: string;
     public invoke: Function;
     public callback: Function;
@@ -1068,7 +1070,7 @@ const Zone: ZoneType = (function(global: any) {
     _state: TaskState = 'notScheduled';
 
     constructor(
-        type: TaskType, source: string, callback: Function, options: TaskData,
+        type: T, source: string, callback: Function, options: TaskData,
         scheduleFn: (task: Task) => void, cancelFn: (task: Task) => void) {
       this.type = type;
       this.source = source;
