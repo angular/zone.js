@@ -6,8 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {zoneSymbol} from '../../lib/common/utils';
-
 describe('Zone', function() {
   const rootZone = Zone.current;
 

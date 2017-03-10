@@ -106,4 +106,3 @@ describe('Microtasks', function() {
     });
   });
 });
-export let __something__;
