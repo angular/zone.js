@@ -39,7 +39,6 @@ describe('XMLHttpRequest', function() {
 
       req.open('get', '/', true);
       req.send();
-
       const lastScheduled = wtfMock.log[wtfMock.log.length - 1];
       expect(lastScheduled).toMatch('# Zone:schedule:macroTask:XMLHttpRequest.send');
     }, null, null, 'unit-test');
@@ -185,27 +184,36 @@ describe('XMLHttpRequest', function() {
   });
 
   it('should work properly when send request multiple times on single xmlRequest instance',
-     function() {
+     function(done) {
        testZone.run(function() {
          const req = new XMLHttpRequest();
          req.open('get', '/', true);
          req.send();
          req.onloadend = function() {
+           req.onloadend = null;
            req.open('get', '/', true);
-           req.send();
+           req.onloadend = function() {
+             done();
+           };
+           expect(() => {
+             req.send();
+           }).not.toThrow();
          };
        });
      });
 
   it('should keep taskcount correctly when abort was called multiple times before request is done',
-     function() {
+     function(done) {
        testZone.run(function() {
          const req = new XMLHttpRequest();
          req.open('get', '/', true);
          req.send();
          req.addEventListener('readystatechange', function(ev) {
            if (req.readyState >= 2) {
-             req.abort();
+             expect(() => {
+               req.abort();
+             }).not.toThrow();
+             done();
            }
          });
        });
@@ -221,4 +229,23 @@ describe('XMLHttpRequest', function() {
        };
        expect(func).not.toThrow();
      });
+
+  it('should be in the zone when use XMLHttpRequest.addEventListener', function(done) {
+    testZone.run(function() {
+      // sometimes this case will cause timeout
+      // so we set it longer
+      const interval = (<any>jasmine).DEFAULT_TIMEOUT_INTERVAL;
+      (<any>jasmine).DEFAULT_TIMEOUT_INTERVAL = 5000;
+      const req = new XMLHttpRequest();
+      req.open('get', '/', true);
+      req.addEventListener('readystatechange', function() {
+        if (req.readyState === 4) {
+          // expect(Zone.current.name).toEqual('test');
+          (<any>jasmine).DEFAULT_TIMEOUT_INTERVAL = interval;
+          done();
+        }
+      });
+      req.send();
+    });
+  });
 });

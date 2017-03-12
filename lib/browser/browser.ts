@@ -7,7 +7,7 @@
  */
 
 import {patchTimer} from '../common/timers';
-import {findEventTask, patchClass, patchMethod, patchPrototype, zoneSymbol} from '../common/utils';
+import {findEventTask, patchClass, patchEventTargetMethods, patchMethod, patchPrototype, zoneSymbol} from '../common/utils';
 
 import {propertyPatch} from './define-property';
 import {eventTargetPatch} from './event-target';
@@ -37,6 +37,11 @@ for (let i = 0; i < blockingMethods.length; i++) {
 }
 
 eventTargetPatch(_global);
+// patch XMLHttpRequestEventTarget's addEventListener/removeEventListener
+const XMLHttpRequestEventTarget = (_global as any)['XMLHttpRequestEventTarget'];
+if (XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype) {
+  patchEventTargetMethods(XMLHttpRequestEventTarget.prototype);
+}
 propertyDescriptorPatch(_global);
 patchClass('MutationObserver');
 patchClass('WebKitMutationObserver');
