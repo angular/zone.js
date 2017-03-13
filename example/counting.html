@@ -30,8 +30,8 @@
     const countingZoneSpec = Zone['countingZoneSpec'];
     const myCountingZone = Zone.current.fork(countingZoneSpec).fork({
       onScheduleTask(parent, current, target, task) {
-        console.log('Scheduled ' + task.source + ' => ' + task.data.handleId);
         parent.scheduleTask(target, task);
+        console.log('Scheduled ' + task.source + ' => ' + task.data.handleId);
         outputElem.innerText = countingZoneSpec.counter();
       },
       onInvokeTask(parent, current, target, task) {
