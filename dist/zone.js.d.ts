@@ -420,9 +420,9 @@ declare type HasTaskState = {
  */
 declare type TaskType = 'microTask' | 'macroTask' | 'eventTask';
 /**
- * Task type: `notScheduled`, `scheduling`, `scheduled`, `running`, `canceling`.
+ * Task type: `notScheduled`, `scheduling`, `scheduled`, `running`, `canceling`, 'unknown'.
  */
-declare type TaskState = 'notScheduled' | 'scheduling' | 'scheduled' | 'running' | 'canceling';
+declare type TaskState = 'notScheduled' | 'scheduling' | 'scheduled' | 'running' | 'canceling' | 'unknown';
 /**
  */
 interface TaskData {
@@ -462,7 +462,7 @@ interface Task {
      */
     type: TaskType;
     /**
-     * Task state: `notScheduled`, `scheduling`, `scheduled`, `running`, `canceling`.
+     * Task state: `notScheduled`, `scheduling`, `scheduled`, `running`, `canceling`, `unknown`.
      */
     state: TaskState;
     /**
@@ -500,7 +500,7 @@ interface Task {
      * @type {Zone} The zone which will be used to invoke the `callback`. The Zone is captured
      * at the time of Task creation.
      */
-    zone: Zone;
+    readonly zone: Zone;
     /**
      * Number of times the task has been executed, or -1 if canceled.
      */

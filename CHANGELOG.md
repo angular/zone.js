@@ -1,3 +1,20 @@
+<a name="0.8.1"></a>
+## [0.8.1](https://github.com/angular/zone.js/compare/v0.8.0...0.8.1) (2017-03-13)
+
+
+### Bug Fixes
+
+* **example:** Update counting.html ([#648](https://github.com/angular/zone.js/issues/648)) ([a63ae5f](https://github.com/angular/zone.js/commit/a63ae5f))
+* **XHR:** fix [#671](https://github.com/angular/zone.js/issues/671), patch XMLHttpRequestEventTarget prototype ([300dc36](https://github.com/angular/zone.js/commit/300dc36))
+
+
+### Features
+
+* **error:** remove zone internal stack frames in error.stack ([#632](https://github.com/angular/zone.js/issues/632)) ([76fa891](https://github.com/angular/zone.js/commit/76fa891))
+* **task:** add task lifecycle doc and testcases to explain task state transition. ([#651](https://github.com/angular/zone.js/issues/651)) ([ef39a44](https://github.com/angular/zone.js/commit/ef39a44))
+
+
+
 <a name="0.8.0"></a>
 # [0.8.0](https://github.com/angular/zone.js/compare/v0.7.8...0.8.0) (2017-03-10)
 
