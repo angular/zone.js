@@ -63,7 +63,7 @@ describe('nodejs file system', () => {
               done();
             });
           });
-          writeFile('testfile', 'test new content');
+          writeFile('testfile', 'test new content', () => {});
         });
       });
     });
@@ -83,7 +83,7 @@ describe('nodejs file system', () => {
               done();
             });
           });
-          writeFile('testfile', 'test new content');
+          writeFile('testfile', 'test new content', () => {});
         });
       });
     });
