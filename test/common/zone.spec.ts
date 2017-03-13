@@ -140,6 +140,28 @@ describe('Zone', function() {
       log = [];
     });
 
+    it('task can only run in the zone of creation', () => {
+      const task =
+          zone.fork({name: 'createZone'}).scheduleMacroTask('test', noop, null, noop, noop);
+      expect(() => {
+        Zone.current.fork({name: 'anotherZone'}).runTask(task);
+      })
+          .toThrowError(
+              'A task can only be run in the zone of creation! (Creation: createZone; Execution: anotherZone)');
+      task.zone.cancelTask(task);
+    });
+
+    it('task can only cancel in the zone of creation', () => {
+      const task =
+          zone.fork({name: 'createZone'}).scheduleMacroTask('test', noop, null, noop, noop);
+      expect(() => {
+        Zone.current.fork({name: 'anotherZone'}).cancelTask(task);
+      })
+          .toThrowError(
+              'A task can only be cancelled in the zone of creation! (Creation: createZone; Execution: anotherZone)');
+      task.zone.cancelTask(task);
+    });
+
     it('should prevent double cancellation', () => {
       const task = zone.scheduleMacroTask('test', () => log.push('macroTask'), null, noop, noop);
       zone.cancelTask(task);
@@ -207,28 +229,6 @@ describe('Zone', function() {
         {microTask: false, macroTask: false, eventTask: false, change: 'microTask', zone: 'child'},
         {microTask: false, macroTask: false, eventTask: false, change: 'microTask', zone: 'parent'},
       ]);
-    });
-
-    it('should allow overriding of the Zone in task', () => {
-      expect(Zone.current).not.toBe(zone);
-      let taskZone = null;
-      const callback = () => {
-        taskZone = Zone.current;
-      };
-      const customSchedule = (task: Task) => {};
-      const customCancel = (task: Task) => {};
-      const testZone = Zone.current.fork({
-        name: 'testZone',
-        onScheduleTask: (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
-                            Task => {
-                              task.zone = zone;
-                              return delegate.scheduleTask(targetZone, task);
-                            }
-      });
-      const task =
-          testZone.scheduleMacroTask('test1', callback, null, customSchedule, customCancel);
-      task.zone.runTask(task);
-      expect(taskZone).toBe(zone);
     });
 
     it('should allow rescheduling a task on a separate zone', () => {
