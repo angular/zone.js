@@ -1033,7 +1033,7 @@ var Zone$1 = (function (global) {
         'ZoneTask.invoke', 'ZoneAware', 'getStacktraceWithUncaughtError', 'new LongStackTrace',
         'long-stack-trace'
     ];
-    function attachZoneAndRemoveInternalZoneFrames(error) {
+    function attachZoneAndRemoveInternalZoneFrames(error, zoneAwareError) {
         // Save original stack trace
         error.originalStack = error.stack;
         // Process the stack trace and rewrite the frames.
@@ -1080,7 +1080,15 @@ var Zone$1 = (function (global) {
             for (; i_1 < frames_1.length && zoneFrame; i_1++) {
                 _loop_2();
             }
-            error.stack = error.zoneAwareStack = frames_1.join('\n');
+            var finalStack = frames_1.join('\n');
+            try {
+                error.stack = error.zoneAwareStack = finalStack;
+            }
+            catch (nonWritableErr) {
+                // in some browser, the error.stack is readonly such as PhantomJS
+                // so we need to store the stack frames to zoneAwareError directly
+                zoneAwareError.stack = finalStack;
+            }
         }
     }
     /**
@@ -1111,7 +1119,7 @@ var Zone$1 = (function (global) {
         this[__symbol__('error')] = error;
         // 1. attach zone information to stack frame
         // 2. remove zone internal stack frames
-        attachZoneAndRemoveInternalZoneFrames(error);
+        attachZoneAndRemoveInternalZoneFrames(error, this);
         // use defineProperties here instead of copy property value
         // because of issue #595 which will break angular2.
         var props = getErrorPropertiesForPrototype(Object.getPrototypeOf(this));
