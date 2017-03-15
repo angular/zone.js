@@ -87,7 +87,7 @@ Zone['longStackTraceZoneSpec'] = {
         if (!error) {
             return undefined;
         }
-        var task = error[Zone['__symbol__']('currentTask')];
+        var task = error[Zone.__symbol__('currentTask')];
         var trace = task && task.data && task.data[creationTrace];
         if (!trace) {
             return error.stack;

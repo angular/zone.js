@@ -1,3 +1,12 @@
+<a name="0.8.3"></a>
+## [0.8.3](https://github.com/angular/zone.js/compare/v0.8.1...0.8.3) (2017-03-15)
+
+
+### Bug Fixes
+
+* **zone:** consistent access to __symbol__ to work with closure ([f742394](https://github.com/angular/zone.js/commit/f742394))
+
+
 <a name="0.8.2"></a>
 ## [0.8.2](https://github.com/angular/zone.js/compare/v0.8.1...0.8.2) (2017-03-14)
 

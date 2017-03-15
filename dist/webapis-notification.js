@@ -30,7 +30,7 @@
         if (!desc || !desc.configurable) {
             return;
         }
-        var patchOnProperties = Zone[Zone['__symbol__']('patchOnProperties')];
+        var patchOnProperties = Zone[Zone.__symbol__('patchOnProperties')];
         patchOnProperties(Notification.prototype, null);
     }
 })(typeof window === 'object' && window || typeof self === 'object' && self || global);

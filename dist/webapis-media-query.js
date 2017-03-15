@@ -25,7 +25,7 @@
         if (!_global['MediaQueryList']) {
             return;
         }
-        var patchEventTargetMethods = Zone[Zone['__symbol__']('patchEventTargetMethods')];
+        var patchEventTargetMethods = Zone[Zone.__symbol__('patchEventTargetMethods')];
         patchEventTargetMethods(_global['MediaQueryList'].prototype, 'addListener', 'removeListener', function (self, args) {
             return {
                 useCapturing: false,

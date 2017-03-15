@@ -19,7 +19,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 (function (_global) {
-    var __symbol__ = Zone['__symbol__'];
+    var __symbol__ = Zone.__symbol__;
     // TODO: @JiaLiPassion, we can automatically patch bluebird
     // if global.Promise = Bluebird, but sometimes in nodejs,
     // global.Promise is not Bluebird, and Bluebird is just be
