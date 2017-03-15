@@ -14,7 +14,7 @@
       return;
     }
     const patchEventTargetMethods =
-        (Zone as any)[(Zone as any)['__symbol__']('patchEventTargetMethods')];
+        (Zone as any)[(Zone as any).__symbol__('patchEventTargetMethods')];
     patchEventTargetMethods(
         _global['MediaQueryList'].prototype, 'addListener', 'removeListener',
         (self: any, args: any[]) => {

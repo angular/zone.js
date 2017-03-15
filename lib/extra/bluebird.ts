@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 ((_global: any) => {
-  const __symbol__ = (Zone as any)['__symbol__'];
+  const __symbol__ = (Zone as any).__symbol__;
   // TODO: @JiaLiPassion, we can automatically patch bluebird
   // if global.Promise = Bluebird, but sometimes in nodejs,
   // global.Promise is not Bluebird, and Bluebird is just be

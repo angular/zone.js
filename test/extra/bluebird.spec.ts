@@ -16,7 +16,7 @@ describe('bluebird promise', () => {
     BluebirdPromise = require('bluebird');
     // import bluebird patch
     require('../../lib/extra/bluebird');
-    const patchBluebird = (Zone as any)[(Zone as any)['__symbol__']('bluebird')];
+    const patchBluebird = (Zone as any)[(Zone as any).__symbol__('bluebird')];
     patchBluebird(BluebirdPromise);
   });
 

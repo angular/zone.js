@@ -86,7 +86,7 @@
     private _microtasks: Function[] = [];
     private _lastError: Error = null;
     private _uncaughtPromiseErrors: {rejection: any}[] =
-        (Promise as any)[(Zone as any)['__symbol__']('uncaughtPromiseErrors')];
+        (Promise as any)[(Zone as any).__symbol__('uncaughtPromiseErrors')];
 
     pendingPeriodicTimers: number[] = [];
     pendingTimers: number[] = [];

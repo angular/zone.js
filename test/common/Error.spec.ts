@@ -159,7 +159,7 @@ describe('ZoneAwareError', () => {
 
   it('should copy customized NativeError properties to ZoneAwareError', () => {
     const spy = jasmine.createSpy('errorCustomFunction');
-    const NativeError = (global as any)[(Zone as any)['__symbol__']('Error')];
+    const NativeError = (global as any)[(Zone as any).__symbol__('Error')];
     NativeError.customFunction = function(args: any) {
       spy(args);
     };
