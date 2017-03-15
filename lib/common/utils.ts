@@ -13,10 +13,9 @@
 
 // Hack since TypeScript isn't compiling this for a worker.
 declare const WorkerGlobalScope: any;
-declare const window: any;
 
 export const zoneSymbol: (name: string) => string = (n) => `__zone_symbol__${n}`;
-const _global = typeof window === 'object' && window || typeof self === 'object' && self || global;
+const _global: any = typeof window === 'object' && window || typeof self === 'object' && self || global;
 
 export function bindArguments(args: any[], source: string): any[] {
   for (let i = args.length - 1; i >= 0; i--) {
@@ -50,12 +49,12 @@ export const isNode: boolean =
      {}.toString.call(process) === '[object process]');
 
 export const isBrowser: boolean =
-    !isNode && !isWebWorker && !!(typeof window !== 'undefined' && window['HTMLElement']);
+    !isNode && !isWebWorker && !!(typeof window !== 'undefined' && (window as any)['HTMLElement']);
 
 // we are in electron of nw, so we are both browser and nodejs
 export const isMix: boolean = typeof process !== 'undefined' &&
     {}.toString.call(process) === '[object process]' && !isWebWorker &&
-    !!(typeof window !== 'undefined' && window['HTMLElement']);
+    !!(typeof window !== 'undefined' && (window as any)['HTMLElement']);
 
 export function patchProperty(obj: any, prop: string) {
   const desc = Object.getOwnPropertyDescriptor(obj, prop) || {enumerable: true, configurable: true};
