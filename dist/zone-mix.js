@@ -280,7 +280,7 @@ var Zone$1 = (function (global) {
     };
     var ZoneDelegate = (function () {
         function ZoneDelegate(zone, parentDelegate, zoneSpec) {
-            this._taskCounts = { microTask: 0, macroTask: 0, eventTask: 0 };
+            this._taskCounts = { 'microTask': 0, 'macroTask': 0, 'eventTask': 0 };
             this.zone = zone;
             this._parentDelegate = parentDelegate;
             this._forkZS = zoneSpec && (zoneSpec && zoneSpec.onFork ? zoneSpec : parentDelegate._forkZS);
@@ -919,112 +919,6 @@ var Zone$1 = (function (global) {
     var zoneAwareErrorStartFrames = [];
     global.Error = ZoneAwareError;
     var stackRewrite = 'stackRewrite';
-    // fix #595, create property descriptor
-    // for error properties
-    var createProperty = function (props, key) {
-        // if property is already defined, skip it.
-        if (props[key]) {
-            return;
-        }
-        // define a local property
-        // in case error property is not settable
-        var name = __symbol__(key);
-        props[key] = {
-            configurable: true,
-            enumerable: true,
-            get: function () {
-                // if local property has no value
-                // use internal error's property value
-                if (!this[name]) {
-                    var error_2 = this[__symbol__('error')];
-                    if (error_2) {
-                        this[name] = error_2[key];
-                    }
-                }
-                return this[name];
-            },
-            set: function (value) {
-                // setter will set value to local property value
-                this[name] = value;
-            }
-        };
-    };
-    // fix #595, create property descriptor
-    // for error method properties
-    var createMethodProperty = function (props, key) {
-        if (props[key]) {
-            return;
-        }
-        props[key] = {
-            configurable: true,
-            enumerable: true,
-            writable: true,
-            value: function () {
-                var error = this[__symbol__('error')];
-                var errorMethod = (error && error[key]) || this[key];
-                if (errorMethod) {
-                    return errorMethod.apply(error, arguments);
-                }
-            }
-        };
-    };
-    var createErrorProperties = function () {
-        var props = Object.create(null);
-        var error = new NativeError();
-        var keys = Object.getOwnPropertyNames(error);
-        for (var i = 0; i < keys.length; i++) {
-            var key = keys[i];
-            // Avoid bugs when hasOwnProperty is shadowed
-            if (Object.prototype.hasOwnProperty.call(error, key)) {
-                createProperty(props, key);
-            }
-        }
-        var proto = NativeError.prototype;
-        if (proto) {
-            var pKeys = Object.getOwnPropertyNames(proto);
-            for (var i = 0; i < pKeys.length; i++) {
-                var key = pKeys[i];
-                // skip constructor
-                if (key !== 'constructor' && key !== 'toString' && key !== 'toSource') {
-                    createProperty(props, key);
-                }
-            }
-        }
-        // some other properties are not
-        // in NativeError
-        createProperty(props, 'originalStack');
-        createProperty(props, 'zoneAwareStack');
-        // in IE, stack is not in prototype
-        createProperty(props, 'stack');
-        // define toString, toSource as method property
-        createMethodProperty(props, 'toString');
-        createMethodProperty(props, 'toSource');
-        return props;
-    };
-    var errorProperties = createErrorProperties();
-    // for derived Error class which extends ZoneAwareError
-    // we should not override the derived class's property
-    // so we create a new props object only copy the properties
-    // from errorProperties which not exist in derived Error's prototype
-    var getErrorPropertiesForPrototype = function (prototype) {
-        // if the prototype is ZoneAwareError.prototype
-        // we just return the prebuilt errorProperties.
-        if (prototype === ZoneAwareError.prototype) {
-            return errorProperties;
-        }
-        var newProps = Object.create(null);
-        var cKeys = Object.getOwnPropertyNames(errorProperties);
-        var keys = Object.getOwnPropertyNames(prototype);
-        cKeys.forEach(function (cKey) {
-            if (keys.filter(function (key) {
-                return key === cKey;
-            })
-                .length === 0) {
-                newProps[cKey] = errorProperties[cKey];
-            }
-        });
-        return newProps;
-    };
     // some functions are not easily to be detected here,
     // for example Timeout.ZoneTask.invoke, if we want to detect those functions
     // by detect zone, we have to run all patched APIs, it is too risky
@@ -1033,7 +927,7 @@ var Zone$1 = (function (global) {
         'ZoneTask.invoke', 'ZoneAware', 'getStacktraceWithUncaughtError', 'new LongStackTrace',
         'long-stack-trace'
     ];
-    function attachZoneAndRemoveInternalZoneFrames(error, zoneAwareError) {
+    function attachZoneAndRemoveInternalZoneFrames(error) {
         // Save original stack trace
         error.originalStack = error.stack;
         // Process the stack trace and rewrite the frames.
@@ -1087,7 +981,6 @@ var Zone$1 = (function (global) {
             catch (nonWritableErr) {
                 // in some browser, the error.stack is readonly such as PhantomJS
                 // so we need to store the stack frames to zoneAwareError directly
-                zoneAwareError.stack = finalStack;
             }
         }
     }
@@ -1096,14 +989,7 @@ var Zone$1 = (function (global) {
      * adds zone information to it.
      */
     function ZoneAwareError() {
-        // make sure we have a valid this
-        // if this is undefined(call Error without new) or this is global
-        // or this is some other objects, we should force to create a
-        // valid ZoneAwareError by call Object.create()
-        if (!(this instanceof ZoneAwareError)) {
-            return ZoneAwareError.apply(Object.create(ZoneAwareError.prototype), arguments);
-        }
-        // Create an Error.
+        // We always have to return native error otherwise the browser console will not work.
         var error = NativeError.apply(this, arguments);
         if (!error.stack) {
             // in IE, the error.stack will be undefined
@@ -1116,15 +1002,10 @@ var Zone$1 = (function (global) {
                 error = err;
             }
         }
-        this[__symbol__('error')] = error;
         // 1. attach zone information to stack frame
         // 2. remove zone internal stack frames
-        attachZoneAndRemoveInternalZoneFrames(error, this);
-        // use defineProperties here instead of copy property value
-        // because of issue #595 which will break angular2.
-        var props = getErrorPropertiesForPrototype(Object.getPrototypeOf(this));
-        Object.defineProperties(this, props);
-        return this;
+        attachZoneAndRemoveInternalZoneFrames(error);
+        return error;
     }
     // Copy the prototype so that instanceof operator works as expected
     ZoneAwareError.prototype = NativeError.prototype;
@@ -1258,8 +1139,6 @@ var Zone$1 = (function (global) {
     // 1. IE issue, the error.stack can only be not undefined after throw
     // 2. handle Error(...) without new options
     var throwError = function (message, withNew) {
-        if (withNew === void 0) { withNew = true; }
-        var error;
         try {
             if (withNew) {
                 throw new Error(message);
@@ -1269,9 +1148,8 @@ var Zone$1 = (function (global) {
             }
         }
         catch (err) {
-            error = err;
+            return err;
         }
-        return error;
     };
     var nativeStackTraceLimit = NativeError.stackTraceLimit;
     // in some system/browser, some additional stack frames
@@ -1284,14 +1162,14 @@ var Zone$1 = (function (global) {
     var detectRunFn = function () {
         detectZone.run(function () {
             detectZone.runGuarded(function () {
-                throw throwError('blacklistStackFrames');
+                throw throwError('blacklistStackFrames', true);
             });
         });
     };
     var detectRunWithoutNewFn = function () {
         detectZone.run(function () {
             detectZone.runGuarded(function () {
-                throw throwError('blacklistStackFrames', false);
+                throw throwError('blacklistStackFrames');
             });
         });
     };
@@ -1440,7 +1318,7 @@ var Zone$1 = (function (global) {
     detectZoneWithCallbacks.runGuarded(detectPromiseCaughtWithoutNewFn);
     NativeError.stackTraceLimit = nativeStackTraceLimit;
     return global['Zone'] = Zone;
-})(typeof window === 'object' && window || typeof self === 'object' && self || global);
+})(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);
 
 /**
  * @license
@@ -1945,14 +1823,16 @@ function patchTimer(window, setName, cancelName, nameSuffix) {
     var tasksByHandleId = {};
     function scheduleTask(task) {
         var data = task.data;
-        data.args[0] = function () {
+        function timer() {
             try {
                 task.invoke.apply(this, arguments);
             }
             finally {
                 delete tasksByHandleId[data.handleId];
             }
-        };
+        }
+        
+        data.args[0] = timer;
         data.handleId = setNative.apply(window, data.args);
         tasksByHandleId[data.handleId] = task;
         return task;
@@ -2330,7 +2210,7 @@ function registerElementPatch(_global) {
 var set = 'set';
 var clear = 'clear';
 var blockingMethods = ['alert', 'prompt', 'confirm'];
-var _global = typeof window === 'object' && window || typeof self === 'object' && self || global;
+var _global = typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global;
 patchTimer(_global, set, clear, 'Timeout');
 patchTimer(_global, set, clear, 'Interval');
 patchTimer(_global, set, clear, 'Immediate');

@@ -23,9 +23,11 @@
  * @suppress {globalThis}
  */
 var NEWLINE = '\n';
-var SEP = '  -------------  ';
-var IGNORE_FRAMES = [];
+var IGNORE_FRAMES = {};
 var creationTrace = '__creationTrace__';
+var ERROR_TAG = 'STACKTRACE TRACKING';
+var SEP_TAG = '__SEP_TAG__';
+var sepTemplate = '';
 var LongStackTrace = (function () {
     function LongStackTrace() {
         this.error = getStacktrace();
@@ -34,7 +36,7 @@ var LongStackTrace = (function () {
     return LongStackTrace;
 }());
 function getStacktraceWithUncaughtError() {
-    return new Error('STACKTRACE TRACKING');
+    return new Error(ERROR_TAG);
 }
 function getStacktraceWithCaughtError() {
     try {
@@ -59,19 +61,21 @@ function addErrorStack(lines, error) {
     for (var i = 0; i < trace.length; i++) {
         var frame = trace[i];
         // Filter out the Frames which are part of stack capturing.
-        if (!(i < IGNORE_FRAMES.length && IGNORE_FRAMES[i] === frame)) {
+        if (!IGNORE_FRAMES.hasOwnProperty(frame)) {
             lines.push(trace[i]);
         }
     }
 }
 function renderLongStackTrace(frames, stack) {
-    var longTrace = [stack];
+    var longTrace = [stack.trim()];
     if (frames) {
         var timestamp = new Date().getTime();
         for (var i = 0; i < frames.length; i++) {
             var traceFrames = frames[i];
             var lastTime = traceFrames.timestamp;
-            longTrace.push(SEP + " Elapsed: " + (timestamp - lastTime.getTime()) + " ms; At: " + lastTime + " " + SEP);
+            var separator = "____________________Elapsed " + (timestamp - lastTime.getTime()) + " ms; At: " + lastTime;
+            separator = separator.replace(/[^\w\d]/g, '_');
+            longTrace.push(sepTemplate.replace(SEP_TAG, separator));
             addErrorStack(longTrace, traceFrames.error);
             timestamp = lastTime.getTime();
         }
@@ -109,39 +113,11 @@ Zone['longStackTraceZoneSpec'] = {
     onHandleError: function (parentZoneDelegate, currentZone, targetZone, error) {
         var parentTask = Zone.currentTask || error.task;
         if (error instanceof Error && parentTask) {
-            var stackSetSucceeded = null;
+            var longStack = renderLongStackTrace(parentTask.data && parentTask.data[creationTrace], error.stack);
             try {
-                var descriptor = Object.getOwnPropertyDescriptor(error, 'stack');
-                if (descriptor && descriptor.configurable) {
-                    var delegateGet_1 = descriptor.get;
-                    var value_1 = descriptor.value;
-                    descriptor = {
-                        get: function () {
-                            return renderLongStackTrace(parentTask.data && parentTask.data[creationTrace], delegateGet_1 ? delegateGet_1.apply(this) : value_1);
-                        }
-                    };
-                    Object.defineProperty(error, 'stack', descriptor);
-                    stackSetSucceeded = true;
-                }
+                error.stack = error.longStack = longStack;
             }
             catch (err) {
-            }
-            var longStack = stackSetSucceeded ?
-                null :
-                renderLongStackTrace(parentTask.data && parentTask.data[creationTrace], error.stack);
-            if (!stackSetSucceeded) {
-                try {
-                    stackSetSucceeded = error.stack = longStack;
-                }
-                catch (err) {
-                }
-            }
-            if (!stackSetSucceeded) {
-                try {
-                    stackSetSucceeded = error.longStack = longStack;
-                }
-                catch (err) {
-                }
             }
         }
         return parentZoneDelegate.handleError(targetZone, error);
@@ -161,12 +137,20 @@ function computeIgnoreFrames() {
     for (var i = 0; i < frames1.length; i++) {
         var frame1 = frames1[i];
         var frame2 = frames2[i];
+        if (!sepTemplate && frame1.indexOf(ERROR_TAG) == -1) {
+            sepTemplate = frame1.replace(/^(\s*(at)?\s*)([\w\/\<]+)/, '$1' + SEP_TAG);
+        }
         if (frame1 === frame2) {
-            IGNORE_FRAMES.push(frame1);
+            IGNORE_FRAMES[frame1] = true;
         }
         else {
             break;
         }
+        console.log('>>>>>>', sepTemplate, frame1);
+    }
+    if (!sepTemplate) {
+        // If we could not find it default to this text.
+        sepTemplate = SEP_TAG + '@[native code]';
     }
 }
 computeIgnoreFrames();

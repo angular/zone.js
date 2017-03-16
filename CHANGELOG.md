@@ -1,3 +1,14 @@
+<a name="0.8.4"></a>
+## [0.8.4](https://github.com/angular/zone.js/compare/v0.8.3...0.8.4) (2017-03-16)
+
+
+### Bug Fixes
+
+* correct declaration which breaks closure ([0e19304](https://github.com/angular/zone.js/commit/0e19304))
+* stack rewriting now works with source maps ([bcd09a0](https://github.com/angular/zone.js/commit/bcd09a0))
+
+
+
 <a name="0.8.3"></a>
 ## [0.8.3](https://github.com/angular/zone.js/compare/v0.8.1...0.8.3) (2017-03-15)
 
