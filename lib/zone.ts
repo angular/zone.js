@@ -877,7 +877,7 @@ const Zone: ZoneType = (function(global: any) {
 
     private _taskCounts: {microTask: number,
                           macroTask: number,
-                          eventTask: number} = {microTask: 0, macroTask: 0, eventTask: 0};
+                          eventTask: number} = {'microTask': 0, 'macroTask': 0, 'eventTask': 0};
 
     private _parentDelegate: ZoneDelegate;
 
@@ -1052,7 +1052,7 @@ const Zone: ZoneType = (function(global: any) {
     }
 
     cancelTask(targetZone: Zone, task: Task): any {
-      let value;
+      let value: any;
       if (this._cancelTaskZS) {
         value = this._cancelTaskZS.onCancelTask(
             this._cancelTaskDlgt, this._cancelTaskCurrZone, targetZone, task);
@@ -1078,8 +1078,8 @@ const Zone: ZoneType = (function(global: any) {
 
     _updateTaskCount(type: TaskType, count: number) {
       const counts = this._taskCounts;
-      const prev = counts[type];
-      const next = counts[type] = prev + count;
+      const prev = (counts as any)[type];
+      const next = (counts as any)[type] = prev + count;
       if (next < 0) {
         throw new Error('More tasks executed then were scheduled.');
       }
@@ -1347,7 +1347,7 @@ const Zone: ZoneType = (function(global: any) {
     }
     if ((promise as any)[symbolState] === UNRESOLVED) {
       // should only get value.then once based on promise spec.
-      let then = null;
+      let then: any = null;
       try {
         if (typeof value === 'object' || typeof value === 'function') {
           then = value && value.then;
@@ -1622,122 +1622,6 @@ const Zone: ZoneType = (function(global: any) {
   global.Error = ZoneAwareError;
   const stackRewrite = 'stackRewrite';
 
-  // fix #595, create property descriptor
-  // for error properties
-  const createProperty = function(props: {[k: string]: any}, key: string) {
-    // if property is already defined, skip it.
-    if (props[key]) {
-      return;
-    }
-    // define a local property
-    // in case error property is not settable
-    const name = __symbol__(key);
-    props[key] = {
-      configurable: true,
-      enumerable: true,
-      get: function() {
-        // if local property has no value
-        // use internal error's property value
-        if (!this[name]) {
-          const error = this[__symbol__('error')];
-          if (error) {
-            this[name] = error[key];
-          }
-        }
-        return this[name];
-      },
-      set: function(value: any) {
-        // setter will set value to local property value
-        this[name] = value;
-      }
-    };
-  };
-
-  // fix #595, create property descriptor
-  // for error method properties
-  const createMethodProperty = function(props: {[k: string]: any}, key: string) {
-    if (props[key]) {
-      return;
-    }
-    props[key] = {
-      configurable: true,
-      enumerable: true,
-      writable: true,
-      value: function() {
-        const error = this[__symbol__('error')];
-        let errorMethod = (error && error[key]) || this[key];
-        if (errorMethod) {
-          return errorMethod.apply(error, arguments);
-        }
-      }
-    };
-  };
-
-  const createErrorProperties = function() {
-    const props = Object.create(null);
-
-    const error = new NativeError();
-    let keys = Object.getOwnPropertyNames(error);
-    for (let i = 0; i < keys.length; i++) {
-      const key = keys[i];
-      // Avoid bugs when hasOwnProperty is shadowed
-      if (Object.prototype.hasOwnProperty.call(error, key)) {
-        createProperty(props, key);
-      }
-    }
-
-    const proto = NativeError.prototype;
-    if (proto) {
-      let pKeys = Object.getOwnPropertyNames(proto);
-      for (let i = 0; i < pKeys.length; i++) {
-        const key = pKeys[i];
-        // skip constructor
-        if (key !== 'constructor' && key !== 'toString' && key !== 'toSource') {
-          createProperty(props, key);
-        }
-      }
-    }
-
-    // some other properties are not
-    // in NativeError
-    createProperty(props, 'originalStack');
-    createProperty(props, 'zoneAwareStack');
-    // in IE, stack is not in prototype
-    createProperty(props, 'stack');
-
-    // define toString, toSource as method property
-    createMethodProperty(props, 'toString');
-    createMethodProperty(props, 'toSource');
-    return props;
-  };
-
-  const errorProperties = createErrorProperties();
-
-  // for derived Error class which extends ZoneAwareError
-  // we should not override the derived class's property
-  // so we create a new props object only copy the properties
-  // from errorProperties which not exist in derived Error's prototype
-  const getErrorPropertiesForPrototype = function(prototype: any) {
-    // if the prototype is ZoneAwareError.prototype
-    // we just return the prebuilt errorProperties.
-    if (prototype === ZoneAwareError.prototype) {
-      return errorProperties;
-    }
-    const newProps = Object.create(null);
-    const cKeys = Object.getOwnPropertyNames(errorProperties);
-    const keys = Object.getOwnPropertyNames(prototype);
-    cKeys.forEach(cKey => {
-      if (keys.filter(key => {
-                return key === cKey;
-              })
-              .length === 0) {
-        newProps[cKey] = errorProperties[cKey];
-      }
-    });
-
-    return newProps;
-  };
-
   // some functions are not easily to be detected here,
   // for example Timeout.ZoneTask.invoke, if we want to detect those functions
   // by detect zone, we have to run all patched APIs, it is too risky
@@ -1747,7 +1631,7 @@ const Zone: ZoneType = (function(global: any) {
     'long-stack-trace'
   ];
 
-  function attachZoneAndRemoveInternalZoneFrames(error: any, zoneAwareError: any) {
+  function attachZoneAndRemoveInternalZoneFrames(error: Error) {
     // Save original stack trace
     error.originalStack = error.stack;
     // Process the stack trace and rewrite the frames.
@@ -1795,7 +1679,6 @@ const Zone: ZoneType = (function(global: any) {
       } catch (nonWritableErr) {
         // in some browser, the error.stack is readonly such as PhantomJS
         // so we need to store the stack frames to zoneAwareError directly
-        zoneAwareError.stack = finalStack;
       }
     }
   }
@@ -1805,14 +1688,7 @@ const Zone: ZoneType = (function(global: any) {
    * adds zone information to it.
    */
   function ZoneAwareError() {
-    // make sure we have a valid this
-    // if this is undefined(call Error without new) or this is global
-    // or this is some other objects, we should force to create a
-    // valid ZoneAwareError by call Object.create()
-    if (!(this instanceof ZoneAwareError)) {
-      return ZoneAwareError.apply(Object.create(ZoneAwareError.prototype), arguments);
-    }
-    // Create an Error.
+    // We always have to return native error otherwise the browser console will not work.
     let error: Error = NativeError.apply(this, arguments);
     if (!error.stack) {
       // in IE, the error.stack will be undefined
@@ -1824,16 +1700,10 @@ const Zone: ZoneType = (function(global: any) {
         error = err;
       }
     }
-    this[__symbol__('error')] = error;
     // 1. attach zone information to stack frame
     // 2. remove zone internal stack frames
-    attachZoneAndRemoveInternalZoneFrames(error, this);
-
-    // use defineProperties here instead of copy property value
-    // because of issue #595 which will break angular2.
-    const props = getErrorPropertiesForPrototype(Object.getPrototypeOf(this));
-    Object.defineProperties(this, props);
-    return this;
+    attachZoneAndRemoveInternalZoneFrames(error);
+    return error;
   }
 
   // Copy the prototype so that instanceof operator works as expected
@@ -1975,8 +1845,7 @@ const Zone: ZoneType = (function(global: any) {
   // use this method to handle
   // 1. IE issue, the error.stack can only be not undefined after throw
   // 2. handle Error(...) without new options
-  const throwError = (message: string, withNew: boolean = true) => {
-    let error;
+  const throwError = (message: string, withNew?: boolean) => {
     try {
       if (withNew) {
         throw new Error(message);
@@ -1984,9 +1853,8 @@ const Zone: ZoneType = (function(global: any) {
         throw Error(message);
       }
     } catch (err) {
-      error = err;
+      return err;
     }
-    return error;
   };
 
   const nativeStackTraceLimit = NativeError.stackTraceLimit;
@@ -2000,7 +1868,7 @@ const Zone: ZoneType = (function(global: any) {
   let detectRunFn = () => {
     detectZone.run(() => {
       detectZone.runGuarded(() => {
-        throw throwError('blacklistStackFrames');
+        throw throwError('blacklistStackFrames', true);
       });
     });
   };
@@ -2008,7 +1876,7 @@ const Zone: ZoneType = (function(global: any) {
   let detectRunWithoutNewFn = () => {
     detectZone.run(() => {
       detectZone.runGuarded(() => {
-        throw throwError('blacklistStackFrames', false);
+        throw throwError('blacklistStackFrames');
       });
     });
   };
@@ -2190,4 +2058,4 @@ const Zone: ZoneType = (function(global: any) {
   NativeError.stackTraceLimit = nativeStackTraceLimit;
 
   return global['Zone'] = Zone;
-})(typeof window === 'object' && window || typeof self === 'object' && self || global);
+})(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);

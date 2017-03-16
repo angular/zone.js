@@ -34,7 +34,7 @@ describe('longStackTraceZone', function() {
         setTimeout(function() {
           setTimeout(function() {
             try {
-              expect(log[0].stack.split('Elapsed: ').length).toBe(3);
+              expect(log[0].stack.split('Elapsed').length).toBe(3);
               done();
             } catch (e) {
               expect(e).toBe(null);
@@ -82,7 +82,7 @@ describe('longStackTraceZone', function() {
           });
           setTimeout(function() {
             try {
-              expect(log[0].stack.split('Elapsed: ').length).toBe(5);
+              expect(log[0].stack.split('Elapsed').length).toBe(5);
               done();
             } catch (e) {
               expect(e).toBe(null);
@@ -105,7 +105,7 @@ describe('longStackTraceZone', function() {
           promise.catch(function(error) {
             // should be able to get long stack trace
             const longStackFrames: string = longStackTraceZoneSpec.getLongStackTrace(error);
-            expect(longStackFrames.split('Elapsed: ').length).toBe(4);
+            expect(longStackFrames.split('Elapsed').length).toBe(4);
             done();
           });
         }, 0);

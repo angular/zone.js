@@ -16,7 +16,7 @@ __karma__.loaded = function() {};
 (window as any).global = window;
 
 System.config({defaultJSExtensions: true});
-let browserPatchedPromise = null;
+let browserPatchedPromise: any = null;
 if ((window as any)[(Zone as any).__symbol__('setTimeout')]) {
   browserPatchedPromise = Promise.resolve('browserPatched');
 } else {

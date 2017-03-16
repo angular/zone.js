@@ -15,7 +15,8 @@
 declare const WorkerGlobalScope: any;
 
 export const zoneSymbol: (name: string) => string = (n) => `__zone_symbol__${n}`;
-const _global: any = typeof window === 'object' && window || typeof self === 'object' && self || global;
+const _global: any =
+    typeof window === 'object' && window || typeof self === 'object' && self || global;
 
 export function bindArguments(args: any[], source: string): any[] {
   for (let i = args.length - 1; i >= 0; i--) {

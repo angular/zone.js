@@ -955,92 +955,56 @@ describe('task lifecycle', () => {
          ]);
        }));
 
-    it('should not be able to reschedule task in notScheduled/running/canceling state', testFnWithLoggedTransitionTo(
-                                                                                            () => {
-                                                                                              Zone.current
-                                                                                                  .fork({
-                                                                                                    name:
-                                                                                                        'rescheduleNotScheduled'
-                                                                                                  })
-                                                                                                  .run(() => {
-                                                                                                    const t =
-                                                                                                        Zone.current
-                                                                                                            .scheduleMacroTask(
-                                                                                                                'testRescheduleZoneTask',
-                                                                                                                noop,
-                                                                                                                null,
-                                                                                                                noop,
-                                                                                                                noop);
-                                                                                                    Zone.current
-                                                                                                        .cancelTask(
-                                                                                                            t);
-                                                                                                    expect(() => {
-                                                                                                      t.cancelScheduleRequest();
-                                                                                                    })
-                                                                                                        .toThrow(Error(
-                                                                                                            `macroTask 'testRescheduleZoneTask': can not transition to 'notScheduled', expecting state 'scheduling', was 'notScheduled'.`));
-                                                                                                  });
+    it('should not be able to reschedule task in notScheduled / running / canceling state',
+       testFnWithLoggedTransitionTo(() => {
+         Zone.current.fork({name: 'rescheduleNotScheduled'}).run(() => {
+           const t =
+               Zone.current.scheduleMacroTask('testRescheduleZoneTask', noop, null, noop, noop);
+           Zone.current.cancelTask(t);
+           expect(() => {
+             t.cancelScheduleRequest();
+           })
+               .toThrow(Error(
+                   `macroTask 'testRescheduleZoneTask': can not transition to ` +
+                   `'notScheduled', expecting state 'scheduling', was 'notScheduled'.`));
+         });
 
-                                                                                              Zone.current
-                                                                                                  .fork({
-                                                                                                    name:
-                                                                                                        'rescheduleRunning',
-                                                                                                    onInvokeTask:
-                                                                                                        (delegate,
-                                                                                                         currZone,
-                                                                                                         targetZone,
-                                                                                                         task,
-                                                                                                         applyThis,
-                                                                                                         applyArgs) => {
-                                                                                                          expect(() => {
-                                                                                                            task.cancelScheduleRequest();
-                                                                                                          })
-                                                                                                              .toThrow(Error(
-                                                                                                                  `macroTask 'testRescheduleZoneTask': can not transition to 'notScheduled', expecting state 'scheduling', was 'running'.`));
-                                                                                                        }
-                                                                                                  })
-                                                                                                  .run(() => {
-                                                                                                    const t =
-                                                                                                        Zone.current
-                                                                                                            .scheduleMacroTask(
-                                                                                                                'testRescheduleZoneTask',
-                                                                                                                noop,
-                                                                                                                null,
-                                                                                                                noop,
-                                                                                                                noop);
-                                                                                                    t.invoke();
-                                                                                                  });
+         Zone.current
+             .fork({
+               name: 'rescheduleRunning',
+               onInvokeTask: (delegate, currZone, targetZone, task, applyThis, applyArgs) => {
+                 expect(() => {
+                   task.cancelScheduleRequest();
+                 })
+                     .toThrow(Error(
+                         `macroTask 'testRescheduleZoneTask': can not transition to ` +
+                         `'notScheduled', expecting state 'scheduling', was 'running'.`));
+               }
+             })
+             .run(() => {
+               const t =
+                   Zone.current.scheduleMacroTask('testRescheduleZoneTask', noop, null, noop, noop);
+               t.invoke();
+             });
 
-                                                                                              Zone.current
-                                                                                                  .fork({
-                                                                                                    name:
-                                                                                                        'rescheduleCanceling',
-                                                                                                    onCancelTask:
-                                                                                                        (delegate,
-                                                                                                         currZone,
-                                                                                                         targetZone,
-                                                                                                         task) => {
-                                                                                                          expect(() => {
-                                                                                                            task.cancelScheduleRequest();
-                                                                                                          })
-                                                                                                              .toThrow(Error(
-                                                                                                                  `macroTask 'testRescheduleZoneTask': can not transition to 'notScheduled', expecting state 'scheduling', was 'canceling'.`));
-                                                                                                        }
-                                                                                                  })
-                                                                                                  .run(() => {
-                                                                                                    const t =
-                                                                                                        Zone.current
-                                                                                                            .scheduleMacroTask(
-                                                                                                                'testRescheduleZoneTask',
-                                                                                                                noop,
-                                                                                                                null,
-                                                                                                                noop,
-                                                                                                                noop);
-                                                                                                    Zone.current
-                                                                                                        .cancelTask(
-                                                                                                            t);
-                                                                                                  });
-                                                                                            }));
+         Zone.current
+             .fork({
+               name: 'rescheduleCanceling',
+               onCancelTask: (delegate, currZone, targetZone, task) => {
+                 expect(() => {
+                   task.cancelScheduleRequest();
+                 })
+                     .toThrow(Error(
+                         `macroTask 'testRescheduleZoneTask': can not transition to ` +
+                         `'notScheduled', expecting state 'scheduling', was 'canceling'.`));
+               }
+             })
+             .run(() => {
+               const t =
+                   Zone.current.scheduleMacroTask('testRescheduleZoneTask', noop, null, noop, noop);
+               Zone.current.cancelTask(t);
+             });
+       }));
 
     it('can not reschedule a task to a zone which is the descendants of the original zone',
        testFnWithLoggedTransitionTo(() => {

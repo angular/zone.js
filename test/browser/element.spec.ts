@@ -7,7 +7,6 @@
  */
 
 import {ifEnvSupports} from '../test-util';
-declare const global: any;
 
 describe('element', function() {
   let button: HTMLButtonElement;
@@ -92,7 +91,7 @@ describe('element', function() {
      * For now we are choosing to ignore it and assume that this arrises in tests only.
      * As an added measure we make sure that all jasmine tests always run in a task. See: jasmine.ts
      */
-    global[(Zone as any).__symbol__('setTimeout')](() => {
+    (window as any)[(Zone as any).__symbol__('setTimeout')](() => {
       let log = '';
       button.addEventListener('click', () => {
         Zone.current.scheduleMicroTask('test', () => log += 'microtask;');

@@ -6,74 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-// simulate @angular/facade/src/error.ts
-class BaseError extends Error {
-  /** @internal **/
-  _nativeError: Error;
-
-  constructor(message: string) {
-    super(message);
-    const nativeError = new Error(message) as any as Error;
-    this._nativeError = nativeError;
-  }
-
-  get message() {
-    return this._nativeError.message;
-  }
-  set message(message) {
-    this._nativeError.message = message;
-  }
-  get name() {
-    return this._nativeError.name;
-  }
-  get stack() {
-    return (this._nativeError as any).stack;
-  }
-  set stack(value) {
-    (this._nativeError as any).stack = value;
-  }
-  toString() {
-    return this._nativeError.toString();
-  }
-}
-
-class WrappedError extends BaseError {
-  originalError: any;
-
-  constructor(message: string, error: any) {
-    super(`${message} caused by: ${error instanceof Error ? error.message : error}`);
-    this.originalError = error;
-  }
-
-  get stack() {
-    return ((this.originalError instanceof Error ? this.originalError : this._nativeError) as any)
-        .stack;
-  }
-}
-
-class TestError extends WrappedError {
-  constructor(message: string, error: any) {
-    super(`${message} caused by: ${error instanceof Error ? error.message : error}`, error);
-  }
-
-  get message() {
-    return 'test ' + this.originalError.message;
-  }
-}
-
-class TestMessageError extends WrappedError {
-  constructor(message: string, error: any) {
-    super(`${message} caused by: ${error instanceof Error ? error.message : error}`, error);
-  }
-
-  get message() {
-    return 'test ' + this.originalError.message;
-  }
-
-  set message(value) {
-    this.originalError.message = value;
-  }
-}
+const _global: any =
+    typeof window === 'object' && window || typeof self === 'object' && self || global;
 
 describe('ZoneAwareError', () => {
   // If the environment does not supports stack rewrites, then these tests will fail
@@ -84,7 +18,7 @@ describe('ZoneAwareError', () => {
     class MyError extends Error {}
     const myError = new MyError();
     expect(myError instanceof Error).toBe(true);
-    expect(myError instanceof MyError).toBe(true);
+    expect(myError instanceof _global[(Zone as any).__symbol__('Error')]).toBe(true);
     expect(myError.stack).not.toBe(undefined);
   });
 
@@ -134,27 +68,6 @@ describe('ZoneAwareError', () => {
       // in firefox, error has fileName property
       expect((<any>myError).fileName).toContain('zone');
     }
-  });
-
-  it('should not use child Error class get/set in ZoneAwareError constructor', () => {
-    const func = () => {
-      const error = new BaseError('test');
-      expect(error.message).toEqual('test');
-    };
-
-    expect(func).not.toThrow();
-  });
-
-  it('should behave correctly with wrapped error', () => {
-    const error = new TestError('originalMessage', new Error('error message'));
-    expect(error.message).toEqual('test error message');
-    error.originalError.message = 'new error message';
-    expect(error.message).toEqual('test new error message');
-
-    const error1 = new TestMessageError('originalMessage', new Error('error message'));
-    expect(error1.message).toEqual('test error message');
-    error1.message = 'new error message';
-    expect(error1.message).toEqual('test new error message');
   });
 
   it('should copy customized NativeError properties to ZoneAwareError', () => {
@@ -227,40 +140,28 @@ describe('ZoneAwareError', () => {
       if (/Outside/.test(outsideFrames[0])) {
         outsideFrames.shift();
       }
-      if (/new Error/.test(outsideFrames[0])) {
+      if (/Error /.test(outsideFrames[0])) {
         outsideFrames.shift();
       }
 
       if (/Outside/.test(outsideWithoutNewFrames[0])) {
         outsideWithoutNewFrames.shift();
       }
-      if (/new Error/.test(outsideWithoutNewFrames[0])) {
-        outsideWithoutNewFrames.shift();
-      }
-      if (/Error.ZoneAwareError/.test(outsideWithoutNewFrames[0])) {
-        outsideWithoutNewFrames.shift();
-      }
-      if (/ZoneAwareError/.test(outsideWithoutNewFrames[0])) {
+      if (/Error /.test(outsideWithoutNewFrames[0])) {
         outsideWithoutNewFrames.shift();
       }
 
       if (/Inside/.test(insideFrames[0])) {
         insideFrames.shift();
       }
-      if (/new Error/.test(insideFrames[0])) {
+      if (/Error /.test(insideFrames[0])) {
         insideFrames.shift();
       }
 
       if (/Inside/.test(insideWithoutNewFrames[0])) {
         insideWithoutNewFrames.shift();
       }
-      if (/new Error/.test(insideWithoutNewFrames[0])) {
-        insideWithoutNewFrames.shift();
-      }
-      if (/Error.ZoneAwareError/.test(insideWithoutNewFrames[0])) {
-        insideWithoutNewFrames.shift();
-      }
-      if (/ZoneAwareError/.test(insideWithoutNewFrames[0])) {
+      if (/Error /.test(insideWithoutNewFrames[0])) {
         insideWithoutNewFrames.shift();
       }
 
@@ -289,7 +190,7 @@ function assertStackDoesNotContainZoneFrames(err: Error) {
   for (let i = 0; i < frames.length; i++) {
     expect(zoneAwareFrames.filter(f => frames[i].indexOf(f) !== -1)).toEqual([]);
   }
-};
+}
 
 const errorZoneSpec = {
   name: 'errorZone',
@@ -312,6 +213,9 @@ const assertStackDoesNotContainZoneFramesTest = function(testFn: Function) {
     errorZone.run(testFn);
   };
 };
+
+const LongStackTraceZoneSpec: {getLongStackTrace(error: Error): string}&ZoneSpec =
+    (Zone as any)['longStackTraceZoneSpec'];
 
 describe('Error stack', () => {
   it('Error with new which occurs in setTimeout callback should not have zone frames visible',
@@ -368,25 +272,60 @@ describe('Error stack', () => {
 
   it('Error with new which occurs in longStackTraceZone should not have zone frames and longStackTraceZone frames visible',
      assertStackDoesNotContainZoneFramesTest(() => {
-       const task = Zone.current.fork((Zone as any)['longStackTraceZoneSpec'])
-                        .scheduleEventTask('errorEvent', () => {
-                          throw new Error('test error');
-                        }, null, () => null, null);
+       const task =
+           Zone.current.fork(LongStackTraceZoneSpec).scheduleEventTask('errorEvent', () => {
+             throw new Error('test error');
+           }, null, () => null, null);
        task.invoke();
      }));
 
   it('Error without new which occurs in longStackTraceZone should not have zone frames and longStackTraceZone frames visible',
      assertStackDoesNotContainZoneFramesTest(() => {
-       const task = Zone.current.fork((Zone as any)['longStackTraceZoneSpec'])
-                        .scheduleEventTask('errorEvent', () => {
-                          throw Error('test error');
-                        }, null, () => null, null);
+       const task =
+           Zone.current.fork(LongStackTraceZoneSpec).scheduleEventTask('errorEvent', () => {
+             throw Error('test error');
+           }, null, () => null, null);
        task.invoke();
      }));
 
+  it('Error stack trace should have consistent format', (done) => {
+    const CHROME_FRAMES = /^    at\s/;
+    const OTHER_FRAMES = /[\w\d.]+/;
+
+    Zone.current.fork(LongStackTraceZoneSpec)
+        .fork({
+          name: 'myTest',
+          onHandleError: function(
+              parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, error: any):
+              boolean {
+                parentZoneDelegate.handleError(targetZone, error);
+                let frames: string[] = error.stack.split('\n');
+                if (frames[0].indexOf('LongStackTrace') != -1) frames.shift();
+                let frameRegexp: RegExp = null;
+                if (frames[0].indexOf('    at') == 0)
+                  frameRegexp = CHROME_FRAMES;
+                else
+                  frameRegexp = OTHER_FRAMES;
+                for (let i = 0; i < frames.length; i++) {
+                  let frame = frames[i];
+                  if (frame) {
+                    expect(frame).toMatch(frameRegexp);
+                  }
+                }
+                done();
+                return false;
+              }
+        })
+        .run(() => {
+          setTimeout(() => {
+            throw new Error('LongStackTrace');
+          }, 0);
+        });
+  });
+
   it('stack frames of the callback in user customized zoneSpec should be kept',
      assertStackDoesNotContainZoneFramesTest(() => {
-       const task = Zone.current.fork((Zone as any)['longStackTraceZoneSpec'])
+       const task = Zone.current.fork(LongStackTraceZoneSpec)
                         .fork({
                           name: 'customZone',
                           onScheduleTask: (parentDelegate, currentZone, targetZone, task) => {
@@ -407,8 +346,6 @@ describe('Error stack', () => {
      }));
 
   it('should be able to generate zone free stack even NativeError stack is readonly', function() {
-    const _global: any =
-        typeof window === 'object' && window || typeof self === 'object' && self || global;
     const NativeError = _global['__zone_symbol__Error'];
     const desc = Object.getOwnPropertyDescriptor(NativeError.prototype, 'stack');
     if (desc) {

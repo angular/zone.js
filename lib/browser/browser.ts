@@ -18,7 +18,7 @@ const set = 'set';
 const clear = 'clear';
 const blockingMethods = ['alert', 'prompt', 'confirm'];
 const _global: any =
-    typeof window === 'object' && window || typeof self === 'object' && self || global;
+    typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global;
 
 patchTimer(_global, set, clear, 'Timeout');
 patchTimer(_global, set, clear, 'Interval');

@@ -39,6 +39,7 @@ describe('setTimeout', function() {
       // node.js. They do not stringify properly since they contain circular references.
       id = JSON.stringify((<MacroTask>cancelId).data, function replaceTimer(key, value) {
         if (key == 'handleId' && typeof value == 'object') return value.constructor.name;
+        if (typeof value === 'function') return value.name;
         return value;
       }) as any as number;
       expect(wtfMock.log).toEqual([
