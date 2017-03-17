@@ -88,7 +88,10 @@ export function patchProperty(obj: any, prop: string) {
         let result;
         result = fn.apply(this, arguments);
 
-        if (result != undefined && !result) event.preventDefault();
+        if (result != undefined && !result) {
+          event.preventDefault();
+        }
+        return result;
       };
 
       this[_prop] = wrapFn;
