@@ -1703,6 +1703,20 @@ const Zone: ZoneType = (function(global: any) {
     // 1. attach zone information to stack frame
     // 2. remove zone internal stack frames
     attachZoneAndRemoveInternalZoneFrames(error);
+    if (this instanceof NativeError && this.constructor != NativeError) {
+      // We got called with a `new` operator AND we are subclass of ZoneAwareError
+      // in that case we have to copy all of our properties to `this`.
+      Object.keys(error).concat('stack', 'message').forEach((key) => {
+        if ((error as any)[key] !== undefined) {
+          try {
+            this[key] = (error as any)[key];
+          } catch (e) {
+            // ignore the assignment in case it is a setter and it throws.
+          }
+        }
+      });
+      return this;
+    }
     return error;
   }
 
