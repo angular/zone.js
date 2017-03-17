@@ -146,7 +146,6 @@ function computeIgnoreFrames() {
     } else {
       break;
     }
-    console.log('>>>>>>', sepTemplate, frame1);
   }
   if (!sepTemplate) {
     // If we could not find it default to this text.
