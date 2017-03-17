@@ -15,7 +15,7 @@ const IGNORE_FRAMES: {[k: string]: true} = {};
 const creationTrace = '__creationTrace__';
 const ERROR_TAG = 'STACKTRACE TRACKING';
 const SEP_TAG = '__SEP_TAG__';
-let sepTemplate = '';
+let sepTemplate: string = SEP_TAG + '@[native]';
 
 class LongStackTrace {
   error: Error = getStacktrace();
@@ -137,19 +137,23 @@ function computeIgnoreFrames() {
   const frames2 = frames[1];
   for (let i = 0; i < frames1.length; i++) {
     const frame1 = frames1[i];
-    const frame2 = frames2[i];
-    if (!sepTemplate && frame1.indexOf(ERROR_TAG) == -1) {
-      sepTemplate = frame1.replace(/^(\s*(at)?\s*)([\w\/\<]+)/, '$1' + SEP_TAG);
+    if (frame1.indexOf(ERROR_TAG) == -1) {
+      let match = frame1.match(/^\s*at\s+/);
+      if (match) {
+        sepTemplate = match[0] + SEP_TAG + ' (http://localhost)';
+        break;
+      }
     }
+  }
+
+  for (let i = 0; i < frames1.length; i++) {
+    const frame1 = frames1[i];
+    const frame2 = frames2[i];
     if (frame1 === frame2) {
       IGNORE_FRAMES[frame1] = true;
     } else {
       break;
     }
-  }
-  if (!sepTemplate) {
-    // If we could not find it default to this text.
-    sepTemplate = SEP_TAG + '@[native code]';
   }
 }
 computeIgnoreFrames();

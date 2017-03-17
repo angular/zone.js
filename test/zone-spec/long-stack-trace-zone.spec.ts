@@ -28,17 +28,25 @@ describe('longStackTraceZone', function() {
     log = [];
   });
 
+  function expectElapsed(stack: string, expectedCount: number) {
+    try {
+      let actualCount = stack.split('_Elapsed_').length;
+      if (actualCount !== expectedCount) {
+        expect(actualCount).toEqual(expectedCount);
+        console.log(stack);
+      }
+    } catch (e) {
+      expect(e).toBe(null);
+    }
+  }
+
   it('should produce long stack traces', function(done) {
     lstz.run(function() {
       setTimeout(function() {
         setTimeout(function() {
           setTimeout(function() {
-            try {
-              expect(log[0].stack.split('Elapsed').length).toBe(3);
-              done();
-            } catch (e) {
-              expect(e).toBe(null);
-            }
+            expectElapsed(log[0].stack, 3);
+            done();
           }, 0);
           throw new Error('Hello');
         }, 0);
@@ -81,12 +89,8 @@ describe('longStackTraceZone', function() {
             fail('should not get here');
           });
           setTimeout(function() {
-            try {
-              expect(log[0].stack.split('Elapsed').length).toBe(5);
-              done();
-            } catch (e) {
-              expect(e).toBe(null);
-            }
+            expectElapsed(log[0].stack, 5);
+            done();
           }, 0);
         }, 0);
       }, 0);
@@ -105,7 +109,7 @@ describe('longStackTraceZone', function() {
           promise.catch(function(error) {
             // should be able to get long stack trace
             const longStackFrames: string = longStackTraceZoneSpec.getLongStackTrace(error);
-            expect(longStackFrames.split('Elapsed').length).toBe(4);
+            expectElapsed(longStackFrames, 4);
             done();
           });
         }, 0);
