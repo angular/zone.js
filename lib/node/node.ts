@@ -11,6 +11,7 @@ import './events';
 import './fs';
 
 import {patchTimer} from '../common/timers';
+import {patchFuncToString} from '../common/to-string';
 import {findEventTask, patchMacroTask, patchMicroTask, zoneSymbol} from '../common/utils';
 
 const set = 'set';
@@ -34,6 +35,9 @@ if (shouldPatchGlobalTimers) {
 // patch process related methods
 patchProcess();
 handleUnhandledPromiseRejection();
+
+// patch Function.prototyp.toString
+patchFuncToString();
 
 // Crypto
 let crypto: any;
