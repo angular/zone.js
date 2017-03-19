@@ -1901,6 +1901,7 @@ const Zone: ZoneType = (function(global: any) {
 
   function handleDetectError(error: Error) {
     let frames = error.stack ? error.stack.split(/\n/) : [];
+    let findRunTask: boolean = false;
     while (frames.length) {
       let frame = frames.shift();
       // On safari it is possible to have stack frame with no line number.
@@ -1918,6 +1919,8 @@ const Zone: ZoneType = (function(global: any) {
       if (fnName.indexOf('runGuarded') !== -1) {
         break;
       } else if (fnName.indexOf('runTask') !== -1) {
+        findRunTask = true;
+      } else if (findRunTask && fnName.indexOf('invoke') !== -1) {
         break;
       }
     }
@@ -1994,10 +1997,36 @@ const Zone: ZoneType = (function(global: any) {
     });
   };
 
+  let detectMacroPromiseFn = () => {
+    Zone.current
+        .scheduleMacroTask(
+            'macro',
+            () => {
+              new Promise((resolve, reject) => {
+                reject(throwError('zoneAwareFrames'));
+              });
+            },
+            null, () => null, null)
+        .invoke();
+  };
+
   let detectPromiseWithoutNewFn = () => {
     new Promise((resolve, reject) => {
       reject(throwError('zoneAwareFrames', false));
     });
+  };
+
+  let detectMacroPromiseWithoutNewFn = () => {
+    Zone.current
+        .scheduleMacroTask(
+            'macro',
+            () => {
+              new Promise((resolve, reject) => {
+                reject(throwError('zoneAwareFrames', false));
+              });
+            },
+            null, () => null, null)
+        .invoke();
   };
 
   let detectPromiseCaughtFn = () => {
@@ -2009,6 +2038,22 @@ const Zone: ZoneType = (function(global: any) {
     });
   };
 
+  let detectMacroPromiseCaughtFn = () => {
+    Zone.current
+        .scheduleMacroTask(
+            'macro',
+            () => {
+              const p = new Promise((resolve, reject) => {
+                reject(throwError('zoneAwareFrames'));
+              });
+              p.catch(err => {
+                throw err;
+              });
+            },
+            null, () => null, null)
+        .invoke();
+  };
+
   let detectPromiseCaughtWithoutNewFn = () => {
     const p = new Promise((resolve, reject) => {
       reject(throwError('zoneAwareFrames', false));
@@ -2018,7 +2063,25 @@ const Zone: ZoneType = (function(global: any) {
     });
   };
 
+  let detectMacroPromiseCaughtWithoutNewFn = () => {
+    Zone.current
+        .scheduleMacroTask(
+            'macro',
+            () => {
+              const p = new Promise((resolve, reject) => {
+                reject(throwError('zoneAwareFrames', false));
+              });
+              p.catch(err => {
+                throw err;
+              });
+            },
+            null, () => null, null)
+        .invoke();
+  };
+
   // Cause the error to extract the stack frames.
+  detectEmptyZone.scheduleEventTask('detect', detectFn, null, () => null, null).invoke();
+  detectZoneWithCallbacks.scheduleEventTask('detect', detectFn, null, () => null, null).invoke();
   detectEmptyZone.runTask(
       detectEmptyZone.scheduleEventTask('detect', detectFn, null, () => null, null));
   detectZoneWithCallbacks.runTask(
@@ -2069,6 +2132,18 @@ const Zone: ZoneType = (function(global: any) {
 
   detectEmptyZone.runGuarded(detectPromiseCaughtWithoutNewFn);
   detectZoneWithCallbacks.runGuarded(detectPromiseCaughtWithoutNewFn);
+
+  detectEmptyZone.runGuarded(detectMacroPromiseFn);
+  detectZoneWithCallbacks.runGuarded(detectMacroPromiseFn);
+
+  detectEmptyZone.runGuarded(detectMacroPromiseWithoutNewFn);
+  detectZoneWithCallbacks.runGuarded(detectMacroPromiseWithoutNewFn);
+
+  detectEmptyZone.runGuarded(detectMacroPromiseCaughtFn);
+  detectZoneWithCallbacks.runGuarded(detectMacroPromiseCaughtFn);
+
+  detectEmptyZone.runGuarded(detectMacroPromiseCaughtWithoutNewFn);
+  detectZoneWithCallbacks.runGuarded(detectMacroPromiseCaughtWithoutNewFn);
   NativeError.stackTraceLimit = nativeStackTraceLimit;
 
   return global['Zone'] = Zone;
