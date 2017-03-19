@@ -13,6 +13,14 @@ describe('crypto test', () => {
   } catch (err) {
   }
 
+  beforeEach(() => {
+    (<any>jasmine).DEFAULT_TIMEOUT_INTERVAL = 5000;
+  });
+
+  afterEach(() => {
+    (<any>jasmine).DEFAULT_TIMEOUT_INTERVAL = 2000;
+  });
+
   it('crypto randomBytes method should be patched as tasks', (done) => {
     if (!crypto) {
       done();
