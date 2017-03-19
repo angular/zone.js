@@ -6,8 +6,10 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {zoneSymbol} from '../../lib/common/utils';
+import {isBrowser, isMix, zoneSymbol} from '../../lib/common/utils';
 import {ifEnvSupports} from '../test-util';
+
+import Spy = jasmine.Spy;
 declare const global: any;
 
 function windowPrototype() {
@@ -17,6 +19,19 @@ function windowPrototype() {
 function promiseUnhandleRejectionSupport() {
   return !!global['PromiseRejectionEvent'];
 }
+
+function canPatchOnProperty(obj: any, prop: string) {
+  if (!obj) {
+    return false;
+  }
+  const desc = Object.getOwnPropertyDescriptor(obj, prop);
+  if (!desc || !desc.configurable) {
+    return false;
+  }
+  return true;
+}
+
+(canPatchOnProperty as any).message = 'patchOnProperties';
 
 describe('Zone', function() {
   const rootZone = Zone.current;
@@ -50,6 +65,80 @@ describe('Zone', function() {
       expect(promptSpy).toHaveBeenCalledWith('promptMsg', 'default');
       expect(confirmSpy).toHaveBeenCalledWith('confirmMsg');
     });
+
+    describe('DOM onProperty hooks', ifEnvSupports(canPatchOnProperty, function() {
+               let mouseEvent = document.createEvent('Event');
+               let hookSpy: Spy, eventListenerSpy: Spy;
+               const zone = rootZone.fork({
+                 name: 'spy',
+                 onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone,
+                                  targetZone: Zone, task: Task): any => {
+                   hookSpy();
+                   return parentZoneDelegate.scheduleTask(targetZone, task);
+                 }
+               });
+
+               beforeEach(function() {
+                 mouseEvent.initEvent('mousedown', true, true);
+                 hookSpy = jasmine.createSpy('hook');
+                 eventListenerSpy = jasmine.createSpy('eventListener');
+               });
+
+               it('window onclick should be in zone',
+                  ifEnvSupports(
+                      () => {
+                        return canPatchOnProperty(window, 'onmousedown');
+                      },
+                      function() {
+                        zone.run(function() {
+                          window.onmousedown = eventListenerSpy;
+                        });
+
+                        window.dispatchEvent(mouseEvent);
+
+                        expect(hookSpy).toHaveBeenCalled();
+                        expect(eventListenerSpy).toHaveBeenCalled();
+                        window.removeEventListener('mousedown', eventListenerSpy);
+                      }));
+
+               it('document onclick should be in zone',
+                  ifEnvSupports(
+                      () => {
+                        return canPatchOnProperty(Document.prototype, 'onmousedown');
+                      },
+                      function() {
+                        zone.run(function() {
+                          document.onmousedown = eventListenerSpy;
+                        });
+
+                        document.dispatchEvent(mouseEvent);
+
+                        expect(hookSpy).toHaveBeenCalled();
+                        expect(eventListenerSpy).toHaveBeenCalled();
+                        document.removeEventListener('mousedown', eventListenerSpy);
+                      }));
+
+               it('SVGElement onclick should be in zone',
+                  ifEnvSupports(
+                      () => {
+                        return typeof SVGElement !== 'undefined' &&
+                            canPatchOnProperty(SVGElement.prototype, 'onmousedown');
+                      },
+                      function() {
+                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                        document.body.appendChild(svg);
+                        zone.run(function() {
+                          svg.onmousedown = eventListenerSpy;
+                        });
+
+                        svg.dispatchEvent(mouseEvent);
+
+                        expect(hookSpy).toHaveBeenCalled();
+                        expect(eventListenerSpy).toHaveBeenCalled();
+                        svg.removeEventListener('mouse', eventListenerSpy);
+                        document.body.removeChild(svg);
+                      }));
+             }));
 
     describe('eventListener hooks', function() {
       let button: HTMLButtonElement;
