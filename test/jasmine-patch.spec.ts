@@ -8,7 +8,13 @@
 
 import {ifEnvSupports} from './test-util';
 
-ifEnvSupports(() => jasmine && (jasmine as any)['Spec'], () => {
+function supportJasmineSpec() {
+  return jasmine && (jasmine as any)['Spec'];
+}
+
+(supportJasmineSpec as any).message = 'jasmine spec';
+
+ifEnvSupports(supportJasmineSpec, () => {
   beforeEach(() => {
     // assert that each jasmine run has a task, so that drainMicrotask works properly.
     expect(Zone.currentTask).toBeTruthy();
