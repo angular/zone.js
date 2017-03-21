@@ -27,7 +27,7 @@ var IGNORE_FRAMES = {};
 var creationTrace = '__creationTrace__';
 var ERROR_TAG = 'STACKTRACE TRACKING';
 var SEP_TAG = '__SEP_TAG__';
-var sepTemplate = '';
+var sepTemplate = SEP_TAG + '@[native]';
 var LongStackTrace = (function () {
     function LongStackTrace() {
         this.error = getStacktrace();
@@ -136,21 +136,23 @@ function computeIgnoreFrames() {
     var frames2 = frames[1];
     for (var i = 0; i < frames1.length; i++) {
         var frame1 = frames1[i];
-        var frame2 = frames2[i];
-        if (!sepTemplate && frame1.indexOf(ERROR_TAG) == -1) {
-            sepTemplate = frame1.replace(/^(\s*(at)?\s*)([\w\/\<]+)/, '$1' + SEP_TAG);
+        if (frame1.indexOf(ERROR_TAG) == -1) {
+            var match = frame1.match(/^\s*at\s+/);
+            if (match) {
+                sepTemplate = match[0] + SEP_TAG + ' (http://localhost)';
+                break;
+            }
         }
+    }
+    for (var i = 0; i < frames1.length; i++) {
+        var frame1 = frames1[i];
+        var frame2 = frames2[i];
         if (frame1 === frame2) {
             IGNORE_FRAMES[frame1] = true;
         }
         else {
             break;
         }
-        console.log('>>>>>>', sepTemplate, frame1);
-    }
-    if (!sepTemplate) {
-        // If we could not find it default to this text.
-        sepTemplate = SEP_TAG + '@[native code]';
     }
 }
 computeIgnoreFrames();

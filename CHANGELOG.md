@@ -1,3 +1,23 @@
+<a name="0.8.5"></a>
+## [0.8.5](https://github.com/angular/zone.js/compare/v0.8.4...0.8.5) (2017-03-21)
+
+
+### Bug Fixes
+
+* add support for subclassing of Errors ([81297ee](https://github.com/angular/zone.js/commit/81297ee))
+* improve long-stack-trace stack format detection ([6010557](https://github.com/angular/zone.js/commit/6010557))
+* remove left over console.log ([eeaab91](https://github.com/angular/zone.js/commit/eeaab91))
+* **event:** fix [#667](https://github.com/angular/zone.js/issues/667), eventHandler should return result ([#682](https://github.com/angular/zone.js/issues/682)) ([5c4e24d](https://github.com/angular/zone.js/commit/5c4e24d))
+* **jasmine:** modify jasmine test ifEnvSupports message ([#689](https://github.com/angular/zone.js/issues/689)) ([5635ac0](https://github.com/angular/zone.js/commit/5635ac0))
+* **REVERT:** remove zone internal stack frames in error.stack ([#632](https://github.com/angular/zone.js/issues/632)) ([#690](https://github.com/angular/zone.js/issues/690)) ([291d5a0](https://github.com/angular/zone.js/commit/291d5a0))
+
+
+### Features
+
+* **dom:** fix [#664](https://github.com/angular/zone.js/issues/664), patch window,document,SVGElement onProperties ([#687](https://github.com/angular/zone.js/issues/687)) ([61aee2e](https://github.com/angular/zone.js/commit/61aee2e))
+
+
+
 <a name="0.8.4"></a>
 ## [0.8.4](https://github.com/angular/zone.js/compare/v0.8.3...0.8.4) (2017-03-16)
 

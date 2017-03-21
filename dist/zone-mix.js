@@ -898,97 +898,21 @@ var Zone$1 = (function (global) {
     }
     // This is not part of public API, but it is usefull for tests, so we expose it.
     Promise[Zone.__symbol__('uncaughtPromiseErrors')] = _uncaughtPromiseErrors;
-    /*
-     * This code patches Error so that:
-     *   - It ignores un-needed stack frames.
-     *   - It Shows the associated Zone for reach frame.
-     */
-    var FrameType;
-    (function (FrameType) {
-        /// Skip this frame when printing out stack
-        FrameType[FrameType["blackList"] = 0] = "blackList";
-        /// This frame marks zone transition
-        FrameType[FrameType["transition"] = 1] = "transition";
-    })(FrameType || (FrameType = {}));
+    var blacklistedStackFramesSymbol = Zone.__symbol__('blacklistedStackFrames');
     var NativeError = global[__symbol__('Error')] = global.Error;
     // Store the frames which should be removed from the stack frames
     var blackListedStackFrames = {};
     // We must find the frame where Error was created, otherwise we assume we don't understand stack
-    // the frame will be an array, because Error with new or without new will
-    // have different stack frames.
-    var zoneAwareErrorStartFrames = [];
+    var zoneAwareFrame1;
+    var zoneAwareFrame2;
     global.Error = ZoneAwareError;
     var stackRewrite = 'stackRewrite';
-    // some functions are not easily to be detected here,
-    // for example Timeout.ZoneTask.invoke, if we want to detect those functions
-    // by detect zone, we have to run all patched APIs, it is too risky
-    // so for those functions, just check whether the stack contains the string or not.
-    var otherZoneAwareFunctionNames = [
-        'ZoneTask.invoke', 'ZoneAware', 'getStacktraceWithUncaughtError', 'new LongStackTrace',
-        'long-stack-trace'
-    ];
-    function attachZoneAndRemoveInternalZoneFrames(error) {
-        // Save original stack trace
-        error.originalStack = error.stack;
-        // Process the stack trace and rewrite the frames.
-        if (ZoneAwareError[stackRewrite] && error.originalStack) {
-            var frames_1 = error.originalStack.split('\n');
-            var zoneFrame = _currentZoneFrame;
-            var i_1 = 0;
-            // Find the first frame
-            while (i_1 < frames_1.length &&
-                zoneAwareErrorStartFrames.filter(function (zf) { return zf.trim() === frames_1[i_1].trim(); }).length === 0) {
-                i_1++;
-            }
-            var _loop_2 = function () {
-                // trim here because blackListedStackFrames store the trimmed frames
-                var frame = frames_1[i_1].trim();
-                if (frame) {
-                    var frameType = blackListedStackFrames.hasOwnProperty(frame) && blackListedStackFrames[frame];
-                    if (frameType === FrameType.blackList) {
-                        frames_1.splice(i_1, 1);
-                        i_1--;
-                    }
-                    else if (otherZoneAwareFunctionNames
-                        .filter(function (f) { return frame.toLowerCase().indexOf(f.toLowerCase()) !== -1; })
-                        .length > 0) {
-                        frames_1.splice(i_1, 1);
-                        i_1--;
-                    }
-                    else if (frameType === FrameType.transition) {
-                        if (zoneFrame.parent) {
-                            // This is the special frame where zone changed. Print and process it accordingly
-                            zoneFrame = zoneFrame.parent;
-                        }
-                        else {
-                            zoneFrame = null;
-                        }
-                        frames_1.splice(i_1, 1);
-                        i_1--;
-                    }
-                    else {
-                        frames_1[i_1] += " [" + zoneFrame.zone.name + "]";
-                    }
-                }
-            };
-            for (; i_1 < frames_1.length && zoneFrame; i_1++) {
-                _loop_2();
-            }
-            var finalStack = frames_1.join('\n');
-            try {
-                error.stack = error.zoneAwareStack = finalStack;
-            }
-            catch (nonWritableErr) {
-                // in some browser, the error.stack is readonly such as PhantomJS
-                // so we need to store the stack frames to zoneAwareError directly
-            }
-        }
-    }
     /**
      * This is ZoneAwareError which processes the stack frame and cleans up extra frames as well as
      * adds zone information to it.
      */
     function ZoneAwareError() {
+        var _this = this;
         // We always have to return native error otherwise the browser console will not work.
         var error = NativeError.apply(this, arguments);
         if (!error.stack) {
@@ -1002,14 +926,68 @@ var Zone$1 = (function (global) {
                 error = err;
             }
         }
-        // 1. attach zone information to stack frame
-        // 2. remove zone internal stack frames
-        attachZoneAndRemoveInternalZoneFrames(error);
+        // Save original stack trace
+        var originalStack = error['originalStack'] = error.stack;
+        // Process the stack trace and rewrite the frames.
+        if (ZoneAwareError[stackRewrite] && originalStack) {
+            var frames_1 = originalStack.split('\n');
+            var zoneFrame = _currentZoneFrame;
+            var i = 0;
+            // Find the first frame
+            while (!(frames_1[i] === zoneAwareFrame1 || frames_1[i] === zoneAwareFrame2) &&
+                i < frames_1.length) {
+                i++;
+            }
+            for (; i < frames_1.length && zoneFrame; i++) {
+                var frame = frames_1[i];
+                if (frame.trim()) {
+                    switch (blackListedStackFrames[frame]) {
+                        case 0 /* blackList */:
+                            frames_1.splice(i, 1);
+                            i--;
+                            break;
+                        case 1 /* transition */:
+                            if (zoneFrame.parent) {
+                                // This is the special frame where zone changed. Print and process it accordingly
+                                frames_1[i] += " [" + zoneFrame.parent.zone.name + " => " + zoneFrame.zone.name + "]";
+                                zoneFrame = zoneFrame.parent;
+                            }
+                            else {
+                                zoneFrame = null;
+                            }
+                            break;
+                        default:
+                            frames_1[i] += " [" + zoneFrame.zone.name + "]";
+                    }
+                }
+            }
+            try {
+                error.stack = error.zoneAwareStack = frames_1.join('\n');
+            }
+            catch (e) {
+                // ignore as some browsers don't allow overriding of stack
+            }
+        }
+        if (this instanceof NativeError && this.constructor != NativeError) {
+            // We got called with a `new` operator AND we are subclass of ZoneAwareError
+            // in that case we have to copy all of our properties to `this`.
+            Object.keys(error).concat('stack', 'message').forEach(function (key) {
+                if (error[key] !== undefined) {
+                    try {
+                        _this[key] = error[key];
+                    }
+                    catch (e) {
+                        // ignore the assignment in case it is a setter and it throws.
+                    }
+                }
+            });
+            return this;
+        }
         return error;
     }
     // Copy the prototype so that instanceof operator works as expected
     ZoneAwareError.prototype = NativeError.prototype;
-    ZoneAwareError[Zone.__symbol__('blacklistedStackFrames')] = blackListedStackFrames;
+    ZoneAwareError[blacklistedStackFramesSymbol] = blackListedStackFrames;
     ZoneAwareError[stackRewrite] = false;
     // those properties need special handling
     var specialPropertyNames = ['stackTraceLimit', 'captureStackTrace', 'prepareStackTrace'];
@@ -1102,12 +1080,11 @@ var Zone$1 = (function (global) {
                         // FireFox: Zone.prototype.run@http://localhost:9876/base/build/lib/zone.js:101:24
                         // Safari: run@http://localhost:9876/base/build/lib/zone.js:101:24
                         var fnName = frame.split('(')[0].split('@')[0];
-                        var frameType = FrameType.transition;
+                        var frameType = 1;
                         if (fnName.indexOf('ZoneAwareError') !== -1) {
-                            // we found the ZoneAwareError start frame
-                            // the frame will be different when call Error(...)
-                            // and new Error(...), so we store them both
-                            zoneAwareErrorStartFrames.push(frame);
+                            zoneAwareFrame1 = frame;
+                            zoneAwareFrame2 = frame.replace('Error.', '');
+                            blackListedStackFrames[zoneAwareFrame2] = 0 /* blackList */;
                         }
                         if (fnName.indexOf('runGuarded') !== -1) {
                             runGuardedFrame = true;
@@ -1119,9 +1096,9 @@ var Zone$1 = (function (global) {
                             runFrame = true;
                         }
                         else {
-                            frameType = FrameType.blackList;
+                            frameType = 0 /* blackList */;
                         }
-                        blackListedStackFrames[frame.trim()] = frameType;
+                        blackListedStackFrames[frame] = frameType;
                         // Once we find all of the frames we can stop looking.
                         if (runFrame && runGuardedFrame && runTaskFrame) {
                             ZoneAwareError[stackRewrite] = true;
@@ -1135,188 +1112,17 @@ var Zone$1 = (function (global) {
     });
     // carefully constructor a stack frame which contains all of the frames of interest which
     // need to be detected and blacklisted.
-    // use this method to handle
-    // 1. IE issue, the error.stack can only be not undefined after throw
-    // 2. handle Error(...) without new options
-    var throwError = function (message, withNew) {
-        try {
-            if (withNew) {
-                throw new Error(message);
-            }
-            else {
-                throw Error(message);
-            }
-        }
-        catch (err) {
-            return err;
-        }
-    };
-    var nativeStackTraceLimit = NativeError.stackTraceLimit;
-    // in some system/browser, some additional stack frames
-    // will be generated (such as inline function)
-    // so the the stack frame to check ZoneAwareError Start
-    // maybe ignored because the frame's number will exceed
-    // stackTraceLimit, so we just set stackTraceLimit to 100
-    // and reset after all detect work is done.
-    NativeError.stackTraceLimit = 100;
+    // carefully constructor a stack frame which contains all of the frames of interest which
+    // need to be detected and blacklisted.
     var detectRunFn = function () {
         detectZone.run(function () {
             detectZone.runGuarded(function () {
-                throw throwError('blacklistStackFrames', true);
-            });
-        });
-    };
-    var detectRunWithoutNewFn = function () {
-        detectZone.run(function () {
-            detectZone.runGuarded(function () {
-                throw throwError('blacklistStackFrames');
+                throw new ZoneAwareError(ZoneAwareError, NativeError);
             });
         });
     };
     // Cause the error to extract the stack frames.
     detectZone.runTask(detectZone.scheduleMacroTask('detect', detectRunFn, null, function () { return null; }, null));
-    detectZone.runTask(detectZone.scheduleMacroTask('detect', detectRunWithoutNewFn, null, function () { return null; }, null));
-    function handleDetectError(error) {
-        var frames = error.stack ? error.stack.split(/\n/) : [];
-        while (frames.length) {
-            var frame = frames.shift();
-            // On safari it is possible to have stack frame with no line number.
-            // This check makes sure that we don't filter frames on name only (must have
-            // linenumber)
-            var trimmedFrame = frame.trim().split('[')[0].trim();
-            if (/:\d+:\d+/.test(trimmedFrame) && !blackListedStackFrames.hasOwnProperty(trimmedFrame)) {
-                blackListedStackFrames[trimmedFrame] = FrameType.blackList;
-            }
-            // when we found runGuarded or runTask, we should stop
-            // otherwise we will store some stack frames like
-            // module.load, require and something like that
-            var fnName = frame.split('(')[0].split('@')[0];
-            if (fnName.indexOf('runGuarded') !== -1) {
-                break;
-            }
-            else if (fnName.indexOf('runTask') !== -1) {
-                break;
-            }
-        }
-    }
-    var detectEmptyZone = Zone.root.fork({
-        name: 'detectEmptyZone',
-        onHandleError: function (parentDelegate, currentZone, targetZone, error) {
-            parentDelegate.handleError(targetZone, error);
-            handleDetectError(error);
-            return false;
-        }
-    });
-    var detectZoneWithCallbacks = Zone.root.fork({
-        name: 'detectCallbackZone',
-        onFork: function (parentDelegate, currentZone, targetZone, zoneSpec) {
-            // we need to generate Error with or without new
-            handleDetectError(throwError('onFork'));
-            handleDetectError(throwError('onFork', false));
-            return parentDelegate.fork(targetZone, zoneSpec);
-        },
-        onIntercept: function (parentDelegate, currentZone, targetZone, delegate, source) {
-            handleDetectError(throwError('onIntercept'));
-            handleDetectError(throwError('onIntercept', false));
-            return parentDelegate.intercept(targetZone, delegate, source);
-        },
-        onInvoke: function (parentZoneDelegate, currentZone, targetZone, delegate, applyThis, applyArgs, source) {
-            handleDetectError(throwError('onInvoke'));
-            handleDetectError(throwError('onInvoke', false));
-            return parentZoneDelegate.invoke(targetZone, delegate, applyThis, applyArgs, source);
-        },
-        onScheduleTask: function (parentZoneDelegate, currentZone, targetZone, task) {
-            handleDetectError(throwError('onScheduleTask'));
-            handleDetectError(throwError('onScheduleTask', false));
-            return parentZoneDelegate.scheduleTask(targetZone, task);
-        },
-        onInvokeTask: function (parentZoneDelegate, currentZone, targetZone, task, applyThis, applyArgs) {
-            handleDetectError(throwError('onInvokeTask'));
-            handleDetectError(throwError('onInvokeTask', false));
-            return parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
-        },
-        onCancelTask: function (parentZoneDelegate, currentZone, targetZone, task) {
-            handleDetectError(throwError('onCancelTask'));
-            handleDetectError(throwError('onCancelTask', false));
-            return parentZoneDelegate.cancelTask(targetZone, task);
-        },
-        onHasTask: function (delegate, current, target, hasTaskState) {
-            handleDetectError(throwError('onHasTask'));
-            handleDetectError(throwError('onHasTask', false));
-            return delegate.hasTask(target, hasTaskState);
-        },
-        onHandleError: function (parentDelegate, currentZone, targetZone, error) {
-            parentDelegate.handleError(targetZone, error);
-            handleDetectError(error);
-            return false;
-        }
-    });
-    var detectFn = function () {
-        throw throwError('zoneAwareFrames');
-    };
-    var detectWithoutNewFn = function () {
-        throw throwError('zoneAwareFrames', false);
-    };
-    var detectPromiseFn = function () {
-        new Promise(function (resolve, reject) {
-            reject(throwError('zoneAwareFrames'));
-        });
-    };
-    var detectPromiseWithoutNewFn = function () {
-        new Promise(function (resolve, reject) {
-            reject(throwError('zoneAwareFrames', false));
-        });
-    };
-    var detectPromiseCaughtFn = function () {
-        var p = new Promise(function (resolve, reject) {
-            reject(throwError('zoneAwareFrames'));
-        });
-        p.catch(function (err) {
-            throw err;
-        });
-    };
-    var detectPromiseCaughtWithoutNewFn = function () {
-        var p = new Promise(function (resolve, reject) {
-            reject(throwError('zoneAwareFrames', false));
-        });
-        p.catch(function (err) {
-            throw err;
-        });
-    };
-    // Cause the error to extract the stack frames.
-    detectEmptyZone.runTask(detectEmptyZone.scheduleEventTask('detect', detectFn, null, function () { return null; }, null));
-    detectZoneWithCallbacks.runTask(detectZoneWithCallbacks.scheduleEventTask('detect', detectFn, null, function () { return null; }, null));
-    detectEmptyZone.runTask(detectEmptyZone.scheduleMacroTask('detect', detectFn, null, function () { return null; }, null));
-    detectZoneWithCallbacks.runTask(detectZoneWithCallbacks.scheduleMacroTask('detect', detectFn, null, function () { return null; }, null));
-    detectEmptyZone.runTask(detectEmptyZone.scheduleMicroTask('detect', detectFn, null, function () { return null; }));
-    detectZoneWithCallbacks.runTask(detectZoneWithCallbacks.scheduleMicroTask('detect', detectFn, null, function () { return null; }));
-    detectEmptyZone.runGuarded(function () {
-        detectEmptyZone.run(detectFn);
-    });
-    detectZoneWithCallbacks.runGuarded(function () {
-        detectEmptyZone.run(detectFn);
-    });
-    detectEmptyZone.runTask(detectEmptyZone.scheduleEventTask('detect', detectWithoutNewFn, null, function () { return null; }, null));
-    detectZoneWithCallbacks.runTask(detectZoneWithCallbacks.scheduleEventTask('detect', detectWithoutNewFn, null, function () { return null; }, null));
-    detectEmptyZone.runTask(detectEmptyZone.scheduleMacroTask('detect', detectWithoutNewFn, null, function () { return null; }, null));
-    detectZoneWithCallbacks.runTask(detectZoneWithCallbacks.scheduleMacroTask('detect', detectWithoutNewFn, null, function () { return null; }, null));
-    detectEmptyZone.runTask(detectEmptyZone.scheduleMicroTask('detect', detectWithoutNewFn, null, function () { return null; }));
-    detectZoneWithCallbacks.runTask(detectZoneWithCallbacks.scheduleMicroTask('detect', detectWithoutNewFn, null, function () { return null; }));
-    detectEmptyZone.runGuarded(function () {
-        detectEmptyZone.run(detectWithoutNewFn);
-    });
-    detectZoneWithCallbacks.runGuarded(function () {
-        detectEmptyZone.run(detectWithoutNewFn);
-    });
-    detectEmptyZone.runGuarded(detectPromiseFn);
-    detectZoneWithCallbacks.runGuarded(detectPromiseFn);
-    detectEmptyZone.runGuarded(detectPromiseWithoutNewFn);
-    detectZoneWithCallbacks.runGuarded(detectPromiseWithoutNewFn);
-    detectEmptyZone.runGuarded(detectPromiseCaughtFn);
-    detectZoneWithCallbacks.runGuarded(detectPromiseCaughtFn);
-    detectEmptyZone.runGuarded(detectPromiseCaughtWithoutNewFn);
-    detectZoneWithCallbacks.runGuarded(detectPromiseCaughtWithoutNewFn);
-    NativeError.stackTraceLimit = nativeStackTraceLimit;
     return global['Zone'] = Zone;
 })(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);
 
@@ -1391,8 +1197,10 @@ function patchProperty(obj, prop) {
             var wrapFn = function (event) {
                 var result;
                 result = fn.apply(this, arguments);
-                if (result != undefined && !result)
+                if (result != undefined && !result) {
                     event.preventDefault();
+                }
+                return result;
             };
             this[_prop] = wrapFn;
             this.addEventListener(eventName, wrapFn, false);
@@ -2080,6 +1888,11 @@ function propertyDescriptorPatch(_global) {
     if (canPatchViaPropertyDescriptor()) {
         // for browsers that we can patch the descriptor:  Chrome & Firefox
         if (isBrowser) {
+            patchOnProperties(window, eventNames);
+            patchOnProperties(Document.prototype, eventNames);
+            if (typeof SVGElement !== 'undefined') {
+                patchOnProperties(SVGElement.prototype, eventNames);
+            }
             patchOnProperties(HTMLElement.prototype, eventNames);
         }
         patchOnProperties(XMLHttpRequest.prototype, null);
