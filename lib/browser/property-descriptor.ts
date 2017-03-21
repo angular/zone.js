@@ -23,6 +23,11 @@ export function propertyDescriptorPatch(_global: any) {
   if (canPatchViaPropertyDescriptor()) {
     // for browsers that we can patch the descriptor:  Chrome & Firefox
     if (isBrowser) {
+      patchOnProperties(window, eventNames);
+      patchOnProperties(Document.prototype, eventNames);
+      if (typeof SVGElement !== 'undefined') {
+        patchOnProperties(SVGElement.prototype, eventNames);
+      }
       patchOnProperties(HTMLElement.prototype, eventNames);
     }
     patchOnProperties(XMLHttpRequest.prototype, null);
