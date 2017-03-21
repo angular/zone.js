@@ -35,6 +35,8 @@ if (shouldPatchGlobalTimers) {
 patchProcess();
 handleUnhandledPromiseRejection();
 
+patchDomains();
+
 // Crypto
 let crypto: any;
 try {
@@ -92,4 +94,14 @@ function handleUnhandledPromiseRejection() {
 
   (Zone as any)[zoneSymbol('rejectionHandledHandler')] =
       findProcessPromiseRejectionHandler('rejectionHandled');
+}
+
+// Preserve Zones along with domains
+function patchDomains() {
+  if (process.domain && process.domain.bind) {
+    const originalBind = process.domain.bind;
+    process.domain.constructor.prototype.bind = function(cb: Function) {
+      return originalBind.call(this, Zone.current.wrap(cb, 'domain.bind'));
+    };
+  }
 }
