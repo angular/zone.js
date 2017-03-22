@@ -1664,11 +1664,13 @@ const Zone: ZoneType = (function(global: any) {
             case FrameType.transition:
               if (zoneFrame.parent) {
                 // This is the special frame where zone changed. Print and process it accordingly
-                frames[i] += ` [${zoneFrame.parent.zone.name} => ${zoneFrame.zone.name}]`;
+                // frames[i] += ` [${zoneFrame.parent.zone.name} => ${zoneFrame.zone.name}]`;
                 zoneFrame = zoneFrame.parent;
               } else {
                 zoneFrame = null;
               }
+              frames.splice(i, 1);
+              i--;
               break;
             default:
               frames[i] += ` [${zoneFrame.zone.name}]`;
@@ -1833,6 +1835,67 @@ const Zone: ZoneType = (function(global: any) {
   }) as Zone;
   // carefully constructor a stack frame which contains all of the frames of interest which
   // need to be detected and blacklisted.
+
+  const parentDetectSpec = {name: 'parent'};
+  const childDetectZone = Zone.current.fork(parentDetectSpec).fork({
+    name: 'child',
+    onScheduleTask: function(delegate, curr, target, task) {
+      return delegate.scheduleTask(target, task);
+    },
+    onInvokeTask: function(delegate, curr, target, task, applyThis, applyArgs) {
+      return delegate.invokeTask(target, task, applyThis, applyArgs);
+    },
+    onCancelTask: function(delegate, curr, target, task) {
+      return delegate.cancelTask(target, task);
+    },
+    onInvoke: function(delegate, curr, target, callback, applyThis, applyArgs, source) {
+      return delegate.invoke(target, callback, applyThis, applyArgs, source);
+    }
+  });
+
+  Error.stackTraceLimit = 100;
+  childDetectZone.run(() => {
+    childDetectZone.runGuarded(() => {
+      const fakeTransitionTo =
+          (toState: TaskState, fromState1: TaskState, fromState2: TaskState) => {};
+      childDetectZone.scheduleEventTask(
+          'detect',
+          () => {
+            childDetectZone.scheduleMacroTask(
+                'detect',
+                () => {
+                  childDetectZone.scheduleMicroTask(
+                      'detect',
+                      () => {
+                        const error = new Error('detect');
+                        const frames = error.stack.split('\n');
+                        while (frames.length) {
+                          let frame = frames.shift();
+                          blackListedStackFrames[frame] = FrameType.blackList;
+                        }
+                      },
+                      null,
+                      (t: Task) => {
+                        (t as any)._transitionTo = fakeTransitionTo;
+                        t.invoke();
+                      });
+                },
+                null,
+                (t) => {
+                  (t as any)._transitionTo = fakeTransitionTo;
+                  t.invoke();
+                },
+                () => {});
+          },
+          null,
+          (t) => {
+            (t as any)._transitionTo = fakeTransitionTo;
+            t.invoke();
+          },
+          () => {});
+    });
+  });
+  Error.stackTraceLimit = 15;
 
   // carefully constructor a stack frame which contains all of the frames of interest which
   // need to be detected and blacklisted.
