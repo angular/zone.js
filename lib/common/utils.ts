@@ -34,9 +34,11 @@ export function patchPrototype(prototype: any, fnNames: string[]) {
     const delegate = prototype[name];
     if (delegate) {
       prototype[name] = ((delegate: Function) => {
-        return function() {
+        const patched: any = function() {
           return delegate.apply(this, bindArguments(<any>arguments, source + '.' + name));
         };
+        attachOriginToPatched(patched, delegate);
+        return patched;
       })(delegate);
     }
   }
@@ -401,6 +403,8 @@ const originalInstanceKey = zoneSymbol('originalInstance');
 export function patchClass(className: string) {
   const OriginalClass = _global[className];
   if (!OriginalClass) return;
+  // keep original class in global
+  _global[zoneSymbol(className)] = OriginalClass;
 
   _global[className] = function() {
     const a = bindArguments(<any>arguments, className);
@@ -425,6 +429,9 @@ export function patchClass(className: string) {
     }
   };
 
+  // attach original delegate to patched function
+  attachOriginToPatched(_global[className], OriginalClass);
+
   const instance = new OriginalClass(function() {});
 
   let prop;
@@ -441,6 +448,10 @@ export function patchClass(className: string) {
           set: function(fn) {
             if (typeof fn === 'function') {
               this[originalInstanceKey][prop] = Zone.current.wrap(fn, className + '.' + prop);
+              // keep callback in wrapped function so we can
+              // use it in Function.prototype.toString to return
+              // the native one.
+              attachOriginToPatched(this[originalInstanceKey][prop], fn);
             } else {
               this[originalInstanceKey][prop] = fn;
             }
@@ -488,6 +499,7 @@ export function patchMethod(
   if (proto && !(delegate = proto[delegateName])) {
     delegate = proto[delegateName] = proto[name];
     proto[name] = createNamedFn(name, patchFn(delegate, delegateName, name));
+    attachOriginToPatched(proto[name], delegate);
   }
   return delegate;
 }
@@ -573,6 +585,10 @@ export function findEventTask(target: any, evtName: string): Task[] {
     }
   }
   return result;
+}
+
+export function attachOriginToPatched(patched: Function, original: any) {
+  (patched as any)[zoneSymbol('OriginalDelegate')] = original;
 }
 
 (Zone as any)[zoneSymbol('patchEventTargetMethods')] = patchEventTargetMethods;

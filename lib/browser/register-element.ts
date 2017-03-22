@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {isBrowser, isMix} from '../common/utils';
+import {attachOriginToPatched, isBrowser, isMix} from '../common/utils';
 
 import {_redefineProperty} from './define-property';
 
@@ -39,4 +39,6 @@ export function registerElementPatch(_global: any) {
 
     return _registerElement.apply(document, [name, opts]);
   };
+
+  attachOriginToPatched((<any>document).registerElement, _registerElement);
 }
