@@ -187,7 +187,7 @@ interface Zone {
   /**
    * Invokes a function in a given zone.
    *
-   * The invocation of `callback` can be intercepted be declaring [ZoneSpec.onInvoke].
+   * The invocation of `callback` can be intercepted by declaring [ZoneSpec.onInvoke].
    *
    * @param callback The function to invoke.
    * @param applyThis
@@ -201,7 +201,7 @@ interface Zone {
    *
    * Any exceptions thrown will be forwarded to [Zone.HandleError].
    *
-   * The invocation of `callback` can be intercepted be declaring [ZoneSpec.onInvoke]. The
+   * The invocation of `callback` can be intercepted by declaring [ZoneSpec.onInvoke]. The
    * handling of exceptions can intercepted by declaring [ZoneSpec.handleError].
    *
    * @param callback The function to invoke.
