@@ -70,9 +70,7 @@ inherit from EventTarget will also be patched.
  |IDBCursor|DBIndex|WebSocket|
 
 on properties, such as onclick, onreadystatechange, the following on properties will 
-be patched as EventTask 
-
-- all on properties
+be patched as EventTask, the following is the on properties zone.js patched  
 
  |||||||||
  |---|---|---|---|---|---|---|---|

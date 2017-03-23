@@ -55,7 +55,7 @@ describe('longStackTraceZone', function() {
   });
 
   it('should produce a long stack trace even if stack setter throws', (done) => {
-    let wasStackAssigne = false;
+    let wasStackAssigned = false;
     let error = new Error('Expected error');
     defineProperty(error, 'stack', {
       configurable: false,
