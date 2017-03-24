@@ -322,10 +322,32 @@ export function makeZoneAwareRemoveListener(
 
   return function zoneAwareRemoveListener(self: any, args: any[]) {
     const data = metaCreator(self, args);
+
     data.useCapturing = data.useCapturing || defaultUseCapturing;
     // - Inside a Web Worker, `this` is undefined, the context is `global`
     // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
     // see https://github.com/angular/zone.js/issues/190
+    let delegate: EventListener = null;
+    if (typeof data.handler == 'function') {
+      delegate = <EventListener>data.handler;
+    } else if (data.handler && (<EventListenerObject>data.handler).handleEvent) {
+      delegate = (event) => (<EventListenerObject>data.handler).handleEvent(event);
+    }
+    let validZoneHandler = false;
+    try {
+      // In cross site contexts (such as WebDriver frameworks like Selenium),
+      // accessing the handler object here will cause an exception to be thrown which
+      // will fail tests prematurely.
+      validZoneHandler = data.handler && data.handler.toString() === '[object FunctionWrapper]';
+    } catch (error) {
+      // Returning nothing here is fine, because objects in a cross-site context are unusable
+      return;
+    }
+    // Ignore special listeners of IE11 & Edge dev tools, see
+    // https://github.com/angular/zone.js/issues/150
+    if (!delegate || validZoneHandler) {
+      return data.invokeRemoveFunc(symbol, data.handler);
+    }
     const eventTask = findExistingRegisteredTask(
         data.target, data.handler, data.eventName, data.useCapturing, true);
     if (eventTask) {
