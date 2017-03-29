@@ -103,7 +103,11 @@ describe('longStackTraceZone', function() {
         setTimeout(function() {
           let promise = new Promise(function(resolve, reject) {
             setTimeout(function() {
-              reject(new Error('Hello Promise'));
+              try {
+                throw new Error('Hello Promise');
+              } catch (err) {
+                reject(err);
+              }
             }, 0);
           });
           promise.catch(function(error) {

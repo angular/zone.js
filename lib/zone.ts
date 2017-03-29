@@ -1630,16 +1630,6 @@ const Zone: ZoneType = (function(global: any) {
   function ZoneAwareError(): Error {
     // We always have to return native error otherwise the browser console will not work.
     let error: Error = NativeError.apply(this, arguments);
-    if (!error.stack) {
-      // in IE, the error.stack will be undefined
-      // when error was constructed, it will only
-      // be available when throw
-      try {
-        throw error;
-      } catch (err) {
-        error = err;
-      }
-    }
     // Save original stack trace
     const originalStack = (error as any)['originalStack'] = error.stack;
 
