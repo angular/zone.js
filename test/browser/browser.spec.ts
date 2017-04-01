@@ -312,6 +312,32 @@ describe('Zone', function() {
           });
         });
       });
+
+      it('should be able to covert element with event listener to json without cyclic error',
+         function() {
+           const eventListenerSpy = jasmine.createSpy('eventListener');
+           let elemThrowErrorWhenToJson = false;
+           try {
+             JSON.stringify(button);
+           } catch (err) {
+             elemThrowErrorWhenToJson = true;
+           }
+
+           // in chrome mobile, dom element will throw
+           // cyclic error when call JSON.stringify,
+           // so we just ignore it.
+           if (elemThrowErrorWhenToJson) {
+             return;
+           }
+
+           Zone.current.run(function() {
+             button.addEventListener('click', eventListenerSpy);
+           });
+
+           expect(function() {
+             JSON.stringify(button);
+           }).not.toThrow();
+         });
     });
   });
 });
