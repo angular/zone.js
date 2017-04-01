@@ -67,19 +67,40 @@ function canPatchViaPropertyDescriptor() {
   // by default XMLHttpRequest.prototype.onreadystatechange is undefined
   // without adding enumerable and configurable will cause onreadystatechange
   // non-configurable
-  Object.defineProperty(XMLHttpRequest.prototype, 'onreadystatechange', {
-    enumerable: true,
-    configurable: true,
-    get: function() {
-      return true;
-    }
-  });
-  const req = new XMLHttpRequest();
-  const result = !!req.onreadystatechange;
-  // restore original desc
-  Object.defineProperty(XMLHttpRequest.prototype, 'onreadystatechange', xhrDesc || {});
-  return result;
-}
+  // and if XMLHttpRequest.prototype.onreadystatechange is undefined,
+  // we should set a real desc instead a fake one
+  if (xhrDesc) {
+    Object.defineProperty(XMLHttpRequest.prototype, 'onreadystatechange', {
+      enumerable: true,
+      configurable: true,
+      get: function() {
+        return true;
+      }
+    });
+    const req = new XMLHttpRequest();
+    const result = !!req.onreadystatechange;
+    // restore original desc
+    Object.defineProperty(XMLHttpRequest.prototype, 'onreadystatechange', xhrDesc || {});
+    return result;
+  } else {
+    Object.defineProperty(XMLHttpRequest.prototype, 'onreadystatechange', {
+      enumerable: true,
+      configurable: true,
+      get: function() {
+        return this[zoneSymbol('fakeonreadystatechange')];
+      },
+      set: function(value) {
+        this[zoneSymbol('fakeonreadystatechange')] = value;
+      }
+    });
+    const req = new XMLHttpRequest();
+    const detectFunc = () => {};
+    req.onreadystatechange = detectFunc;
+    const result = (req as any)[zoneSymbol('fakeonreadystatechange')] === detectFunc;
+    req.onreadystatechange = null;
+    return result;
+  }
+};
 
 const unboundKey = zoneSymbol('unbound');
 
