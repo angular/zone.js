@@ -61,6 +61,11 @@ export const isMix: boolean = typeof process !== 'undefined' &&
 
 export function patchProperty(obj: any, prop: string) {
   const desc = Object.getOwnPropertyDescriptor(obj, prop) || {enumerable: true, configurable: true};
+  // if the descriptor is not configurable
+  // just return
+  if (!desc.configurable) {
+    return;
+  }
 
   const originalDesc = Object.getOwnPropertyDescriptor(obj, 'original' + prop);
   if (!originalDesc && desc.get) {
