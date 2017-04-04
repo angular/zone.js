@@ -128,24 +128,25 @@ export function patchProperty(obj: any, prop: string) {
   };
 
   Object.defineProperty(obj, prop, desc);
-};
+}
 
 export function patchOnProperties(obj: any, properties: string[]) {
-  const onProperties = [];
-  for (const prop in obj) {
-    if (prop.substr(0, 2) == 'on') {
-      onProperties.push(prop);
-    }
-  }
-  for (let j = 0; j < onProperties.length; j++) {
-    patchProperty(obj, onProperties[j]);
-  }
   if (properties) {
     for (let i = 0; i < properties.length; i++) {
       patchProperty(obj, 'on' + properties[i]);
     }
+  } else {
+    const onProperties = [];
+    for (const prop in obj) {
+      if (prop.substr(0, 2) == 'on') {
+        onProperties.push(prop);
+      }
+    }
+    for (let j = 0; j < onProperties.length; j++) {
+      patchProperty(obj, onProperties[j]);
+    }
   }
-};
+}
 
 const EVENT_TASKS = zoneSymbol('eventTasks');
 
