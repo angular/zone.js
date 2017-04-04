@@ -58,7 +58,7 @@ function addErrorStack(lines: string[], error: Error): void {
 }
 
 function renderLongStackTrace(frames: LongStackTrace[], stack: string): string {
-  const longTrace: string[] = [stack.trim()];
+  const longTrace: string[] = stack ? [stack.trim()] : [''];
 
   if (frames) {
     let timestamp = new Date().getTime();
