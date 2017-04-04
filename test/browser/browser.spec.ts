@@ -138,6 +138,21 @@ describe('Zone', function() {
                         svg.removeEventListener('mouse', eventListenerSpy);
                         document.body.removeChild(svg);
                       }));
+
+               it('get window onerror should not throw error',
+                  ifEnvSupports(
+                      () => {
+                        return canPatchOnProperty(window, 'onerror');
+                      },
+                      function() {
+                        const testFn = function() {
+                          let onerror = window.onerror;
+                          window.onerror = function() {};
+                          onerror = window.onerror;
+                        };
+                        expect(testFn()).not.toThrow();
+                      }));
+
              }));
 
     describe('eventListener hooks', function() {
