@@ -25,8 +25,8 @@ export function propertyDescriptorPatch(_global: any) {
     if (isBrowser) {
       patchOnProperties(window, eventNames);
       patchOnProperties(Document.prototype, eventNames);
-      if (typeof SVGElement !== 'undefined') {
-        patchOnProperties(SVGElement.prototype, eventNames);
+      if (typeof(<any>window)['SVGElement'] !== 'undefined') {
+        patchOnProperties((<any>window)['SVGElement'].prototype, eventNames);
       }
       patchOnProperties(HTMLElement.prototype, eventNames);
     }

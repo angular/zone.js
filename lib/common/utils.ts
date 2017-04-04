@@ -15,6 +15,7 @@
 declare const WorkerGlobalScope: any;
 
 export const zoneSymbol: (name: string) => string = (n) => `__zone_symbol__${n}`;
+const VALUE = zoneSymbol('value');
 const _global: any =
     typeof window === 'object' && window || typeof self === 'object' && self || global;
 
@@ -99,6 +100,12 @@ export function patchProperty(obj: any, prop: string) {
       target.removeEventListener(eventName, target[_prop]);
     }
 
+    if (typeof fn === 'string') {
+      const src: string = fn;
+      fn = new Function(src);
+      fn[VALUE] = src;
+    }
+
     if (typeof fn === 'function') {
       const wrapFn = function(event: Event) {
         let result;
@@ -147,25 +154,27 @@ export function patchProperty(obj: any, prop: string) {
         }
       }
     }
-    return target[_prop] || null;
+    const value = target[_prop] || null;
+    return value && value.hasOwnProperty(VALUE) ? value[value] : value;
   };
 
   Object.defineProperty(obj, prop, desc);
 }
 
 export function patchOnProperties(obj: any, properties: string[]) {
-  const onProperties = [];
-  for (const prop in obj) {
-    if (prop.substr(0, 2) == 'on') {
-      onProperties.push(prop);
-    }
-  }
-  for (let j = 0; j < onProperties.length; j++) {
-    patchProperty(obj, onProperties[j]);
-  }
   if (properties) {
     for (let i = 0; i < properties.length; i++) {
       patchProperty(obj, 'on' + properties[i]);
+    }
+  } else {
+    const onProperties = [];
+    for (const prop in obj) {
+      if (prop.substr(0, 2) == 'on') {
+        onProperties.push(prop);
+      }
+    }
+    for (let j = 0; j < onProperties.length; j++) {
+      patchProperty(obj, onProperties[j]);
     }
   }
 }
