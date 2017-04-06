@@ -254,105 +254,90 @@ describe('Zone', function() {
         });
       });
 
-      it('should support window.addEventListener(unhandledrejection)', function(done) {
-        if (!promiseUnhandleRejectionSupport()) {
-          done();
-          return;
-        }
-        (Zone as any)[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
-        rootZone.fork({name: 'promise'}).run(function() {
-          const listener = (evt: any) => {
-            expect(evt.type).toEqual('unhandledrejection');
-            expect(evt.promise.constructor.name).toEqual('Promise');
-            expect(evt.reason.message).toBe('promise error');
-            window.removeEventListener('unhandledrejection', listener);
-            done();
-          };
-          window.addEventListener('unhandledrejection', listener);
-          new Promise((resolve, reject) => {
-            throw new Error('promise error');
-          });
-        });
-      });
+    });
 
-      it('should support window.addEventListener(rejectionhandled)', function(done) {
-        if (!promiseUnhandleRejectionSupport()) {
-          done();
-          return;
-        }
-        (Zone as any)[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
-        rootZone.fork({name: 'promise'}).run(function() {
-          const listener = (evt: any) => {
-            window.removeEventListener('unhandledrejection', listener);
-            p.catch(reason => {});
-          };
-          window.addEventListener('unhandledrejection', listener);
+    describe('unhandle promise rejection', () => {
+      const AsyncTestZoneSpec = (Zone as any)['AsyncTestZoneSpec'];
+      const asyncTest = function(testFn: Function) {
+        return (done: Function) => {
+          let asyncTestZone: Zone =
+              Zone.current.fork(new AsyncTestZoneSpec(done, (error: Error) => {
+                fail(error);
+              }, 'asyncTest'));
+          asyncTestZone.run(testFn);
+        };
+      };
 
-          window.addEventListener('rejectionhandled', (evt: any) => {
-            expect(evt.type).toEqual('rejectionhandled');
-            expect(evt.promise.constructor.name).toEqual('Promise');
-            expect(evt.reason.message).toBe('promise error');
-            done();
-          });
-          const p = new Promise((resolve, reject) => {
-            throw new Error('promise error');
-          });
-        });
-      });
-
-      it('should support multiple window.addEventListener(unhandledrejection)', function(done) {
-        if (!promiseUnhandleRejectionSupport()) {
-          done();
-          return;
-        }
-        (Zone as any)[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
-        rootZone.fork({name: 'promise'}).run(function() {
-          const listener1 = (evt: any) => {
-            expect(evt.type).toEqual('unhandledrejection');
-            expect(evt.promise.constructor.name).toEqual('Promise');
-            expect(evt.reason.message).toBe('promise error');
-            window.removeEventListener('unhandledrejection', listener1);
-          };
-          const listener2 = (evt: any) => {
-            expect(evt.type).toEqual('unhandledrejection');
-            expect(evt.promise.constructor.name).toEqual('Promise');
-            expect(evt.reason.message).toBe('promise error');
-            window.removeEventListener('unhandledrejection', listener2);
-            done();
-          };
-          window.addEventListener('unhandledrejection', listener1);
-          window.addEventListener('unhandledrejection', listener2);
-          new Promise((resolve, reject) => {
-            throw new Error('promise error');
-          });
-        });
-      });
-
-      it('should be able to covert element with event listener to json without cyclic error',
-         function() {
-           const eventListenerSpy = jasmine.createSpy('eventListener');
-           let elemThrowErrorWhenToJson = false;
-           try {
-             JSON.stringify(button);
-           } catch (err) {
-             elemThrowErrorWhenToJson = true;
-           }
-
-           // in chrome mobile, dom element will throw
-           // cyclic error when call JSON.stringify,
-           // so we just ignore it.
-           if (elemThrowErrorWhenToJson) {
+      it('should support window.addEventListener(unhandledrejection)', asyncTest(() => {
+           if (!promiseUnhandleRejectionSupport()) {
              return;
            }
-
-           Zone.current.run(function() {
-             button.addEventListener('click', eventListenerSpy);
+           (Zone as any)[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
+           rootZone.fork({name: 'promise'}).run(function() {
+             const listener = (evt: any) => {
+               window.removeEventListener('unhandledrejection', listener);
+               expect(evt.type).toEqual('unhandledrejection');
+               expect(evt.promise.constructor.name).toEqual('Promise');
+               expect(evt.reason.message).toBe('promise error');
+             };
+             window.addEventListener('unhandledrejection', listener);
+             new Promise((resolve, reject) => {
+               throw new Error('promise error');
+             });
            });
+         }));
 
-           expect(function() {
-             JSON.stringify(button);
-           }).not.toThrow();
-         });
+      it('should support window.addEventListener(rejectionhandled)', asyncTest(() => {
+           if (!promiseUnhandleRejectionSupport()) {
+             return;
+           }
+           (Zone as any)[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
+           rootZone.fork({name: 'promise'}).run(function() {
+             const listener = (evt: any) => {
+               window.removeEventListener('unhandledrejection', listener);
+               p.catch(reason => {});
+             };
+             window.addEventListener('unhandledrejection', listener);
+
+             const handledListener = (evt: any) => {
+               window.removeEventListener('rejectionhandled', handledListener);
+               expect(evt.type).toEqual('rejectionhandled');
+               expect(evt.promise.constructor.name).toEqual('Promise');
+               expect(evt.reason.message).toBe('promise error');
+             };
+
+             window.addEventListener('rejectionhandled', handledListener);
+             const p = new Promise((resolve, reject) => {
+               throw new Error('promise error');
+             });
+           });
+         }));
+
+      it('should support multiple window.addEventListener(unhandledrejection)', asyncTest(() => {
+           if (!promiseUnhandleRejectionSupport()) {
+             return;
+           }
+           (Zone as any)[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
+           rootZone.fork({name: 'promise'}).run(function() {
+             const listener1 = (evt: any) => {
+               window.removeEventListener('unhandledrejection', listener1);
+               expect(evt.type).toEqual('unhandledrejection');
+               expect(evt.promise.constructor.name).toEqual('Promise');
+               expect(evt.reason.message).toBe('promise error');
+             };
+             const listener2 = (evt: any) => {
+               window.removeEventListener('unhandledrejection', listener2);
+               expect(evt.type).toEqual('unhandledrejection');
+               expect(evt.promise.constructor.name).toEqual('Promise');
+               expect(evt.reason.message).toBe('promise error');
+             };
+             window.addEventListener('unhandledrejection', listener1);
+             window.addEventListener('unhandledrejection', listener2);
+             new Promise((resolve, reject) => {
+               throw new Error('promise error');
+             });
+           });
+         }));
     });
   });
 });
