@@ -608,7 +608,19 @@ type AmbientZoneDelegate = ZoneDelegate;
 
 const Zone: ZoneType = (function(global: any) {
   if (global['Zone']) {
-    throw new Error('Zone already loaded.');
+    let zoneAlreadyLoadedMessage: string = 'Zone already loaded.';
+    // try to findout the already loaded zone.js script file
+    // require the loaded zone.js version to be newer than 0.8.6
+    try {
+      const LoadedZone: any = global['Zone'];
+      const scriptFileName: string = LoadedZone['__zone_symbol__scriptFileName'];
+      if (scriptFileName) {
+        zoneAlreadyLoadedMessage =
+            'Zone already loaded. The loaded Zone.js script file seems to be ' + scriptFileName;
+      }
+    } catch (error) {
+    }
+    throw new Error(zoneAlreadyLoadedMessage);
   }
 
   const NO_ZONE = {name: 'NO ZONE'};
@@ -623,12 +635,17 @@ const Zone: ZoneType = (function(global: any) {
 
     static assertZonePatched() {
       if (global.Promise !== ZoneAwarePromise) {
+        // try to findout the already loaded zone.js script file
+        // require the loaded zone.js version to be newer than 0.8.6
+        const scriptFileName: string = (Zone as any)[__symbol__('scriptFileName')];
+        const scriptFileErrorMessage: string =
+            scriptFileName ? 'the loaded Zone.js script file seems to be ' + scriptFileName : '';
         throw new Error(
             'Zone.js has detected that ZoneAwarePromise `(window|global).Promise` ' +
             'has been overwritten.\n' +
             'Most likely cause is that a Promise polyfill has been loaded ' +
             'after Zone.js (Polyfilling Promise api is not necessary when zone.js is loaded. ' +
-            'If you must load one, do so before loading zone.js.)');
+            'If you must load one, do so before loading zone.js.)' + scriptFileErrorMessage);
       }
     }
 
@@ -1803,11 +1820,24 @@ const Zone: ZoneType = (function(global: any) {
                 // Chrome: at Zone.run (http://localhost:9876/base/build/lib/zone.js:100:24)
                 // FireFox: Zone.prototype.run@http://localhost:9876/base/build/lib/zone.js:101:24
                 // Safari: run@http://localhost:9876/base/build/lib/zone.js:101:24
-                let fnName: string = frame.split('(')[0].split('@')[0];
+                let frameParts: string[] = frame.split('(');
+                let fnNamePart: string = frameParts[0];
+
+                let fnName: string = fnNamePart.split('@')[0];
                 let frameType = FrameType.transition;
                 if (fnName.indexOf('ZoneAwareError') !== -1) {
                   zoneAwareFrame1 = frame;
                   zoneAwareFrame2 = frame.replace('Error.', '');
+
+                  // try to find the filename where zone.js live with
+                  let fileNamePart1: string = frameParts.length > 1 ? frameParts[1] : fnNamePart;
+                  let fileNameParts: string[] = fileNamePart1.split('@');
+                  let fileNamePart2: string =
+                      fileNameParts.length > 1 ? fileNameParts[1] : fileNameParts[0];
+                  // Keep a script file name in Zone, so when zone.js report 'already loaded'
+                  // error, it can report which file include the loaded zone.js
+                  (Zone as any)[__symbol__('scriptFileName')] = fileNamePart2;
+
                   blackListedStackFrames[zoneAwareFrame2] = FrameType.blackList;
                 }
                 if (fnName.indexOf('runGuarded') !== -1) {

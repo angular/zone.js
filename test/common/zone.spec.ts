@@ -328,12 +328,24 @@ describe('Zone', function() {
 
       it('should throw when Promise has been patched', () => {
         class WrongPromise {}
+        const errorMessage =
+            'Zone.js has detected that ZoneAwarePromise `(window|global).Promise` ' +
+            'has been overwritten.';
+        const errorScriptMessage = 'the loaded Zone.js script file seems to be';
 
         const ZoneAwarePromise = global.Promise;
         global.Promise = WrongPromise;
         try {
           expect(ZoneAwarePromise).toBeTruthy();
-          expect(() => Zone.assertZonePatched()).toThrow();
+          try {
+            Zone.assertZonePatched();
+          } catch (error) {
+            expect(error.message).toContain(errorMessage);
+            expect(error.message).toContain(errorScriptMessage);
+            const idx = error.message.lastIndexOf(errorScriptMessage);
+            const fileName: string = error.message.slice(idx + errorScriptMessage.length);
+            expect(fileName).toContain('zone.js');
+          }
         } finally {
           // restore it.
           global.Promise = ZoneAwarePromise;
