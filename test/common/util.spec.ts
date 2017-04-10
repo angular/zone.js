@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {patchMethod, zoneSymbol} from '../../lib/common/utils';
+import {patchMethod, patchProperty, zoneSymbol} from '../../lib/common/utils';
 
 describe('utils', function() {
 
@@ -60,6 +60,25 @@ describe('utils', function() {
       });
       expect(pMethod).toBe(Type.prototype.method);
     });
+
+    it('should not patch property which is not configurable', () => {
+      const TestType = function() {};
+      const originalDefineProperty = (Object as any)[zoneSymbol('defineProperty')];
+      if (originalDefineProperty) {
+        originalDefineProperty(
+            TestType.prototype, 'nonConfigurableProperty',
+            {configurable: false, writable: true, value: 'test'});
+      } else {
+        Object.defineProperty(
+            TestType.prototype, 'nonConfigurableProperty',
+            {configurable: false, writable: true, value: 'test'});
+      }
+      patchProperty(TestType.prototype, 'nonConfigurableProperty');
+      const desc = Object.getOwnPropertyDescriptor(TestType.prototype, 'nonConfigurableProperty');
+      expect(desc.writable).toBeTruthy();
+      expect(!desc.get).toBeTruthy();
+    });
+
 
     it('should have a method name in the stacktrace', () => {
       const fn = function someOtherName() {
