@@ -36,7 +36,7 @@ describe('element', function() {
        // `this` would be null inside the method when `addEventListener` is called from strict mode
        // it would be `window`:
        // - when called from non strict-mode,
-       // - when `window.addEventListener` is called explicitely.
+       // - when `window.addEventListener` is called explicitly.
        addEventListener('click', listener);
 
        button.dispatchEvent(clickEvent);
@@ -88,7 +88,7 @@ describe('element', function() {
      * 3. Pay the cost of throwing an exception in event tasks and verifying that we are the
      *    top most frame.
      *
-     * For now we are choosing to ignore it and assume that this arrises in tests only.
+     * For now we are choosing to ignore it and assume that this arises in tests only.
      * As an added measure we make sure that all jasmine tests always run in a task. See: jasmine.ts
      */
     (window as any)[(Zone as any).__symbol__('setTimeout')](() => {

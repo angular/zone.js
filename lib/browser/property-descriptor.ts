@@ -79,7 +79,7 @@ function canPatchViaPropertyDescriptor() {
   // restore original desc
   Object.defineProperty(XMLHttpRequest.prototype, 'onreadystatechange', xhrDesc || {});
   return result;
-};
+}
 
 const unboundKey = zoneSymbol('unbound');
 
@@ -106,5 +106,5 @@ function patchViaCapturingAllTheEvents() {
         elt = elt.parentElement;
       }
     }, true);
-  };
-};
+  }
+}

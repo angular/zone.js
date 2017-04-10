@@ -58,7 +58,7 @@ function addErrorStack(lines: string[], error: Error): void {
 }
 
 function renderLongStackTrace(frames: LongStackTrace[], stack: string): string {
-  const longTrace: string[] = stack ? [stack.trim()] : [''];
+  const longTrace: string[] = [stack ? stack.trim() : ''];
 
   if (frames) {
     let timestamp = new Date().getTime();
@@ -97,26 +97,38 @@ function renderLongStackTrace(frames: LongStackTrace[], stack: string): string {
 
   onScheduleTask: function(
       parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task): any {
-    const currentTask = Zone.currentTask;
-    let trace = currentTask && currentTask.data && (currentTask.data as any)[creationTrace] || [];
-    trace = [new LongStackTrace()].concat(trace);
-    if (trace.length > this.longStackTraceLimit) {
-      trace.length = this.longStackTraceLimit;
+    if (Error.stackTraceLimit > 0) {
+      // if Error.stackTraceLimit is 0, means stack trace
+      // is disabled, so we don't need to generate long stack trace
+      // this will improve performance in some test(some test will
+      // set stackTraceLimit to 0, https://github.com/angular/zone.js/issues/698
+      const currentTask = Zone.currentTask;
+      let trace = currentTask && currentTask.data && (currentTask.data as any)[creationTrace] || [];
+      trace = [new LongStackTrace()].concat(trace);
+      if (trace.length > this.longStackTraceLimit) {
+        trace.length = this.longStackTraceLimit;
+      }
+      if (!task.data) task.data = {};
+      (task.data as any)[creationTrace] = trace;
     }
-    if (!task.data) task.data = {};
-    (task.data as any)[creationTrace] = trace;
     return parentZoneDelegate.scheduleTask(targetZone, task);
   },
 
   onHandleError: function(
       parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, error: any): boolean {
-    const parentTask = Zone.currentTask || error.task;
-    if (error instanceof Error && parentTask) {
-      const longStack =
-          renderLongStackTrace(parentTask.data && parentTask.data[creationTrace], error.stack);
-      try {
-        error.stack = (error as any).longStack = longStack;
-      } catch (err) {
+    if (Error.stackTraceLimit > 0) {
+      // if Error.stackTraceLimit is 0, means stack trace
+      // is disabled, so we don't need to generate long stack trace
+      // this will improve performance in some test(some test will
+      // set stackTraceLimit to 0, https://github.com/angular/zone.js/issues/698
+      const parentTask = Zone.currentTask || error.task;
+      if (error instanceof Error && parentTask) {
+        const longStack =
+            renderLongStackTrace(parentTask.data && parentTask.data[creationTrace], error.stack);
+        try {
+          error.stack = (error as any).longStack = longStack;
+        } catch (err) {
+        }
       }
     }
     return parentZoneDelegate.handleError(targetZone, error);
@@ -131,6 +143,9 @@ function captureStackTraces(stackTraces: string[][], count: number): void {
 }
 
 function computeIgnoreFrames() {
+  if (Error.stackTraceLimit <= 0) {
+    return;
+  }
   const frames: string[][] = [];
   captureStackTraces(frames, 2);
   const frames1 = frames[0];

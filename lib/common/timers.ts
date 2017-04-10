@@ -29,7 +29,7 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
       } finally {
         delete tasksByHandleId[data.handleId];
       }
-    };
+    }
     data.args[0] = timer;
     data.handleId = setNative.apply(window, data.args);
     tasksByHandleId[data.handleId] = task;

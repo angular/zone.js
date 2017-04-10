@@ -55,7 +55,7 @@ describe('longStackTraceZone', function() {
   });
 
   it('should produce a long stack trace even if stack setter throws', (done) => {
-    let wasStackAssigne = false;
+    let wasStackAssigned = false;
     let error = new Error('Expected error');
     defineProperty(error, 'stack', {
       configurable: false,
@@ -103,7 +103,11 @@ describe('longStackTraceZone', function() {
         setTimeout(function() {
           let promise = new Promise(function(resolve, reject) {
             setTimeout(function() {
-              reject(new Error('Hello Promise'));
+              try {
+                throw new Error('Hello Promise');
+              } catch (err) {
+                reject(err);
+              }
             }, 0);
           });
           promise.catch(function(error) {
@@ -112,6 +116,25 @@ describe('longStackTraceZone', function() {
             expectElapsed(longStackFrames, 4);
             done();
           });
+        }, 0);
+      }, 0);
+    });
+  });
+
+  it('should not produce long stack traces if Error.stackTraceLimit = 0', function(done) {
+    const originalStackTraceLimit = Error.stackTraceLimit;
+    lstz.run(function() {
+      setTimeout(function() {
+        setTimeout(function() {
+          setTimeout(function() {
+            if (log[0].stack) {
+              expectElapsed(log[0].stack, 1);
+            }
+            Error.stackTraceLimit = originalStackTraceLimit;
+            done();
+          }, 0);
+          Error.stackTraceLimit = 0;
+          throw new Error('Hello');
         }, 0);
       }, 0);
     });

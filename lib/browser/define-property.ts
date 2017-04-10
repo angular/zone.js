@@ -53,13 +53,13 @@ export function propertyPatch() {
     }
     return desc;
   };
-};
+}
 
 export function _redefineProperty(obj: any, prop: string, desc: any) {
   const originalConfigurableFlag = desc.configurable;
   desc = rewriteDescriptor(obj, prop, desc);
   return _tryDefineProperty(obj, prop, desc, originalConfigurableFlag);
-};
+}
 
 function isUnconfigurable(obj: any, prop: any) {
   return obj && obj[unconfigurablesKey] && obj[unconfigurablesKey][prop];

@@ -70,20 +70,26 @@ inherit from EventTarget will also be patched.
  |IDBCursor|DBIndex|WebSocket|
 
 on properties, such as onclick, onreadystatechange, the following on properties will 
-be patched as EventTask 
-
-- all on properties
+be patched as EventTask, the following is the on properties zone.js patched  
 
  |||||||||
- |---|---|---|---|---|---|---|---|
- |copy|cut|paste|abort|blur|focus|canplay|canplaythrough|
- |change|click|contextmenu|dblclick|drag|dragend|dragenter|dragleave|
- |dragover|dragstart|drop|durationchange|emptied|ended|input|invalid|
- |keydown|keypress|keyup|load|loadeddata|loadedmetadata|loadstart|message|
- |mousedown|mouseenter|mouseleave|mousemove|mouseout|mouseover|mouseup|pause|
- |play|playing|progress|ratechange|reset|scroll|seeked|seeking|
- |select|show|stalled|submit|suspend|timeupdate|volumechange|waiting|
- |mozfullscreenchange|mozfullscreenerror|mozpointerlockchange|mozpointerlockerror|error|webglcontextrestored|webglcontextlost|webglcontextcreationerror|
+ |---|---|---|---|
+ |copy|cut|paste|abort|
+ |blur|focus|canplay|canplaythrough|
+ |change|click|contextmenu|dblclick|
+ |drag|dragend|dragenter|dragleave|
+ |dragover|dragstart|drop|durationchange|
+ |emptied|ended|input|invalid|
+ |keydown|keypress|keyup|load|
+ |loadeddata|loadedmetadata|loadstart|message|
+ |mousedown|mouseenter|mouseleave|mousemove|
+ |mouseout|mouseover|mouseup|pause|
+ |play|playing|progress|ratechange|
+ |reset|scroll|seeked|seeking|
+ |select|show|stalled|submit|
+ |suspend|timeupdate|volumechange|waiting|
+ |mozfullscreenchange|mozfullscreenerror|mozpointerlockchange|mozpointerlockerror|
+ |error|webglcontextrestored|webglcontextlost|webglcontextcreationerror|
 
 ## NodeJS
 
