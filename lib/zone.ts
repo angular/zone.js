@@ -1177,7 +1177,6 @@ const Zone: ZoneType = (function(global: any) {
         type: this.type,
         state: this.state,
         source: this.source,
-        data: this.data,
         zone: this.zone.name,
         invoke: this.invoke,
         scheduleFn: this.scheduleFn,
