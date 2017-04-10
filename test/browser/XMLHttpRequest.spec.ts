@@ -189,10 +189,10 @@ describe('XMLHttpRequest', function() {
          const req = new XMLHttpRequest();
          req.open('get', '/', true);
          req.send();
-         req.onloadend = function() {
-           req.onloadend = null;
+         req.onload = function() {
+           req.onload = null;
            req.open('get', '/', true);
-           req.onloadend = function() {
+           req.onload = function() {
              done();
            };
            expect(() => {

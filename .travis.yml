@@ -28,4 +28,6 @@ script:
   - node_modules/.bin/gulp promisetest
   - node_modules/.bin/karma start karma-dist-sauce-jasmine.conf.js --single-run
   - node_modules/.bin/karma start karma-build-sauce-mocha.conf.js --single-run
+  - node_modules/.bin/karma start karma-dist-sauce-selenium3-jasmine.conf.js --single-run
+  - node_modules/.bin/karma start karma-build-sauce-selenium3-mocha.conf.js --single-run
   - node_modules/.bin/gulp test/node

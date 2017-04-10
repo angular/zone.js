@@ -13,27 +13,29 @@ module.exports = function (config) {
     'SL_FIREFOX': {
       base: 'SauceLabs',
       browserName: 'firefox',
-      version: '44'
+      version: '52'
     },
     /*'SL_SAFARI7': {
       base: 'SauceLabs',
         browserName: 'safari',
         platform: 'OS X 10.9',
-        version: '7'
+        version: '7.0'
     },*/
     'SL_SAFARI8': {
       base: 'SauceLabs',
-        browserName: 'safari',
-        platform: 'OS X 10.10',
-        version: '8'
+      browserName: 'safari',
+      platform: 'OS X 10.10',
+      version: '8.0'
     },
     'SL_SAFARI9': {
       base: 'SauceLabs',
-        browserName: 'safari',
-        platform: 'OS X 10.11',
-        version: '9.0'
+      browserName: 'safari',
+      platform: 'OS X 10.11',
+      version: '9.0'
     },
-    /*'SL_IOS7': {
+    /*
+     no longer supported in SauceLabs
+    'SL_IOS7': {
       base: 'SauceLabs',
       browserName: 'iphone',
       platform: 'OS X 10.10',
@@ -45,19 +47,24 @@ module.exports = function (config) {
       platform: 'OS X 10.10',
       version: '8.4'
     },
-    /*'SL_IOS9': {
+    'SL_IOS9': {
       base: 'SauceLabs',
       browserName: 'iphone',
       platform: 'OS X 10.10',
-      version: '9.2'
-    },*/
-    /* Dissabled do to: https://travis-ci.org/angular/zone.js/builds/141228742#L744
-     'SL_IE9': {
+      version: '9.3'
+    },
+    'SL_IOS10': {
+      base: 'SauceLabs',
+      browserName: 'iphone',
+      platform: 'OS X 10.10',
+      version: '10.2'
+    },
+    'SL_IE9': {
       base: 'SauceLabs',
       browserName: 'internet explorer',
       platform: 'Windows 2008',
       version: '9'
-    },*/
+    },
     'SL_IE10': {
       base: 'SauceLabs',
       browserName: 'internet explorer',
@@ -70,11 +77,11 @@ module.exports = function (config) {
       platform: 'Windows 10',
       version: '11'
     },
-    'SL_MSEDGE13': {
+    'SL_MSEDGE': {
       base: 'SauceLabs',
       browserName: 'MicrosoftEdge',
       platform: 'Windows 10',
-      version: '13.10586'
+      version: '14.14393'
     },
     /*
      fix issue #584, Android 4.1~4.3 are not supported
