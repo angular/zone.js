@@ -382,6 +382,25 @@ describe('Zone', function() {
         JSON.stringify(macro);
       }).not.toThrow();
     });
+
+    it('should call onHandleError callback when zoneSpec onHasTask throw error', () => {
+      const spy = jasmine.createSpy('error');
+      const hasTaskZone = Zone.current.fork({
+        name: 'hasTask',
+        onHasTask: (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                    hasTasState: HasTaskState) => {
+          throw new Error('onHasTask Error');
+        },
+        onHandleError:
+            (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, error: Error) => {
+              spy(error.message);
+              return delegate.handleError(targetZone, error);
+            }
+      });
+
+      const microTask = hasTaskZone.scheduleMicroTask('test', () => {}, null, () => {});
+      expect(spy).toHaveBeenCalledWith('onHasTask Error');
+    });
   });
 });
 

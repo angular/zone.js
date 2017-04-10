@@ -1074,6 +1074,7 @@ const Zone: ZoneType = (function(global: any) {
             this._hasTaskZS.onHasTask(
                 this._hasTaskDlgt, this._hasTaskCurrZone, targetZone, isEmpty);
       } catch (err) {
+        this.handleError(targetZone, err);
       }
     }
 
