@@ -164,6 +164,7 @@ export interface ListenerTaskMeta extends TaskData {
   handler: NestedEventListenerOrEventListenerObject;
   target: any;
   name: string;
+  crossContext: boolean;
   invokeAddFunc: (addFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) => any;
   invokeRemoveFunc:
       (removeFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) => any;
@@ -228,21 +229,47 @@ const defaultListenerMetaCreator = (self: any, args: any[]) => {
     handler: args[1],
     target: self || _global,
     name: args[0],
+    crossContext: false,
     invokeAddFunc: function(
         addFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) {
-      if (delegate && (<Task>delegate).invoke) {
-        return this.target[addFnSymbol](this.eventName, (<Task>delegate).invoke, this.useCapturing);
+      // check if the data is cross site context, if it is, fallback to
+      // remove the delegate directly and try catch error
+      if (!this.crossContext) {
+        if (delegate && (<Task>delegate).invoke) {
+          return this.target[addFnSymbol](
+              this.eventName, (<Task>delegate).invoke, this.useCapturing);
+        } else {
+          return this.target[addFnSymbol](this.eventName, delegate, this.useCapturing);
+        }
       } else {
-        return this.target[addFnSymbol](this.eventName, delegate, this.useCapturing);
+        // add a if/else branch here for performance concern, for most times
+        // cross site context is false, so we don't need to try/catch
+        try {
+          return this.target[addFnSymbol](this.eventName, delegate, this.useCapturing);
+        } catch (err) {
+          // do nothing here is fine, because objects in a cross-site context are unusable
+        }
       }
     },
     invokeRemoveFunc: function(
         removeFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) {
-      if (delegate && (<Task>delegate).invoke) {
-        return this.target[removeFnSymbol](
-            this.eventName, (<Task>delegate).invoke, this.useCapturing);
+      // check if the data is cross site context, if it is, fallback to
+      // remove the delegate directly and try catch error
+      if (!this.crossContext) {
+        if (delegate && (<Task>delegate).invoke) {
+          return this.target[removeFnSymbol](
+              this.eventName, (<Task>delegate).invoke, this.useCapturing);
+        } else {
+          return this.target[removeFnSymbol](this.eventName, delegate, this.useCapturing);
+        }
       } else {
-        return this.target[removeFnSymbol](this.eventName, delegate, this.useCapturing);
+        // add a if/else branch here for performance concern, for most times
+        // cross site context is false, so we don't need to try/catch
+        try {
+          return this.target[removeFnSymbol](this.eventName, delegate, this.useCapturing);
+        } catch (err) {
+          // do nothing here is fine, because objects in a cross-site context are unusable
+        }
       }
     }
   };
@@ -289,8 +316,9 @@ export function makeZoneAwareAddListener(
       // will fail tests prematurely.
       validZoneHandler = data.handler && data.handler.toString() === '[object FunctionWrapper]';
     } catch (error) {
-      // Returning nothing here is fine, because objects in a cross-site context are unusable
-      return;
+      // we can still try to add the data.handler even we are in cross site context
+      data.crossContext = true;
+      return data.invokeAddFunc(addFnSymbol, data.handler);
     }
     // Ignore special listeners of IE11 & Edge dev tools, see
     // https://github.com/angular/zone.js/issues/150
@@ -322,10 +350,32 @@ export function makeZoneAwareRemoveListener(
 
   return function zoneAwareRemoveListener(self: any, args: any[]) {
     const data = metaCreator(self, args);
+
     data.useCapturing = data.useCapturing || defaultUseCapturing;
     // - Inside a Web Worker, `this` is undefined, the context is `global`
     // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
     // see https://github.com/angular/zone.js/issues/190
+    let delegate: EventListener = null;
+    if (typeof data.handler == 'function') {
+      delegate = <EventListener>data.handler;
+    } else if (data.handler && (<EventListenerObject>data.handler).handleEvent) {
+      delegate = (event) => (<EventListenerObject>data.handler).handleEvent(event);
+    }
+    let validZoneHandler = false;
+    try {
+      // In cross site contexts (such as WebDriver frameworks like Selenium),
+      // accessing the handler object here will cause an exception to be thrown which
+      // will fail tests prematurely.
+      validZoneHandler = data.handler && data.handler.toString() === '[object FunctionWrapper]';
+    } catch (error) {
+      data.crossContext = true;
+      return data.invokeRemoveFunc(symbol, data.handler);
+    }
+    // Ignore special listeners of IE11 & Edge dev tools, see
+    // https://github.com/angular/zone.js/issues/150
+    if (!delegate || validZoneHandler) {
+      return data.invokeRemoveFunc(symbol, data.handler);
+    }
     const eventTask = findExistingRegisteredTask(
         data.target, data.handler, data.eventName, data.useCapturing, true);
     if (eventTask) {
