@@ -81,8 +81,17 @@ export function patchProperty(obj: any, prop: string) {
   const _prop = zoneSymbol('_' + prop);
 
   desc.set = function(fn) {
-    if (this[_prop]) {
-      this.removeEventListener(eventName, this[_prop]);
+    // in some of windows's onproperty callback, this is undefined
+    // so we need to check it
+    let target = this;
+    if (!target && obj === _global) {
+      target = _global;
+    }
+    if (!target) {
+      return;
+    }
+    if (target[_prop]) {
+      target.removeEventListener(eventName, target[_prop]);
     }
 
     if (typeof fn === 'function') {
@@ -96,17 +105,26 @@ export function patchProperty(obj: any, prop: string) {
         return result;
       };
 
-      this[_prop] = wrapFn;
-      this.addEventListener(eventName, wrapFn, false);
+      target[_prop] = wrapFn;
+      target.addEventListener(eventName, wrapFn, false);
     } else {
-      this[_prop] = null;
+      target[_prop] = null;
     }
   };
 
   // The getter would return undefined for unassigned properties but the default value of an
   // unassigned property is null
   desc.get = function() {
-    let r = this[_prop] || null;
+    // in some of windows's onproperty callback, this is undefined
+    // so we need to check it
+    let target = this;
+    if (!target && obj === _global) {
+      target = _global;
+    }
+    if (!target) {
+      return null;
+    }
+    let r = target[_prop] || null;
     // result will be null when use inline event attribute,
     // such as <button onclick="func();">OK</button>
     // because the onclick function is internal raw uncompiled handler
@@ -118,13 +136,13 @@ export function patchProperty(obj: any, prop: string) {
         r = originalDesc.get.apply(this, arguments);
         if (r) {
           desc.set.apply(this, [r]);
-          if (typeof this['removeAttribute'] === 'function') {
-            this.removeAttribute(prop);
+          if (typeof target['removeAttribute'] === 'function') {
+            target.removeAttribute(prop);
           }
         }
       }
     }
-    return this[_prop] || null;
+    return target[_prop] || null;
   };
 
   Object.defineProperty(obj, prop, desc);
