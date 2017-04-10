@@ -1654,11 +1654,12 @@ const Zone: ZoneType = (function(global: any) {
             case FrameType.transition:
               if (zoneFrame.parent) {
                 // This is the special frame where zone changed. Print and process it accordingly
-                frames[i] += ` [${zoneFrame.parent.zone.name} => ${zoneFrame.zone.name}]`;
                 zoneFrame = zoneFrame.parent;
               } else {
                 zoneFrame = null;
               }
+              frames.splice(i, 1);
+              i--;
               break;
             default:
               frames[i] += ` [${zoneFrame.zone.name}]`;
@@ -1770,12 +1771,6 @@ const Zone: ZoneType = (function(global: any) {
   // find the frames of interest.
   let detectZone: Zone = Zone.current.fork({
     name: 'detect',
-    onInvoke: function(
-        parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function,
-        applyThis: any, applyArgs: any[], source: string): any {
-      // Here only so that it will show up in the stack frame so that it can be black listed.
-      return parentZoneDelegate.invoke(targetZone, delegate, applyThis, applyArgs, source);
-    },
     onHandleError: function(parentZD: ZoneDelegate, current: Zone, target: Zone, error: any):
         boolean {
           if (error.originalStack && Error === ZoneAwareError) {
@@ -1824,17 +1819,67 @@ const Zone: ZoneType = (function(global: any) {
   // carefully constructor a stack frame which contains all of the frames of interest which
   // need to be detected and blacklisted.
 
-  // carefully constructor a stack frame which contains all of the frames of interest which
-  // need to be detected and blacklisted.
-  let detectRunFn = () => {
-    detectZone.run(() => {
-      detectZone.runGuarded(() => {
-        throw new (ZoneAwareError as any)(ZoneAwareError, NativeError);
-      });
+  const childDetectZone = detectZone.fork({
+    name: 'child',
+    onScheduleTask: function(delegate, curr, target, task) {
+      return delegate.scheduleTask(target, task);
+    },
+    onInvokeTask: function(delegate, curr, target, task, applyThis, applyArgs) {
+      return delegate.invokeTask(target, task, applyThis, applyArgs);
+    },
+    onCancelTask: function(delegate, curr, target, task) {
+      return delegate.cancelTask(target, task);
+    },
+    onInvoke: function(delegate, curr, target, callback, applyThis, applyArgs, source) {
+      return delegate.invoke(target, callback, applyThis, applyArgs, source);
+    }
+  });
+
+  // we need to detect all zone related frames, it will
+  // exceed default stackTraceLimit, so we set it to
+  // larger number here, and restore it after detect finish.
+  const originalStackTraceLimit = Error.stackTraceLimit;
+  Error.stackTraceLimit = 100;
+  // we schedule event/micro/macro task, and invoke them
+  // when onSchedule, so we can get all stack traces for
+  // all kinds of tasks with one error thrown.
+  childDetectZone.run(() => {
+    childDetectZone.runGuarded(() => {
+      const fakeTransitionTo =
+          (toState: TaskState, fromState1: TaskState, fromState2: TaskState) => {};
+      childDetectZone.scheduleEventTask(
+          blacklistedStackFramesSymbol,
+          () => {
+            childDetectZone.scheduleMacroTask(
+                blacklistedStackFramesSymbol,
+                () => {
+                  childDetectZone.scheduleMicroTask(
+                      blacklistedStackFramesSymbol,
+                      () => {
+                        throw new (ZoneAwareError as any)(ZoneAwareError, NativeError);
+                      },
+                      null,
+                      (t: Task) => {
+                        (t as any)._transitionTo = fakeTransitionTo;
+                        t.invoke();
+                      });
+                },
+                null,
+                (t) => {
+                  (t as any)._transitionTo = fakeTransitionTo;
+                  t.invoke();
+                },
+                () => {});
+          },
+          null,
+          (t) => {
+            (t as any)._transitionTo = fakeTransitionTo;
+            t.invoke();
+          },
+          () => {});
     });
-  };
-  // Cause the error to extract the stack frames.
-  detectZone.runTask(detectZone.scheduleMacroTask('detect', detectRunFn, null, () => null, null));
+  });
+  Error.stackTraceLimit = originalStackTraceLimit;
 
   return global['Zone'] = Zone;
 })(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);
