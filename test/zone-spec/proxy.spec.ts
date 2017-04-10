@@ -76,9 +76,9 @@ describe('ProxySpec', () => {
     });
 
     it('should fork', () => {
-      const forkeZone = proxyZone.fork({name: 'fork'});
-      expect(forkeZone).not.toBe(proxyZone);
-      expect(forkeZone.name).toBe('fork');
+      const forkedZone = proxyZone.fork({name: 'fork'});
+      expect(forkedZone).not.toBe(proxyZone);
+      expect(forkedZone.name).toBe('fork');
       let called = false;
       proxyZoneSpec.setDelegate({
         name: '.',

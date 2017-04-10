@@ -6,4 +6,4 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-window.soucelabs = true;
+window.saucelabs = true;

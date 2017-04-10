@@ -128,7 +128,7 @@ export function patchProperty(obj: any, prop: string) {
   };
 
   Object.defineProperty(obj, prop, desc);
-};
+}
 
 export function patchOnProperties(obj: any, properties: string[]) {
   const onProperties = [];
@@ -145,7 +145,7 @@ export function patchOnProperties(obj: any, properties: string[]) {
       patchProperty(obj, 'on' + properties[i]);
     }
   }
-};
+}
 
 const EVENT_TASKS = zoneSymbol('eventTasks');
 
@@ -413,8 +413,6 @@ export function makeZoneAwareRemoveAllListeners(fnName: string, useCapturingPara
 }
 
 export function makeZoneAwareListeners(fnName: string) {
-  const symbol = zoneSymbol(fnName);
-
   return function zoneAwareEventListeners(self: any, args: any[]) {
     const eventName: string = args[0];
     const target = self || _global;
@@ -426,10 +424,6 @@ export function makeZoneAwareListeners(fnName: string) {
         .map((task: Task) => (task.data as any)['handler']);
   };
 }
-
-const zoneAwareAddEventListener =
-    makeZoneAwareAddListener(ADD_EVENT_LISTENER, REMOVE_EVENT_LISTENER);
-const zoneAwareRemoveEventListener = makeZoneAwareRemoveListener(REMOVE_EVENT_LISTENER);
 
 export function patchEventTargetMethods(
     obj: any, addFnName: string = ADD_EVENT_LISTENER, removeFnName: string = REMOVE_EVENT_LISTENER,
@@ -519,7 +513,7 @@ export function patchClass(className: string) {
       _global[className][prop] = OriginalClass[prop];
     }
   }
-};
+}
 
 export function createNamedFn(name: string, delegate: (self: any, args: any[]) => any): Function {
   try {

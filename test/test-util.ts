@@ -33,4 +33,4 @@ export function ifEnvSupports(test: any, block: Function) {
       });
     }
   };
-};
+}

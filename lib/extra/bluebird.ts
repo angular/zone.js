@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-((_global: any) => {
+(() => {
   const __symbol__ = (Zone as any).__symbol__;
   // TODO: @JiaLiPassion, we can automatically patch bluebird
   // if global.Promise = Bluebird, but sometimes in nodejs,
@@ -17,4 +17,4 @@
       Zone.current.scheduleMicroTask('bluebird', fn);
     });
   };
-})(typeof window === 'object' && window || typeof self === 'object' && self || global);
+})();

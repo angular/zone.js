@@ -11,8 +11,8 @@ declare const window: any;
 
 const TIMEOUT = 5000;
 
-if (!window['soucelabs']) {
-  // SouceLabs does not support WebSockets; skip these tests
+if (!window['saucelabs']) {
+  // sauceLabs does not support WebSockets; skip these tests
 
   describe('WebSocket', ifEnvSupports('WebSocket', function() {
              let socket: WebSocket;
@@ -76,7 +76,7 @@ if (!window['soucelabs']) {
                    expect(log).toEqual('a');
                    done();
                  }, 10);
-               };
+               }
 
                socket.addEventListener('message', logOnMessage);
                socket.send('hi');
