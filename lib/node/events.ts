@@ -30,7 +30,7 @@ const zoneAwarePrependListener = callAndReturnFirstParam(
 const zoneAwareRemoveListener =
     callAndReturnFirstParam(makeZoneAwareRemoveListener(EE_REMOVE_LISTENER, false));
 const zoneAwareRemoveAllListeners =
-    callAndReturnFirstParam(makeZoneAwareRemoveAllListeners(EE_REMOVE_ALL_LISTENER, false));
+    callAndReturnFirstParam(makeZoneAwareRemoveAllListeners(EE_REMOVE_ALL_LISTENER));
 const zoneAwareListeners = makeZoneAwareListeners(EE_LISTENERS);
 
 export function patchEventEmitterMethods(obj: any): boolean {

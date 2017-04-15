@@ -181,8 +181,18 @@ export interface NestedEventListener { listener?: EventListenerOrEventListenerOb
 export declare type NestedEventListenerOrEventListenerObject =
     NestedEventListener | EventListener | EventListenerObject;
 
+export interface EventListenerOptions { capture?: boolean; }
+
+export interface AddEventListenerOptions extends EventListenerOptions {
+  passive?: boolean;
+  once?: boolean;
+}
+
+export declare type EventListenerOptionsOrCapture =
+    EventListenerOptions | AddEventListenerOptions | boolean;
+
 export interface ListenerTaskMeta extends TaskData {
-  useCapturing: boolean;
+  options: EventListenerOptionsOrCapture;
   eventName: string;
   handler: NestedEventListenerOrEventListenerObject;
   target: any;
@@ -193,8 +203,23 @@ export interface ListenerTaskMeta extends TaskData {
       (removeFnSymbol: any, delegate: Task|NestedEventListenerOrEventListenerObject) => any;
 }
 
+// compare the EventListenerOptionsOrCapture
+// 1. if the options is usCapture: boolean, compare the useCpature values directly
+// 2. if the options is EventListerOptions, only compare the capture
+function compareEventListenerOptions(
+    left: EventListenerOptionsOrCapture, right: EventListenerOptionsOrCapture): boolean {
+  const leftCapture: any = (typeof left === 'boolean') ?
+      left :
+      ((typeof left === 'object') ? (left && left.capture) : false);
+  const rightCapture: any = (typeof right === 'boolean') ?
+      right :
+      ((typeof right === 'object') ? (right && right.capture) : false);
+  return !!leftCapture === !!rightCapture;
+}
+
 function findExistingRegisteredTask(
-    target: any, handler: any, name: string, capture: boolean, remove: boolean): Task {
+    target: any, handler: any, name: string, options: EventListenerOptionsOrCapture,
+    remove: boolean): Task {
   const eventTasks: Task[] = target[EVENT_TASKS];
   if (eventTasks) {
     for (let i = 0; i < eventTasks.length; i++) {
@@ -202,7 +227,7 @@ function findExistingRegisteredTask(
       const data = <ListenerTaskMeta>eventTask.data;
       const listener = <NestedEventListener>data.handler;
       if ((data.handler === handler || listener.listener === handler) &&
-          data.useCapturing === capture && data.eventName === name) {
+          compareEventListenerOptions(data.options, options) && data.eventName === name) {
         if (remove) {
           eventTasks.splice(i, 1);
         }
@@ -213,15 +238,14 @@ function findExistingRegisteredTask(
   return null;
 }
 
-function findAllExistingRegisteredTasks(
-    target: any, name: string, capture: boolean, remove: boolean): Task[] {
+function findAllExistingRegisteredTasks(target: any, name: string, remove: boolean): Task[] {
   const eventTasks: Task[] = target[EVENT_TASKS];
   if (eventTasks) {
     const result = [];
     for (let i = eventTasks.length - 1; i >= 0; i--) {
       const eventTask = eventTasks[i];
       const data = <ListenerTaskMeta>eventTask.data;
-      if (data.eventName === name && data.useCapturing === capture) {
+      if (data.eventName === name) {
         result.push(eventTask);
         if (remove) {
           eventTasks.splice(i, 1);
@@ -247,7 +271,7 @@ function attachRegisteredEvent(target: any, eventTask: Task, isPrepend: boolean)
 
 const defaultListenerMetaCreator = (self: any, args: any[]) => {
   return {
-    useCapturing: args[2],
+    options: args[2],
     eventName: args[0],
     handler: args[1],
     target: self || _global,
@@ -259,16 +283,15 @@ const defaultListenerMetaCreator = (self: any, args: any[]) => {
       // remove the delegate directly and try catch error
       if (!this.crossContext) {
         if (delegate && (<Task>delegate).invoke) {
-          return this.target[addFnSymbol](
-              this.eventName, (<Task>delegate).invoke, this.useCapturing);
+          return this.target[addFnSymbol](this.eventName, (<Task>delegate).invoke, this.options);
         } else {
-          return this.target[addFnSymbol](this.eventName, delegate, this.useCapturing);
+          return this.target[addFnSymbol](this.eventName, delegate, this.options);
         }
       } else {
         // add a if/else branch here for performance concern, for most times
         // cross site context is false, so we don't need to try/catch
         try {
-          return this.target[addFnSymbol](this.eventName, delegate, this.useCapturing);
+          return this.target[addFnSymbol](this.eventName, delegate, this.options);
         } catch (err) {
           // do nothing here is fine, because objects in a cross-site context are unusable
         }
@@ -280,16 +303,15 @@ const defaultListenerMetaCreator = (self: any, args: any[]) => {
       // remove the delegate directly and try catch error
       if (!this.crossContext) {
         if (delegate && (<Task>delegate).invoke) {
-          return this.target[removeFnSymbol](
-              this.eventName, (<Task>delegate).invoke, this.useCapturing);
+          return this.target[removeFnSymbol](this.eventName, (<Task>delegate).invoke, this.options);
         } else {
-          return this.target[removeFnSymbol](this.eventName, delegate, this.useCapturing);
+          return this.target[removeFnSymbol](this.eventName, delegate, this.options);
         }
       } else {
         // add a if/else branch here for performance concern, for most times
         // cross site context is false, so we don't need to try/catch
         try {
-          return this.target[removeFnSymbol](this.eventName, delegate, this.useCapturing);
+          return this.target[removeFnSymbol](this.eventName, delegate, this.options);
         } catch (err) {
           // do nothing here is fine, because objects in a cross-site context are unusable
         }
@@ -314,15 +336,14 @@ export function makeZoneAwareAddListener(
 
   function cancelEventListener(eventTask: Task): void {
     const meta = <ListenerTaskMeta>eventTask.data;
-    findExistingRegisteredTask(
-        meta.target, eventTask.invoke, meta.eventName, meta.useCapturing, true);
+    findExistingRegisteredTask(meta.target, eventTask.invoke, meta.eventName, meta.options, true);
     return meta.invokeRemoveFunc(removeFnSymbol, eventTask);
   }
 
   return function zoneAwareAddListener(self: any, args: any[]) {
     const data: ListenerTaskMeta = metaCreator(self, args);
 
-    data.useCapturing = data.useCapturing || defaultUseCapturing;
+    data.options = data.options || defaultUseCapturing;
     // - Inside a Web Worker, `this` is undefined, the context is `global`
     // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
     // see https://github.com/angular/zone.js/issues/190
@@ -351,7 +372,7 @@ export function makeZoneAwareAddListener(
 
     if (!allowDuplicates) {
       const eventTask: Task = findExistingRegisteredTask(
-          data.target, data.handler, data.eventName, data.useCapturing, false);
+          data.target, data.handler, data.eventName, data.options, false);
       if (eventTask) {
         // we already registered, so this will have noop.
         return data.invokeAddFunc(addFnSymbol, eventTask);
@@ -374,7 +395,7 @@ export function makeZoneAwareRemoveListener(
   return function zoneAwareRemoveListener(self: any, args: any[]) {
     const data = metaCreator(self, args);
 
-    data.useCapturing = data.useCapturing || defaultUseCapturing;
+    data.options = data.options || defaultUseCapturing;
     // - Inside a Web Worker, `this` is undefined, the context is `global`
     // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
     // see https://github.com/angular/zone.js/issues/190
@@ -399,8 +420,8 @@ export function makeZoneAwareRemoveListener(
     if (!delegate || validZoneHandler) {
       return data.invokeRemoveFunc(symbol, data.handler);
     }
-    const eventTask = findExistingRegisteredTask(
-        data.target, data.handler, data.eventName, data.useCapturing, true);
+    const eventTask =
+        findExistingRegisteredTask(data.target, data.handler, data.eventName, data.options, true);
     if (eventTask) {
       eventTask.zone.cancelTask(eventTask);
     } else {
@@ -409,9 +430,8 @@ export function makeZoneAwareRemoveListener(
   };
 }
 
-export function makeZoneAwareRemoveAllListeners(fnName: string, useCapturingParam: boolean = true) {
+export function makeZoneAwareRemoveAllListeners(fnName: string) {
   const symbol = zoneSymbol(fnName);
-  const defaultUseCapturing = useCapturingParam ? false : undefined;
 
   return function zoneAwareRemoveAllListener(self: any, args: any[]) {
     const target = self || _global;
@@ -424,13 +444,12 @@ export function makeZoneAwareRemoveAllListeners(fnName: string, useCapturingPara
       return;
     }
     const eventName = args[0];
-    const useCapturing = args[1] || defaultUseCapturing;
     // call this function just remove the related eventTask from target[EVENT_TASKS]
-    findAllExistingRegisteredTasks(target, eventName, useCapturing, true);
     // we don't need useCapturing here because useCapturing is just for DOM, and
     // removeAllListeners should only be called by node eventEmitter
     // and we don't cancel Task either, because call native eventEmitter.removeAllListeners will
     // will do remove listener(cancelTask) for us
+    findAllExistingRegisteredTasks(target, eventName, true);
     target[symbol](eventName);
   };
 }
