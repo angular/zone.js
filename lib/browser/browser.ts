@@ -47,7 +47,7 @@ propertyDescriptorPatch(_global);
 patchClass('MutationObserver');
 patchClass('WebKitMutationObserver');
 patchClass('FileReader');
-propertyPatch();
+// propertyPatch();
 registerElementPatch(_global);
 
 // Treat XMLHTTPRequest as a macrotask.
