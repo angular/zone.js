@@ -19,11 +19,12 @@ const _global = typeof window === 'object' && window || typeof self === 'object'
 
 // Timers
 const timers = require('timers');
+const shouldPatchGlobalTimers = global.setTimeout === timers.setTimeout;
+
 patchTimer(timers, set, clear, 'Timeout');
 patchTimer(timers, set, clear, 'Interval');
 patchTimer(timers, set, clear, 'Immediate');
 
-const shouldPatchGlobalTimers = global.setTimeout !== timers.setTimeout;
 
 if (shouldPatchGlobalTimers) {
   patchTimer(_global, set, clear, 'Timeout');
