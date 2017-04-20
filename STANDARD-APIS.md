@@ -72,7 +72,7 @@ inherit from EventTarget will also be patched.
 on properties, such as onclick, onreadystatechange, the following on properties will 
 be patched as EventTask, the following is the on properties zone.js patched  
 
- |||||||||
+ |||||
  |---|---|---|---|
  |copy|cut|paste|abort|
  |blur|focus|canplay|canplaythrough|
