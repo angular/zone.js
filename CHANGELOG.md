@@ -1,5 +1,5 @@
-<a name="0.8.6"></a>
-## [0.8.6](https://github.com/angular/zone.js/compare/v0.8.5...0.8.6) (2017-04-21)
+<a name="0.8.f"></a>
+## [0.8.7](https://github.com/angular/zone.js/compare/v0.8.5...0.8.7) (2017-04-21)
 
 
 ### Bug Fixes

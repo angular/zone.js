@@ -54,7 +54,7 @@
     // Example:
     //   - In beforeEach() do childZone = Zone.current.fork(...);
     //   - In it() try to do fakeAsync(). The issue is that because the beforeEach forked the
-    //     zone outside of fakeAsync it will be able to escope the fakeAsync rules.
+    //     zone outside of fakeAsync it will be able to escape the fakeAsync rules.
     //   - Because ProxyZone is parent fo `childZone` fakeAsync can retroactively add
     //     fakeAsync behavior to the childZone.
     var testProxyZone = null;
