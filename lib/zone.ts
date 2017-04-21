@@ -1211,7 +1211,14 @@ const Zone: ZoneType = (function(global: any) {
   const symbolPromise = __symbol__('Promise');
   const symbolThen = __symbol__('then');
 
-  let _currentZoneFrame = new ZoneFrame(null, new Zone(null, null));
+  const symbolRootZoneSpec = '__rootZoneSpec__';
+  let rootZone: Zone = new Zone(null, null);
+  if (global[symbolRootZoneSpec]) {
+    rootZone = <Zone>rootZone.fork(global[symbolRootZoneSpec]);
+    delete global[symbolRootZoneSpec];
+  }
+
+  let _currentZoneFrame = new ZoneFrame(null, rootZone);
   let _currentTask: Task = null;
   let _microTaskQueue: Task[] = [];
   let _isDrainingMicrotaskQueue: boolean = false;
