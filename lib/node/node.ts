@@ -11,7 +11,7 @@ import './events';
 import './fs';
 
 import {patchTimer} from '../common/timers';
-import {patchFuncToString} from '../common/to-string';
+import {patchFuncToString, patchObjectToString} from '../common/to-string';
 import {findEventTask, patchMacroTask, patchMicroTask, zoneSymbol} from '../common/utils';
 
 const set = 'set';
@@ -38,6 +38,8 @@ handleUnhandledPromiseRejection();
 
 // patch Function.prototyp.toString
 patchFuncToString();
+// patch Object.prototyp.toString
+patchObjectToString();
 
 // Crypto
 let crypto: any;

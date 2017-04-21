@@ -7,7 +7,7 @@
  */
 
 import {patchTimer} from '../common/timers';
-import {patchFuncToString} from '../common/to-string';
+import {patchFuncToString, patchObjectToString} from '../common/to-string';
 import {findEventTask, patchClass, patchEventTargetMethods, patchMethod, patchPrototype, zoneSymbol} from '../common/utils';
 
 import {propertyPatch} from './define-property';
@@ -154,6 +154,8 @@ if (_global['navigator'] && _global['navigator'].geolocation) {
 
 // patch Func.prototype.toString to let them look like native
 patchFuncToString();
+// patch Object.prototype.toString to let them look like native
+patchObjectToString();
 
 // handle unhandled promise rejection
 function findPromiseRejectionHandler(evtName: string) {

@@ -34,3 +34,13 @@ export function patchFuncToString() {
     return originalFunctionToString.apply(this, arguments);
   };
 }
+
+export function patchObjectToString() {
+  const originalObjectToString = Object.prototype.toString;
+  Object.prototype.toString = function() {
+    if (this instanceof Promise) {
+      return '[object Promise]';
+    }
+    return originalObjectToString.apply(this, arguments);
+  };
+}
