@@ -1,4 +1,14 @@
-<a name="0.8.f"></a>
+<a name="0.8.8"></a>
+## [0.8.8](https://github.com/angular/zone.js/compare/v0.8.7...0.8.8) (2017-04-21)
+
+
+### Bug Fixes
+
+* on<property> handling broken in v0.8.7 ([fbe7b13](https://github.com/angular/zone.js/commit/fbe7b13))
+
+
+
+<a name="0.8.7"></a>
 ## [0.8.7](https://github.com/angular/zone.js/compare/v0.8.5...0.8.7) (2017-04-21)
 
 

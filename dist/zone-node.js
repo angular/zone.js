@@ -1157,7 +1157,6 @@ var Zone$1 = (function (global) {
  * @suppress {undefinedVars,globalThis}
  */
 var zoneSymbol = function (n) { return "__zone_symbol__" + n; };
-var VALUE = zoneSymbol('value');
 var _global$1 = typeof window === 'object' && window || typeof self === 'object' && self || global;
 
 
@@ -1176,10 +1175,6 @@ function patchProperty(obj, prop) {
     if (!desc.configurable) {
         return;
     }
-    var originalDesc = Object.getOwnPropertyDescriptor(obj, 'original' + prop);
-    if (!originalDesc && desc.get) {
-        Object.defineProperty(obj, 'original' + prop, { enumerable: false, configurable: true, get: desc.get });
-    }
     // A property descriptor cannot have getter/setter and be writable
     // deleting the writable and value properties avoids this error:
     //
@@ -1187,10 +1182,11 @@ function patchProperty(obj, prop) {
     // getter or setter has been specified
     delete desc.writable;
     delete desc.value;
+    var originalDescGet = desc.get;
     // substr(2) cuz 'onclick' -> 'click', etc
     var eventName = prop.substr(2);
     var _prop = zoneSymbol('_' + prop);
-    desc.set = function (fn) {
+    desc.set = function (newValue) {
         // in some of windows's onproperty callback, this is undefined
         // so we need to check it
         var target = this;
@@ -1200,18 +1196,13 @@ function patchProperty(obj, prop) {
         if (!target) {
             return;
         }
-        if (target[_prop]) {
-            target.removeEventListener(eventName, target[_prop]);
+        var previousValue = target[_prop];
+        if (previousValue) {
+            target.removeEventListener(eventName, previousValue);
         }
-        if (typeof fn === 'string') {
-            var src = fn;
-            fn = new Function(src);
-            fn[VALUE] = src;
-        }
-        if (typeof fn === 'function') {
+        if (typeof newValue === 'function') {
             var wrapFn = function (event) {
-                var result;
-                result = fn.apply(this, arguments);
+                var result = newValue.apply(this, arguments);
                 if (result != undefined && !result) {
                     event.preventDefault();
                 }
@@ -1236,26 +1227,23 @@ function patchProperty(obj, prop) {
         if (!target) {
             return null;
         }
-        var r = target[_prop] || null;
-        // result will be null when use inline event attribute,
-        // such as <button onclick="func();">OK</button>
-        // because the onclick function is internal raw uncompiled handler
-        // the onclick will be evaluated when first time event was triggered or
-        // the property is accessed, https://github.com/angular/zone.js/issues/525
-        // so we should use original native get to retrieve the handler
-        if (r === null) {
-            if (originalDesc && originalDesc.get) {
-                r = originalDesc.get.apply(this, arguments);
-                if (r) {
-                    desc.set.apply(this, [r]);
-                    if (typeof target['removeAttribute'] === 'function') {
-                        target.removeAttribute(prop);
-                    }
-                }
-            }
+        if (target.hasOwnProperty(_prop)) {
+            return target[_prop];
         }
-        var value = target[_prop] || null;
-        return value && value.hasOwnProperty(VALUE) ? value[value] : value;
+        else {
+            // result will be null when use inline event attribute,
+            // such as <button onclick="func();">OK</button>
+            // because the onclick function is internal raw uncompiled handler
+            // the onclick will be evaluated when first time event was triggered or
+            // the property is accessed, https://github.com/angular/zone.js/issues/525
+            // so we should use original native get to retrieve the handler
+            var value = originalDescGet.apply(this);
+            value = desc.set.apply(this, [value]);
+            if (typeof target['removeAttribute'] === 'function') {
+                target.removeAttribute(prop);
+            }
+            return value;
+        }
     };
     Object.defineProperty(obj, prop, desc);
 }
