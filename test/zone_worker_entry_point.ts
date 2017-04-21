@@ -18,6 +18,7 @@ System.import('../lib/browser/browser').then(() => {
         } else {
           (<any>self).postMessage('fail');
         }
+        websocket.close();
       };
       websocket.send('text');
     });
