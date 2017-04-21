@@ -33,6 +33,24 @@ function canPatchOnProperty(obj: any, prop: string) {
 
 (canPatchOnProperty as any).message = 'patchOnProperties';
 
+let supportsPassive = false;
+try {
+  const opts = Object.defineProperty({}, 'passive', {
+    get: function() {
+      supportsPassive = true;
+    }
+  });
+  window.addEventListener('test', null, opts);
+  window.removeEventListener('test', null, opts);
+} catch (e) {
+}
+
+function supportEventListenerOptions() {
+  return supportsPassive;
+}
+
+(supportEventListenerOptions as any).message = 'supportsEventListenerOptions';
+
 describe('Zone', function() {
   const rootZone = Zone.current;
 
@@ -236,6 +254,268 @@ describe('Zone', function() {
         expect(hookSpy).toHaveBeenCalled();
         expect(eventListenerSpy).not.toHaveBeenCalled();
       });
+
+      it('should support addEventListener/removeEventListener with AddEventListenerOptions with capture setting',
+         ifEnvSupports(supportEventListenerOptions, function() {
+           let hookSpy = jasmine.createSpy('hook');
+           let cancelSpy = jasmine.createSpy('cancel');
+           const logs: string[] = [];
+           const zone = rootZone.fork({
+             name: 'spy',
+             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+               hookSpy();
+               return parentZoneDelegate.scheduleTask(targetZone, task);
+             },
+             onCancelTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                            task: Task): any => {
+               cancelSpy();
+               return parentZoneDelegate.cancelTask(targetZone, task);
+             }
+           });
+
+           const docListener = () => {
+             logs.push('document');
+           };
+           const btnListener = () => {
+             logs.push('button');
+           };
+
+           // test capture true
+           zone.run(function() {
+             (document as any).addEventListener('click', docListener, {capture: true});
+             button.addEventListener('click', btnListener);
+           });
+
+           button.dispatchEvent(clickEvent);
+           expect(hookSpy).toHaveBeenCalled();
+
+           expect(logs).toEqual(['document', 'button']);
+           logs.splice(0);
+
+           (document as any).removeEventListener('click', docListener, {capture: true});
+           button.removeEventListener('click', btnListener);
+           expect(cancelSpy).toHaveBeenCalled();
+
+           button.dispatchEvent(clickEvent);
+           expect(logs).toEqual([]);
+
+           hookSpy = jasmine.createSpy('hook');
+           cancelSpy = jasmine.createSpy('cancel');
+
+           // test capture false
+           zone.run(function() {
+             (document as any).addEventListener('click', docListener, {capture: false});
+             button.addEventListener('click', btnListener);
+           });
+
+           button.dispatchEvent(clickEvent);
+           expect(hookSpy).toHaveBeenCalled();
+           expect(logs).toEqual(['button', 'document']);
+           logs.splice(0);
+
+           (document as any).removeEventListener('click', docListener, {capture: false});
+           button.removeEventListener('click', btnListener);
+           expect(cancelSpy).toHaveBeenCalled();
+
+           button.dispatchEvent(clickEvent);
+           expect(logs).toEqual([]);
+         }));
+
+      it('should support mix useCapture with AddEventListenerOptions capture',
+         ifEnvSupports(supportEventListenerOptions, function() {
+           let hookSpy = jasmine.createSpy('hook');
+           let cancelSpy = jasmine.createSpy('cancel');
+           const logs: string[] = [];
+           const zone = rootZone.fork({
+             name: 'spy',
+             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+               hookSpy();
+               return parentZoneDelegate.scheduleTask(targetZone, task);
+             },
+             onCancelTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                            task: Task): any => {
+               cancelSpy();
+               return parentZoneDelegate.cancelTask(targetZone, task);
+             }
+           });
+
+           const docListener = () => {
+             logs.push('document options');
+           };
+           const docListener1 = () => {
+             logs.push('document useCapture');
+           };
+           const btnListener = () => {
+             logs.push('button');
+           };
+
+           // test capture true
+           zone.run(function() {
+             (document as any).addEventListener('click', docListener, {capture: true});
+             document.addEventListener('click', docListener1, true);
+             button.addEventListener('click', btnListener);
+           });
+
+           button.dispatchEvent(clickEvent);
+           expect(hookSpy).toHaveBeenCalled();
+           expect(logs).toEqual(['document options', 'document useCapture', 'button']);
+           logs.splice(0);
+
+           (document as any).removeEventListener('click', docListener, {capture: true});
+           document.removeEventListener('click', docListener1, true);
+           button.removeEventListener('click', btnListener);
+           expect(cancelSpy).toHaveBeenCalled();
+
+           button.dispatchEvent(clickEvent);
+           expect(logs).toEqual([]);
+
+           hookSpy = jasmine.createSpy('hook');
+           cancelSpy = jasmine.createSpy('cancel');
+           // test removeEventListener by options which was added by useCapture and vice versa
+           zone.run(function() {
+             (document as any).addEventListener('click', docListener, {capture: true});
+             document.removeEventListener('click', docListener, true);
+           });
+
+           button.dispatchEvent(clickEvent);
+           expect(hookSpy).toHaveBeenCalled();
+           expect(cancelSpy).toHaveBeenCalled();
+           expect(logs).toEqual([]);
+
+           hookSpy = jasmine.createSpy('hook');
+           cancelSpy = jasmine.createSpy('cancel');
+           zone.run(function() {
+             document.addEventListener('click', docListener, true);
+             (document as any).removeEventListener('click', docListener, {capture: true});
+           });
+
+           button.dispatchEvent(clickEvent);
+           expect(hookSpy).toHaveBeenCalled();
+           expect(cancelSpy).toHaveBeenCalled();
+           expect(logs).toEqual([]);
+
+           hookSpy = jasmine.createSpy('hook');
+           cancelSpy = jasmine.createSpy('cancel');
+           // test removeEventListener by default  which was added by options without capture
+           // property
+           zone.run(function() {
+             (document as any).addEventListener('click', docListener, {passive: true});
+             (document as any).removeEventListener('click', docListener);
+           });
+
+           button.dispatchEvent(clickEvent);
+           expect(hookSpy).toHaveBeenCalled();
+           expect(cancelSpy).toHaveBeenCalled();
+           expect(logs).toEqual([]);
+
+           hookSpy = jasmine.createSpy('hook');
+           cancelSpy = jasmine.createSpy('cancel');
+           // test removeEventListener by default which was added by empty options
+           zone.run(function() {
+             (document as any).addEventListener('click', docListener, {});
+             (document as any).removeEventListener('click', docListener);
+           });
+
+           button.dispatchEvent(clickEvent);
+           expect(hookSpy).toHaveBeenCalled();
+           expect(cancelSpy).toHaveBeenCalled();
+           expect(logs).toEqual([]);
+         }));
+
+      it('should support addEventListener with empty options and treated by capture=false',
+         ifEnvSupports(supportEventListenerOptions, function() {
+           let hookSpy = jasmine.createSpy('hook');
+           const logs: string[] = [];
+           const zone = rootZone.fork({
+             name: 'spy',
+             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+               hookSpy();
+               return parentZoneDelegate.scheduleTask(targetZone, task);
+             }
+           });
+
+           const docListener = () => {
+             logs.push('document options');
+           };
+           const btnListener = () => {
+             logs.push('button');
+           };
+
+           zone.run(function() {
+             (document as any).addEventListener('click', docListener, {});
+             button.addEventListener('click', btnListener);
+           });
+
+           button.dispatchEvent(clickEvent);
+
+           expect(hookSpy).toHaveBeenCalled();
+           hookSpy = jasmine.createSpy('hook');
+           expect(logs).toEqual(['button', 'document options']);
+
+           document.removeEventListener('click', docListener);
+           button.removeEventListener('click', btnListener);
+         }));
+
+      it('should support addEventListener with AddEventListenerOptions once setting',
+         ifEnvSupports(supportEventListenerOptions, function() {
+           let hookSpy = jasmine.createSpy('hook');
+           const eventListenerSpy = jasmine.createSpy('eventListener');
+           const zone = rootZone.fork({
+             name: 'spy',
+             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+               hookSpy();
+               return parentZoneDelegate.scheduleTask(targetZone, task);
+             }
+           });
+
+           zone.run(function() {
+             (button as any).addEventListener('click', eventListenerSpy, {once: true});
+           });
+
+           button.dispatchEvent(clickEvent);
+
+           expect(hookSpy).toHaveBeenCalled();
+           hookSpy = jasmine.createSpy('hook');
+           expect(eventListenerSpy).toHaveBeenCalled();
+
+           button.dispatchEvent(clickEvent);
+           expect(hookSpy).not.toHaveBeenCalled();
+         }));
+
+      it('should support addEventListener with AddEventListenerOptions passive setting',
+         ifEnvSupports(supportEventListenerOptions, function() {
+           const hookSpy = jasmine.createSpy('hook');
+           const logs: string[] = [];
+           const zone = rootZone.fork({
+             name: 'spy',
+             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+               hookSpy();
+               return parentZoneDelegate.scheduleTask(targetZone, task);
+             }
+           });
+
+           const listener = (e: Event) => {
+             logs.push(e.defaultPrevented.toString());
+             e.preventDefault();
+             logs.push(e.defaultPrevented.toString());
+           };
+
+           zone.run(function() {
+             (button as any).addEventListener('click', listener, {passive: true});
+           });
+
+           button.dispatchEvent(clickEvent);
+
+           expect(hookSpy).toHaveBeenCalled();
+           expect(logs).toEqual(['false', 'false']);
+
+           button.removeEventListener('click', listener);
+         }));
 
       it('should support inline event handler attributes', function() {
         const hookSpy = jasmine.createSpy('hook');
