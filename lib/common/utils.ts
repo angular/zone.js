@@ -15,7 +15,6 @@
 declare const WorkerGlobalScope: any;
 
 export const zoneSymbol: (name: string) => string = (n) => `__zone_symbol__${n}`;
-const VALUE = zoneSymbol('value');
 const _global: any =
     typeof window === 'object' && window || typeof self === 'object' && self || global;
 
@@ -68,12 +67,6 @@ export function patchProperty(obj: any, prop: string) {
     return;
   }
 
-  const originalDesc = Object.getOwnPropertyDescriptor(obj, 'original' + prop);
-  if (!originalDesc && desc.get) {
-    Object.defineProperty(
-        obj, 'original' + prop, {enumerable: false, configurable: true, get: desc.get});
-  }
-
   // A property descriptor cannot have getter/setter and be writable
   // deleting the writable and value properties avoids this error:
   //
@@ -81,12 +74,13 @@ export function patchProperty(obj: any, prop: string) {
   // getter or setter has been specified
   delete desc.writable;
   delete desc.value;
+  const originalDescGet = desc.get;
 
   // substr(2) cuz 'onclick' -> 'click', etc
   const eventName = prop.substr(2);
   const _prop = zoneSymbol('_' + prop);
 
-  desc.set = function(fn) {
+  desc.set = function(newValue) {
     // in some of windows's onproperty callback, this is undefined
     // so we need to check it
     let target = this;
@@ -96,20 +90,14 @@ export function patchProperty(obj: any, prop: string) {
     if (!target) {
       return;
     }
-    if (target[_prop]) {
-      target.removeEventListener(eventName, target[_prop]);
+    let previousValue = target[_prop];
+    if (previousValue) {
+      target.removeEventListener(eventName, previousValue);
     }
 
-    if (typeof fn === 'string') {
-      const src: string = fn;
-      fn = new Function(src);
-      fn[VALUE] = src;
-    }
-
-    if (typeof fn === 'function') {
+    if (typeof newValue === 'function') {
       const wrapFn = function(event: Event) {
-        let result;
-        result = fn.apply(this, arguments);
+        let result = newValue.apply(this, arguments);
 
         if (result != undefined && !result) {
           event.preventDefault();
@@ -136,26 +124,22 @@ export function patchProperty(obj: any, prop: string) {
     if (!target) {
       return null;
     }
-    let r = target[_prop] || null;
-    // result will be null when use inline event attribute,
-    // such as <button onclick="func();">OK</button>
-    // because the onclick function is internal raw uncompiled handler
-    // the onclick will be evaluated when first time event was triggered or
-    // the property is accessed, https://github.com/angular/zone.js/issues/525
-    // so we should use original native get to retrieve the handler
-    if (r === null) {
-      if (originalDesc && originalDesc.get) {
-        r = originalDesc.get.apply(this, arguments);
-        if (r) {
-          desc.set.apply(this, [r]);
-          if (typeof target['removeAttribute'] === 'function') {
-            target.removeAttribute(prop);
-          }
-        }
+    if (target.hasOwnProperty(_prop)) {
+      return target[_prop];
+    } else {
+      // result will be null when use inline event attribute,
+      // such as <button onclick="func();">OK</button>
+      // because the onclick function is internal raw uncompiled handler
+      // the onclick will be evaluated when first time event was triggered or
+      // the property is accessed, https://github.com/angular/zone.js/issues/525
+      // so we should use original native get to retrieve the handler
+      let value = originalDescGet.apply(this);
+      value = desc.set.apply(this, [value]);
+      if (typeof target['removeAttribute'] === 'function') {
+        target.removeAttribute(prop);
       }
+      return value;
     }
-    const value = target[_prop] || null;
-    return value && value.hasOwnProperty(VALUE) ? value[value] : value;
   };
 
   Object.defineProperty(obj, prop, desc);
