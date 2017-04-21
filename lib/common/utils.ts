@@ -133,7 +133,7 @@ export function patchProperty(obj: any, prop: string) {
       // the onclick will be evaluated when first time event was triggered or
       // the property is accessed, https://github.com/angular/zone.js/issues/525
       // so we should use original native get to retrieve the handler
-      let value = originalDescGet.apply(this);
+      let value = originalDescGet && originalDescGet.apply(this);
       if (value) {
         desc.set.apply(this, [value]);
         if (typeof target['removeAttribute'] === 'function') {
@@ -553,23 +553,12 @@ export function patchClass(className: string) {
   }
 }
 
-export function createNamedFn(name: string, delegate: (self: any, args: any[]) => any): Function {
-  try {
-    return (Function('f', `return function ${name}(){return f(this, arguments)}`))(delegate);
-  } catch (error) {
-    // if we fail, we must be CSP, just return delegate.
-    return function() {
-      return delegate(this, <any>arguments);
-    };
-  }
-}
-
 export function patchMethod(
     target: any, name: string,
     patchFn: (delegate: Function, delegateName: string, name: string) => (self: any, args: any[]) =>
         any): Function {
   let proto = target;
-  while (proto && Object.getOwnPropertyNames(proto).indexOf(name) === -1) {
+  while (proto && !proto.hasOwnProperty(name)) {
     proto = Object.getPrototypeOf(proto);
   }
   if (!proto && target[name]) {
@@ -580,7 +569,10 @@ export function patchMethod(
   let delegate: Function;
   if (proto && !(delegate = proto[delegateName])) {
     delegate = proto[delegateName] = proto[name];
-    proto[name] = createNamedFn(name, patchFn(delegate, delegateName, name));
+    const patchDelegate = patchFn(delegate, delegateName, name);
+    proto[name] = function() {
+      return patchDelegate(this, arguments as any);
+    };
     attachOriginToPatched(proto[name], delegate);
   }
   return delegate;

@@ -56,7 +56,7 @@ describe('Microtasks', function() {
 
     testZone.run(function() {
       resolvedPromise.then(function() {
-        expect(Zone.current).toBe(testZone);
+        expect(Zone.current.name).toBe(testZone.name);
         done();
       });
     });

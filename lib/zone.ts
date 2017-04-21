@@ -301,6 +301,30 @@ interface ZoneType {
    *  Return the root zone.
    */
   root: Zone;
+
+  /** @internal */
+  __load_patch(name: string, fn: _PatchFn): void;
+
+  /** @internal */
+  __symbol__(name: string): string;
+}
+
+/** @internal */
+type _PatchFn = (global: Window, Zone: ZoneType, api: _ZonePrivate) => void;
+
+/** @internal */
+interface _ZonePrivate {
+  currentZoneFrame(): _ZoneFrame;
+  symbol(name: string): string;
+  scheduleMicroTask(task?: MicroTask): void;
+  onUnhandledError: (showError: boolean, error: Error) => void;
+  microtaskDrainDone: (showError: boolean) => void;
+}
+
+/** @internal */
+interface _ZoneFrame {
+  parent: _ZoneFrame;
+  zone: Zone;
 }
 
 /**
@@ -587,43 +611,30 @@ interface EventTask extends Task {
   type: 'eventTask';
 }
 
-/**
- * Extend the Error with additional fields for rewritten stack frames
- */
-interface Error {
-  /**
-   * Stack trace where extra frames have been removed and zone names added.
-   */
-  zoneAwareStack?: string;
-
-  /**
-   * Original stack trace with no modifications
-   */
-  originalStack?: string;
-}
-
 /** @internal */
 type AmbientZone = Zone;
 /** @internal */
 type AmbientZoneDelegate = ZoneDelegate;
 
 const Zone: ZoneType = (function(global: any) {
+  const performance: {mark(name: string): void; measure(name: string, label: string): void;} =
+      global['performance'];
+  function mark(name: string) {
+    performance && performance['mark'] && performance['mark'](name);
+  }
+  function performanceMeasure(name: string, label: string) {
+    performance && performance['measure'] && performance['measure'](name, label);
+  }
+  mark('Zone');
   if (global['Zone']) {
     throw new Error('Zone already loaded.');
   }
-
-  const NO_ZONE = {name: 'NO ZONE'};
-  const notScheduled: 'notScheduled' = 'notScheduled', scheduling: 'scheduling' = 'scheduling',
-                      scheduled: 'scheduled' = 'scheduled', running: 'running' = 'running',
-                      canceling: 'canceling' = 'canceling', unknown: 'unknown' = 'unknown';
-  const microTask: 'microTask' = 'microTask', macroTask: 'macroTask' = 'macroTask',
-                   eventTask: 'eventTask' = 'eventTask';
 
   class Zone implements AmbientZone {
     static __symbol__: (name: string) => string = __symbol__;
 
     static assertZonePatched() {
-      if (global.Promise !== ZoneAwarePromise) {
+      if (global['Promise'] !== patches['ZoneAwarePromise']) {
         throw new Error(
             'Zone.js has detected that ZoneAwarePromise `(window|global).Promise` ' +
             'has been overwritten.\n' +
@@ -647,6 +658,17 @@ const Zone: ZoneType = (function(global: any) {
     static get currentTask(): Task {
       return _currentTask;
     };
+
+    static __load_patch(name: string, fn: _PatchFn): void {
+      if (patches.hasOwnProperty(name)) {
+        throw Error('Already loaded patch: ' + name);
+      } else {
+        const perfName = 'Zone:' + name;
+        mark(perfName);
+        patches[name] = fn(global, Zone, _api);
+        performanceMeasure(perfName, perfName);
+      }
+    }
 
     public get parent(): AmbientZone {
       return this._parent;
@@ -705,7 +727,7 @@ const Zone: ZoneType = (function(global: any) {
     public run<T>(
         callback: (...args: any[]) => T, applyThis: any = undefined, applyArgs: any[] = null,
         source: string = null): T {
-      _currentZoneFrame = new ZoneFrame(_currentZoneFrame, this);
+      _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
       try {
         return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
       } finally {
@@ -717,7 +739,7 @@ const Zone: ZoneType = (function(global: any) {
     public runGuarded<T>(
         callback: (...args: any[]) => T, applyThis: any = null, applyArgs: any[] = null,
         source: string = null) {
-      _currentZoneFrame = new ZoneFrame(_currentZoneFrame, this);
+      _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
       try {
         try {
           return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
@@ -742,7 +764,7 @@ const Zone: ZoneType = (function(global: any) {
       task.runCount++;
       const previousTask = _currentTask;
       _currentTask = task;
-      _currentZoneFrame = new ZoneFrame(_currentZoneFrame, this);
+      _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
       try {
         if (task.type == macroTask && task.data && !task.data.isPeriodic) {
           task.cancelFn = null;
@@ -1097,7 +1119,6 @@ const Zone: ZoneType = (function(global: any) {
     }
   }
 
-
   class ZoneTask<T extends TaskType> implements Task {
     public type: T;
     public source: string;
@@ -1188,37 +1209,18 @@ const Zone: ZoneType = (function(global: any) {
     }
   }
 
-  interface UncaughtPromiseError extends Error {
-    zone: AmbientZone;
-    task: Task;
-    promise: ZoneAwarePromise<any>;
-    rejection: any;
-  }
-
-  class ZoneFrame {
-    public parent: ZoneFrame;
-    public zone: Zone;
-    constructor(parent: ZoneFrame, zone: Zone) {
-      this.parent = parent;
-      this.zone = zone;
-    }
-  }
-
-  function __symbol__(name: string) {
-    return '__zone_symbol__' + name;
-  }
+  //////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////
+  ///  MICROTASK QUEUE
+  //////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////
   const symbolSetTimeout = __symbol__('setTimeout');
   const symbolPromise = __symbol__('Promise');
   const symbolThen = __symbol__('then');
-
-  let _currentZoneFrame = new ZoneFrame(null, new Zone(null, null));
-  let _currentTask: Task = null;
   let _microTaskQueue: Task[] = [];
   let _isDrainingMicrotaskQueue: boolean = false;
-  const _uncaughtPromiseErrors: UncaughtPromiseError[] = [];
-  let _numberOfNestedTaskFrames = 0;
 
-  function scheduleQueueDrain() {
+  function scheduleMicroTask(task?: MicroTask) {
     // if we are not running in any task, and there has not been anything scheduled
     // we must bootstrap the initial task creation by manually scheduling the drain
     if (_numberOfNestedTaskFrames === 0 && _microTaskQueue.length === 0) {
@@ -1229,40 +1231,11 @@ const Zone: ZoneType = (function(global: any) {
         global[symbolSetTimeout](drainMicroTaskQueue, 0);
       }
     }
-  }
-
-  function scheduleMicroTask(task: MicroTask) {
-    scheduleQueueDrain();
-    _microTaskQueue.push(task);
-  }
-
-  function consoleError(e: any) {
-    if ((Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')]) {
-      return;
-    }
-    const rejection = e && e.rejection;
-    if (rejection) {
-      console.error(
-          'Unhandled Promise rejection:',
-          rejection instanceof Error ? rejection.message : rejection, '; Zone:',
-          (<Zone>e.zone).name, '; Task:', e.task && (<Task>e.task).source, '; Value:', rejection,
-          rejection instanceof Error ? rejection.stack : undefined);
-    }
-    console.error(e);
-  }
-
-  function handleUnhandledRejection(e: any) {
-    consoleError(e);
-    try {
-      const handler = (Zone as any)[__symbol__('unhandledPromiseRejectionHandler')];
-      if (handler && typeof handler === 'function') {
-        handler.apply(this, [e]);
-      }
-    } catch (err) {
-    }
+    task && _microTaskQueue.push(task);
   }
 
   function drainMicroTaskQueue() {
+    const showError: boolean = !(Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')];
     if (!_isDrainingMicrotaskQueue) {
       _isDrainingMicrotaskQueue = true;
       while (_microTaskQueue.length) {
@@ -1273,613 +1246,51 @@ const Zone: ZoneType = (function(global: any) {
           try {
             task.zone.runTask(task, null, null);
           } catch (error) {
-            consoleError(error);
+            if ((Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')]) {
+              return;
+            }
+            _api.onUnhandledError(showError, error);
           }
         }
       }
-      while (_uncaughtPromiseErrors.length) {
-        while (_uncaughtPromiseErrors.length) {
-          const uncaughtPromiseError: UncaughtPromiseError = _uncaughtPromiseErrors.shift();
-          try {
-            uncaughtPromiseError.zone.runGuarded(() => {
-              throw uncaughtPromiseError;
-            });
-          } catch (error) {
-            handleUnhandledRejection(error);
-          }
-        }
-      }
+      _api.microtaskDrainDone(showError);
       _isDrainingMicrotaskQueue = false;
     }
   }
 
-  function isThenable(value: any): boolean {
-    return value && value.then;
-  }
+  //////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////
+  ///  BOOTSTRAP
+  //////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////
 
-  function forwardResolution(value: any): any {
-    return value;
-  }
 
-  function forwardRejection(rejection: any): any {
-    return ZoneAwarePromise.reject(rejection);
-  }
+  const NO_ZONE = {name: 'NO ZONE'};
+  const notScheduled: 'notScheduled' = 'notScheduled', scheduling: 'scheduling' = 'scheduling',
+                      scheduled: 'scheduled' = 'scheduled', running: 'running' = 'running',
+                      canceling: 'canceling' = 'canceling', unknown: 'unknown' = 'unknown';
+  const microTask: 'microTask' = 'microTask', macroTask: 'macroTask' = 'macroTask',
+                   eventTask: 'eventTask' = 'eventTask';
 
-  const symbolState: string = __symbol__('state');
-  const symbolValue: string = __symbol__('value');
-  const source: string = 'Promise.then';
-  const UNRESOLVED: null = null;
-  const RESOLVED = true;
-  const REJECTED = false;
-  const REJECTED_NO_CATCH = 0;
-
-  function makeResolver(promise: ZoneAwarePromise<any>, state: boolean): (value: any) => void {
-    return (v) => {
-      try {
-        resolvePromise(promise, state, v);
-      } catch (err) {
-        resolvePromise(promise, false, err);
-      }
-      // Do not return value or you will break the Promise spec.
-    };
-  }
-
-  const once = function() {
-    let wasCalled = false;
-
-    return function wrapper(wrappedFunction: Function) {
-      return function() {
-        if (wasCalled) {
-          return;
-        }
-        wasCalled = true;
-        wrappedFunction.apply(null, arguments);
-      };
-    };
+  const patches: {[key: string]: any} = {};
+  const _api: _ZonePrivate = {
+    symbol: __symbol__,
+    currentZoneFrame: () => _currentZoneFrame,
+    onUnhandledError: noop,
+    microtaskDrainDone: noop,
+    scheduleMicroTask: scheduleMicroTask
   };
+  let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
+  let _currentTask: Task = null;
+  let _numberOfNestedTaskFrames = 0;
 
-  // Promise Resolution
-  function resolvePromise(
-      promise: ZoneAwarePromise<any>, state: boolean, value: any): ZoneAwarePromise<any> {
-    const onceWrapper = once();
-    if (promise === value) {
-      throw new TypeError('Promise resolved with itself');
-    }
-    if ((promise as any)[symbolState] === UNRESOLVED) {
-      // should only get value.then once based on promise spec.
-      let then: any = null;
-      try {
-        if (typeof value === 'object' || typeof value === 'function') {
-          then = value && value.then;
-        }
-      } catch (err) {
-        onceWrapper(() => {
-          resolvePromise(promise, false, err);
-        })();
-        return promise;
-      }
-      // if (value instanceof ZoneAwarePromise) {
-      if (state !== REJECTED && value instanceof ZoneAwarePromise &&
-          value.hasOwnProperty(symbolState) && value.hasOwnProperty(symbolValue) &&
-          (value as any)[symbolState] !== UNRESOLVED) {
-        clearRejectedNoCatch(<Promise<any>>value);
-        resolvePromise(promise, (value as any)[symbolState], (value as any)[symbolValue]);
-      } else if (state !== REJECTED && typeof then === 'function') {
-        try {
-          then.apply(value, [
-            onceWrapper(makeResolver(promise, state)), onceWrapper(makeResolver(promise, false))
-          ]);
-        } catch (err) {
-          onceWrapper(() => {
-            resolvePromise(promise, false, err);
-          })();
-        }
-      } else {
-        (promise as any)[symbolState] = state;
-        const queue = (promise as any)[symbolValue];
-        (promise as any)[symbolValue] = value;
+  function noop() {}
 
-        // record task information in value when error occurs, so we can
-        // do some additional work such as render longStackTrace
-        if (state === REJECTED && value instanceof Error) {
-          (value as any)[__symbol__('currentTask')] = Zone.currentTask;
-        }
-
-        for (let i = 0; i < queue.length;) {
-          scheduleResolveOrReject(promise, queue[i++], queue[i++], queue[i++], queue[i++]);
-        }
-        if (queue.length == 0 && state == REJECTED) {
-          (promise as any)[symbolState] = REJECTED_NO_CATCH;
-          try {
-            throw new Error(
-                'Uncaught (in promise): ' + value +
-                (value && value.stack ? '\n' + value.stack : ''));
-          } catch (err) {
-            const error: UncaughtPromiseError = err;
-            error.rejection = value;
-            error.promise = promise;
-            error.zone = Zone.current;
-            error.task = Zone.currentTask;
-            _uncaughtPromiseErrors.push(error);
-            scheduleQueueDrain();
-          }
-        }
-      }
-    }
-    // Resolving an already resolved promise is a noop.
-    return promise;
+  function __symbol__(name: string) {
+    return '__zone_symbol__' + name;
   }
 
-  function clearRejectedNoCatch(promise: ZoneAwarePromise<any>): void {
-    if ((promise as any)[symbolState] === REJECTED_NO_CATCH) {
-      // if the promise is rejected no catch status
-      // and queue.length > 0, means there is a error handler
-      // here to handle the rejected promise, we should trigger
-      // windows.rejectionhandled eventHandler or nodejs rejectionHandled
-      // eventHandler
-      try {
-        const handler = (Zone as any)[__symbol__('rejectionHandledHandler')];
-        if (handler && typeof handler === 'function') {
-          handler.apply(this, [{rejection: (promise as any)[symbolValue], promise: promise}]);
-        }
-      } catch (err) {
-      }
-      (promise as any)[symbolState] = REJECTED;
-      for (let i = 0; i < _uncaughtPromiseErrors.length; i++) {
-        if (promise === _uncaughtPromiseErrors[i].promise) {
-          _uncaughtPromiseErrors.splice(i, 1);
-        }
-      }
-    }
-  }
 
-  function scheduleResolveOrReject<R, U>(
-      promise: ZoneAwarePromise<any>, zone: AmbientZone, chainPromise: ZoneAwarePromise<any>,
-      onFulfilled?: (value: R) => U, onRejected?: (error: any) => U): void {
-    clearRejectedNoCatch(promise);
-    const delegate = (promise as any)[symbolState] ?
-        (typeof onFulfilled === 'function') ? onFulfilled : forwardResolution :
-        (typeof onRejected === 'function') ? onRejected : forwardRejection;
-    zone.scheduleMicroTask(source, () => {
-      try {
-        resolvePromise(
-            chainPromise, true, zone.run(delegate, undefined, [(promise as any)[symbolValue]]));
-      } catch (error) {
-        resolvePromise(chainPromise, false, error);
-      }
-    });
-  }
-
-  class ZoneAwarePromise<R> implements Promise<R> {
-    static toString() {
-      return 'function ZoneAwarePromise() { [native code] }';
-    }
-
-    static resolve<R>(value: R): Promise<R> {
-      return resolvePromise(<ZoneAwarePromise<R>>new this(null), RESOLVED, value);
-    }
-
-    static reject<U>(error: U): Promise<U> {
-      return resolvePromise(<ZoneAwarePromise<U>>new this(null), REJECTED, error);
-    }
-
-    static race<R>(values: PromiseLike<any>[]): Promise<R> {
-      let resolve: (v: any) => void;
-      let reject: (v: any) => void;
-      let promise: any = new this((res, rej) => {
-        [resolve, reject] = [res, rej];
-      });
-      function onResolve(value: any) {
-        promise && (promise = null || resolve(value));
-      }
-      function onReject(error: any) {
-        promise && (promise = null || reject(error));
-      }
-
-      for (let value of values) {
-        if (!isThenable(value)) {
-          value = this.resolve(value);
-        }
-        value.then(onResolve, onReject);
-      }
-      return promise;
-    }
-
-    static all<R>(values: any): Promise<R> {
-      let resolve: (v: any) => void;
-      let reject: (v: any) => void;
-      let promise = new this((res, rej) => {
-        resolve = res;
-        reject = rej;
-      });
-      let count = 0;
-      const resolvedValues: any[] = [];
-      for (let value of values) {
-        if (!isThenable(value)) {
-          value = this.resolve(value);
-        }
-        value.then(
-            ((index) => (value: any) => {
-              resolvedValues[index] = value;
-              count--;
-              if (!count) {
-                resolve(resolvedValues);
-              }
-            })(count),
-            reject);
-        count++;
-      }
-      if (!count) resolve(resolvedValues);
-      return promise;
-    }
-
-    constructor(
-        executor:
-            (resolve: (value?: R|PromiseLike<R>) => void, reject: (error?: any) => void) => void) {
-      const promise: ZoneAwarePromise<R> = this;
-      if (!(promise instanceof ZoneAwarePromise)) {
-        throw new Error('Must be an instanceof Promise.');
-      }
-      (promise as any)[symbolState] = UNRESOLVED;
-      (promise as any)[symbolValue] = [];  // queue;
-      try {
-        executor && executor(makeResolver(promise, RESOLVED), makeResolver(promise, REJECTED));
-      } catch (error) {
-        resolvePromise(promise, false, error);
-      }
-    }
-
-    then<R, U>(
-        onFulfilled?: (value: R) => U | PromiseLike<U>,
-        onRejected?: (error: any) => U | PromiseLike<U>): Promise<R> {
-      const chainPromise: Promise<R> = new (this.constructor as typeof ZoneAwarePromise)(null);
-      const zone = Zone.current;
-      if ((this as any)[symbolState] == UNRESOLVED) {
-        (<any[]>(this as any)[symbolValue]).push(zone, chainPromise, onFulfilled, onRejected);
-      } else {
-        scheduleResolveOrReject(this, zone, chainPromise, onFulfilled, onRejected);
-      }
-      return chainPromise;
-    }
-
-    catch<U>(onRejected?: (error: any) => U | PromiseLike<U>): Promise<R> {
-      return this.then(null, onRejected);
-    }
-  }
-  // Protect against aggressive optimizers dropping seemingly unused properties.
-  // E.g. Closure Compiler in advanced mode.
-  ZoneAwarePromise['resolve'] = ZoneAwarePromise.resolve;
-  ZoneAwarePromise['reject'] = ZoneAwarePromise.reject;
-  ZoneAwarePromise['race'] = ZoneAwarePromise.race;
-  ZoneAwarePromise['all'] = ZoneAwarePromise.all;
-
-  const NativePromise = global[symbolPromise] = global['Promise'];
-  global['Promise'] = ZoneAwarePromise;
-
-  const symbolThenPatched = __symbol__('thenPatched');
-
-  function patchThen(Ctor: Function) {
-    const proto = Ctor.prototype;
-    const originalThen = proto.then;
-    // Keep a reference to the original method.
-    proto[symbolThen] = originalThen;
-
-    Ctor.prototype.then = function(onResolve: any, onReject: any) {
-      const wrapped = new ZoneAwarePromise((resolve, reject) => {
-        originalThen.call(this, resolve, reject);
-      });
-      return wrapped.then(onResolve, onReject);
-    };
-    (Ctor as any)[symbolThenPatched] = true;
-  }
-
-  function zoneify(fn: Function) {
-    return function() {
-      let resultPromise = fn.apply(this, arguments);
-      if (resultPromise instanceof ZoneAwarePromise) {
-        return resultPromise;
-      }
-      let ctor = resultPromise.constructor;
-      if (!ctor[symbolThenPatched]) {
-        patchThen(ctor);
-      }
-      return resultPromise;
-    };
-  }
-
-  if (NativePromise) {
-    patchThen(NativePromise);
-
-    let fetch = global['fetch'];
-    if (typeof fetch == 'function') {
-      global['fetch'] = zoneify(fetch);
-    }
-  }
-
-  // This is not part of public API, but it is useful for tests, so we expose it.
-  (Promise as any)[Zone.__symbol__('uncaughtPromiseErrors')] = _uncaughtPromiseErrors;
-
-  /*
-   * This code patches Error so that:
-   *   - It ignores un-needed stack frames.
-   *   - It Shows the associated Zone for reach frame.
-   */
-
-  const enum FrameType {
-    /// Skip this frame when printing out stack
-    blackList,
-    /// This frame marks zone transition
-    transition
-  }
-
-  const blacklistedStackFramesSymbol = Zone.__symbol__('blacklistedStackFrames');
-  const NativeError = global[__symbol__('Error')] = global.Error;
-  // Store the frames which should be removed from the stack frames
-  const blackListedStackFrames: {[frame: string]: FrameType} = {};
-  // We must find the frame where Error was created, otherwise we assume we don't understand stack
-  let zoneAwareFrame1: string;
-  let zoneAwareFrame2: string;
-
-  global.Error = ZoneAwareError;
-  const stackRewrite = 'stackRewrite';
-
-  /**
-   * This is ZoneAwareError which processes the stack frame and cleans up extra frames as well as
-   * adds zone information to it.
-   */
-  function ZoneAwareError(): Error {
-    // We always have to return native error otherwise the browser console will not work.
-    let error: Error = NativeError.apply(this, arguments);
-    // Save original stack trace
-    const originalStack = (error as any)['originalStack'] = error.stack;
-
-    // Process the stack trace and rewrite the frames.
-    if ((ZoneAwareError as any)[stackRewrite] && originalStack) {
-      let frames: string[] = originalStack.split('\n');
-      let zoneFrame = _currentZoneFrame;
-      let i = 0;
-      // Find the first frame
-      while (!(frames[i] === zoneAwareFrame1 || frames[i] === zoneAwareFrame2) &&
-             i < frames.length) {
-        i++;
-      }
-      for (; i < frames.length && zoneFrame; i++) {
-        let frame = frames[i];
-        if (frame.trim()) {
-          switch (blackListedStackFrames[frame]) {
-            case FrameType.blackList:
-              frames.splice(i, 1);
-              i--;
-              break;
-            case FrameType.transition:
-              if (zoneFrame.parent) {
-                // This is the special frame where zone changed. Print and process it accordingly
-                zoneFrame = zoneFrame.parent;
-              } else {
-                zoneFrame = null;
-              }
-              frames.splice(i, 1);
-              i--;
-              break;
-            default:
-              frames[i] += ` [${zoneFrame.zone.name}]`;
-          }
-        }
-      }
-      try {
-        error.stack = error.zoneAwareStack = frames.join('\n');
-      } catch (e) {
-        // ignore as some browsers don't allow overriding of stack
-      }
-    }
-
-    if (this instanceof NativeError && this.constructor != NativeError) {
-      // We got called with a `new` operator AND we are subclass of ZoneAwareError
-      // in that case we have to copy all of our properties to `this`.
-      Object.keys(error).concat('stack', 'message').forEach((key) => {
-        if ((error as any)[key] !== undefined) {
-          try {
-            this[key] = (error as any)[key];
-          } catch (e) {
-            // ignore the assignment in case it is a setter and it throws.
-          }
-        }
-      });
-      return this;
-    }
-    return error;
-  }
-
-  // Copy the prototype so that instanceof operator works as expected
-  ZoneAwareError.prototype = NativeError.prototype;
-  (ZoneAwareError as any)[blacklistedStackFramesSymbol] = blackListedStackFrames;
-  (ZoneAwareError as any)[stackRewrite] = false;
-
-  // those properties need special handling
-  const specialPropertyNames = ['stackTraceLimit', 'captureStackTrace', 'prepareStackTrace'];
-  // those properties of NativeError should be set to ZoneAwareError
-  const nativeErrorProperties = Object.keys(NativeError);
-  if (nativeErrorProperties) {
-    nativeErrorProperties.forEach(prop => {
-      if (specialPropertyNames.filter(sp => sp === prop).length === 0) {
-        Object.defineProperty(ZoneAwareError, prop, {
-          get: function() {
-            return NativeError[prop];
-          },
-          set: function(value) {
-            NativeError[prop] = value;
-          }
-        });
-      }
-    });
-  }
-
-  if (NativeError.hasOwnProperty('stackTraceLimit')) {
-    // Extend default stack limit as we will be removing few frames.
-    NativeError.stackTraceLimit = Math.max(NativeError.stackTraceLimit, 15);
-
-    // make sure that ZoneAwareError has the same property which forwards to NativeError.
-    Object.defineProperty(ZoneAwareError, 'stackTraceLimit', {
-      get: function() {
-        return NativeError.stackTraceLimit;
-      },
-      set: function(value) {
-        return NativeError.stackTraceLimit = value;
-      }
-    });
-  }
-
-  if (NativeError.hasOwnProperty('captureStackTrace')) {
-    Object.defineProperty(ZoneAwareError, 'captureStackTrace', {
-      // add named function here because we need to remove this
-      // stack frame when prepareStackTrace below
-      value: function zoneCaptureStackTrace(targetObject: Object, constructorOpt?: Function) {
-        NativeError.captureStackTrace(targetObject, constructorOpt);
-      }
-    });
-  }
-
-  Object.defineProperty(ZoneAwareError, 'prepareStackTrace', {
-    get: function() {
-      return NativeError.prepareStackTrace;
-    },
-    set: function(value) {
-      if (!value || typeof value !== 'function') {
-        return NativeError.prepareStackTrace = value;
-      }
-      return NativeError.prepareStackTrace = function(
-                 error: Error, structuredStackTrace: {getFunctionName: Function}[]) {
-        // remove additional stack information from ZoneAwareError.captureStackTrace
-        if (structuredStackTrace) {
-          for (let i = 0; i < structuredStackTrace.length; i++) {
-            const st = structuredStackTrace[i];
-            // remove the first function which name is zoneCaptureStackTrace
-            if (st.getFunctionName() === 'zoneCaptureStackTrace') {
-              structuredStackTrace.splice(i, 1);
-              break;
-            }
-          }
-        }
-        return value.apply(this, [error, structuredStackTrace]);
-      };
-    }
-  });
-
-  // Now we need to populate the `blacklistedStackFrames` as well as find the
-  // run/runGuarded/runTask frames. This is done by creating a detect zone and then threading
-  // the execution through all of the above methods so that we can look at the stack trace and
-  // find the frames of interest.
-  let detectZone: Zone = Zone.current.fork({
-    name: 'detect',
-    onHandleError: function(parentZD: ZoneDelegate, current: Zone, target: Zone, error: any):
-        boolean {
-          if (error.originalStack && Error === ZoneAwareError) {
-            let frames = error.originalStack.split(/\n/);
-            let runFrame = false, runGuardedFrame = false, runTaskFrame = false;
-            while (frames.length) {
-              let frame = frames.shift();
-              // On safari it is possible to have stack frame with no line number.
-              // This check makes sure that we don't filter frames on name only (must have
-              // linenumber)
-              if (/:\d+:\d+/.test(frame)) {
-                // Get rid of the path so that we don't accidentally find function name in path.
-                // In chrome the separator is `(` and `@` in FF and safari
-                // Chrome: at Zone.run (zone.js:100)
-                // Chrome: at Zone.run (http://localhost:9876/base/build/lib/zone.js:100:24)
-                // FireFox: Zone.prototype.run@http://localhost:9876/base/build/lib/zone.js:101:24
-                // Safari: run@http://localhost:9876/base/build/lib/zone.js:101:24
-                let fnName: string = frame.split('(')[0].split('@')[0];
-                let frameType = FrameType.transition;
-                if (fnName.indexOf('ZoneAwareError') !== -1) {
-                  zoneAwareFrame1 = frame;
-                  zoneAwareFrame2 = frame.replace('Error.', '');
-                  blackListedStackFrames[zoneAwareFrame2] = FrameType.blackList;
-                }
-                if (fnName.indexOf('runGuarded') !== -1) {
-                  runGuardedFrame = true;
-                } else if (fnName.indexOf('runTask') !== -1) {
-                  runTaskFrame = true;
-                } else if (fnName.indexOf('run') !== -1) {
-                  runFrame = true;
-                } else {
-                  frameType = FrameType.blackList;
-                }
-                blackListedStackFrames[frame] = frameType;
-                // Once we find all of the frames we can stop looking.
-                if (runFrame && runGuardedFrame && runTaskFrame) {
-                  (ZoneAwareError as any)[stackRewrite] = true;
-                  break;
-                }
-              }
-            }
-          }
-          return false;
-        }
-  }) as Zone;
-  // carefully constructor a stack frame which contains all of the frames of interest which
-  // need to be detected and blacklisted.
-
-  const childDetectZone = detectZone.fork({
-    name: 'child',
-    onScheduleTask: function(delegate, curr, target, task) {
-      return delegate.scheduleTask(target, task);
-    },
-    onInvokeTask: function(delegate, curr, target, task, applyThis, applyArgs) {
-      return delegate.invokeTask(target, task, applyThis, applyArgs);
-    },
-    onCancelTask: function(delegate, curr, target, task) {
-      return delegate.cancelTask(target, task);
-    },
-    onInvoke: function(delegate, curr, target, callback, applyThis, applyArgs, source) {
-      return delegate.invoke(target, callback, applyThis, applyArgs, source);
-    }
-  });
-
-  // we need to detect all zone related frames, it will
-  // exceed default stackTraceLimit, so we set it to
-  // larger number here, and restore it after detect finish.
-  const originalStackTraceLimit = Error.stackTraceLimit;
-  Error.stackTraceLimit = 100;
-  // we schedule event/micro/macro task, and invoke them
-  // when onSchedule, so we can get all stack traces for
-  // all kinds of tasks with one error thrown.
-  childDetectZone.run(() => {
-    childDetectZone.runGuarded(() => {
-      const fakeTransitionTo =
-          (toState: TaskState, fromState1: TaskState, fromState2: TaskState) => {};
-      childDetectZone.scheduleEventTask(
-          blacklistedStackFramesSymbol,
-          () => {
-            childDetectZone.scheduleMacroTask(
-                blacklistedStackFramesSymbol,
-                () => {
-                  childDetectZone.scheduleMicroTask(
-                      blacklistedStackFramesSymbol,
-                      () => {
-                        throw new (ZoneAwareError as any)(ZoneAwareError, NativeError);
-                      },
-                      null,
-                      (t: Task) => {
-                        (t as any)._transitionTo = fakeTransitionTo;
-                        t.invoke();
-                      });
-                },
-                null,
-                (t) => {
-                  (t as any)._transitionTo = fakeTransitionTo;
-                  t.invoke();
-                },
-                () => {});
-          },
-          null,
-          (t) => {
-            (t as any)._transitionTo = fakeTransitionTo;
-            t.invoke();
-          },
-          () => {});
-    });
-  });
-  Error.stackTraceLimit = originalStackTraceLimit;
-
+  performanceMeasure('Zone', 'Zone');
   return global['Zone'] = Zone;
 })(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);

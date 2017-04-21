@@ -78,26 +78,5 @@ describe('utils', function() {
       expect(desc.writable).toBeTruthy();
       expect(!desc.get).toBeTruthy();
     });
-
-
-    it('should have a method name in the stacktrace', () => {
-      const fn = function someOtherName() {
-        throw new Error('MyError');
-      };
-      const target = {mySpecialMethodName: fn};
-      patchMethod(target, 'mySpecialMethodName', (delegate: Function) => {
-        return function(self, args) {
-          return delegate();
-        };
-      });
-      try {
-        target.mySpecialMethodName();
-      } catch (e) {
-        if (e.stack) {
-          expect(e.stack).toContain('mySpecialMethodName');
-        }
-      }
-    });
   });
-
 });
