@@ -31,7 +31,7 @@ describe(
         callbackNames.map(function(callbackName) {
           const fullCallbackName = callbackName + 'Callback';
           const proto = Object.create(HTMLElement.prototype);
-          proto[fullCallbackName] = function(arg: any) {
+          (proto as any)[fullCallbackName] = function(arg: any) {
             callbacks[callbackName](arg);
           };
           return (<any>document).registerElement('x-' + callbackName.toLowerCase(), {
