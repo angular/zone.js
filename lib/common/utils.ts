@@ -134,11 +134,13 @@ export function patchProperty(obj: any, prop: string) {
       // the property is accessed, https://github.com/angular/zone.js/issues/525
       // so we should use original native get to retrieve the handler
       let value = originalDescGet.apply(this);
-      value = desc.set.apply(this, [value]);
-      if (typeof target['removeAttribute'] === 'function') {
-        target.removeAttribute(prop);
+      if (value) {
+        desc.set.apply(this, [value]);
+        if (typeof target['removeAttribute'] === 'function') {
+          target.removeAttribute(prop);
+        }
+        return value;
       }
-      return value;
     }
     return null;
   };
