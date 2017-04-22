@@ -61,6 +61,11 @@ describe('XMLHttpRequest', function() {
     req.send();
   });
 
+  it('should return null when access ontimeout first time without error', function() {
+    let req: XMLHttpRequest = new XMLHttpRequest();
+    expect(req.ontimeout).toBe(null);
+  });
+
   const supportsOnProgress = function() {
     return 'onprogress' in new XMLHttpRequest();
   };
