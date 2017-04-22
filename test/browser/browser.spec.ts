@@ -125,20 +125,6 @@ describe('Zone', function() {
                        window.removeEventListener('mousedown', eventListenerSpy);
                      }));
 
-              it('window onresize should be patched',
-                 ifEnvSupports(
-                     () => {
-                       return canPatchOnProperty(window, 'onmousedown');
-                     },
-                     function() {
-                       window.onresize = eventListenerSpy;
-                       const innerResizeProp: any = (window as any)[zoneSymbol('_onresize')];
-                       expect(innerResizeProp).toBeTruthy();
-                       innerResizeProp();
-                       expect(eventListenerSpy).toHaveBeenCalled();
-                       window.removeEventListener('resize', eventListenerSpy);
-                     }));
-
               it('document onclick should be in zone',
                  ifEnvSupports(
                      () => {
