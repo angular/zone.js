@@ -84,94 +84,114 @@ describe('Zone', function() {
       expect(confirmSpy).toHaveBeenCalledWith('confirmMsg');
     });
 
-    describe('DOM onProperty hooks', ifEnvSupports(canPatchOnProperty, function() {
-               let mouseEvent = document.createEvent('Event');
-               let hookSpy: Spy, eventListenerSpy: Spy;
-               const zone = rootZone.fork({
-                 name: 'spy',
-                 onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone,
-                                  targetZone: Zone, task: Task): any => {
-                   hookSpy();
-                   return parentZoneDelegate.scheduleTask(targetZone, task);
-                 }
-               });
+    describe(
+        'DOM onProperty hooks',
+        ifEnvSupports(
+            () => {
+              return canPatchOnProperty(HTMLElement.prototype, 'onclick');
+            },
+            function() {
+              let mouseEvent = document.createEvent('Event');
+              let hookSpy: Spy, eventListenerSpy: Spy;
+              const zone = rootZone.fork({
+                name: 'spy',
+                onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone,
+                                 targetZone: Zone, task: Task): any => {
+                  hookSpy();
+                  return parentZoneDelegate.scheduleTask(targetZone, task);
+                }
+              });
 
-               beforeEach(function() {
-                 mouseEvent.initEvent('mousedown', true, true);
-                 hookSpy = jasmine.createSpy('hook');
-                 eventListenerSpy = jasmine.createSpy('eventListener');
-               });
+              beforeEach(function() {
+                mouseEvent.initEvent('mousedown', true, true);
+                hookSpy = jasmine.createSpy('hook');
+                eventListenerSpy = jasmine.createSpy('eventListener');
+              });
 
-               it('window onclick should be in zone',
-                  ifEnvSupports(
-                      () => {
-                        return canPatchOnProperty(window, 'onmousedown');
-                      },
-                      function() {
-                        zone.run(function() {
-                          window.onmousedown = eventListenerSpy;
-                        });
+              it('window onclick should be in zone',
+                 ifEnvSupports(
+                     () => {
+                       return canPatchOnProperty(window, 'onmousedown');
+                     },
+                     function() {
+                       zone.run(function() {
+                         window.onmousedown = eventListenerSpy;
+                       });
 
-                        window.dispatchEvent(mouseEvent);
+                       window.dispatchEvent(mouseEvent);
 
-                        expect(hookSpy).toHaveBeenCalled();
-                        expect(eventListenerSpy).toHaveBeenCalled();
-                        window.removeEventListener('mousedown', eventListenerSpy);
-                      }));
+                       expect(hookSpy).toHaveBeenCalled();
+                       expect(eventListenerSpy).toHaveBeenCalled();
+                       window.removeEventListener('mousedown', eventListenerSpy);
+                     }));
 
-               it('document onclick should be in zone',
-                  ifEnvSupports(
-                      () => {
-                        return canPatchOnProperty(Document.prototype, 'onmousedown');
-                      },
-                      function() {
-                        zone.run(function() {
-                          document.onmousedown = eventListenerSpy;
-                        });
+              it('window onresize should be patched',
+                 ifEnvSupports(
+                     () => {
+                       return canPatchOnProperty(window, 'onmousedown');
+                     },
+                     function() {
+                       window.onresize = eventListenerSpy;
+                       const innerResizeProp: any = (window as any)[zoneSymbol('_onresize')];
+                       expect(innerResizeProp).toBeTruthy();
+                       innerResizeProp();
+                       expect(eventListenerSpy).toHaveBeenCalled();
+                       window.removeEventListener('resize', eventListenerSpy);
+                     }));
 
-                        document.dispatchEvent(mouseEvent);
+              it('document onclick should be in zone',
+                 ifEnvSupports(
+                     () => {
+                       return canPatchOnProperty(Document.prototype, 'onmousedown');
+                     },
+                     function() {
+                       zone.run(function() {
+                         document.onmousedown = eventListenerSpy;
+                       });
 
-                        expect(hookSpy).toHaveBeenCalled();
-                        expect(eventListenerSpy).toHaveBeenCalled();
-                        document.removeEventListener('mousedown', eventListenerSpy);
-                      }));
+                       document.dispatchEvent(mouseEvent);
 
-               it('SVGElement onclick should be in zone',
-                  ifEnvSupports(
-                      () => {
-                        return typeof SVGElement !== 'undefined' &&
-                            canPatchOnProperty(SVGElement.prototype, 'onmousedown');
-                      },
-                      function() {
-                        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
-                        document.body.appendChild(svg);
-                        zone.run(function() {
-                          svg.onmousedown = eventListenerSpy;
-                        });
+                       expect(hookSpy).toHaveBeenCalled();
+                       expect(eventListenerSpy).toHaveBeenCalled();
+                       document.removeEventListener('mousedown', eventListenerSpy);
+                     }));
 
-                        svg.dispatchEvent(mouseEvent);
+              it('SVGElement onclick should be in zone',
+                 ifEnvSupports(
+                     () => {
+                       return typeof SVGElement !== 'undefined' &&
+                           canPatchOnProperty(SVGElement.prototype, 'onmousedown');
+                     },
+                     function() {
+                       const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                       document.body.appendChild(svg);
+                       zone.run(function() {
+                         svg.onmousedown = eventListenerSpy;
+                       });
 
-                        expect(hookSpy).toHaveBeenCalled();
-                        expect(eventListenerSpy).toHaveBeenCalled();
-                        svg.removeEventListener('mouse', eventListenerSpy);
-                        document.body.removeChild(svg);
-                      }));
+                       svg.dispatchEvent(mouseEvent);
 
-               it('get window onerror should not throw error',
-                  ifEnvSupports(
-                      () => {
-                        return canPatchOnProperty(window, 'onerror');
-                      },
-                      function() {
-                        const testFn = function() {
-                          let onerror = window.onerror;
-                          window.onerror = function() {};
-                          onerror = window.onerror;
-                        };
-                        expect(testFn()).not.toThrow();
-                      }));
+                       expect(hookSpy).toHaveBeenCalled();
+                       expect(eventListenerSpy).toHaveBeenCalled();
+                       svg.removeEventListener('mouse', eventListenerSpy);
+                       document.body.removeChild(svg);
+                     }));
 
-             }));
+              it('get window onerror should not throw error',
+                 ifEnvSupports(
+                     () => {
+                       return canPatchOnProperty(window, 'onerror');
+                     },
+                     function() {
+                       const testFn = function() {
+                         let onerror = window.onerror;
+                         window.onerror = function() {};
+                         onerror = window.onerror;
+                       };
+                       expect(testFn).not.toThrow();
+                     }));
+
+            }));
 
     describe('eventListener hooks', function() {
       let button: HTMLButtonElement;

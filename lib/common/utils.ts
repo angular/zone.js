@@ -126,7 +126,7 @@ export function patchProperty(obj: any, prop: string) {
     }
     if (target.hasOwnProperty(_prop)) {
       return target[_prop];
-    } else {
+    } else if (originalDescGet) {
       // result will be null when use inline event attribute,
       // such as <button onclick="func();">OK</button>
       // because the onclick function is internal raw uncompiled handler
@@ -140,27 +140,34 @@ export function patchProperty(obj: any, prop: string) {
       }
       return value;
     }
+    return null;
   };
 
   Object.defineProperty(obj, prop, desc);
 }
 
 export function patchOnProperties(obj: any, properties: string[]) {
+  const hash: any = {};
   if (properties) {
     for (let i = 0; i < properties.length; i++) {
-      patchProperty(obj, 'on' + properties[i]);
-    }
-  } else {
-    const onProperties = [];
-    for (const prop in obj) {
-      if (prop.substr(0, 2) == 'on') {
-        onProperties.push(prop);
-      }
-    }
-    for (let j = 0; j < onProperties.length; j++) {
-      patchProperty(obj, onProperties[j]);
+      const prop = 'on' + properties[i];
+      hash[prop] = true;
     }
   }
+
+  const onProperties = [];
+  for (const prop in obj) {
+    if (prop.substr(0, 2) == 'on') {
+      onProperties.push(prop);
+    }
+  }
+  for (let j = 0; j < onProperties.length; j++) {
+    hash[onProperties[j]] = true;
+  }
+
+  Object.keys(hash).forEach(prop => {
+    patchProperty(obj, prop);
+  });
 }
 
 const EVENT_TASKS = zoneSymbol('eventTasks');
