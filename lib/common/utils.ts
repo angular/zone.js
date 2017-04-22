@@ -149,27 +149,21 @@ export function patchProperty(obj: any, prop: string) {
 }
 
 export function patchOnProperties(obj: any, properties: string[]) {
-  const hash: any = {};
   if (properties) {
     for (let i = 0; i < properties.length; i++) {
-      const prop = 'on' + properties[i];
-      hash[prop] = true;
+      patchProperty(obj, 'on' + properties[i]);
+    }
+  } else {
+    const onProperties = [];
+    for (const prop in obj) {
+      if (prop.substr(0, 2) == 'on') {
+        onProperties.push(prop);
+      }
+    }
+    for (let j = 0; j < onProperties.length; j++) {
+      patchProperty(obj, onProperties[j]);
     }
   }
-
-  const onProperties = [];
-  for (const prop in obj) {
-    if (prop.substr(0, 2) == 'on') {
-      onProperties.push(prop);
-    }
-  }
-  for (let j = 0; j < onProperties.length; j++) {
-    hash[onProperties[j]] = true;
-  }
-
-  Object.keys(hash).forEach(prop => {
-    patchProperty(obj, prop);
-  });
 }
 
 const EVENT_TASKS = zoneSymbol('eventTasks');
