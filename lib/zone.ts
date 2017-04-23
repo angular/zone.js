@@ -1675,17 +1675,24 @@ const Zone: ZoneType = (function(global: any) {
 
     if (this instanceof NativeError && this.constructor != NativeError) {
       // We got called with a `new` operator AND we are subclass of ZoneAwareError
-      // in that case we have to copy all of our properties to `this`.
-      Object.keys(error).concat('stack', 'message').forEach((key) => {
-        if ((error as any)[key] !== undefined) {
-          try {
-            this[key] = (error as any)[key];
-          } catch (e) {
-            // ignore the assignment in case it is a setter and it throws.
+      if ((Object as any)['setPrototypeOf']) {
+        // we reset the prototoype chain
+        (Object as any)['setPrototypeOf'](error, this.constructor);
+      } else if (this.hasOwnProperty('__proto__')) {
+        this.__proto__ = this.constructor;
+      } else {
+        // We can't reset the prototype chain so just copy the Error properties onto the destination object.
+        Object.keys(error).concat('stack', 'message').forEach((key) => {
+          if ((error as any)[key] !== undefined) {
+            try {
+              this[key] = (error as any)[key];
+            } catch (e) {
+              // ignore the assignment in case it is a setter and it throws.
+            }
           }
-        }
-      });
-      return this;
+          return this;
+        });
+      }
     }
     return error;
   }
