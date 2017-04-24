@@ -353,6 +353,148 @@ describe('FakeAsyncTestZoneSpec', () => {
     expect(testZoneSpec.pendingTimers.length).toBe(0);
   });
 
+  describe('flushing all tasks', () => {
+    it('should flush all pending timers', () => {
+      fakeAsyncTestZone.run(() => {
+        let x = false;
+        let y = false;
+        let z = false;
+
+        setTimeout(() => {
+          x = true;
+        }, 10);
+        setTimeout(() => {
+          y = true;
+        }, 100);
+        setTimeout(() => {
+          z = true;
+        }, 70);
+
+        let elapsed = testZoneSpec.flush();
+
+        expect(elapsed).toEqual(100);
+        expect(x).toBe(true);
+        expect(y).toBe(true);
+        expect(z).toBe(true);
+      });
+    });
+
+    it('should flush nested timers', () => {
+      fakeAsyncTestZone.run(() => {
+        let x = true;
+        let y = true;
+        setTimeout(() => {
+          x = true;
+          setTimeout(() => {
+            y = true;
+          }, 100);
+        }, 200);
+
+        let elapsed = testZoneSpec.flush();
+
+        expect(elapsed).toEqual(300);
+        expect(x).toBe(true);
+        expect(y).toBe(true);
+      });
+    });
+
+    it('should advance intervals', () => {
+      fakeAsyncTestZone.run(() => {
+        let x = false;
+        let y = false;
+        let z = 0;
+
+        setTimeout(() => {
+          x = true;
+        }, 50);
+        setTimeout(() => {
+          y = true;
+        }, 141);
+        setInterval(() => {
+          z++;
+        }, 10);
+
+        let elapsed = testZoneSpec.flush();
+
+        expect(elapsed).toEqual(141);
+        expect(x).toBe(true);
+        expect(y).toBe(true);
+        expect(z).toEqual(14);
+      });
+    });
+
+    it('should not wait for intervals', () => {
+      fakeAsyncTestZone.run(() => {
+        let z = 0;
+
+        setInterval(() => {
+          z++;
+        }, 10);
+
+        let elapsed = testZoneSpec.flush();
+
+        expect(elapsed).toEqual(0);
+        expect(z).toEqual(0);
+      });
+    });
+
+
+    it('should process micro-tasks created in timers before next timers', () => {
+      fakeAsyncTestZone.run(() => {
+        let log: string[] = [];
+
+        Promise.resolve(null).then((_) => log.push('microtask'));
+
+        setTimeout(() => {
+          log.push('timer');
+          Promise.resolve(null).then((_) => log.push('t microtask'));
+        }, 20);
+
+        let id = setInterval(() => {
+          log.push('periodic timer');
+          Promise.resolve(null).then((_) => log.push('pt microtask'));
+        }, 10);
+
+        testZoneSpec.flush();
+        expect(log).toEqual(
+            ['microtask', 'periodic timer', 'pt microtask', 'timer', 't microtask']);
+      });
+    });
+
+    it('should throw the exception from tick for error thrown in timer callback', () => {
+      fakeAsyncTestZone.run(() => {
+        setTimeout(() => {
+          throw new Error('timer');
+        }, 10);
+        expect(() => {
+          testZoneSpec.flush();
+        }).toThrowError('timer');
+      });
+      // There should be no pending timers after the error in timer callback.
+      expect(testZoneSpec.pendingTimers.length).toBe(0);
+    });
+
+    it('should do something reasonable with polling timeouts', () => {
+      expect(() => {
+        fakeAsyncTestZone.run(() => {
+          let z = 0;
+
+          let poll = () => {
+            setTimeout(() => {
+              z++;
+              poll();
+            }, 10);
+          };
+
+          poll();
+          testZoneSpec.flush();
+        });
+      })
+          .toThrowError(
+              'flush failed after reaching the limit of 20 tasks. Does your code use a polling timeout?');
+    });
+  });
+
   describe('outside of FakeAsync Zone', () => {
     it('calling flushMicrotasks should throw exception', () => {
       expect(() => {
