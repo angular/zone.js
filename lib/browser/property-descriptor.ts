@@ -23,7 +23,7 @@ export function propertyDescriptorPatch(_global: any) {
   if (canPatchViaPropertyDescriptor()) {
     // for browsers that we can patch the descriptor:  Chrome & Firefox
     if (isBrowser) {
-      patchOnProperties(window, eventNames);
+      patchOnProperties(window, eventNames.concat(['resize']));
       patchOnProperties(Document.prototype, eventNames);
       if (typeof(<any>window)['SVGElement'] !== 'undefined') {
         patchOnProperties((<any>window)['SVGElement'].prototype, eventNames);
