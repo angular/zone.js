@@ -1,3 +1,13 @@
+<a name="0.8.9"></a>
+## [0.8.9](https://github.com/angular/zone.js/compare/v0.8.8...0.8.9) (2017-04-25)
+
+
+### Bug Fixes
+
+* **patch:** fix [#746](https://github.com/angular/zone.js/issues/746), check desc get is null and only patch window.resize additionally ([#747](https://github.com/angular/zone.js/issues/747)) ([e598310](https://github.com/angular/zone.js/commit/e598310))
+
+
+
 <a name="0.8.8"></a>
 ## [0.8.8](https://github.com/angular/zone.js/compare/v0.8.7...0.8.8) (2017-04-21)
 

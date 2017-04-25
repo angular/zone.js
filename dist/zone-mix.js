@@ -1255,7 +1255,7 @@ function patchProperty(obj, prop) {
         if (target.hasOwnProperty(_prop)) {
             return target[_prop];
         }
-        else {
+        else if (originalDescGet) {
             // result will be null when use inline event attribute,
             // such as <button onclick="func();">OK</button>
             // because the onclick function is internal raw uncompiled handler
@@ -1263,12 +1263,15 @@ function patchProperty(obj, prop) {
             // the property is accessed, https://github.com/angular/zone.js/issues/525
             // so we should use original native get to retrieve the handler
             var value = originalDescGet.apply(this);
-            value = desc.set.apply(this, [value]);
-            if (typeof target['removeAttribute'] === 'function') {
-                target.removeAttribute(prop);
+            if (value) {
+                desc.set.apply(this, [value]);
+                if (typeof target['removeAttribute'] === 'function') {
+                    target.removeAttribute(prop);
+                }
+                return value;
             }
-            return value;
         }
+        return null;
     };
     Object.defineProperty(obj, prop, desc);
 }
@@ -2036,7 +2039,7 @@ function propertyDescriptorPatch(_global) {
     if (canPatchViaPropertyDescriptor()) {
         // for browsers that we can patch the descriptor:  Chrome & Firefox
         if (isBrowser) {
-            patchOnProperties(window, eventNames);
+            patchOnProperties(window, eventNames.concat(['resize']));
             patchOnProperties(Document.prototype, eventNames);
             if (typeof window['SVGElement'] !== 'undefined') {
                 patchOnProperties(window['SVGElement'].prototype, eventNames);
