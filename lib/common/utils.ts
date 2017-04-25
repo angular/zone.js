@@ -554,14 +554,9 @@ export function patchClass(className: string) {
 }
 
 export function createNamedFn(name: string, delegate: (self: any, args: any[]) => any): Function {
-  try {
-    return (Function('f', `return function ${name}(){return f(this, arguments)}`))(delegate);
-  } catch (error) {
-    // if we fail, we must be CSP, just return delegate.
-    return function() {
-      return delegate(this, <any>arguments);
-    };
-  }
+  return function() {
+    return delegate(this, <any>arguments);
+  };
 }
 
 export function patchMethod(
