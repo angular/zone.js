@@ -56,6 +56,7 @@ function supportEventListenerOptions() {
 
 describe('Zone', function() {
   const rootZone = Zone.current;
+  (Zone as any)[zoneSymbol('ignoreConsoleErrorUncaughtError')] = true;
 
   describe('hooks', function() {
     it('should allow you to override alert/prompt/confirm', function() {

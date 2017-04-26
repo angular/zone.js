@@ -1,5 +1,5 @@
 # compile closure test source file
-tsc -p .
+$(npm bin)/tsc -p .
 # Run the Google Closure compiler java runnable with zone externs
 java -jar node_modules/google-closure-compiler/compiler.jar --flagfile 'scripts/closure/closure_flagfile' --externs './dist/zone_externs.js'
 
@@ -10,7 +10,7 @@ if [ $? -eq 0 ]
 then
   echo "Successfully pass closure compiler with zone externs"
 else
-  echo "failed to pass closure compiler with zone externs" 
+  echo "failed to pass closure compiler with zone externs"
   exit 1
 fi
 
@@ -24,7 +24,7 @@ if [ $? -eq 1 ]
 then
   echo "Successfully detect closure compiler error without zone externs"
 else
-  echo "failed to detect closure compiler error without zone externs" 
+  echo "failed to detect closure compiler error without zone externs"
   exit 1
 fi
 

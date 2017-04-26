@@ -7,6 +7,8 @@
  */
 
 import '../zone';
+import '../common/promise';
+import '../common/error-rewrite';
 import './events';
 import './fs';
 
@@ -18,19 +20,21 @@ const set = 'set';
 const clear = 'clear';
 const _global = typeof window === 'object' && window || typeof self === 'object' && self || global;
 
-// Timers
-const timers = require('timers');
-patchTimer(timers, set, clear, 'Timeout');
-patchTimer(timers, set, clear, 'Interval');
-patchTimer(timers, set, clear, 'Immediate');
+Zone.__load_patch('timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+  // Timers
+  const timers = require('timers');
+  patchTimer(timers, set, clear, 'Timeout');
+  patchTimer(timers, set, clear, 'Interval');
+  patchTimer(timers, set, clear, 'Immediate');
 
-const shouldPatchGlobalTimers = global.setTimeout !== timers.setTimeout;
+  const shouldPatchGlobalTimers = global['setTimeout'] !== timers.setTimeout;
 
-if (shouldPatchGlobalTimers) {
-  patchTimer(_global, set, clear, 'Timeout');
-  patchTimer(_global, set, clear, 'Interval');
-  patchTimer(_global, set, clear, 'Immediate');
-}
+  if (shouldPatchGlobalTimers) {
+    patchTimer(_global, set, clear, 'Timeout');
+    patchTimer(_global, set, clear, 'Interval');
+    patchTimer(_global, set, clear, 'Immediate');
+  }
+});
 
 // patch process related methods
 patchProcess();
