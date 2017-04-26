@@ -13,6 +13,7 @@
     func: Function;
     args: any[];
     delay: number;
+    isPeriodic: boolean;
   }
 
   class Scheduler {
@@ -26,13 +27,21 @@
 
     constructor() {}
 
-    scheduleFunction(cb: Function, delay: number, args: any[] = [], id: number = -1): number {
+    scheduleFunction(
+        cb: Function, delay: number, args: any[] = [], isPeriodic: boolean = false,
+        id: number = -1): number {
       let currentId: number = id < 0 ? this.nextId++ : id;
       let endTime = this._currentTime + delay;
 
       // Insert so that scheduler queue remains sorted by end time.
-      let newEntry:
-          ScheduledFunction = {endTime: endTime, id: currentId, func: cb, args: args, delay: delay};
+      let newEntry: ScheduledFunction = {
+        endTime: endTime,
+        id: currentId,
+        func: cb,
+        args: args,
+        delay: delay,
+        isPeriodic: isPeriodic
+      };
       let i = 0;
       for (; i < this._schedulerQueue.length; i++) {
         let currentEntry = this._schedulerQueue[i];
@@ -72,6 +81,31 @@
         }
       }
       this._currentTime = finalTime;
+    }
+
+    flush(limit: number = 20): number {
+      const startTime = this._currentTime;
+      let count = 0;
+      while (this._schedulerQueue.length > 0) {
+        count++;
+        if (count > limit) {
+          throw new Error(
+              'flush failed after reaching the limit of ' + limit +
+              ' tasks. Does your code use a polling timeout?');
+        }
+        // If the only remaining tasks are periodic, finish flushing.
+        if (!(this._schedulerQueue.filter(task => !task.isPeriodic).length)) {
+          break;
+        }
+        let current = this._schedulerQueue.shift();
+        this._currentTime = current.endTime;
+        let retval = current.func.apply(global, current.args);
+        if (!retval) {
+          // Uncaught exception in the current scheduled function. Stop processing the queue.
+          break;
+        }
+      }
+      return this._currentTime - startTime;
     }
   }
 
@@ -134,7 +168,7 @@
       return () => {
         // Requeue the timer callback if it's not been canceled.
         if (this.pendingPeriodicTimers.indexOf(id) !== -1) {
-          this._scheduler.scheduleFunction(fn, interval, args, id);
+          this._scheduler.scheduleFunction(fn, interval, args, true, id);
         }
       };
     }
@@ -168,7 +202,7 @@
       completers.onSuccess = this._requeuePeriodicTimer(cb, interval, args, id);
 
       // Queue the callback and dequeue the periodic timer only on error.
-      this._scheduler.scheduleFunction(cb, interval, args);
+      this._scheduler.scheduleFunction(cb, interval, args, true);
       this.pendingPeriodicTimers.push(id);
       return id;
     }
@@ -207,6 +241,16 @@
         microtask();
       }
       flushErrors();
+    }
+
+    flush(): number {
+      FakeAsyncTestZoneSpec.assertInZone();
+      this.flushMicrotasks();
+      let elapsed = this._scheduler.flush();
+      if (this._lastError !== null) {
+        this._resetLastErrorAndThrow();
+      }
+      return elapsed;
     }
 
     // ZoneSpec implementation below.
