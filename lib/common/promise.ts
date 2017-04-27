@@ -47,8 +47,8 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
     }
   };
 
-  function handleUnhandledRejection(ignoreError: boolean, e: any) {
-    api.onUnhandledError(ignoreError, e);
+  function handleUnhandledRejection(showError: boolean, e: any) {
+    api.onUnhandledError(showError, e);
     try {
       const handler = (Zone as any)[__symbol__('unhandledPromiseRejectionHandler')];
       if (handler && typeof handler === 'function') {

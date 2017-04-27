@@ -1235,7 +1235,6 @@ const Zone: ZoneType = (function(global: any) {
   }
 
   function drainMicroTaskQueue() {
-    const showError: boolean = !(Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')];
     if (!_isDrainingMicrotaskQueue) {
       _isDrainingMicrotaskQueue = true;
       while (_microTaskQueue.length) {
@@ -1246,13 +1245,13 @@ const Zone: ZoneType = (function(global: any) {
           try {
             task.zone.runTask(task, null, null);
           } catch (error) {
-            if ((Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')]) {
-              return;
-            }
+            const showError: boolean =
+                !(Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')];
             _api.onUnhandledError(showError, error);
           }
         }
       }
+      const showError: boolean = !(Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')];
       _api.microtaskDrainDone(showError);
       _isDrainingMicrotaskQueue = false;
     }
