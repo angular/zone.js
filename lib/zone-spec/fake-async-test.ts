@@ -16,6 +16,12 @@
     isPeriodic: boolean;
   }
 
+  interface MicroTaskScheduledFunction {
+    func: Function;
+    args: any[];
+    target: any;
+  }
+
   class Scheduler {
     // Next scheduler id.
     public nextId: number = 0;
@@ -117,7 +123,7 @@
     }
 
     private _scheduler: Scheduler = new Scheduler();
-    private _microtasks: Function[] = [];
+    private _microtasks: MicroTaskScheduledFunction[] = [];
     private _lastError: Error = null;
     private _uncaughtPromiseErrors: {rejection: any}[] =
         (Promise as any)[(Zone as any).__symbol__('uncaughtPromiseErrors')];
@@ -238,7 +244,7 @@
       };
       while (this._microtasks.length > 0) {
         let microtask = this._microtasks.shift();
-        microtask();
+        microtask.func.apply(microtask.target, microtask.args);
       }
       flushErrors();
     }
@@ -262,7 +268,22 @@
     onScheduleTask(delegate: ZoneDelegate, current: Zone, target: Zone, task: Task): Task {
       switch (task.type) {
         case 'microTask':
-          this._microtasks.push(task.invoke);
+          let args = task.data && (task.data as any).args;
+          // should pass additional arguments to callback if have any
+          // currently we know process.nextTick will have such additional
+          // arguments
+          let addtionalArgs: any[];
+          if (args) {
+            let callbackIndex = (task.data as any).callbackIndex;
+            if (typeof args.length === 'number' && args.length > callbackIndex + 1) {
+              addtionalArgs = Array.prototype.slice.call(args, callbackIndex + 1);
+            }
+          }
+          this._microtasks.push({
+            func: task.invoke,
+            args: addtionalArgs,
+            target: task.data && (task.data as any).target
+          });
           break;
         case 'macroTask':
           switch (task.source) {

@@ -7,7 +7,15 @@
  */
 
 import '../../lib/zone-spec/fake-async-test';
+
+import {isNode} from '../../lib/common/utils';
 import {ifEnvSupports} from '../test-util';
+
+function supportNode() {
+  return isNode;
+}
+
+(supportNode as any).message = 'support node';
 
 describe('FakeAsyncTestZoneSpec', () => {
   let FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
@@ -525,6 +533,37 @@ describe('FakeAsyncTestZoneSpec', () => {
                    req.send();
                  });
                }).toThrowError('Cannot make XHRs from within a fake async test.');
+             });
+           }));
+
+  describe('node process', ifEnvSupports(supportNode, () => {
+             it('should be able to schedule microTask with additional arguments', () => {
+               const process = global['process'];
+               const nextTick = process && process['nextTick'];
+               if (!nextTick) {
+                 return;
+               }
+               fakeAsyncTestZone.run(() => {
+                 let tickRun = false;
+                 let cbArgRun = false;
+                 nextTick(
+                     (strArg: string, cbArg: Function) => {
+                       tickRun = true;
+                       expect(strArg).toEqual('stringArg');
+                       cbArg();
+                     },
+                     'stringArg',
+                     () => {
+                       cbArgRun = true;
+                     });
+
+                 expect(tickRun).toEqual(false);
+
+                 testZoneSpec.flushMicrotasks();
+                 expect(tickRun).toEqual(true);
+                 expect(cbArgRun).toEqual(true);
+               });
+
              });
            }));
 });
