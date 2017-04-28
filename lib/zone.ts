@@ -317,8 +317,9 @@ interface _ZonePrivate {
   currentZoneFrame(): _ZoneFrame;
   symbol(name: string): string;
   scheduleMicroTask(task?: MicroTask): void;
-  onUnhandledError: (showError: boolean, error: Error) => void;
-  microtaskDrainDone: (showError: boolean) => void;
+  onUnhandledError: (error: Error) => void;
+  microtaskDrainDone: () => void;
+  showUncaughtError: () => boolean;
 }
 
 /** @internal */
@@ -1245,14 +1246,12 @@ const Zone: ZoneType = (function(global: any) {
           try {
             task.zone.runTask(task, null, null);
           } catch (error) {
-            const showError: boolean =
-                !(Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')];
-            _api.onUnhandledError(showError, error);
+            _api.onUnhandledError(error);
           }
         }
       }
       const showError: boolean = !(Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')];
-      _api.microtaskDrainDone(showError);
+      _api.microtaskDrainDone();
       _isDrainingMicrotaskQueue = false;
     }
   }
@@ -1277,7 +1276,8 @@ const Zone: ZoneType = (function(global: any) {
     currentZoneFrame: () => _currentZoneFrame,
     onUnhandledError: noop,
     microtaskDrainDone: noop,
-    scheduleMicroTask: scheduleMicroTask
+    scheduleMicroTask: scheduleMicroTask,
+    showUncaughtError: () => !(Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')]
   };
   let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
   let _currentTask: Task = null;

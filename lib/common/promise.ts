@@ -18,8 +18,8 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
   const symbolPromise = __symbol__('Promise');
   const symbolThen = __symbol__('then');
 
-  api.onUnhandledError = (showError: boolean, e: any) => {
-    if (showError) {
+  api.onUnhandledError = (e: any) => {
+    if (api.showUncaughtError()) {
       const rejection = e && e.rejection;
       if (rejection) {
         console.error(
@@ -32,7 +32,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
     }
   };
 
-  api.microtaskDrainDone = (showError: boolean) => {
+  api.microtaskDrainDone = () => {
     while (_uncaughtPromiseErrors.length) {
       while (_uncaughtPromiseErrors.length) {
         const uncaughtPromiseError: UncaughtPromiseError = _uncaughtPromiseErrors.shift();
@@ -41,14 +41,14 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
             throw uncaughtPromiseError;
           });
         } catch (error) {
-          handleUnhandledRejection(showError, error);
+          handleUnhandledRejection(error);
         }
       }
     }
   };
 
-  function handleUnhandledRejection(showError: boolean, e: any) {
-    api.onUnhandledError(showError, e);
+  function handleUnhandledRejection(e: any) {
+    api.onUnhandledError(e);
     try {
       const handler = (Zone as any)[__symbol__('unhandledPromiseRejectionHandler')];
       if (handler && typeof handler === 'function') {
