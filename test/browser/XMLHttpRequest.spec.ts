@@ -67,8 +67,17 @@ describe('XMLHttpRequest', function() {
   });
 
   const supportsOnProgress = function() {
-    return 'onprogress' in new XMLHttpRequest();
+    const userAgent = navigator.userAgent.toLowerCase();
+    const versions: string[] = userAgent.split('msie');
+    if (versions && versions.length > 1) {
+      const ver = parseInt(versions[1]);
+      if (typeof ver === 'number') {
+        return ver > 9;
+      }
+    }
+    return true;
   };
+
   (<any>supportsOnProgress).message = 'XMLHttpRequest.onprogress';
 
   describe('onprogress', ifEnvSupports(supportsOnProgress, function() {

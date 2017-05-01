@@ -60,6 +60,7 @@ export const isMix: boolean = typeof process !== 'undefined' &&
     !!(typeof window !== 'undefined' && (window as any)['HTMLElement']);
 
 export function patchProperty(obj: any, prop: string) {
+  // TODO: @JiaLiPassion, if the desc not exists in obj, should we still patch the property?
   const desc = Object.getOwnPropertyDescriptor(obj, prop) || {enumerable: true, configurable: true};
   // if the descriptor is not configurable
   // just return

@@ -10,9 +10,30 @@ import {isBrowser, isMix, isNode, patchClass, patchOnProperties, zoneSymbol} fro
 
 import * as webSocketPatch from './websocket';
 
-const eventNames =
-    'copy cut paste abort blur focus canplay canplaythrough change click contextmenu dblclick drag dragend dragenter dragleave dragover dragstart drop durationchange emptied ended input invalid keydown keypress keyup load loadeddata loadedmetadata loadstart message mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup pause play playing progress ratechange reset scroll seeked seeking select show stalled submit suspend timeupdate volumechange waiting mozfullscreenchange mozfullscreenerror mozpointerlockchange mozpointerlockerror error webglcontextrestored webglcontextlost webglcontextcreationerror'
+const globalEventHandlersEventNames =
+    'abort animationcancel animationend animationiteration auxclick blur cancel canplay canplaythrough change click close contextmenu curechange dblclick drag dragend dragenter dragexit dragleave dragover drop durationchange emptied ended error focus gotpointercapture input invalid keydown keypress keyup load loadstart loadeddata loadedmetadata lostpointercapture mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup mousewheel pause play playing pointercancel pointerdown pointerenter pointerleave pointerlockchange mozpointerlockchange webkitpointerlockerchange pointerlockerror mozpointerlockerror webkitpointerlockerror pointermove pointout pointerover pointerup progress ratechange reset resize scroll seeked seeking select selectionchange selectstart show sort stalled submit suspend timeupdate volumechange touchcancel touchmove touchstart transitioncancel transitionend waiting'
         .split(' ');
+const documentEventNames =
+    'afterscriptexecute, beforescriptexecute, DOMContentLoaded, fullscreenchange, mozfullscreenchange, webkitfullscreenchange, msfullscreenchange, fullscreenerror, mozfullscreenerror, webkitfullscreenerror, msfullscreenerror, offline, online, readystatechange'
+        .split(' ');
+const windowEventNames =
+    'afterinput, appinstalled, beforeinstallprompt, beforeprint, beforeunload, devicelight, devicemotion, deviceorientation, deviceorientationabsolute, deviceproximity, hashchange, languagechange, message, mozbeforepaint, offline, online, paint, pageshow, pagehide, popstate, rejectionhandled, storage, onunhandledrejection, unload, userproximity, vrdisplyconnected, vrdisplaydisconnected, vrdisplaypresentchange'
+        .split(' ');
+const elementEventNames = 'wheel'.split(' ');
+const webglEventNames =
+    'webglcontextrestored webglcontextlost webglcontextcreationerror'.split(' ');
+const formEventNames = 'autocomplete autocompleteerror'.split(' ');
+const detailEventNames = 'toggle'.split(' ');
+
+const XMLHttpRequestEventNames =
+    'loadstart progress abort error load progress timeout loadend readystatechange'.split(' ');
+const IDBIndexEventNames =
+    'upgradeneeded complete abort success error blocked versionchange close'.split(' ');
+const websocketEventNames = 'close error open message'.split(' ');
+
+const htmlElementEventNames = elementEventNames.concat(
+    globalEventHandlersEventNames, webglEventNames, formEventNames, detailEventNames);
+const eventNames = htmlElementEventNames.concat(documentEventNames, windowEventNames);
 
 export function propertyDescriptorPatch(_global: any) {
   if (isNode && !isMix) {
@@ -23,24 +44,26 @@ export function propertyDescriptorPatch(_global: any) {
   if (canPatchViaPropertyDescriptor()) {
     // for browsers that we can patch the descriptor:  Chrome & Firefox
     if (isBrowser) {
-      patchOnProperties(window, eventNames.concat(['resize']));
-      patchOnProperties(Document.prototype, eventNames);
+      patchOnProperties(window, windowEventNames.concat(globalEventHandlersEventNames));
+      patchOnProperties(
+          Document.prototype, documentEventNames.concat(globalEventHandlersEventNames));
+
       if (typeof(<any>window)['SVGElement'] !== 'undefined') {
-        patchOnProperties((<any>window)['SVGElement'].prototype, eventNames);
+        patchOnProperties((<any>window)['SVGElement'].prototype, htmlElementEventNames);
       }
-      patchOnProperties(HTMLElement.prototype, eventNames);
+      patchOnProperties(HTMLElement.prototype, htmlElementEventNames);
     }
-    patchOnProperties(XMLHttpRequest.prototype, null);
+    patchOnProperties(XMLHttpRequest.prototype, XMLHttpRequestEventNames);
     if (typeof IDBIndex !== 'undefined') {
-      patchOnProperties(IDBIndex.prototype, null);
-      patchOnProperties(IDBRequest.prototype, null);
-      patchOnProperties(IDBOpenDBRequest.prototype, null);
-      patchOnProperties(IDBDatabase.prototype, null);
-      patchOnProperties(IDBTransaction.prototype, null);
-      patchOnProperties(IDBCursor.prototype, null);
+      patchOnProperties(IDBIndex.prototype, IDBIndexEventNames);
+      patchOnProperties(IDBRequest.prototype, IDBIndexEventNames);
+      patchOnProperties(IDBOpenDBRequest.prototype, IDBIndexEventNames);
+      patchOnProperties(IDBDatabase.prototype, IDBIndexEventNames);
+      patchOnProperties(IDBTransaction.prototype, IDBIndexEventNames);
+      patchOnProperties(IDBCursor.prototype, IDBIndexEventNames);
     }
     if (supportsWebSocket) {
-      patchOnProperties(WebSocket.prototype, null);
+      patchOnProperties(WebSocket.prototype, websocketEventNames);
     }
   } else {
     // Safari, Android browsers (Jelly Bean)
