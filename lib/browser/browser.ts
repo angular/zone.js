@@ -6,8 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import '../common/to-string';
+
 import {patchTimer} from '../common/timers';
-import {patchFuncToString, patchObjectToString} from '../common/to-string';
 import {findEventTask, patchClass, patchEventTargetMethods, patchMethod, patchPrototype, zoneSymbol} from '../common/utils';
 
 import {propertyPatch} from './define-property';
@@ -157,21 +158,14 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   }
 });
 
-Zone.__load_patch('geo', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('geolocation', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   /// GEO_LOCATION
   if (global['navigator'] && global['navigator'].geolocation) {
     patchPrototype(global['navigator'].geolocation, ['getCurrentPosition', 'watchPosition']);
   }
 });
 
-Zone.__load_patch('toString', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  // patch Func.prototype.toString to let them look like native
-  patchFuncToString();
-  // patch Object.prototype.toString to let them look like native
-  patchObjectToString();
-});
-
-Zone.__load_patch('promiseRejectionHandler', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('PromiseRejectionEvent', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   // handle unhandled promise rejection
   function findPromiseRejectionHandler(evtName: string) {
     return function(e: any) {

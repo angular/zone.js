@@ -9,23 +9,22 @@ import {zoneSymbol} from './utils';
 
 // override Function.prototype.toString to make zone.js patched function
 // look like native function
-export function patchFuncToString() {
+Zone.__load_patch('toString', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+  // patch Func.prototype.toString to let them look like native
   const originalFunctionToString = Function.prototype.toString;
-  const g: any =
-      typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global;
   Function.prototype.toString = function() {
     if (typeof this === 'function') {
       if (this[zoneSymbol('OriginalDelegate')]) {
         return originalFunctionToString.apply(this[zoneSymbol('OriginalDelegate')], arguments);
       }
       if (this === Promise) {
-        const nativePromise = g[zoneSymbol('Promise')];
+        const nativePromise = global[zoneSymbol('Promise')];
         if (nativePromise) {
           return originalFunctionToString.apply(nativePromise, arguments);
         }
       }
       if (this === Error) {
-        const nativeError = g[zoneSymbol('Error')];
+        const nativeError = global[zoneSymbol('Error')];
         if (nativeError) {
           return originalFunctionToString.apply(nativeError, arguments);
         }
@@ -33,9 +32,9 @@ export function patchFuncToString() {
     }
     return originalFunctionToString.apply(this, arguments);
   };
-}
 
-export function patchObjectToString() {
+
+  // patch Object.prototype.toString to let them look like native
   const originalObjectToString = Object.prototype.toString;
   Object.prototype.toString = function() {
     if (this instanceof Promise) {
@@ -43,4 +42,4 @@ export function patchObjectToString() {
     }
     return originalObjectToString.apply(this, arguments);
   };
-}
+});

@@ -663,7 +663,7 @@ const Zone: ZoneType = (function(global: any) {
     static __load_patch(name: string, fn: _PatchFn): void {
       if (patches.hasOwnProperty(name)) {
         throw Error('Already loaded patch: ' + name);
-      } else {
+      } else if (!global['__Zone_disable_' + name]) {
         const perfName = 'Zone:' + name;
         mark(perfName);
         patches[name] = fn(global, Zone, _api);
