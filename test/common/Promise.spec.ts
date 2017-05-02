@@ -244,7 +244,42 @@ describe(
             });
           });
 
-          it('should notify Zone.onError if no one catches promise', (done) => {
+          it('should output error to console if ignoreConsoleErrorUncaughtError is false',
+             (done) => {
+               Zone.current.fork({name: 'promise-error'}).run(() => {
+                 (Zone as any)[Zone.__symbol__('ignoreConsoleErrorUncaughtError')] = false;
+                 const originalConsoleError = console.error;
+                 console.error = jasmine.createSpy('consoleErr');
+                 const p = new Promise((resolve, reject) => {
+                   throw new Error('promise error');
+                 });
+                 setTimeout(() => {
+                   expect(console.error).toHaveBeenCalled();
+                   console.error = originalConsoleError;
+                   done();
+                 }, 10);
+               });
+             });
+
+          it('should not output error to console if ignoreConsoleErrorUncaughtError is true',
+             (done) => {
+               Zone.current.fork({name: 'promise-error'}).run(() => {
+                 (Zone as any)[Zone.__symbol__('ignoreConsoleErrorUncaughtError')] = true;
+                 const originalConsoleError = console.error;
+                 console.error = jasmine.createSpy('consoleErr');
+                 const p = new Promise((resolve, reject) => {
+                   throw new Error('promise error');
+                 });
+                 setTimeout(() => {
+                   expect(console.error).not.toHaveBeenCalled();
+                   console.error = originalConsoleError;
+                   (Zone as any)[Zone.__symbol__('ignoreConsoleErrorUncaughtError')] = false;
+                   done();
+                 }, 10);
+               });
+             });
+
+          it('should notify Zone.onHandleError if no one catches promise', (done) => {
             let promiseError: Error = null;
             let zone: Zone = null;
             let task: Task = null;
