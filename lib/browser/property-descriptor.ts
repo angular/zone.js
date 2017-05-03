@@ -10,30 +10,221 @@ import {isBrowser, isMix, isNode, patchClass, patchOnProperties, zoneSymbol} fro
 
 import * as webSocketPatch from './websocket';
 
-const globalEventHandlersEventNames =
-    'abort animationcancel animationend animationiteration auxclick blur cancel canplay canplaythrough change click close contextmenu curechange dblclick drag dragend dragenter dragexit dragleave dragover drop durationchange emptied ended error focus gotpointercapture input invalid keydown keypress keyup load loadstart loadeddata loadedmetadata lostpointercapture mousedown mouseenter mouseleave mousemove mouseout mouseover mouseup mousewheel pause play playing pointercancel pointerdown pointerenter pointerleave pointerlockchange mozpointerlockchange webkitpointerlockerchange pointerlockerror mozpointerlockerror webkitpointerlockerror pointermove pointout pointerover pointerup progress ratechange reset resize scroll seeked seeking select selectionchange selectstart show sort stalled submit suspend timeupdate volumechange touchcancel touchmove touchstart transitioncancel transitionend waiting'
-        .split(' ');
-const documentEventNames =
-    'afterscriptexecute, beforescriptexecute, DOMContentLoaded, fullscreenchange, mozfullscreenchange, webkitfullscreenchange, msfullscreenchange, fullscreenerror, mozfullscreenerror, webkitfullscreenerror, msfullscreenerror, offline, online, readystatechange'
-        .split(' ');
-const windowEventNames =
-    'afterinput, appinstalled, beforeinstallprompt, beforeprint, beforeunload, devicelight, devicemotion, deviceorientation, deviceorientationabsolute, deviceproximity, hashchange, languagechange, message, mozbeforepaint, offline, online, paint, pageshow, pagehide, popstate, rejectionhandled, storage, onunhandledrejection, unload, userproximity, vrdisplyconnected, vrdisplaydisconnected, vrdisplaypresentchange'
-        .split(' ');
-const elementEventNames = 'wheel'.split(' ');
-const webglEventNames =
-    'webglcontextrestored webglcontextlost webglcontextcreationerror'.split(' ');
-const formEventNames = 'autocomplete autocompleteerror'.split(' ');
-const detailEventNames = 'toggle'.split(' ');
+const globalEventHandlersEventNames = [
+  'abort',
+  'animationcancel',
+  'animationend',
+  'animationiteration',
+  'auxclick',
+  'beforeinput',
+  'blur',
+  'cancel',
+  'canplay',
+  'canplaythrough',
+  'change',
+  'compositionstart',
+  'compositionupdate',
+  'compositionend',
+  'cuechange',
+  'click',
+  'close',
+  'contextmenu',
+  'curechange',
+  'dblclick',
+  'drag',
+  'dragend',
+  'dragenter',
+  'dragexit',
+  'dragleave',
+  'dragover',
+  'drop',
+  'durationchange',
+  'emptied',
+  'ended',
+  'error',
+  'focus',
+  'focusin',
+  'focusout',
+  'gotpointercapture',
+  'input',
+  'invalid',
+  'keydown',
+  'keypress',
+  'keyup',
+  'load',
+  'loadstart',
+  'loadeddata',
+  'loadedmetadata',
+  'lostpointercapture',
+  'mousedown',
+  'mouseenter',
+  'mouseleave',
+  'mousemove',
+  'mouseout',
+  'mouseover',
+  'mouseup',
+  'mousewheel',
+  'pause',
+  'play',
+  'playing',
+  'pointercancel',
+  'pointerdown',
+  'pointerenter',
+  'pointerleave',
+  'pointerlockchange',
+  'mozpointerlockchange',
+  'webkitpointerlockerchange',
+  'pointerlockerror',
+  'mozpointerlockerror',
+  'webkitpointerlockerror',
+  'pointermove',
+  'pointout',
+  'pointerover',
+  'pointerup',
+  'progress',
+  'ratechange',
+  'reset',
+  'resize',
+  'scroll',
+  'seeked',
+  'seeking',
+  'select',
+  'selectionchange',
+  'selectstart',
+  'show',
+  'sort',
+  'stalled',
+  'submit',
+  'suspend',
+  'timeupdate',
+  'volumechange',
+  'touchcancel',
+  'touchmove',
+  'touchstart',
+  'transitioncancel',
+  'transitionend',
+  'waiting',
+  'wheel'
+];
+const documentEventNames = [
+  'afterscriptexecute', 'beforescriptexecute', 'DOMContentLoaded', 'fullscreenchange',
+  'mozfullscreenchange', 'webkitfullscreenchange', 'msfullscreenchange', 'fullscreenerror',
+  'mozfullscreenerror', 'webkitfullscreenerror', 'msfullscreenerror', 'readystatechange'
+];
+const windowEventNames = [
+  'absolutedeviceorientation',
+  'afterinput',
+  'afterprint',
+  'appinstalled',
+  'beforeinstallprompt',
+  'beforeprint',
+  'beforeunload',
+  'devicelight',
+  'devicemotion',
+  'deviceorientation',
+  'deviceorientationabsolute',
+  'deviceproximity',
+  'hashchange',
+  'languagechange',
+  'message',
+  'mozbeforepaint',
+  'offline',
+  'online',
+  'paint',
+  'pageshow',
+  'pagehide',
+  'popstate',
+  'rejectionhandled',
+  'storage',
+  'unhandledrejection',
+  'unload',
+  'userproximity',
+  'vrdisplyconnected',
+  'vrdisplaydisconnected',
+  'vrdisplaypresentchange'
+];
+const htmlElementEventNames = [
+  'beforecopy', 'beforecut', 'beforepaste', 'copy', 'cut', 'paste', 'dragstart', 'loadend',
+  'animationstart', 'search', 'transitionrun', 'transitionstart', 'webkitanimationend',
+  'webkitanimationiteration', 'webkitanimationstart', 'webkittransitionend'
+];
+const mediaElementEventNames =
+    ['encrypted', 'waitingforkey', 'msneedkey', 'mozinterruptbegin', 'mozinterruptend'];
+const ieElementEventNames = [
+  'activate',
+  'afterupdate',
+  'ariarequest',
+  'beforeactivate',
+  'beforedeactivate',
+  'beforeeditfocus',
+  'beforeupdate',
+  'cellchange',
+  'controlselect',
+  'dataavailable',
+  'datasetchanged',
+  'datasetcomplete',
+  'errorupdate',
+  'filterchange',
+  'layoutcomplete',
+  'losecapture',
+  'move',
+  'moveend',
+  'movestart',
+  'propertychange',
+  'resizeend',
+  'resizestart',
+  'rowenter',
+  'rowexit',
+  'rowsdelete',
+  'rowsinserted',
+  'command',
+  'compassneedscalibration',
+  'deactivate',
+  'help',
+  'mscontentzoom',
+  'msmanipulationstatechanged',
+  'msgesturechange',
+  'msgesturedoubletap',
+  'msgestureend',
+  'msgesturehold',
+  'msgesturestart',
+  'msgesturetap',
+  'msgotpointercapture',
+  'msinertiastart',
+  'mslostpointercapture',
+  'mspointercancel',
+  'mspointerdown',
+  'mspointerenter',
+  'mspointerhover',
+  'mspointerleave',
+  'mspointermove',
+  'mspointerout',
+  'mspointerover',
+  'mspointerup',
+  'pointerout',
+  'mssitemodejumplistitemremoved',
+  'msthumbnailclick',
+  'stop',
+  'storagecommit'
+];
+const webglEventNames = ['webglcontextrestored', 'webglcontextlost', 'webglcontextcreationerror'];
+const formEventNames = ['autocomplete', 'autocompleteerror'];
+const detailEventNames = ['toggle'];
+const frameEventNames = ['load'];
+const frameSetEventNames = ['blur', 'error', 'focus', 'load', 'resize', 'scroll'];
+const marqueeEventNames = ['bounce', 'finish', 'start'];
 
-const XMLHttpRequestEventNames =
-    'loadstart progress abort error load progress timeout loadend readystatechange'.split(' ');
+const XMLHttpRequestEventNames = [
+  'loadstart', 'progress', 'abort', 'error', 'load', 'progress', 'timeout', 'loadend',
+  'readystatechange'
+];
 const IDBIndexEventNames =
-    'upgradeneeded complete abort success error blocked versionchange close'.split(' ');
-const websocketEventNames = 'close error open message'.split(' ');
+    ['upgradeneeded', 'complete', 'abort', 'success', 'error', 'blocked', 'versionchange', 'close'];
+const websocketEventNames = ['close', 'error', 'open', 'message'];
 
-const htmlElementEventNames = elementEventNames.concat(
-    globalEventHandlersEventNames, webglEventNames, formEventNames, detailEventNames);
-const eventNames = htmlElementEventNames.concat(documentEventNames, windowEventNames);
+const eventNames = globalEventHandlersEventNames.concat(
+    webglEventNames, formEventNames, detailEventNames, documentEventNames, windowEventNames,
+    htmlElementEventNames, ieElementEventNames);
 
 export function propertyDescriptorPatch(_global: any) {
   if (isNode && !isMix) {
@@ -44,16 +235,34 @@ export function propertyDescriptorPatch(_global: any) {
   if (canPatchViaPropertyDescriptor()) {
     // for browsers that we can patch the descriptor:  Chrome & Firefox
     if (isBrowser) {
-      patchOnProperties(window, windowEventNames.concat(globalEventHandlersEventNames));
-      patchOnProperties(
-          Document.prototype, documentEventNames.concat(globalEventHandlersEventNames));
+      // in IE/Edge, onProp not exist in window object, but in WindowPrototype
+      // so we need to pass WindowPrototype to check onProp exist or not
+      patchOnProperties(window, eventNames, Object.getPrototypeOf(window));
+      patchOnProperties(Document.prototype, eventNames);
 
       if (typeof(<any>window)['SVGElement'] !== 'undefined') {
-        patchOnProperties((<any>window)['SVGElement'].prototype, htmlElementEventNames);
+        patchOnProperties((<any>window)['SVGElement'].prototype, eventNames);
       }
-      patchOnProperties(HTMLElement.prototype, htmlElementEventNames);
+      patchOnProperties(Element.prototype, eventNames);
+      patchOnProperties(HTMLElement.prototype, eventNames);
+      patchOnProperties(HTMLMediaElement.prototype, mediaElementEventNames);
+      patchOnProperties(HTMLFrameSetElement.prototype, windowEventNames.concat(frameSetEventNames));
+      patchOnProperties(HTMLBodyElement.prototype, windowEventNames.concat(frameSetEventNames));
+      patchOnProperties(HTMLFrameElement.prototype, frameEventNames);
+      patchOnProperties(HTMLIFrameElement.prototype, frameEventNames);
+
+      const HTMLMarqueeElement = (window as any)['HTMLMarqueeElement'];
+      if (HTMLMarqueeElement) {
+        patchOnProperties(HTMLMarqueeElement.prototype, marqueeEventNames);
+      }
     }
     patchOnProperties(XMLHttpRequest.prototype, XMLHttpRequestEventNames);
+    const XMLHttpRequestEventTarget = _global['XMLHttpRequestEventTarget'];
+    if (XMLHttpRequestEventTarget) {
+      patchOnProperties(
+          XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype,
+          XMLHttpRequestEventNames);
+    }
     if (typeof IDBIndex !== 'undefined') {
       patchOnProperties(IDBIndex.prototype, IDBIndexEventNames);
       patchOnProperties(IDBRequest.prototype, IDBIndexEventNames);
