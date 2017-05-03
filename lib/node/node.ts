@@ -17,21 +17,48 @@ import {findEventTask, patchMacroTask, patchMicroTask} from '../common/utils';
 
 const set = 'set';
 const clear = 'clear';
-const _global = typeof window === 'object' && window || typeof self === 'object' && self || global;
 
 Zone.__load_patch('timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   // Timers
-  const timers = require('timers');
-  patchTimer(timers, set, clear, 'Timeout');
-  patchTimer(timers, set, clear, 'Interval');
-  patchTimer(timers, set, clear, 'Immediate');
-
-  const shouldPatchGlobalTimers = global['setTimeout'] !== timers.setTimeout;
-
-  if (shouldPatchGlobalTimers) {
-    patchTimer(_global, set, clear, 'Timeout');
-    patchTimer(_global, set, clear, 'Interval');
-    patchTimer(_global, set, clear, 'Immediate');
+  let globalUseTimeoutFromTimer = false;
+  try {
+    const timers = require('timers');
+    let globalEqualTimersTimeout = global.setTimeout === timers.setTimeout;
+    if (!globalEqualTimersTimeout) {
+      // if global.setTimeout not equal timers.setTimeout, check
+      // whether global.setTimeout use timers.setTimeout or not
+      const originSetTimeout = timers.setTimeout;
+      timers.setTimeout = function() {
+        globalUseTimeoutFromTimer = true;
+        return originSetTimeout.apply(this, arguments);
+      };
+      const detectTimeout = global.setTimeout(noop, 100);
+      clearTimeout(detectTimeout);
+      timers.setTimeout = originSetTimeout;
+    }
+    patchTimer(timers, set, clear, 'Timeout');
+    patchTimer(timers, set, clear, 'Interval');
+    patchTimer(timers, set, clear, 'Immediate');
+  } catch (error) {
+    // timers module not exists, for example, when we using nativescript
+    // timers is not available
+  }
+  if (!globalUseTimeoutFromTimer) {
+    // 1. global setTimeout equals timers setTimeout
+    // 2. or global don't use timers setTimeout(maybe some other library patch setTimeout)
+    // 3. or load timers module error happens, we should patch global setTimeout
+    patchTimer(global, set, clear, 'Timeout');
+    patchTimer(global, set, clear, 'Interval');
+    patchTimer(global, set, clear, 'Immediate');
+  } else {
+    // global use timers setTimeout, but not equals
+    // this happenes when use nodejs v0.10.x, global setTimeout will
+    // use a lazy load version of timers setTimeout
+    // we should not double patch timer's setTimeout
+    // so we only store the __symbol__ for consistency
+    global[Zone.__symbol__('setTimeout')] = global.setTimeout;
+    global[Zone.__symbol__('setInterval')] = global.setInterval;
+    global[Zone.__symbol__('setImmediate')] = global.setImmediate;
   }
 });
 
