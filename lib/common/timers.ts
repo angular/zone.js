@@ -27,17 +27,28 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
       try {
         task.invoke.apply(this, arguments);
       } finally {
-        delete tasksByHandleId[data.handleId];
+        if (typeof data.handleId === 'number') {
+          // Node returns complex objects as handleIds
+          delete tasksByHandleId[data.handleId];
+        }
       }
     }
     data.args[0] = timer;
     data.handleId = setNative.apply(window, data.args);
-    tasksByHandleId[data.handleId] = task;
+    if (typeof data.handleId === 'number') {
+      // Node returns complex objects as handleIds -> no need to keep them around. Additionally,
+      // this throws an
+      // exception in older node versions and has no effect there, because of the stringified key.
+      tasksByHandleId[data.handleId] = task;
+    }
     return task;
   }
 
   function clearTask(task: Task) {
-    delete tasksByHandleId[(<TimerOptions>task.data).handleId];
+    if (typeof(<TimerOptions>task.data).handleId === 'number') {
+      // Node returns complex objects as handleIds
+      delete tasksByHandleId[(<TimerOptions>task.data).handleId];
+    }
     return clearNative((<TimerOptions>task.data).handleId);
   }
 
