@@ -8,7 +8,6 @@
 
 import '../zone';
 import '../common/promise';
-import '../common/error-rewrite';
 import '../common/to-string';
 import './events';
 import './fs';

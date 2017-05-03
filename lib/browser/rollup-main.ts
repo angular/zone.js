@@ -9,5 +9,4 @@
 
 import '../zone';
 import '../common/promise';
-import '../common/error-rewrite';
 import './browser';

@@ -91,6 +91,14 @@ gulp.task('build/zone.min.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/browser/rollup-main.ts', 'zone.min.js', true, cb);
 });
 
+gulp.task('build/zone-error.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/common/error-rewrite.ts', 'zone-error.js', false, cb);
+});
+
+gulp.task('build/zone-error.min.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/common/error-rewrite.ts', 'zone-error.min.js', true, cb);
+});
+
 gulp.task('build/webapis-media-query.js', ['compile-esm'], function(cb) {
     return generateScript('./lib/browser/webapis-media-query.ts', 'webapis-media-query.js', false, cb);
 });
@@ -179,6 +187,8 @@ gulp.task('build', [
   'build/zone.js',
   'build/zone.js.d.ts',
   'build/zone.min.js',
+  'build/zone-error.js',
+  'build/zone-error.min.js',
   'build/zone-node.js',
   'build/webapis-media-query.js',
   'build/webapis-media-query.min.js',
