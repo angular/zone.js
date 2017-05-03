@@ -28,13 +28,21 @@
             // Current simulated time in millis.
             this._currentTime = 0;
         }
-        Scheduler.prototype.scheduleFunction = function (cb, delay, args, id) {
+        Scheduler.prototype.scheduleFunction = function (cb, delay, args, isPeriodic, id) {
             if (args === void 0) { args = []; }
+            if (isPeriodic === void 0) { isPeriodic = false; }
             if (id === void 0) { id = -1; }
             var currentId = id < 0 ? this.nextId++ : id;
             var endTime = this._currentTime + delay;
             // Insert so that scheduler queue remains sorted by end time.
-            var newEntry = { endTime: endTime, id: currentId, func: cb, args: args, delay: delay };
+            var newEntry = {
+                endTime: endTime,
+                id: currentId,
+                func: cb,
+                args: args,
+                delay: delay,
+                isPeriodic: isPeriodic
+            };
             var i = 0;
             for (; i < this._schedulerQueue.length; i++) {
                 var currentEntry = this._schedulerQueue[i];
@@ -74,6 +82,30 @@
                 }
             }
             this._currentTime = finalTime;
+        };
+        Scheduler.prototype.flush = function (limit) {
+            if (limit === void 0) { limit = 20; }
+            var startTime = this._currentTime;
+            var count = 0;
+            while (this._schedulerQueue.length > 0) {
+                count++;
+                if (count > limit) {
+                    throw new Error('flush failed after reaching the limit of ' + limit +
+                        ' tasks. Does your code use a polling timeout?');
+                }
+                // If the only remaining tasks are periodic, finish flushing.
+                if (!(this._schedulerQueue.filter(function (task) { return !task.isPeriodic; }).length)) {
+                    break;
+                }
+                var current = this._schedulerQueue.shift();
+                this._currentTime = current.endTime;
+                var retval = current.func.apply(global, current.args);
+                if (!retval) {
+                    // Uncaught exception in the current scheduled function. Stop processing the queue.
+                    break;
+                }
+            }
+            return this._currentTime - startTime;
         };
         return Scheduler;
     }());
@@ -134,7 +166,7 @@
             return function () {
                 // Requeue the timer callback if it's not been canceled.
                 if (_this.pendingPeriodicTimers.indexOf(id) !== -1) {
-                    _this._scheduler.scheduleFunction(fn, interval, args, id);
+                    _this._scheduler.scheduleFunction(fn, interval, args, true, id);
                 }
             };
         };
@@ -167,7 +199,7 @@
             // Use the callback created above to requeue on success.
             completers.onSuccess = this._requeuePeriodicTimer(cb, interval, args, id);
             // Queue the callback and dequeue the periodic timer only on error.
-            this._scheduler.scheduleFunction(cb, interval, args);
+            this._scheduler.scheduleFunction(cb, interval, args, true);
             this.pendingPeriodicTimers.push(id);
             return id;
         };
@@ -201,14 +233,38 @@
             };
             while (this._microtasks.length > 0) {
                 var microtask = this._microtasks.shift();
-                microtask();
+                microtask.func.apply(microtask.target, microtask.args);
             }
             flushErrors();
+        };
+        FakeAsyncTestZoneSpec.prototype.flush = function () {
+            FakeAsyncTestZoneSpec.assertInZone();
+            this.flushMicrotasks();
+            var elapsed = this._scheduler.flush();
+            if (this._lastError !== null) {
+                this._resetLastErrorAndThrow();
+            }
+            return elapsed;
         };
         FakeAsyncTestZoneSpec.prototype.onScheduleTask = function (delegate, current, target, task) {
             switch (task.type) {
                 case 'microTask':
-                    this._microtasks.push(task.invoke);
+                    var args = task.data && task.data.args;
+                    // should pass additional arguments to callback if have any
+                    // currently we know process.nextTick will have such additional
+                    // arguments
+                    var addtionalArgs = void 0;
+                    if (args) {
+                        var callbackIndex = task.data.callbackIndex;
+                        if (typeof args.length === 'number' && args.length > callbackIndex + 1) {
+                            addtionalArgs = Array.prototype.slice.call(args, callbackIndex + 1);
+                        }
+                    }
+                    this._microtasks.push({
+                        func: task.invoke,
+                        args: addtionalArgs,
+                        target: task.data && task.data.target
+                    });
                     break;
                 case 'macroTask':
                     switch (task.source) {

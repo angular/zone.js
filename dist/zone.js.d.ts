@@ -521,17 +521,4 @@ interface MacroTask extends Task {
 interface EventTask extends Task {
     type: 'eventTask';
 }
-/**
- * Extend the Error with additional fields for rewritten stack frames
- */
-interface Error {
-    /**
-     * Stack trace where extra frames have been removed and zone names added.
-     */
-    zoneAwareStack?: string;
-    /**
-     * Original stack trace with no modifications
-     */
-    originalStack?: string;
-}
 declare const Zone: ZoneType;

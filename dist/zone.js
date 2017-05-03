@@ -19,12 +19,17 @@
  * found in the LICENSE file at https://angular.io/license
  */
 var Zone$1 = (function (global) {
+    var performance = global['performance'];
+    function mark(name) {
+        performance && performance['mark'] && performance['mark'](name);
+    }
+    function performanceMeasure(name, label) {
+        performance && performance['measure'] && performance['measure'](name, label);
+    }
+    mark('Zone');
     if (global['Zone']) {
         throw new Error('Zone already loaded.');
     }
-    var NO_ZONE = { name: 'NO ZONE' };
-    var notScheduled = 'notScheduled', scheduling = 'scheduling', scheduled = 'scheduled', running = 'running', canceling = 'canceling', unknown = 'unknown';
-    var microTask = 'microTask', macroTask = 'macroTask', eventTask = 'eventTask';
     var Zone = (function () {
         function Zone(parent, zoneSpec) {
             this._properties = null;
@@ -35,7 +40,7 @@ var Zone$1 = (function (global) {
                 new ZoneDelegate(this, this._parent && this._parent._zoneDelegate, zoneSpec);
         }
         Zone.assertZonePatched = function () {
-            if (global.Promise !== ZoneAwarePromise) {
+            if (global['Promise'] !== patches['ZoneAwarePromise']) {
                 throw new Error('Zone.js has detected that ZoneAwarePromise `(window|global).Promise` ' +
                     'has been overwritten.\n' +
                     'Most likely cause is that a Promise polyfill has been loaded ' +
@@ -70,6 +75,17 @@ var Zone$1 = (function (global) {
             configurable: true
         });
         
+        Zone.__load_patch = function (name, fn) {
+            if (patches.hasOwnProperty(name)) {
+                throw Error('Already loaded patch: ' + name);
+            }
+            else if (!global['__Zone_disable_' + name]) {
+                var perfName = 'Zone:' + name;
+                mark(perfName);
+                patches[name] = fn(global, Zone, _api);
+                performanceMeasure(perfName, perfName);
+            }
+        };
         Object.defineProperty(Zone.prototype, "parent", {
             get: function () {
                 return this._parent;
@@ -120,7 +136,7 @@ var Zone$1 = (function (global) {
             if (applyThis === void 0) { applyThis = undefined; }
             if (applyArgs === void 0) { applyArgs = null; }
             if (source === void 0) { source = null; }
-            _currentZoneFrame = new ZoneFrame(_currentZoneFrame, this);
+            _currentZoneFrame = { parent: _currentZoneFrame, zone: this };
             try {
                 return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
             }
@@ -132,7 +148,7 @@ var Zone$1 = (function (global) {
             if (applyThis === void 0) { applyThis = null; }
             if (applyArgs === void 0) { applyArgs = null; }
             if (source === void 0) { source = null; }
-            _currentZoneFrame = new ZoneFrame(_currentZoneFrame, this);
+            _currentZoneFrame = { parent: _currentZoneFrame, zone: this };
             try {
                 try {
                     return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
@@ -156,7 +172,7 @@ var Zone$1 = (function (global) {
             task.runCount++;
             var previousTask = _currentTask;
             _currentTask = task;
-            _currentZoneFrame = new ZoneFrame(_currentZoneFrame, this);
+            _currentZoneFrame = { parent: _currentZoneFrame, zone: this };
             try {
                 if (task.type == macroTask && task.data && !task.data.isPeriodic) {
                     task.cancelFn = null;
@@ -522,26 +538,17 @@ var Zone$1 = (function (global) {
         };
         return ZoneTask;
     }());
-    var ZoneFrame = (function () {
-        function ZoneFrame(parent, zone) {
-            this.parent = parent;
-            this.zone = zone;
-        }
-        return ZoneFrame;
-    }());
-    function __symbol__(name) {
-        return '__zone_symbol__' + name;
-    }
+    //////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////
+    ///  MICROTASK QUEUE
+    //////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////
     var symbolSetTimeout = __symbol__('setTimeout');
     var symbolPromise = __symbol__('Promise');
     var symbolThen = __symbol__('then');
-    var _currentZoneFrame = new ZoneFrame(null, new Zone(null, null));
-    var _currentTask = null;
     var _microTaskQueue = [];
     var _isDrainingMicrotaskQueue = false;
-    var _uncaughtPromiseErrors = [];
-    var _numberOfNestedTaskFrames = 0;
-    function scheduleQueueDrain() {
+    function scheduleMicroTask(task) {
         // if we are not running in any task, and there has not been anything scheduled
         // we must bootstrap the initial task creation by manually scheduling the drain
         if (_numberOfNestedTaskFrames === 0 && _microTaskQueue.length === 0) {
@@ -553,31 +560,7 @@ var Zone$1 = (function (global) {
                 global[symbolSetTimeout](drainMicroTaskQueue, 0);
             }
         }
-    }
-    function scheduleMicroTask(task) {
-        scheduleQueueDrain();
-        _microTaskQueue.push(task);
-    }
-    function consoleError(e) {
-        if (Zone[__symbol__('ignoreConsoleErrorUncaughtError')]) {
-            return;
-        }
-        var rejection = e && e.rejection;
-        if (rejection) {
-            console.error('Unhandled Promise rejection:', rejection instanceof Error ? rejection.message : rejection, '; Zone:', e.zone.name, '; Task:', e.task && e.task.source, '; Value:', rejection, rejection instanceof Error ? rejection.stack : undefined);
-        }
-        console.error(e);
-    }
-    function handleUnhandledRejection(e) {
-        consoleError(e);
-        try {
-            var handler = Zone[__symbol__('unhandledPromiseRejectionHandler')];
-            if (handler && typeof handler === 'function') {
-                handler.apply(this, [e]);
-            }
-        }
-        catch (err) {
-        }
+        task && _microTaskQueue.push(task);
     }
     function drainMicroTaskQueue() {
         if (!_isDrainingMicrotaskQueue) {
@@ -591,27 +574,91 @@ var Zone$1 = (function (global) {
                         task.zone.runTask(task, null, null);
                     }
                     catch (error) {
-                        consoleError(error);
+                        _api.onUnhandledError(error);
                     }
                 }
             }
-            while (_uncaughtPromiseErrors.length) {
-                var _loop_1 = function () {
-                    var uncaughtPromiseError = _uncaughtPromiseErrors.shift();
-                    try {
-                        uncaughtPromiseError.zone.runGuarded(function () {
-                            throw uncaughtPromiseError;
-                        });
-                    }
-                    catch (error) {
-                        handleUnhandledRejection(error);
-                    }
-                };
-                while (_uncaughtPromiseErrors.length) {
-                    _loop_1();
-                }
-            }
+            var showError = !Zone[__symbol__('ignoreConsoleErrorUncaughtError')];
+            _api.microtaskDrainDone();
             _isDrainingMicrotaskQueue = false;
+        }
+    }
+    //////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////
+    ///  BOOTSTRAP
+    //////////////////////////////////////////////////////
+    //////////////////////////////////////////////////////
+    var NO_ZONE = { name: 'NO ZONE' };
+    var notScheduled = 'notScheduled', scheduling = 'scheduling', scheduled = 'scheduled', running = 'running', canceling = 'canceling', unknown = 'unknown';
+    var microTask = 'microTask', macroTask = 'macroTask', eventTask = 'eventTask';
+    var patches = {};
+    var _api = {
+        symbol: __symbol__,
+        currentZoneFrame: function () { return _currentZoneFrame; },
+        onUnhandledError: noop,
+        microtaskDrainDone: noop,
+        scheduleMicroTask: scheduleMicroTask,
+        showUncaughtError: function () { return !Zone[__symbol__('ignoreConsoleErrorUncaughtError')]; }
+    };
+    var _currentZoneFrame = { parent: null, zone: new Zone(null, null) };
+    var _currentTask = null;
+    var _numberOfNestedTaskFrames = 0;
+    function noop() { }
+    function __symbol__(name) {
+        return '__zone_symbol__' + name;
+    }
+    performanceMeasure('Zone', 'Zone');
+    return global['Zone'] = Zone;
+})(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+Zone.__load_patch('ZoneAwarePromise', function (global, Zone, api) {
+    var __symbol__ = api.symbol;
+    var _uncaughtPromiseErrors = [];
+    var symbolPromise = __symbol__('Promise');
+    var symbolThen = __symbol__('then');
+    api.onUnhandledError = function (e) {
+        if (api.showUncaughtError()) {
+            var rejection = e && e.rejection;
+            if (rejection) {
+                console.error('Unhandled Promise rejection:', rejection instanceof Error ? rejection.message : rejection, '; Zone:', e.zone.name, '; Task:', e.task && e.task.source, '; Value:', rejection, rejection instanceof Error ? rejection.stack : undefined);
+            }
+            console.error(e);
+        }
+    };
+    api.microtaskDrainDone = function () {
+        while (_uncaughtPromiseErrors.length) {
+            var _loop_1 = function () {
+                var uncaughtPromiseError = _uncaughtPromiseErrors.shift();
+                try {
+                    uncaughtPromiseError.zone.runGuarded(function () {
+                        throw uncaughtPromiseError;
+                    });
+                }
+                catch (error) {
+                    handleUnhandledRejection(error);
+                }
+            };
+            while (_uncaughtPromiseErrors.length) {
+                _loop_1();
+            }
+        }
+    };
+    function handleUnhandledRejection(e) {
+        api.onUnhandledError(e);
+        try {
+            var handler = Zone[__symbol__('unhandledPromiseRejectionHandler')];
+            if (handler && typeof handler === 'function') {
+                handler.apply(this, [e]);
+            }
+        }
+        catch (err) {
         }
     }
     function isThenable(value) {
@@ -717,7 +764,7 @@ var Zone$1 = (function (global) {
                         error_1.zone = Zone.current;
                         error_1.task = Zone.currentTask;
                         _uncaughtPromiseErrors.push(error_1);
-                        scheduleQueueDrain();
+                        api.scheduleMicroTask(); // to make sure that it is running
                     }
                 }
             }
@@ -896,253 +943,8 @@ var Zone$1 = (function (global) {
     }
     // This is not part of public API, but it is useful for tests, so we expose it.
     Promise[Zone.__symbol__('uncaughtPromiseErrors')] = _uncaughtPromiseErrors;
-    var blacklistedStackFramesSymbol = Zone.__symbol__('blacklistedStackFrames');
-    var NativeError = global[__symbol__('Error')] = global.Error;
-    // Store the frames which should be removed from the stack frames
-    var blackListedStackFrames = {};
-    // We must find the frame where Error was created, otherwise we assume we don't understand stack
-    var zoneAwareFrame1;
-    var zoneAwareFrame2;
-    global.Error = ZoneAwareError;
-    var stackRewrite = 'stackRewrite';
-    /**
-     * This is ZoneAwareError which processes the stack frame and cleans up extra frames as well as
-     * adds zone information to it.
-     */
-    function ZoneAwareError() {
-        var _this = this;
-        // We always have to return native error otherwise the browser console will not work.
-        var error = NativeError.apply(this, arguments);
-        // Save original stack trace
-        var originalStack = error['originalStack'] = error.stack;
-        // Process the stack trace and rewrite the frames.
-        if (ZoneAwareError[stackRewrite] && originalStack) {
-            var frames_1 = originalStack.split('\n');
-            var zoneFrame = _currentZoneFrame;
-            var i = 0;
-            // Find the first frame
-            while (!(frames_1[i] === zoneAwareFrame1 || frames_1[i] === zoneAwareFrame2) &&
-                i < frames_1.length) {
-                i++;
-            }
-            for (; i < frames_1.length && zoneFrame; i++) {
-                var frame = frames_1[i];
-                if (frame.trim()) {
-                    switch (blackListedStackFrames[frame]) {
-                        case 0 /* blackList */:
-                            frames_1.splice(i, 1);
-                            i--;
-                            break;
-                        case 1 /* transition */:
-                            if (zoneFrame.parent) {
-                                // This is the special frame where zone changed. Print and process it accordingly
-                                zoneFrame = zoneFrame.parent;
-                            }
-                            else {
-                                zoneFrame = null;
-                            }
-                            frames_1.splice(i, 1);
-                            i--;
-                            break;
-                        default:
-                            frames_1[i] += " [" + zoneFrame.zone.name + "]";
-                    }
-                }
-            }
-            try {
-                error.stack = error.zoneAwareStack = frames_1.join('\n');
-            }
-            catch (e) {
-                // ignore as some browsers don't allow overriding of stack
-            }
-        }
-        if (this instanceof NativeError && this.constructor != NativeError) {
-            // We got called with a `new` operator AND we are subclass of ZoneAwareError
-            // in that case we have to copy all of our properties to `this`.
-            Object.keys(error).concat('stack', 'message').forEach(function (key) {
-                if (error[key] !== undefined) {
-                    try {
-                        _this[key] = error[key];
-                    }
-                    catch (e) {
-                        // ignore the assignment in case it is a setter and it throws.
-                    }
-                }
-            });
-            return this;
-        }
-        return error;
-    }
-    // Copy the prototype so that instanceof operator works as expected
-    ZoneAwareError.prototype = NativeError.prototype;
-    ZoneAwareError[blacklistedStackFramesSymbol] = blackListedStackFrames;
-    ZoneAwareError[stackRewrite] = false;
-    // those properties need special handling
-    var specialPropertyNames = ['stackTraceLimit', 'captureStackTrace', 'prepareStackTrace'];
-    // those properties of NativeError should be set to ZoneAwareError
-    var nativeErrorProperties = Object.keys(NativeError);
-    if (nativeErrorProperties) {
-        nativeErrorProperties.forEach(function (prop) {
-            if (specialPropertyNames.filter(function (sp) { return sp === prop; }).length === 0) {
-                Object.defineProperty(ZoneAwareError, prop, {
-                    get: function () {
-                        return NativeError[prop];
-                    },
-                    set: function (value) {
-                        NativeError[prop] = value;
-                    }
-                });
-            }
-        });
-    }
-    if (NativeError.hasOwnProperty('stackTraceLimit')) {
-        // Extend default stack limit as we will be removing few frames.
-        NativeError.stackTraceLimit = Math.max(NativeError.stackTraceLimit, 15);
-        // make sure that ZoneAwareError has the same property which forwards to NativeError.
-        Object.defineProperty(ZoneAwareError, 'stackTraceLimit', {
-            get: function () {
-                return NativeError.stackTraceLimit;
-            },
-            set: function (value) {
-                return NativeError.stackTraceLimit = value;
-            }
-        });
-    }
-    if (NativeError.hasOwnProperty('captureStackTrace')) {
-        Object.defineProperty(ZoneAwareError, 'captureStackTrace', {
-            // add named function here because we need to remove this
-            // stack frame when prepareStackTrace below
-            value: function zoneCaptureStackTrace(targetObject, constructorOpt) {
-                NativeError.captureStackTrace(targetObject, constructorOpt);
-            }
-        });
-    }
-    Object.defineProperty(ZoneAwareError, 'prepareStackTrace', {
-        get: function () {
-            return NativeError.prepareStackTrace;
-        },
-        set: function (value) {
-            if (!value || typeof value !== 'function') {
-                return NativeError.prepareStackTrace = value;
-            }
-            return NativeError.prepareStackTrace = function (error, structuredStackTrace) {
-                // remove additional stack information from ZoneAwareError.captureStackTrace
-                if (structuredStackTrace) {
-                    for (var i = 0; i < structuredStackTrace.length; i++) {
-                        var st = structuredStackTrace[i];
-                        // remove the first function which name is zoneCaptureStackTrace
-                        if (st.getFunctionName() === 'zoneCaptureStackTrace') {
-                            structuredStackTrace.splice(i, 1);
-                            break;
-                        }
-                    }
-                }
-                return value.apply(this, [error, structuredStackTrace]);
-            };
-        }
-    });
-    // Now we need to populate the `blacklistedStackFrames` as well as find the
-    // run/runGuarded/runTask frames. This is done by creating a detect zone and then threading
-    // the execution through all of the above methods so that we can look at the stack trace and
-    // find the frames of interest.
-    var detectZone = Zone.current.fork({
-        name: 'detect',
-        onHandleError: function (parentZD, current, target, error) {
-            if (error.originalStack && Error === ZoneAwareError) {
-                var frames_2 = error.originalStack.split(/\n/);
-                var runFrame = false, runGuardedFrame = false, runTaskFrame = false;
-                while (frames_2.length) {
-                    var frame = frames_2.shift();
-                    // On safari it is possible to have stack frame with no line number.
-                    // This check makes sure that we don't filter frames on name only (must have
-                    // linenumber)
-                    if (/:\d+:\d+/.test(frame)) {
-                        // Get rid of the path so that we don't accidentally find function name in path.
-                        // In chrome the separator is `(` and `@` in FF and safari
-                        // Chrome: at Zone.run (zone.js:100)
-                        // Chrome: at Zone.run (http://localhost:9876/base/build/lib/zone.js:100:24)
-                        // FireFox: Zone.prototype.run@http://localhost:9876/base/build/lib/zone.js:101:24
-                        // Safari: run@http://localhost:9876/base/build/lib/zone.js:101:24
-                        var fnName = frame.split('(')[0].split('@')[0];
-                        var frameType = 1;
-                        if (fnName.indexOf('ZoneAwareError') !== -1) {
-                            zoneAwareFrame1 = frame;
-                            zoneAwareFrame2 = frame.replace('Error.', '');
-                            blackListedStackFrames[zoneAwareFrame2] = 0 /* blackList */;
-                        }
-                        if (fnName.indexOf('runGuarded') !== -1) {
-                            runGuardedFrame = true;
-                        }
-                        else if (fnName.indexOf('runTask') !== -1) {
-                            runTaskFrame = true;
-                        }
-                        else if (fnName.indexOf('run') !== -1) {
-                            runFrame = true;
-                        }
-                        else {
-                            frameType = 0 /* blackList */;
-                        }
-                        blackListedStackFrames[frame] = frameType;
-                        // Once we find all of the frames we can stop looking.
-                        if (runFrame && runGuardedFrame && runTaskFrame) {
-                            ZoneAwareError[stackRewrite] = true;
-                            break;
-                        }
-                    }
-                }
-            }
-            return false;
-        }
-    });
-    // carefully constructor a stack frame which contains all of the frames of interest which
-    // need to be detected and blacklisted.
-    var childDetectZone = detectZone.fork({
-        name: 'child',
-        onScheduleTask: function (delegate, curr, target, task) {
-            return delegate.scheduleTask(target, task);
-        },
-        onInvokeTask: function (delegate, curr, target, task, applyThis, applyArgs) {
-            return delegate.invokeTask(target, task, applyThis, applyArgs);
-        },
-        onCancelTask: function (delegate, curr, target, task) {
-            return delegate.cancelTask(target, task);
-        },
-        onInvoke: function (delegate, curr, target, callback, applyThis, applyArgs, source) {
-            return delegate.invoke(target, callback, applyThis, applyArgs, source);
-        }
-    });
-    // we need to detect all zone related frames, it will
-    // exceed default stackTraceLimit, so we set it to
-    // larger number here, and restore it after detect finish.
-    var originalStackTraceLimit = Error.stackTraceLimit;
-    Error.stackTraceLimit = 100;
-    // we schedule event/micro/macro task, and invoke them
-    // when onSchedule, so we can get all stack traces for
-    // all kinds of tasks with one error thrown.
-    childDetectZone.run(function () {
-        childDetectZone.runGuarded(function () {
-            var fakeTransitionTo = function (toState, fromState1, fromState2) { };
-            childDetectZone.scheduleEventTask(blacklistedStackFramesSymbol, function () {
-                childDetectZone.scheduleMacroTask(blacklistedStackFramesSymbol, function () {
-                    childDetectZone.scheduleMicroTask(blacklistedStackFramesSymbol, function () {
-                        throw new ZoneAwareError(ZoneAwareError, NativeError);
-                    }, null, function (t) {
-                        t._transitionTo = fakeTransitionTo;
-                        t.invoke();
-                    });
-                }, null, function (t) {
-                    t._transitionTo = fakeTransitionTo;
-                    t.invoke();
-                }, function () { });
-            }, null, function (t) {
-                t._transitionTo = fakeTransitionTo;
-                t.invoke();
-            }, function () { });
-        });
-    });
-    Error.stackTraceLimit = originalStackTraceLimit;
-    return global['Zone'] = Zone;
-})(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);
+    return ZoneAwarePromise;
+});
 
 /**
  * @license
@@ -1157,7 +959,7 @@ var Zone$1 = (function (global) {
  * @suppress {undefinedVars,globalThis}
  */
 var zoneSymbol = function (n) { return "__zone_symbol__" + n; };
-var _global$1 = typeof window === 'object' && window || typeof self === 'object' && self || global;
+var _global = typeof window === 'object' && window || typeof self === 'object' && self || global;
 function bindArguments(args, source) {
     for (var i = args.length - 1; i >= 0; i--) {
         if (typeof args[i] === 'function') {
@@ -1186,7 +988,7 @@ function patchPrototype(prototype, fnNames) {
     }
 }
 var isWebWorker = (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope);
-var isNode = (!('nw' in _global$1) && typeof process !== 'undefined' &&
+var isNode = (!('nw' in _global) && typeof process !== 'undefined' &&
     {}.toString.call(process) === '[object process]');
 var isBrowser = !isNode && !isWebWorker && !!(typeof window !== 'undefined' && window['HTMLElement']);
 // we are in electron of nw, so we are both browser and nodejs
@@ -1215,8 +1017,8 @@ function patchProperty(obj, prop) {
         // in some of windows's onproperty callback, this is undefined
         // so we need to check it
         var target = this;
-        if (!target && obj === _global$1) {
-            target = _global$1;
+        if (!target && obj === _global) {
+            target = _global;
         }
         if (!target) {
             return;
@@ -1246,8 +1048,8 @@ function patchProperty(obj, prop) {
         // in some of windows's onproperty callback, this is undefined
         // so we need to check it
         var target = this;
-        if (!target && obj === _global$1) {
-            target = _global$1;
+        if (!target && obj === _global) {
+            target = _global;
         }
         if (!target) {
             return null;
@@ -1262,7 +1064,7 @@ function patchProperty(obj, prop) {
             // the onclick will be evaluated when first time event was triggered or
             // the property is accessed, https://github.com/angular/zone.js/issues/525
             // so we should use original native get to retrieve the handler
-            var value = originalDescGet.apply(this);
+            var value = originalDescGet && originalDescGet.apply(this);
             if (value) {
                 desc.set.apply(this, [value]);
                 if (typeof target['removeAttribute'] === 'function') {
@@ -1344,7 +1146,7 @@ var defaultListenerMetaCreator = function (self, args) {
         options: args[2],
         eventName: args[0],
         handler: args[1],
-        target: self || _global$1,
+        target: self || _global,
         name: args[0],
         crossContext: false,
         invokeAddFunc: function (addFnSymbol, delegate) {
@@ -1514,12 +1316,12 @@ function patchEventTargetMethods(obj, addFnName, removeFnName, metaCreator) {
 var originalInstanceKey = zoneSymbol('originalInstance');
 // wrap some native API on `window`
 function patchClass(className) {
-    var OriginalClass = _global$1[className];
+    var OriginalClass = _global[className];
     if (!OriginalClass)
         return;
     // keep original class in global
-    _global$1[zoneSymbol(className)] = OriginalClass;
-    _global$1[className] = function () {
+    _global[zoneSymbol(className)] = OriginalClass;
+    _global[className] = function () {
         var a = bindArguments(arguments, className);
         switch (a.length) {
             case 0:
@@ -1542,7 +1344,7 @@ function patchClass(className) {
         }
     };
     // attach original delegate to patched function
-    attachOriginToPatched(_global$1[className], OriginalClass);
+    attachOriginToPatched(_global[className], OriginalClass);
     var instance = new OriginalClass(function () { });
     var prop;
     for (prop in instance) {
@@ -1551,12 +1353,12 @@ function patchClass(className) {
             continue;
         (function (prop) {
             if (typeof instance[prop] === 'function') {
-                _global$1[className].prototype[prop] = function () {
+                _global[className].prototype[prop] = function () {
                     return this[originalInstanceKey][prop].apply(this[originalInstanceKey], arguments);
                 };
             }
             else {
-                Object.defineProperty(_global$1[className].prototype, prop, {
+                Object.defineProperty(_global[className].prototype, prop, {
                     set: function (fn) {
                         if (typeof fn === 'function') {
                             this[originalInstanceKey][prop] = Zone.current.wrap(fn, className + '.' + prop);
@@ -1578,24 +1380,13 @@ function patchClass(className) {
     }
     for (prop in OriginalClass) {
         if (prop !== 'prototype' && OriginalClass.hasOwnProperty(prop)) {
-            _global$1[className][prop] = OriginalClass[prop];
+            _global[className][prop] = OriginalClass[prop];
         }
-    }
-}
-function createNamedFn(name, delegate) {
-    try {
-        return (Function('f', "return function " + name + "(){return f(this, arguments)}"))(delegate);
-    }
-    catch (error) {
-        // if we fail, we must be CSP, just return delegate.
-        return function () {
-            return delegate(this, arguments);
-        };
     }
 }
 function patchMethod(target, name, patchFn) {
     var proto = target;
-    while (proto && Object.getOwnPropertyNames(proto).indexOf(name) === -1) {
+    while (proto && !proto.hasOwnProperty(name)) {
         proto = Object.getPrototypeOf(proto);
     }
     if (!proto && target[name]) {
@@ -1606,7 +1397,10 @@ function patchMethod(target, name, patchFn) {
     var delegate;
     if (proto && !(delegate = proto[delegateName])) {
         delegate = proto[delegateName] = proto[name];
-        proto[name] = createNamedFn(name, patchFn(delegate, delegateName, name));
+        var patchDelegate_1 = patchFn(delegate, delegateName, name);
+        proto[name] = function () {
+            return patchDelegate_1(this, arguments);
+        };
         attachOriginToPatched(proto[name], delegate);
     }
     return delegate;
@@ -1642,6 +1436,48 @@ Zone[zoneSymbol('patchOnProperties')] = patchOnProperties;
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+// override Function.prototype.toString to make zone.js patched function
+// look like native function
+Zone.__load_patch('toString', function (global, Zone, api) {
+    // patch Func.prototype.toString to let them look like native
+    var originalFunctionToString = Function.prototype.toString;
+    Function.prototype.toString = function () {
+        if (typeof this === 'function') {
+            if (this[zoneSymbol('OriginalDelegate')]) {
+                return originalFunctionToString.apply(this[zoneSymbol('OriginalDelegate')], arguments);
+            }
+            if (this === Promise) {
+                var nativePromise = global[zoneSymbol('Promise')];
+                if (nativePromise) {
+                    return originalFunctionToString.apply(nativePromise, arguments);
+                }
+            }
+            if (this === Error) {
+                var nativeError = global[zoneSymbol('Error')];
+                if (nativeError) {
+                    return originalFunctionToString.apply(nativeError, arguments);
+                }
+            }
+        }
+        return originalFunctionToString.apply(this, arguments);
+    };
+    // patch Object.prototype.toString to let them look like native
+    var originalObjectToString = Object.prototype.toString;
+    Object.prototype.toString = function () {
+        if (this instanceof Promise) {
+            return '[object Promise]';
+        }
+        return originalObjectToString.apply(this, arguments);
+    };
+});
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 function patchTimer(window, setName, cancelName, nameSuffix) {
     var setNative = null;
     var clearNative = null;
@@ -1655,16 +1491,27 @@ function patchTimer(window, setName, cancelName, nameSuffix) {
                 task.invoke.apply(this, arguments);
             }
             finally {
-                delete tasksByHandleId[data.handleId];
+                if (typeof data.handleId === 'number') {
+                    // Node returns complex objects as handleIds
+                    delete tasksByHandleId[data.handleId];
+                }
             }
         }
         data.args[0] = timer;
         data.handleId = setNative.apply(window, data.args);
-        tasksByHandleId[data.handleId] = task;
+        if (typeof data.handleId === 'number') {
+            // Node returns complex objects as handleIds -> no need to keep them around. Additionally,
+            // this throws an
+            // exception in older node versions and has no effect there, because of the stringified key.
+            tasksByHandleId[data.handleId] = task;
+        }
         return task;
     }
     function clearTask(task) {
-        delete tasksByHandleId[task.data.handleId];
+        if (typeof task.data.handleId === 'number') {
+            // Node returns complex objects as handleIds
+            delete tasksByHandleId[task.data.handleId];
+        }
         return clearNative(task.data.handleId);
     }
     setNative =
@@ -1712,49 +1559,6 @@ function patchTimer(window, setName, cancelName, nameSuffix) {
                 delegate.apply(window, args);
             }
         }; });
-}
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-// override Function.prototype.toString to make zone.js patched function
-// look like native function
-function patchFuncToString() {
-    var originalFunctionToString = Function.prototype.toString;
-    var g = typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global;
-    Function.prototype.toString = function () {
-        if (typeof this === 'function') {
-            if (this[zoneSymbol('OriginalDelegate')]) {
-                return originalFunctionToString.apply(this[zoneSymbol('OriginalDelegate')], arguments);
-            }
-            if (this === Promise) {
-                var nativePromise = g[zoneSymbol('Promise')];
-                if (nativePromise) {
-                    return originalFunctionToString.apply(nativePromise, arguments);
-                }
-            }
-            if (this === Error) {
-                var nativeError = g[zoneSymbol('Error')];
-                if (nativeError) {
-                    return originalFunctionToString.apply(nativeError, arguments);
-                }
-            }
-        }
-        return originalFunctionToString.apply(this, arguments);
-    };
-}
-function patchObjectToString() {
-    var originalObjectToString = Object.prototype.toString;
-    Object.prototype.toString = function () {
-        if (this instanceof Promise) {
-            return '[object Promise]';
-        }
-        return originalObjectToString.apply(this, arguments);
-    };
 }
 
 /**
@@ -1926,7 +1730,7 @@ function apply(_global) {
         return proxySocket;
     };
     for (var prop in WS) {
-        _global.WebSocket[prop] = WS[prop];
+        _global['WebSocket'][prop] = WS[prop];
     }
 }
 
@@ -2101,141 +1905,152 @@ function registerElementPatch(_global) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var set = 'set';
-var clear = 'clear';
-var blockingMethods = ['alert', 'prompt', 'confirm'];
-var _global = typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global;
-patchTimer(_global, set, clear, 'Timeout');
-patchTimer(_global, set, clear, 'Interval');
-patchTimer(_global, set, clear, 'Immediate');
-patchTimer(_global, 'request', 'cancel', 'AnimationFrame');
-patchTimer(_global, 'mozRequest', 'mozCancel', 'AnimationFrame');
-patchTimer(_global, 'webkitRequest', 'webkitCancel', 'AnimationFrame');
-for (var i = 0; i < blockingMethods.length; i++) {
-    var name_1 = blockingMethods[i];
-    patchMethod(_global, name_1, function (delegate, symbol, name) {
-        return function (s, args) {
-            return Zone.current.run(delegate, _global, args, name);
-        };
-    });
-}
-eventTargetPatch(_global);
-// patch XMLHttpRequestEventTarget's addEventListener/removeEventListener
-var XMLHttpRequestEventTarget = _global['XMLHttpRequestEventTarget'];
-if (XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype) {
-    patchEventTargetMethods(XMLHttpRequestEventTarget.prototype);
-}
-propertyDescriptorPatch(_global);
-patchClass('MutationObserver');
-patchClass('WebKitMutationObserver');
-patchClass('FileReader');
-propertyPatch();
-registerElementPatch(_global);
-// Treat XMLHTTPRequest as a macrotask.
-patchXHR(_global);
-var XHR_TASK = zoneSymbol('xhrTask');
-var XHR_SYNC = zoneSymbol('xhrSync');
-var XHR_LISTENER = zoneSymbol('xhrListener');
-var XHR_SCHEDULED = zoneSymbol('xhrScheduled');
-function patchXHR(window) {
-    function findPendingTask(target) {
-        var pendingTask = target[XHR_TASK];
-        return pendingTask;
-    }
-    function scheduleTask(task) {
-        XMLHttpRequest[XHR_SCHEDULED] = false;
-        var data = task.data;
-        // remove existing event listener
-        var listener = data.target[XHR_LISTENER];
-        if (listener) {
-            data.target.removeEventListener('readystatechange', listener);
-        }
-        var newListener = data.target[XHR_LISTENER] = function () {
-            if (data.target.readyState === data.target.DONE) {
-                // sometimes on some browsers XMLHttpRequest will fire onreadystatechange with
-                // readyState=4 multiple times, so we need to check task state here
-                if (!data.aborted && XMLHttpRequest[XHR_SCHEDULED] && task.state === 'scheduled') {
-                    task.invoke();
-                }
-            }
-        };
-        data.target.addEventListener('readystatechange', newListener);
-        var storedTask = data.target[XHR_TASK];
-        if (!storedTask) {
-            data.target[XHR_TASK] = task;
-        }
-        sendNative.apply(data.target, data.args);
-        XMLHttpRequest[XHR_SCHEDULED] = true;
-        return task;
-    }
-    function placeholderCallback() { }
-    function clearTask(task) {
-        var data = task.data;
-        // Note - ideally, we would call data.target.removeEventListener here, but it's too late
-        // to prevent it from firing. So instead, we store info for the event listener.
-        data.aborted = true;
-        return abortNative.apply(data.target, data.args);
-    }
-    var openNative = patchMethod(window.XMLHttpRequest.prototype, 'open', function () { return function (self, args) {
-        self[XHR_SYNC] = args[2] == false;
-        return openNative.apply(self, args);
-    }; });
-    var sendNative = patchMethod(window.XMLHttpRequest.prototype, 'send', function () { return function (self, args) {
-        var zone = Zone.current;
-        if (self[XHR_SYNC]) {
-            // if the XHR is sync there is no task to schedule, just execute the code.
-            return sendNative.apply(self, args);
-        }
-        else {
-            var options = { target: self, isPeriodic: false, delay: null, args: args, aborted: false };
-            return zone.scheduleMacroTask('XMLHttpRequest.send', placeholderCallback, options, scheduleTask, clearTask);
-        }
-    }; });
-    var abortNative = patchMethod(window.XMLHttpRequest.prototype, 'abort', function (delegate) { return function (self, args) {
-        var task = findPendingTask(self);
-        if (task && typeof task.type == 'string') {
-            // If the XHR has already completed, do nothing.
-            // If the XHR has already been aborted, do nothing.
-            // Fix #569, call abort multiple times before done will cause
-            // macroTask task count be negative number
-            if (task.cancelFn == null || (task.data && task.data.aborted)) {
-                return;
-            }
-            task.zone.cancelTask(task);
-        }
-        // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no task
-        // to cancel. Do nothing.
-    }; });
-}
-/// GEO_LOCATION
-if (_global['navigator'] && _global['navigator'].geolocation) {
-    patchPrototype(_global['navigator'].geolocation, ['getCurrentPosition', 'watchPosition']);
-}
-// patch Func.prototype.toString to let them look like native
-patchFuncToString();
-// patch Object.prototype.toString to let them look like native
-patchObjectToString();
-// handle unhandled promise rejection
-function findPromiseRejectionHandler(evtName) {
-    return function (e) {
-        var eventTasks = findEventTask(_global, evtName);
-        eventTasks.forEach(function (eventTask) {
-            // windows has added unhandledrejection event listener
-            // trigger the event listener
-            var PromiseRejectionEvent = _global['PromiseRejectionEvent'];
-            if (PromiseRejectionEvent) {
-                var evt = new PromiseRejectionEvent(evtName, { promise: e.promise, reason: e.rejection });
-                eventTask.invoke(evt);
-            }
+Zone.__load_patch('timers', function (global, Zone, api) {
+    var set = 'set';
+    var clear = 'clear';
+    patchTimer(global, set, clear, 'Timeout');
+    patchTimer(global, set, clear, 'Interval');
+    patchTimer(global, set, clear, 'Immediate');
+    patchTimer(global, 'request', 'cancel', 'AnimationFrame');
+    patchTimer(global, 'mozRequest', 'mozCancel', 'AnimationFrame');
+    patchTimer(global, 'webkitRequest', 'webkitCancel', 'AnimationFrame');
+});
+Zone.__load_patch('blocking', function (global, Zone, api) {
+    var blockingMethods = ['alert', 'prompt', 'confirm'];
+    for (var i = 0; i < blockingMethods.length; i++) {
+        var name_1 = blockingMethods[i];
+        patchMethod(global, name_1, function (delegate, symbol, name) {
+            return function (s, args) {
+                return Zone.current.run(delegate, global, args, name);
+            };
         });
-    };
-}
-if (_global['PromiseRejectionEvent']) {
-    Zone[zoneSymbol('unhandledPromiseRejectionHandler')] =
-        findPromiseRejectionHandler('unhandledrejection');
-    Zone[zoneSymbol('rejectionHandledHandler')] =
-        findPromiseRejectionHandler('rejectionhandled');
-}
+    }
+});
+Zone.__load_patch('EventTarget', function (global, Zone, api) {
+    eventTargetPatch(global);
+    // patch XMLHttpRequestEventTarget's addEventListener/removeEventListener
+    var XMLHttpRequestEventTarget = global['XMLHttpRequestEventTarget'];
+    if (XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype) {
+        patchEventTargetMethods(XMLHttpRequestEventTarget.prototype);
+    }
+    patchClass('MutationObserver');
+    patchClass('WebKitMutationObserver');
+    patchClass('FileReader');
+});
+Zone.__load_patch('on_property', function (global, Zone, api) {
+    propertyDescriptorPatch(global);
+    propertyPatch();
+    registerElementPatch(global);
+});
+Zone.__load_patch('XHR', function (global, Zone, api) {
+    // Treat XMLHTTPRequest as a macrotask.
+    patchXHR(global);
+    var XHR_TASK = zoneSymbol('xhrTask');
+    var XHR_SYNC = zoneSymbol('xhrSync');
+    var XHR_LISTENER = zoneSymbol('xhrListener');
+    var XHR_SCHEDULED = zoneSymbol('xhrScheduled');
+    function patchXHR(window) {
+        function findPendingTask(target) {
+            var pendingTask = target[XHR_TASK];
+            return pendingTask;
+        }
+        function scheduleTask(task) {
+            XMLHttpRequest[XHR_SCHEDULED] = false;
+            var data = task.data;
+            // remove existing event listener
+            var listener = data.target[XHR_LISTENER];
+            if (listener) {
+                data.target.removeEventListener('readystatechange', listener);
+            }
+            var newListener = data.target[XHR_LISTENER] = function () {
+                if (data.target.readyState === data.target.DONE) {
+                    // sometimes on some browsers XMLHttpRequest will fire onreadystatechange with
+                    // readyState=4 multiple times, so we need to check task state here
+                    if (!data.aborted && XMLHttpRequest[XHR_SCHEDULED] &&
+                        task.state === 'scheduled') {
+                        task.invoke();
+                    }
+                }
+            };
+            data.target.addEventListener('readystatechange', newListener);
+            var storedTask = data.target[XHR_TASK];
+            if (!storedTask) {
+                data.target[XHR_TASK] = task;
+            }
+            sendNative.apply(data.target, data.args);
+            XMLHttpRequest[XHR_SCHEDULED] = true;
+            return task;
+        }
+        function placeholderCallback() { }
+        function clearTask(task) {
+            var data = task.data;
+            // Note - ideally, we would call data.target.removeEventListener here, but it's too late
+            // to prevent it from firing. So instead, we store info for the event listener.
+            data.aborted = true;
+            return abortNative.apply(data.target, data.args);
+        }
+        var openNative = patchMethod(window.XMLHttpRequest.prototype, 'open', function () { return function (self, args) {
+            self[XHR_SYNC] = args[2] == false;
+            return openNative.apply(self, args);
+        }; });
+        var sendNative = patchMethod(window.XMLHttpRequest.prototype, 'send', function () { return function (self, args) {
+            var zone = Zone.current;
+            if (self[XHR_SYNC]) {
+                // if the XHR is sync there is no task to schedule, just execute the code.
+                return sendNative.apply(self, args);
+            }
+            else {
+                var options = { target: self, isPeriodic: false, delay: null, args: args, aborted: false };
+                return zone.scheduleMacroTask('XMLHttpRequest.send', placeholderCallback, options, scheduleTask, clearTask);
+            }
+        }; });
+        var abortNative = patchMethod(window.XMLHttpRequest.prototype, 'abort', function (delegate) { return function (self, args) {
+            var task = findPendingTask(self);
+            if (task && typeof task.type == 'string') {
+                // If the XHR has already completed, do nothing.
+                // If the XHR has already been aborted, do nothing.
+                // Fix #569, call abort multiple times before done will cause
+                // macroTask task count be negative number
+                if (task.cancelFn == null || (task.data && task.data.aborted)) {
+                    return;
+                }
+                task.zone.cancelTask(task);
+            }
+            // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no
+            // task
+            // to cancel. Do nothing.
+        }; });
+    }
+});
+Zone.__load_patch('geolocation', function (global, Zone, api) {
+    /// GEO_LOCATION
+    if (global['navigator'] && global['navigator'].geolocation) {
+        patchPrototype(global['navigator'].geolocation, ['getCurrentPosition', 'watchPosition']);
+    }
+});
+Zone.__load_patch('PromiseRejectionEvent', function (global, Zone, api) {
+    // handle unhandled promise rejection
+    function findPromiseRejectionHandler(evtName) {
+        return function (e) {
+            var eventTasks = findEventTask(global, evtName);
+            eventTasks.forEach(function (eventTask) {
+                // windows has added unhandledrejection event listener
+                // trigger the event listener
+                var PromiseRejectionEvent = global['PromiseRejectionEvent'];
+                if (PromiseRejectionEvent) {
+                    var evt = new PromiseRejectionEvent(evtName, { promise: e.promise, reason: e.rejection });
+                    eventTask.invoke(evt);
+                }
+            });
+        };
+    }
+    if (global['PromiseRejectionEvent']) {
+        Zone[zoneSymbol('unhandledPromiseRejectionHandler')] =
+            findPromiseRejectionHandler('unhandledrejection');
+        Zone[zoneSymbol('rejectionHandledHandler')] =
+            findPromiseRejectionHandler('rejectionhandled');
+    }
+});
 
 /**
  * @license
