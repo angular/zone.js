@@ -18,7 +18,7 @@ import {findEventTask, patchMacroTask, patchMicroTask} from '../common/utils';
 const set = 'set';
 const clear = 'clear';
 
-Zone.__load_patch('timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('node_timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   // Timers
   let globalUseTimeoutFromTimer = false;
   try {
@@ -63,7 +63,7 @@ Zone.__load_patch('timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => 
 });
 
 // patch process related methods
-Zone.__load_patch('nextTick', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('node_nextTick', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   // patch nextTick as microTask
   patchMicroTask(process, 'nextTick', (self: any, args: any[]) => {
     return {
@@ -76,7 +76,7 @@ Zone.__load_patch('nextTick', (global: any, Zone: ZoneType, api: _ZonePrivate) =
 });
 
 Zone.__load_patch(
-    'handleUnhandledPromiseRejection', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+    'node_handleUnhandledPromiseRejection', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
       (Zone as any)[api.symbol('unhandledPromiseRejectionHandler')] =
           findProcessPromiseRejectionHandler('unhandledRejection');
 
@@ -103,7 +103,7 @@ Zone.__load_patch(
 
 
 // Crypto
-Zone.__load_patch('crypto', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('node_crypto', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   let crypto: any;
   try {
     crypto = require('crypto');
