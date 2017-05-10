@@ -74,7 +74,7 @@ gulp.task('build/zone.js.d.ts', ['compile-esm'], function() {
 
 // Zone for Node.js environment.
 gulp.task('build/zone-node.js', ['compile-esm'], function(cb) {
-  return generateScript('./lib/node/node.ts', 'zone-node.js', false, cb);
+  return generateScript('./lib/node/rollup-main.ts', 'zone-node.js', false, cb);
 });
 
 // Zone for the browser.

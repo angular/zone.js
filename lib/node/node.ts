@@ -6,9 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import '../zone';
-import '../common/promise';
-import '../common/to-string';
 import './events';
 import './fs';
 
@@ -72,7 +69,7 @@ Zone.__load_patch('node_timers', (global: any, Zone: ZoneType, api: _ZonePrivate
 });
 
 // patch process related methods
-Zone.__load_patch('node_nextTick', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('nextTick', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   // patch nextTick as microTask
   patchMicroTask(process, 'nextTick', (self: any, args: any[]) => {
     return {
@@ -85,7 +82,7 @@ Zone.__load_patch('node_nextTick', (global: any, Zone: ZoneType, api: _ZonePriva
 });
 
 Zone.__load_patch(
-    'node_handleUnhandledPromiseRejection', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+    'handleUnhandledPromiseRejection', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
       (Zone as any)[api.symbol('unhandledPromiseRejectionHandler')] =
           findProcessPromiseRejectionHandler('unhandledRejection');
 
@@ -112,7 +109,7 @@ Zone.__load_patch(
 
 
 // Crypto
-Zone.__load_patch('node_crypto', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('crypto', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   let crypto: any;
   try {
     crypto = require('crypto');

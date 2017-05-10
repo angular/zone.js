@@ -8,7 +8,7 @@
 
 import {makeZoneAwareAddListener, makeZoneAwareListeners, makeZoneAwareRemoveAllListeners, makeZoneAwareRemoveListener, patchMethod} from '../common/utils';
 
-Zone.__load_patch('node_events', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('EventEmitter', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   const callAndReturnFirstParam = (fn: (self: any, args: any[]) => any) => {
     return (self: any, args: any[]) => {
       fn(self, args);

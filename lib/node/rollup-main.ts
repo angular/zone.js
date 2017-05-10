@@ -9,5 +9,4 @@
 import '../zone';
 import '../common/promise';
 import '../common/to-string';
-import '../browser/browser';
-import '../node/node';
+import './node';

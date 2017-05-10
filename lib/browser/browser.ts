@@ -6,8 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import '../common/to-string';
-
 import {patchTimer} from '../common/timers';
 import {findEventTask, patchClass, patchEventTargetMethods, patchMethod, patchPrototype, zoneSymbol} from '../common/utils';
 

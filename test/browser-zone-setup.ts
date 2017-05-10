@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import '../lib/common/to-string';
 import '../lib/browser/browser';
 import '../lib/zone-spec/async-test';
 import '../lib/zone-spec/fake-async-test';
