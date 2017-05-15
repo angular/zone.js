@@ -878,8 +878,10 @@ const Zone: ZoneType = (function(global: any) {
       if (count == -1) {
         task._zoneDelegates = null;
       }
-      for (let i = 0; i < zoneDelegates.length; i++) {
-        zoneDelegates[i]._updateTaskCount(task.type, count);
+      if (zoneDelegates) {
+        for (let i = 0; i < zoneDelegates.length; i++) {
+          zoneDelegates[i]._updateTaskCount(task.type, count);
+        }
       }
     }
   }
