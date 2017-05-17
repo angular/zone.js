@@ -193,4 +193,5 @@ Zone.__load_patch('PromiseRejectionEvent', (global: any, Zone: ZoneType, api: _Z
 Zone.__load_patch('util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   api.patchEventTargetMethods = patchEventTargetMethods;
   api.patchOnProperties = patchOnProperties;
+  api.patchMethod = patchMethod;
 });
