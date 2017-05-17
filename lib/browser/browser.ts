@@ -9,7 +9,7 @@
 import '../common/to-string';
 
 import {patchTimer} from '../common/timers';
-import {findEventTask, patchClass, patchEventTargetMethods, patchMethod, patchPrototype, zoneSymbol} from '../common/utils';
+import {findEventTask, patchClass, patchEventTargetMethods, patchMethod, patchOnProperties, patchPrototype, zoneSymbol} from '../common/utils';
 
 import {propertyPatch} from './define-property';
 import {eventTargetPatch} from './event-target';
@@ -189,4 +189,10 @@ Zone.__load_patch('PromiseRejectionEvent', (global: any, Zone: ZoneType, api: _Z
     (Zone as any)[zoneSymbol('rejectionHandledHandler')] =
         findPromiseRejectionHandler('rejectionhandled');
   }
+});
+
+
+Zone.__load_patch('util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+  api.patchEventTargetMethods = patchEventTargetMethods;
+  api.patchOnProperties = patchOnProperties;
 });

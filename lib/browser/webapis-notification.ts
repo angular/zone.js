@@ -14,6 +14,5 @@ Zone.__load_patch('notification', (global: any, Zone: ZoneType, api: _ZonePrivat
   if (!desc || !desc.configurable) {
     return;
   }
-  const patchOnProperties = (Zone as any)[(Zone as any).__symbol__('patchOnProperties')];
-  patchOnProperties(Notification.prototype, null);
+  api.patchOnProperties(Notification.prototype, null);
 });
