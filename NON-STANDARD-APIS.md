@@ -11,6 +11,18 @@ But there are still a lot of non standard APIs are not patched by default, such 
 * MediaQuery
 * Notification 
 
+## Currently supported polyfills
+
+* webcomponents
+
+Usage:
+
+```
+<script src="webcomponents-lite.js"></script>
+<script src="node_modules/zone.js/dist/zone.js"></script>
+<script src="node_modules/zone.js/dist/webapis-shadydom.js"></script>
+```
+
 ## Currently supported non standard node APIs
 
 ## Currently supported non standard common APIs
