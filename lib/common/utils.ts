@@ -664,6 +664,3 @@ export function findEventTask(target: any, evtName: string): Task[] {
 export function attachOriginToPatched(patched: Function, original: any) {
   (patched as any)[zoneSymbol('OriginalDelegate')] = original;
 }
-
-(Zone as any)[zoneSymbol('patchEventTargetMethods')] = patchEventTargetMethods;
-(Zone as any)[zoneSymbol('patchOnProperties')] = patchOnProperties;

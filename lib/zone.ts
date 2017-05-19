@@ -314,12 +314,15 @@ type _PatchFn = (global: Window, Zone: ZoneType, api: _ZonePrivate) => void;
 
 /** @internal */
 interface _ZonePrivate {
-  currentZoneFrame(): _ZoneFrame;
-  symbol(name: string): string;
-  scheduleMicroTask(task?: MicroTask): void;
+  currentZoneFrame: () => _ZoneFrame;
+  symbol: (name: string) => string;
+  scheduleMicroTask: (task?: MicroTask) => void;
   onUnhandledError: (error: Error) => void;
   microtaskDrainDone: () => void;
   showUncaughtError: () => boolean;
+  patchEventTargetMethods:
+      (obj: any, addFnName?: string, removeFnName?: string, metaCreator?: any) => boolean;
+  patchOnProperties: (obj: any, properties: string[]) => void;
 }
 
 /** @internal */
@@ -1277,7 +1280,9 @@ const Zone: ZoneType = (function(global: any) {
     onUnhandledError: noop,
     microtaskDrainDone: noop,
     scheduleMicroTask: scheduleMicroTask,
-    showUncaughtError: () => !(Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')]
+    showUncaughtError: () => !(Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')],
+    patchEventTargetMethods: () => false,
+    patchOnProperties: noop
   };
   let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
   let _currentTask: Task = null;
