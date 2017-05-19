@@ -45,6 +45,12 @@ more details.
 And now we are adding support to some non standard APIs, such as MediaQuery,
 Notification. Please see [NON-STANDARD-APIS.md](NON-STANDARD-APIS.md) for more details.
 
+## Modules
+
+zone.js patches the async APIs which described above, but those patch will have some overhead,
+from zone.js v0.8.9, you can choose which web API module you want to patch, for detail, please 
+see [MODULE.md](MODULE.md) for more details.
+
 ## Promise A+ test passed
 [![Promises/A+ 1.1 compliant](https://promisesaplus.com/assets/logo-small.png)](https://promisesaplus.com/)
 
