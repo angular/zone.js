@@ -115,6 +115,14 @@ gulp.task('build/webapis-notification.min.js', ['compile-esm'], function(cb) {
     return generateScript('./lib/browser/webapis-notification.ts', 'webapis-notification.min.js', true, cb);
 });
 
+gulp.task('build/webapis-shadydom.js', ['compile-esm'], function(cb) {
+    return generateScript('./lib/browser/shadydom.ts', 'webapis-shadydom.js', false, cb);
+});
+
+gulp.task('build/webapis-shadydom.min.js', ['compile-esm'], function(cb) {
+    return generateScript('./lib/browser/shadydom.ts', 'webapis-shadydom.min.js', true, cb);
+});
+
 gulp.task('build/bluebird.js', ['compile-esm'], function(cb) {
     return generateScript('./lib/extra/bluebird.ts', 'zone-bluebird.js', false, cb);
 });
@@ -194,6 +202,8 @@ gulp.task('build', [
   'build/webapis-media-query.min.js',
   'build/webapis-notification.js',
   'build/webapis-notification.min.js',
+  'build/webapis-shadydom.js',
+  'build/webapis-shadydom.min.js',
   'build/zone-mix.js',
   'build/bluebird.js',
   'build/bluebird.min.js',
