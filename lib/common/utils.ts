@@ -47,16 +47,20 @@ export function patchPrototype(prototype: any, fnNames: string[]) {
 export const isWebWorker: boolean =
     (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope);
 
+// Make sure to access `process` through `_global` so that WebPack does not accidently browserify
+// this code.
 export const isNode: boolean =
-    (!('nw' in _global) && typeof process !== 'undefined' &&
-     {}.toString.call(process) === '[object process]');
+    (!('nw' in _global) && typeof _global.process !== 'undefined' &&
+     {}.toString.call(_global.process) === '[object process]');
 
 export const isBrowser: boolean =
     !isNode && !isWebWorker && !!(typeof window !== 'undefined' && (window as any)['HTMLElement']);
 
 // we are in electron of nw, so we are both browser and nodejs
-export const isMix: boolean = typeof process !== 'undefined' &&
-    {}.toString.call(process) === '[object process]' && !isWebWorker &&
+// Make sure to access `process` through `_global` so that WebPack does not accidently browserify
+// this code.
+export const isMix: boolean = typeof _global.process !== 'undefined' &&
+    {}.toString.call(_global.process) === '[object process]' && !isWebWorker &&
     !!(typeof window !== 'undefined' && (window as any)['HTMLElement']);
 
 export function patchProperty(obj: any, prop: string, prototype?: any) {
