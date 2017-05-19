@@ -59,11 +59,18 @@ export const isMix: boolean = typeof process !== 'undefined' &&
     {}.toString.call(process) === '[object process]' && !isWebWorker &&
     !!(typeof window !== 'undefined' && (window as any)['HTMLElement']);
 
-export function patchProperty(obj: any, prop: string) {
-  const desc = Object.getOwnPropertyDescriptor(obj, prop) || {enumerable: true, configurable: true};
-  // if the descriptor is not configurable
+export function patchProperty(obj: any, prop: string, prototype?: any) {
+  let desc = Object.getOwnPropertyDescriptor(obj, prop);
+  if (!desc && prototype) {
+    // when patch window object, use prototype to check prop exist or not
+    const prototypeDesc = Object.getOwnPropertyDescriptor(prototype, prop);
+    if (prototypeDesc) {
+      desc = {enumerable: true, configurable: true};
+    }
+  }
+  // if the descriptor not exists or is not configurable
   // just return
-  if (!desc.configurable) {
+  if (!desc || !desc.configurable) {
     return;
   }
 
@@ -148,10 +155,10 @@ export function patchProperty(obj: any, prop: string) {
   Object.defineProperty(obj, prop, desc);
 }
 
-export function patchOnProperties(obj: any, properties: string[]) {
+export function patchOnProperties(obj: any, properties: string[], prototype?: any) {
   if (properties) {
     for (let i = 0; i < properties.length; i++) {
-      patchProperty(obj, 'on' + properties[i]);
+      patchProperty(obj, 'on' + properties[i], prototype);
     }
   } else {
     const onProperties = [];
@@ -161,7 +168,7 @@ export function patchOnProperties(obj: any, properties: string[]) {
       }
     }
     for (let j = 0; j < onProperties.length; j++) {
-      patchProperty(obj, onProperties[j]);
+      patchProperty(obj, onProperties[j], prototype);
     }
   }
 }

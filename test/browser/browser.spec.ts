@@ -108,6 +108,53 @@ describe('Zone', function() {
             eventListenerSpy = jasmine.createSpy('eventListener');
           });
 
+          function checkIsOnPropertiesPatched(target: any) {
+            for (let prop in target) {
+              if (prop.substr(0, 2) === 'on') {
+                target[prop] = noop;
+                expect(target[Zone.__symbol__('_' + prop)]).toBeTruthy();
+                target[prop] = null;
+                expect(!target[Zone.__symbol__('_' + prop)]).toBeTruthy();
+              }
+            }
+          }
+
+          it('should patch all possbile on properties on element', function() {
+            const htmlElementTagNames: string[] = [
+              'a',       'area',     'audio',    'base',   'basefont', 'blockquote', 'br',
+              'button',  'canvas',   'caption',  'col',    'colgroup', 'data',       'datalist',
+              'del',     'dir',      'div',      'dl',     'embed',    'fieldset',   'font',
+              'form',    'frame',    'frameset', 'h1',     'h2',       'h3',         'h4',
+              'h5',      'h6',       'head',     'hr',     'html',     'iframe',     'img',
+              'input',   'ins',      'isindex',  'label',  'legend',   'li',         'link',
+              'listing', 'map',      'marquee',  'menu',   'meta',     'meter',      'nextid',
+              'ol',      'optgroup', 'option',   'output', 'p',        'param',      'picture',
+              'pre',     'progress', 'q',        'script', 'select',   'source',     'span',
+              'style',   'table',    'tbody',    'td',     'template', 'textarea',   'tfoot',
+              'th',      'thead',    'time',     'title',  'tr',       'track',      'ul',
+              'video'
+            ];
+            htmlElementTagNames.forEach(tagName => {
+              checkIsOnPropertiesPatched(document.createElement(tagName));
+            });
+          });
+
+          it('should patch all possbile on properties on body', function() {
+            checkIsOnPropertiesPatched(document.body);
+          });
+
+          it('should patch all possbile on properties on Document', function() {
+            checkIsOnPropertiesPatched(document);
+          });
+
+          it('should patch all possbile on properties on Window', function() {
+            checkIsOnPropertiesPatched(window);
+          });
+
+          it('should patch all possbile on properties on xhr', function() {
+            checkIsOnPropertiesPatched(new XMLHttpRequest());
+          });
+
           it('window onclick should be in zone',
              ifEnvSupports(canPatchOnProperty(window, 'onmousedown'), function() {
                zone.run(function() {

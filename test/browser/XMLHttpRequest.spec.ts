@@ -67,8 +67,9 @@ describe('XMLHttpRequest', function() {
   });
 
   const supportsOnProgress = function() {
-    return 'onprogress' in new XMLHttpRequest();
+    return 'onprogress' in (new XMLHttpRequest());
   };
+
   (<any>supportsOnProgress).message = 'XMLHttpRequest.onprogress';
 
   describe('onprogress', ifEnvSupports(supportsOnProgress, function() {
