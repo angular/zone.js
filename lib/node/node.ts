@@ -6,26 +6,26 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import '../zone';
-import '../common/promise';
-import '../common/to-string';
 import './events';
 import './fs';
 
 import {patchTimer} from '../common/timers';
-import {findEventTask, patchMacroTask, patchMicroTask} from '../common/utils';
+import {findEventTask, isMix, patchMacroTask, patchMicroTask} from '../common/utils';
 
 const set = 'set';
 const clear = 'clear';
 
-Zone.__load_patch('timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('node_timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   // Timers
   let globalUseTimeoutFromTimer = false;
   try {
     const timers = require('timers');
     let globalEqualTimersTimeout = global.setTimeout === timers.setTimeout;
-    if (!globalEqualTimersTimeout) {
-      // if global.setTimeout not equal timers.setTimeout, check
+    if (!globalEqualTimersTimeout && !isMix) {
+      // 1. if isMix, then we are in mix environment such as Electron
+      // we should only patch timers.setTimeout because global.setTimeout
+      // have been patched
+      // 2. if global.setTimeout not equal timers.setTimeout, check
       // whether global.setTimeout use timers.setTimeout or not
       const originSetTimeout = timers.setTimeout;
       timers.setTimeout = function() {
@@ -42,6 +42,12 @@ Zone.__load_patch('timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => 
   } catch (error) {
     // timers module not exists, for example, when we using nativescript
     // timers is not available
+  }
+  if (isMix) {
+    // if we are in mix environment, such as Electron,
+    // the global.setTimeout has already been patched,
+    // so we just patch timers.setTimeout
+    return;
   }
   if (!globalUseTimeoutFromTimer) {
     // 1. global setTimeout equals timers setTimeout
