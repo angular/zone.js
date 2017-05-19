@@ -759,10 +759,22 @@ const Zone: ZoneType = (function(global: any) {
 
 
     runTask(task: Task, applyThis?: any, applyArgs?: any): any {
-      if (task.zone != this)
+      if (task.zone != this) {
         throw new Error(
             'A task can only be run in the zone of creation! (Creation: ' +
             (task.zone || NO_ZONE).name + '; Execution: ' + this.name + ')');
+      }
+      // https://github.com/angular/zone.js/issues/778, sometimes eventTask
+      // will run in notScheduled(canceled) state, we should not try to
+      // run such kind of task but just return
+
+      // we have to define an variable here, if not
+      // typescript compiler will complain below
+      const isNotScheduled = task.state === notScheduled;
+      if (isNotScheduled && task.type === eventTask) {
+        return;
+      }
+
       const reEntryGuard = task.state != running;
       reEntryGuard && (task as ZoneTask<any>)._transitionTo(running, scheduled);
       task.runCount++;

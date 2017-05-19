@@ -873,6 +873,26 @@ describe('task lifecycle', () => {
                {toState: 'notScheduled', fromState: 'running'}
              ]);
        }));
+
+    it('task should not run if task transite to notScheduled state which was canceled',
+       testFnWithLoggedTransitionTo(() => {
+         let task: Task;
+         Zone.current.fork({name: 'testCancelZone'}).run(() => {
+           const task = Zone.current.scheduleEventTask('testEventTask', noop, null, noop, noop);
+           Zone.current.cancelTask(task);
+           task.invoke();
+         });
+         expect(log.map(item => {
+           return {toState: item.toState, fromState: item.fromState};
+         }))
+             .toEqual([
+               {toState: 'scheduling', fromState: 'notScheduled'},
+               {toState: 'scheduled', fromState: 'scheduling'},
+               {toState: 'canceling', fromState: 'scheduled'},
+               {toState: 'notScheduled', fromState: 'canceling'}
+             ]);
+       }));
+
   });
 
   describe('reschedule zone', () => {
