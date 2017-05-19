@@ -164,9 +164,19 @@ var Zone$1 = (function (global) {
             }
         };
         Zone.prototype.runTask = function (task, applyThis, applyArgs) {
-            if (task.zone != this)
+            if (task.zone != this) {
                 throw new Error('A task can only be run in the zone of creation! (Creation: ' +
                     (task.zone || NO_ZONE).name + '; Execution: ' + this.name + ')');
+            }
+            // https://github.com/angular/zone.js/issues/778, sometimes eventTask
+            // will run in notScheduled(canceled) state, we should not try to
+            // run such kind of task but just return
+            // we have to define an variable here, if not
+            // typescript compiler will complain below
+            var isNotScheduled = task.state === notScheduled;
+            if (isNotScheduled && task.type === eventTask) {
+                return;
+            }
             var reEntryGuard = task.state != running;
             reEntryGuard && task._transitionTo(running, scheduled);
             task.runCount++;
@@ -598,7 +608,9 @@ var Zone$1 = (function (global) {
         onUnhandledError: noop,
         microtaskDrainDone: noop,
         scheduleMicroTask: scheduleMicroTask,
-        showUncaughtError: function () { return !Zone[__symbol__('ignoreConsoleErrorUncaughtError')]; }
+        showUncaughtError: function () { return !Zone[__symbol__('ignoreConsoleErrorUncaughtError')]; },
+        patchEventTargetMethods: function () { return false; },
+        patchOnProperties: noop
     };
     var _currentZoneFrame = { parent: null, zone: new Zone(null, null) };
     var _currentTask = null;
@@ -963,117 +975,20 @@ var _global = typeof window === 'object' && window || typeof self === 'object' &
 
 
 var isWebWorker = (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope);
-var isNode = (!('nw' in _global) && typeof process !== 'undefined' &&
-    {}.toString.call(process) === '[object process]');
+// Make sure to access `process` through `_global` so that WebPack does not accidently browserify
+// this code.
+var isNode = (!('nw' in _global) && typeof _global.process !== 'undefined' &&
+    {}.toString.call(_global.process) === '[object process]');
 
 // we are in electron of nw, so we are both browser and nodejs
-var isMix = typeof process !== 'undefined' &&
-    {}.toString.call(process) === '[object process]' && !isWebWorker &&
+// Make sure to access `process` through `_global` so that WebPack does not accidently browserify
+// this code.
+var isMix = typeof _global.process !== 'undefined' &&
+    {}.toString.call(_global.process) === '[object process]' && !isWebWorker &&
     !!(typeof window !== 'undefined' && window['HTMLElement']);
-function patchProperty(obj, prop) {
-    var desc = Object.getOwnPropertyDescriptor(obj, prop) || { enumerable: true, configurable: true };
-    // if the descriptor is not configurable
-    // just return
-    if (!desc.configurable) {
-        return;
-    }
-    // A property descriptor cannot have getter/setter and be writable
-    // deleting the writable and value properties avoids this error:
-    //
-    // TypeError: property descriptors must not specify a value or be writable when a
-    // getter or setter has been specified
-    delete desc.writable;
-    delete desc.value;
-    var originalDescGet = desc.get;
-    // substr(2) cuz 'onclick' -> 'click', etc
-    var eventName = prop.substr(2);
-    var _prop = zoneSymbol('_' + prop);
-    desc.set = function (newValue) {
-        // in some of windows's onproperty callback, this is undefined
-        // so we need to check it
-        var target = this;
-        if (!target && obj === _global) {
-            target = _global;
-        }
-        if (!target) {
-            return;
-        }
-        var previousValue = target[_prop];
-        if (previousValue) {
-            target.removeEventListener(eventName, previousValue);
-        }
-        if (typeof newValue === 'function') {
-            var wrapFn = function (event) {
-                var result = newValue.apply(this, arguments);
-                if (result != undefined && !result) {
-                    event.preventDefault();
-                }
-                return result;
-            };
-            target[_prop] = wrapFn;
-            target.addEventListener(eventName, wrapFn, false);
-        }
-        else {
-            target[_prop] = null;
-        }
-    };
-    // The getter would return undefined for unassigned properties but the default value of an
-    // unassigned property is null
-    desc.get = function () {
-        // in some of windows's onproperty callback, this is undefined
-        // so we need to check it
-        var target = this;
-        if (!target && obj === _global) {
-            target = _global;
-        }
-        if (!target) {
-            return null;
-        }
-        if (target.hasOwnProperty(_prop)) {
-            return target[_prop];
-        }
-        else if (originalDescGet) {
-            // result will be null when use inline event attribute,
-            // such as <button onclick="func();">OK</button>
-            // because the onclick function is internal raw uncompiled handler
-            // the onclick will be evaluated when first time event was triggered or
-            // the property is accessed, https://github.com/angular/zone.js/issues/525
-            // so we should use original native get to retrieve the handler
-            var value = originalDescGet && originalDescGet.apply(this);
-            if (value) {
-                desc.set.apply(this, [value]);
-                if (typeof target['removeAttribute'] === 'function') {
-                    target.removeAttribute(prop);
-                }
-                return value;
-            }
-        }
-        return null;
-    };
-    Object.defineProperty(obj, prop, desc);
-}
-function patchOnProperties(obj, properties) {
-    if (properties) {
-        for (var i = 0; i < properties.length; i++) {
-            patchProperty(obj, 'on' + properties[i]);
-        }
-    }
-    else {
-        var onProperties = [];
-        for (var prop in obj) {
-            if (prop.substr(0, 2) == 'on') {
-                onProperties.push(prop);
-            }
-        }
-        for (var j = 0; j < onProperties.length; j++) {
-            patchProperty(obj, onProperties[j]);
-        }
-    }
-}
+
+
 var EVENT_TASKS = zoneSymbol('eventTasks');
-// For EventTarget
-var ADD_EVENT_LISTENER = 'addEventListener';
-var REMOVE_EVENT_LISTENER = 'removeEventListener';
 // compare the EventListenerOptionsOrCapture
 // 1. if the options is usCapture: boolean, compare the useCpature values directly
 // 2. if the options is EventListerOptions, only compare the capture
@@ -1325,19 +1240,7 @@ function makeZoneAwareListeners(fnName) {
             .map(function (task) { return task.data['handler']; });
     };
 }
-function patchEventTargetMethods(obj, addFnName, removeFnName, metaCreator) {
-    if (addFnName === void 0) { addFnName = ADD_EVENT_LISTENER; }
-    if (removeFnName === void 0) { removeFnName = REMOVE_EVENT_LISTENER; }
-    if (metaCreator === void 0) { metaCreator = defaultListenerMetaCreator; }
-    if (obj && obj[addFnName]) {
-        patchMethod(obj, addFnName, function () { return makeZoneAwareAddListener(addFnName, removeFnName, true, false, false, metaCreator); });
-        patchMethod(obj, removeFnName, function () { return makeZoneAwareRemoveListener(removeFnName, true, metaCreator); });
-        return true;
-    }
-    else {
-        return false;
-    }
-}
+
 // wrap some native API on `window`
 
 function patchMethod(target, name, patchFn) {
@@ -1424,8 +1327,6 @@ function findEventTask(target, evtName) {
 function attachOriginToPatched(patched, original) {
     patched[zoneSymbol('OriginalDelegate')] = original;
 }
-Zone[zoneSymbol('patchEventTargetMethods')] = patchEventTargetMethods;
-Zone[zoneSymbol('patchOnProperties')] = patchOnProperties;
 
 /**
  * @license
@@ -1476,48 +1377,50 @@ Zone.__load_patch('toString', function (global, Zone, api) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var callAndReturnFirstParam = function (fn) {
-    return function (self, args) {
-        fn(self, args);
-        return self;
+Zone.__load_patch('EventEmitter', function (global, Zone, api) {
+    var callAndReturnFirstParam = function (fn) {
+        return function (self, args) {
+            fn(self, args);
+            return self;
+        };
     };
-};
-// For EventEmitter
-var EE_ADD_LISTENER = 'addListener';
-var EE_PREPEND_LISTENER = 'prependListener';
-var EE_REMOVE_LISTENER = 'removeListener';
-var EE_REMOVE_ALL_LISTENER = 'removeAllListeners';
-var EE_LISTENERS = 'listeners';
-var EE_ON = 'on';
-var zoneAwareAddListener = callAndReturnFirstParam(makeZoneAwareAddListener(EE_ADD_LISTENER, EE_REMOVE_LISTENER, false, true, false));
-var zoneAwarePrependListener = callAndReturnFirstParam(makeZoneAwareAddListener(EE_PREPEND_LISTENER, EE_REMOVE_LISTENER, false, true, true));
-var zoneAwareRemoveListener = callAndReturnFirstParam(makeZoneAwareRemoveListener(EE_REMOVE_LISTENER, false));
-var zoneAwareRemoveAllListeners = callAndReturnFirstParam(makeZoneAwareRemoveAllListeners(EE_REMOVE_ALL_LISTENER));
-var zoneAwareListeners = makeZoneAwareListeners(EE_LISTENERS);
-function patchEventEmitterMethods(obj) {
-    if (obj && obj.addListener) {
-        patchMethod(obj, EE_ADD_LISTENER, function () { return zoneAwareAddListener; });
-        patchMethod(obj, EE_PREPEND_LISTENER, function () { return zoneAwarePrependListener; });
-        patchMethod(obj, EE_REMOVE_LISTENER, function () { return zoneAwareRemoveListener; });
-        patchMethod(obj, EE_REMOVE_ALL_LISTENER, function () { return zoneAwareRemoveAllListeners; });
-        patchMethod(obj, EE_LISTENERS, function () { return zoneAwareListeners; });
-        obj[EE_ON] = obj[EE_ADD_LISTENER];
-        return true;
+    // For EventEmitter
+    var EE_ADD_LISTENER = 'addListener';
+    var EE_PREPEND_LISTENER = 'prependListener';
+    var EE_REMOVE_LISTENER = 'removeListener';
+    var EE_REMOVE_ALL_LISTENER = 'removeAllListeners';
+    var EE_LISTENERS = 'listeners';
+    var EE_ON = 'on';
+    var zoneAwareAddListener = callAndReturnFirstParam(makeZoneAwareAddListener(EE_ADD_LISTENER, EE_REMOVE_LISTENER, false, true, false));
+    var zoneAwarePrependListener = callAndReturnFirstParam(makeZoneAwareAddListener(EE_PREPEND_LISTENER, EE_REMOVE_LISTENER, false, true, true));
+    var zoneAwareRemoveListener = callAndReturnFirstParam(makeZoneAwareRemoveListener(EE_REMOVE_LISTENER, false));
+    var zoneAwareRemoveAllListeners = callAndReturnFirstParam(makeZoneAwareRemoveAllListeners(EE_REMOVE_ALL_LISTENER));
+    var zoneAwareListeners = makeZoneAwareListeners(EE_LISTENERS);
+    function patchEventEmitterMethods(obj) {
+        if (obj && obj.addListener) {
+            patchMethod(obj, EE_ADD_LISTENER, function () { return zoneAwareAddListener; });
+            patchMethod(obj, EE_PREPEND_LISTENER, function () { return zoneAwarePrependListener; });
+            patchMethod(obj, EE_REMOVE_LISTENER, function () { return zoneAwareRemoveListener; });
+            patchMethod(obj, EE_REMOVE_ALL_LISTENER, function () { return zoneAwareRemoveAllListeners; });
+            patchMethod(obj, EE_LISTENERS, function () { return zoneAwareListeners; });
+            obj[EE_ON] = obj[EE_ADD_LISTENER];
+            return true;
+        }
+        else {
+            return false;
+        }
     }
-    else {
-        return false;
+    // EventEmitter
+    var events;
+    try {
+        events = require('events');
     }
-}
-// EventEmitter
-var events;
-try {
-    events = require('events');
-}
-catch (err) {
-}
-if (events && events.EventEmitter) {
-    patchEventEmitterMethods(events.EventEmitter.prototype);
-}
+    catch (err) {
+    }
+    if (events && events.EventEmitter) {
+        patchEventEmitterMethods(events.EventEmitter.prototype);
+    }
+});
 
 /**
  * @license
@@ -1526,34 +1429,36 @@ if (events && events.EventEmitter) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var fs;
-try {
-    fs = require('fs');
-}
-catch (err) {
-}
-// watch, watchFile, unwatchFile has been patched
-// because EventEmitter has been patched
-var TO_PATCH_MACROTASK_METHODS = [
-    'access', 'appendFile', 'chmod', 'chown', 'close', 'exists', 'fchmod',
-    'fchown', 'fdatasync', 'fstat', 'fsync', 'ftruncate', 'futimes', 'lchmod',
-    'lchown', 'link', 'lstat', 'mkdir', 'mkdtemp', 'open', 'read',
-    'readdir', 'readFile', 'readlink', 'realpath', 'rename', 'rmdir', 'stat',
-    'symlink', 'truncate', 'unlink', 'utimes', 'write', 'writeFile',
-];
-if (fs) {
-    TO_PATCH_MACROTASK_METHODS.filter(function (name) { return !!fs[name] && typeof fs[name] === 'function'; })
-        .forEach(function (name) {
-        patchMacroTask(fs, name, function (self, args) {
-            return {
-                name: 'fs.' + name,
-                args: args,
-                callbackIndex: args.length > 0 ? args.length - 1 : -1,
-                target: self
-            };
+Zone.__load_patch('fs', function (global, Zone, api) {
+    var fs;
+    try {
+        fs = require('fs');
+    }
+    catch (err) {
+    }
+    // watch, watchFile, unwatchFile has been patched
+    // because EventEmitter has been patched
+    var TO_PATCH_MACROTASK_METHODS = [
+        'access', 'appendFile', 'chmod', 'chown', 'close', 'exists', 'fchmod',
+        'fchown', 'fdatasync', 'fstat', 'fsync', 'ftruncate', 'futimes', 'lchmod',
+        'lchown', 'link', 'lstat', 'mkdir', 'mkdtemp', 'open', 'read',
+        'readdir', 'readFile', 'readlink', 'realpath', 'rename', 'rmdir', 'stat',
+        'symlink', 'truncate', 'unlink', 'utimes', 'write', 'writeFile',
+    ];
+    if (fs) {
+        TO_PATCH_MACROTASK_METHODS.filter(function (name) { return !!fs[name] && typeof fs[name] === 'function'; })
+            .forEach(function (name) {
+            patchMacroTask(fs, name, function (self, args) {
+                return {
+                    name: 'fs.' + name,
+                    args: args,
+                    callbackIndex: args.length > 0 ? args.length - 1 : -1,
+                    target: self
+                };
+            });
         });
-    });
-}
+    }
+});
 
 /**
  * @license
@@ -1654,14 +1559,17 @@ function patchTimer(window, setName, cancelName, nameSuffix) {
  */
 var set = 'set';
 var clear = 'clear';
-Zone.__load_patch('timers', function (global, Zone, api) {
+Zone.__load_patch('node_timers', function (global, Zone, api) {
     // Timers
     var globalUseTimeoutFromTimer = false;
     try {
         var timers = require('timers');
         var globalEqualTimersTimeout = global.setTimeout === timers.setTimeout;
-        if (!globalEqualTimersTimeout) {
-            // if global.setTimeout not equal timers.setTimeout, check
+        if (!globalEqualTimersTimeout && !isMix) {
+            // 1. if isMix, then we are in mix environment such as Electron
+            // we should only patch timers.setTimeout because global.setTimeout
+            // have been patched
+            // 2. if global.setTimeout not equal timers.setTimeout, check
             // whether global.setTimeout use timers.setTimeout or not
             var originSetTimeout_1 = timers.setTimeout;
             timers.setTimeout = function () {
@@ -1679,6 +1587,12 @@ Zone.__load_patch('timers', function (global, Zone, api) {
     catch (error) {
         // timers module not exists, for example, when we using nativescript
         // timers is not available
+    }
+    if (isMix) {
+        // if we are in mix environment, such as Electron,
+        // the global.setTimeout has already been patched,
+        // so we just patch timers.setTimeout
+        return;
     }
     if (!globalUseTimeoutFromTimer) {
         // 1. global setTimeout equals timers setTimeout
@@ -1758,5 +1672,13 @@ Zone.__load_patch('crypto', function (global, Zone, api) {
         });
     }
 });
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 
 })));

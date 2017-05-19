@@ -27,8 +27,7 @@ Zone.__load_patch('notification', function (global, Zone, api) {
     if (!desc || !desc.configurable) {
         return;
     }
-    var patchOnProperties = Zone[Zone.__symbol__('patchOnProperties')];
-    patchOnProperties(Notification.prototype, null);
+    api.patchOnProperties(Notification.prototype, null);
 });
 
 })));

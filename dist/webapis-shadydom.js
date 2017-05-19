@@ -19,7 +19,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 Zone.__load_patch('shadydom', function (global, Zone, api) {
-    var patchEventTargetMethods = Zone[Zone.__symbol__('patchEventTargetMethods')];
     // https://github.com/angular/zone.js/issues/782
     // in web components, shadydom will patch addEventListener/removeEventListener of
     // Node.prototype and WindowPrototype, this will have conflict with zone.js
@@ -28,12 +27,12 @@ Zone.__load_patch('shadydom', function (global, Zone, api) {
     if (windowPrototype && windowPrototype.hasOwnProperty('addEventListener')) {
         windowPrototype[Zone.__symbol__('addEventListener')] = null;
         windowPrototype[Zone.__symbol__('removeEventListener')] = null;
-        patchEventTargetMethods(windowPrototype);
+        api.patchEventTargetMethods(windowPrototype);
     }
     if (Node.prototype.hasOwnProperty('addEventListener')) {
         Node.prototype[Zone.__symbol__('addEventListener')] = null;
         Node.prototype[Zone.__symbol__('removeEventListener')] = null;
-        patchEventTargetMethods(Node.prototype);
+        api.patchEventTargetMethods(Node.prototype);
     }
 });
 
