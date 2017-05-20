@@ -7,7 +7,7 @@
  */
 
 import {patchTimer} from '../common/timers';
-import {findEventTask, patchClass, patchEventTargetMethods, patchMethod, patchOnProperties, patchPrototype, zoneSymbol} from '../common/utils';
+import {findEventTask, patchClass, patchEventTargetMethods, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, zoneSymbol} from '../common/utils';
 
 import {propertyPatch} from './define-property';
 import {eventTargetPatch} from './event-target';
@@ -53,6 +53,16 @@ Zone.__load_patch('on_property', (global: any, Zone: ZoneType, api: _ZonePrivate
   propertyDescriptorPatch(global);
   propertyPatch();
   registerElementPatch(global);
+});
+
+Zone.__load_patch('canvas', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+  const HTMLCanvasElement = global['HTMLCanvasElement'];
+  if (typeof HTMLCanvasElement !== 'undefined' && HTMLCanvasElement.prototype &&
+      HTMLCanvasElement.prototype.toBlob) {
+    patchMacroTask(HTMLCanvasElement.prototype, 'toBlob', (self: any, args: any[]) => {
+      return {name: 'HTMLCanvasElement.toBlob', target: self, callbackIndex: 0, args: args};
+    });
+  }
 });
 
 Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
