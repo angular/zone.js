@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 Zone.__load_patch('notification', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  const Notification = _global['Notification'];
+  const Notification = global['Notification'];
   if (!Notification || !Notification.prototype) {
     return;
   }
