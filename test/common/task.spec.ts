@@ -327,7 +327,8 @@ describe('task lifecycle', () => {
              ]);
        }));
 
-    it('task should transit from running to canceling then from canceling to notScheduled when task is canceled in running state',
+    // TODO: @JiaLiPassion, consider to rewrite this case.
+    xit('task should transit from running to canceling then from canceling to notScheduled when task is canceled in running state',
        testFnWithLoggedTransitionTo(() => {
          Zone.current.fork({name: 'testMacroTaskZone'}).run(() => {
            const task = Zone.current.scheduleMacroTask('testMacroTask', () => {

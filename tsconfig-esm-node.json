@@ -21,6 +21,7 @@
     "build",
     "build-esm",
     "dist",
-    "lib/closure"
+    "lib/closure",
+    "test/node_async.ts"
   ]
 }

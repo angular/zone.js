@@ -313,6 +313,12 @@ interface ZoneType {
 type _PatchFn = (global: Window, Zone: ZoneType, api: _ZonePrivate) => void;
 
 /** @internal */
+interface BeforeRunTaskStatus {
+  reEntryGuard: boolean;
+  previousTask: Task;
+}
+
+/** @internal */
 interface _ZonePrivate {
   currentZoneFrame: () => _ZoneFrame;
   symbol: (name: string) => string;
@@ -327,7 +333,10 @@ interface _ZonePrivate {
       (target: any, name: string,
        patchFn: (delegate: Function, delegateName: string, name: string) =>
            (self: any, args: any[]) => any) => Function;
-  patchArguments: (target: any, name: string, source: string) => Function;
+  patchArguments: (target: any, name: string, source: string) => Function;         
+  beforeRunTask: (zone: Zone, task: Task) => void;
+  afterRunTask: (zone: Zone, task: Task) => void;
+  setAsyncContext: (asyncContext: any) => void;
 }
 
 /** @internal */
@@ -744,6 +753,9 @@ const Zone: ZoneType = (function(global: any) {
       try {
         return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
       } finally {
+        if (currentAsyncContext) {
+          return;
+        }
         _currentZoneFrame = _currentZoneFrame.parent;
       }
     }
@@ -766,8 +778,7 @@ const Zone: ZoneType = (function(global: any) {
       }
     }
 
-
-    runTask(task: Task, applyThis?: any, applyArgs?: any): any {
+    beforeRunTask(task: Task) {
       if (task.zone != this) {
         throw new Error(
             'A task can only be run in the zone of creation! (Creation: ' +
@@ -790,32 +801,62 @@ const Zone: ZoneType = (function(global: any) {
       const previousTask = _currentTask;
       _currentTask = task;
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
+      //(process as any)._rawDebug('currentFrame increase ', _currentZoneFrame && _currentZoneFrame.zone.name, task.source);
+      if (!task.data) {
+        task.data = {};
+      }
+      (task.data as any).beforeRunTaskStatus = {
+        reEntryGuard: reEntryGuard,
+        previousTask: previousTask
+      };
+    }
+
+    afterRunTask(task: Task) {
+      const beforeRunTaskStatus = task.data && (task.data as any).beforeRunTaskStatus;
+      if (!beforeRunTaskStatus) {
+        // eventTask and is not scheduled, should not run
+        return;
+      }
+      // if the task's state is notScheduled or unknown, then it has already been cancelled
+      // we should not reset the state to scheduled
+      if (task.state !== notScheduled && task.state !== unknown) {
+        if (task.type == eventTask || (task.data && task.data.isPeriodic)) {
+          beforeRunTaskStatus.reEntryGuard && (task as ZoneTask<any>)._transitionTo(scheduled, running);
+        } else {
+          task.runCount = 0;
+          this._updateTaskCount(task as ZoneTask<any>, -1);
+          beforeRunTaskStatus.reEntryGuard &&
+            (task as ZoneTask<any>)._transitionTo(notScheduled, running, notScheduled);
+        }
+      }
+      _currentZoneFrame = _currentZoneFrame.parent;
+      //(process as any)._rawDebug('currentFrame decrease ', _currentZoneFrame && _currentZoneFrame.zone.name, task.source);
+      _currentTask = beforeRunTaskStatus.previousTask;
+    }
+
+    invokeTask(task: Task, applyThis?: any, applyArgs?: any): any {
+      return this._zoneDelegate.invokeTask(this, task, applyThis, applyArgs);
+    }
+
+    invokeTaskGuarded(task: Task, applyThis?: any, applyArgs?: any): any {
+      try {
+        return this._zoneDelegate.invokeTask(this, task, applyThis, applyArgs);
+      } catch (error) {
+        if (this._zoneDelegate.handleError(this, error)) {
+          throw error;
+        }
+      }
+    }
+
+    runTask(task: Task, applyThis?: any, applyArgs?: any): any {
+      this.beforeRunTask(task);
       try {
         if (task.type == macroTask && task.data && !task.data.isPeriodic) {
           task.cancelFn = null;
         }
-        try {
-          return this._zoneDelegate.invokeTask(this, task, applyThis, applyArgs);
-        } catch (error) {
-          if (this._zoneDelegate.handleError(this, error)) {
-            throw error;
-          }
-        }
+        return this.invokeTaskGuarded(task, applyThis, applyArgs);
       } finally {
-        // if the task's state is notScheduled or unknown, then it has already been cancelled
-        // we should not reset the state to scheduled
-        if (task.state !== notScheduled && task.state !== unknown) {
-          if (task.type == eventTask || (task.data && task.data.isPeriodic)) {
-            reEntryGuard && (task as ZoneTask<any>)._transitionTo(scheduled, running);
-          } else {
-            task.runCount = 0;
-            this._updateTaskCount(task as ZoneTask<any>, -1);
-            reEntryGuard &&
-                (task as ZoneTask<any>)._transitionTo(notScheduled, running, notScheduled);
-          }
-        }
-        _currentZoneFrame = _currentZoneFrame.parent;
-        _currentTask = previousTask;
+        this.afterRunTask(task);
       }
     }
 
@@ -1308,6 +1349,8 @@ const Zone: ZoneType = (function(global: any) {
                    eventTask: 'eventTask' = 'eventTask';
 
   const patches: {[key: string]: any} = {};
+
+  let currentAsyncContext: any;
   const _api: _ZonePrivate = {
     symbol: __symbol__,
     currentZoneFrame: () => _currentZoneFrame,
@@ -1327,6 +1370,20 @@ const Zone: ZoneType = (function(global: any) {
         nativeMicroTaskQueuePromise = NativePromise.resolve(0);
       }
     },
+    beforeRunTask: (zone: Zone, task: Task) => {
+      return zone.beforeRunTask(task);
+    },
+    afterRunTask: (zone: Zone, task: Task) => {
+      return zone.afterRunTask(task);
+    },
+    setAsyncContext: (asyncContext: any) => {
+      currentAsyncContext = asyncContext;
+      if (asyncContext) {
+        _currentZoneFrame = {parent: _currentZoneFrame, zone: asyncContext.zone};
+      } else {
+        _currentZoneFrame = _currentZoneFrame.parent;
+      }
+    },
   };
   let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
   let _currentTask: Task = null;
@@ -1337,7 +1394,6 @@ const Zone: ZoneType = (function(global: any) {
   function __symbol__(name: string) {
     return '__zone_symbol__' + name;
   }
-
 
   performanceMeasure('Zone', 'Zone');
   return global['Zone'] = Zone;

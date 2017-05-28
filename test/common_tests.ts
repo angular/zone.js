@@ -11,7 +11,7 @@ import './common/zone.spec';
 import './common/task.spec';
 import './common/util.spec';
 import './common/Promise.spec';
-import './common/Error.spec';
+/*import './common/Error.spec';
 import './common/setInterval.spec';
 import './common/setTimeout.spec';
 import './common/toString.spec';
@@ -22,5 +22,6 @@ import './zone-spec/fake-async-test.spec';
 import './zone-spec/proxy.spec';
 import './zone-spec/task-tracking.spec';
 import './rxjs/rxjs.spec';
+*/
 
 Error.stackTraceLimit = Number.POSITIVE_INFINITY;

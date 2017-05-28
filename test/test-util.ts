@@ -109,3 +109,10 @@ export function isEdge() {
   const userAgent = navigator.userAgent.toLowerCase();
   return userAgent.indexOf('edge') !== -1;
 }
+
+export function isSupportAsyncHooks() {
+   if (global && (global as any)['__Zone_disable_ZoneAwarePromise']) {
+     return true;
+   }
+   return false;
+}

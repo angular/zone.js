@@ -9,4 +9,5 @@
 import '../zone';
 import '../common/promise';
 import '../common/to-string';
+import './async_hooks_promise';
 import './node';

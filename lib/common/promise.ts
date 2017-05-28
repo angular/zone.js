@@ -233,7 +233,8 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
     const delegate = (promise as any)[symbolState] ?
         (typeof onFulfilled === FUNCTION) ? onFulfilled : forwardResolution :
         (typeof onRejected === FUNCTION) ? onRejected : forwardRejection;
-    zone.scheduleMicroTask(source, () => {
+
+      zone.scheduleMicroTask(source, () => {
       try {
         resolvePromise(
             chainPromise, true, zone.run(delegate, undefined, [(promise as any)[symbolValue]]));
@@ -244,10 +245,15 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
   }
 
   const ZONE_AWARE_PROMISE_TO_STRING = 'function ZoneAwarePromise() { [native code] }';
+  type PROMISE = 'Promise';
 
   class ZoneAwarePromise<R> implements Promise<R> {
     static toString() {
       return ZONE_AWARE_PROMISE_TO_STRING;
+    }
+
+    get[Symbol.toStringTag]() {
+      return 'Promise' as PROMISE;
     }
 
     static resolve<R>(value: R): Promise<R> {
@@ -409,9 +415,13 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
     }
 
     Ctor.prototype.then = function(onResolve: any, onReject: any) {
+      const zone = this.zone;
       const wrapped = new ZoneAwarePromise((resolve, reject) => {
         originalThen.call(this, resolve, reject);
       });
+      if (zone) {
+        (wrapped as any).zone = zone;
+      }
       return wrapped.then(onResolve, onReject);
     };
     (Ctor as any)[symbolThenPatched] = true;

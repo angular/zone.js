@@ -13,6 +13,7 @@ import './test_fake_polyfill';
 // Setup tests for Zone without microtask support
 import '../lib/zone';
 import '../lib/common/promise';
+import '../lib/node/async_hooks_promise';
 import '../lib/common/to-string';
 import '../lib/node/node';
 import '../lib/zone-spec/async-test';
@@ -29,4 +30,4 @@ import './test-env-setup-jasmine';
 
 // List all tests here:
 import './common_tests';
-import './node_tests';
+//import './node_tests';
