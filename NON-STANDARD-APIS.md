@@ -42,13 +42,20 @@ Browser Usage:
 
 After those steps, window.Promise will become a ZoneAware Bluebird Promise.
 
-Node Usage:
+Node Sample Usage:
 
 ```
-require('zone-node.js');
+require('zone.js');
 const Bluebird = require('bluebird');
-require('zone-bluebird.js');
+require('zone.js/dist/zone-bluebird');
 Zone[Zone['__symbol__']('bluebird')](Bluebird);
+Zone.current.fork({
+  name: 'bluebird'
+}).run(() => {
+  Bluebird.resolve(1).then(r => {
+    console.log('result ', r, 'Zone', Zone.current.name);
+  });
+});
 ```
 
 In NodeJS environment, you can choose to use Bluebird Promise as global.Promise
