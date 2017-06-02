@@ -7,7 +7,7 @@
  */
 
 import {isBrowser, isMix, zoneSymbol} from '../../lib/common/utils';
-import {ifEnvSupports} from '../test-util';
+import {ifEnvSupports, ifEnvSupportsWithDone} from '../test-util';
 
 import Spy = jasmine.Spy;
 declare const global: any;
@@ -53,6 +53,17 @@ function supportEventListenerOptions() {
 }
 
 (supportEventListenerOptions as any).message = 'supportsEventListenerOptions';
+
+function supportCanvasTest() {
+  const HTMLCanvasElement = (window as any)['HTMLCanvasElement'];
+  const supportCanvas = typeof HTMLCanvasElement !== 'undefined' && HTMLCanvasElement.prototype &&
+      HTMLCanvasElement.prototype.toBlob;
+  const FileReader = (window as any)['FileReader'];
+  const supportFileReader = typeof FileReader !== 'undefined';
+  return supportCanvas && supportFileReader;
+}
+
+(supportCanvasTest as any).message = 'supportCanvasTest';
 
 describe('Zone', function() {
   const rootZone = Zone.current;
@@ -666,5 +677,45 @@ describe('Zone', function() {
            });
          }));
     });
+
+    it('HTMLCanvasElement.toBlob should be a ZoneAware MacroTask',
+       ifEnvSupportsWithDone(supportCanvasTest, (done: Function) => {
+         const canvas = document.createElement('canvas');
+         const d = canvas.width;
+         const ctx = canvas.getContext('2d');
+         ctx.beginPath();
+         ctx.moveTo(d / 2, 0);
+         ctx.lineTo(d, d);
+         ctx.lineTo(0, d);
+         ctx.closePath();
+         ctx.fillStyle = 'yellow';
+         ctx.fill();
+
+         const scheduleSpy = jasmine.createSpy('scheduleSpy');
+         const zone: Zone = Zone.current.fork({
+           name: 'canvas',
+           onScheduleTask:
+               (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task) => {
+                 scheduleSpy();
+                 return delegate.scheduleTask(targetZone, task);
+               }
+         });
+
+         zone.run(() => {
+           const canvasData = canvas.toDataURL();
+           canvas.toBlob(function(blob) {
+             expect(Zone.current.name).toEqual('canvas');
+             expect(scheduleSpy).toHaveBeenCalled();
+
+             const reader = new FileReader();
+             reader.readAsDataURL(blob);
+             reader.onloadend = function() {
+               const base64data = reader.result;
+               expect(base64data).toEqual(canvasData);
+               done();
+             };
+           });
+         });
+       }));
   });
 });
