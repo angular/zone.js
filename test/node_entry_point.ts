@@ -8,7 +8,7 @@
 
 // Must be loaded before zone loads, so that zone can detect WTF.
 import './wtf_mock';
-import './custom_error';
+import './test_fake_polyfill';
 
 // Setup tests for Zone without microtask support
 import '../lib/zone';
