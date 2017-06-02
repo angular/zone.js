@@ -10,7 +10,7 @@ Zone.__load_patch('mediaQuery', (global: any, Zone: ZoneType, api: _ZonePrivate)
     return;
   }
   api.patchEventTargetMethods(
-      _global['MediaQueryList'].prototype, 'addListener', 'removeListener',
+      global['MediaQueryList'].prototype, 'addListener', 'removeListener',
       (self: any, args: any[]) => {
         return {
           useCapturing: false,
