@@ -91,8 +91,11 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
       const data = <XHROptions>task.data;
       // remove existing event listener
       const listener = data.target[XHR_LISTENER];
+      const oriAddListener = data.target[zoneSymbol('addEventListener')];
+      const oriRemoveListener = data.target[zoneSymbol('removeEventListener')];
+
       if (listener) {
-        data.target.removeEventListener('readystatechange', listener);
+        oriRemoveListener.apply(data.target, ['readystatechange', listener]);
       }
       const newListener = data.target[XHR_LISTENER] = () => {
         if (data.target.readyState === data.target.DONE) {
@@ -104,7 +107,7 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
           }
         }
       };
-      data.target.addEventListener('readystatechange', newListener);
+      oriAddListener.apply(data.target, ['readystatechange', newListener]);
 
       const storedTask: Task = data.target[XHR_TASK];
       if (!storedTask) {

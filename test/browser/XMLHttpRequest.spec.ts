@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {ifEnvSupports} from '../test-util';
+import {ifEnvSupports, supportPatchXHROnProperty} from '../test-util';
 
 describe('XMLHttpRequest', function() {
   let testZone: Zone;
@@ -26,14 +26,14 @@ describe('XMLHttpRequest', function() {
         // The last entry in the log should be the invocation for the current onload,
         // which will vary depending on browser environment. The prior entries
         // should be the invocation of the send macrotask.
-        expect(wtfMock.log[wtfMock.log.length - 5])
-            .toMatch(/\> Zone\:invokeTask.*addEventListener\:readystatechange/);
-        expect(wtfMock.log[wtfMock.log.length - 4])
-            .toEqual('> Zone:invokeTask:XMLHttpRequest.send("<root>::ProxyZone::WTF::TestZone")');
         expect(wtfMock.log[wtfMock.log.length - 3])
-            .toEqual('< Zone:invokeTask:XMLHttpRequest.send');
+            .toEqual('> Zone:invokeTask:XMLHttpRequest.send("<root>::ProxyZone::WTF::TestZone")');
         expect(wtfMock.log[wtfMock.log.length - 2])
-            .toMatch(/\< Zone\:invokeTask.*addEventListener\:readystatechange/);
+            .toEqual('< Zone:invokeTask:XMLHttpRequest.send');
+        if (supportPatchXHROnProperty()) {
+          expect(wtfMock.log[wtfMock.log.length - 1])
+              .toMatch(/\> Zone\:invokeTask.*addEventListener\:load/);
+        }
         done();
       };
 
@@ -42,6 +42,32 @@ describe('XMLHttpRequest', function() {
       const lastScheduled = wtfMock.log[wtfMock.log.length - 1];
       expect(lastScheduled).toMatch('# Zone:schedule:macroTask:XMLHttpRequest.send');
     }, null, null, 'unit-test');
+  });
+
+  it('should not trigger Zone callback of internal onreadystatechange', function(done) {
+    const scheduleSpy = jasmine.createSpy('schedule');
+    const xhrZone = Zone.current.fork({
+      name: 'xhr',
+      onScheduleTask: (delegate: ZoneDelegate, currentZone: Zone, targetZone, task: Task) => {
+        if (task.type === 'eventTask') {
+          scheduleSpy(task.source);
+        }
+        return delegate.scheduleTask(targetZone, task);
+      }
+    });
+
+    xhrZone.run(() => {
+      const req = new XMLHttpRequest();
+      req.onload = function() {
+        expect(Zone.current.name).toEqual('xhr');
+        if (supportPatchXHROnProperty()) {
+          expect(scheduleSpy).toHaveBeenCalled();
+        }
+        done();
+      };
+      req.open('get', '/', true);
+      req.send();
+    });
   });
 
   it('should work with onreadystatechange', function(done) {

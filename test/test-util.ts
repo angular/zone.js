@@ -57,3 +57,14 @@ function _runTest(test: any, block: Function, done: Function) {
     });
   }
 }
+
+export function supportPatchXHROnProperty() {
+  let desc = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'onload');
+  if (!desc && (window as any)['XMLHttpRequestEventTarget']) {
+    desc = Object.getOwnPropertyDescriptor(global['XMLHttpRequestEventTarget'].prototype, 'onload');
+  }
+  if (!desc || !desc.configurable) {
+    return false;
+  }
+  return true;
+}
