@@ -74,6 +74,24 @@ remove the comment of the following line
 //import './extra/bluebird.spec';
 ```
 
+## Others
+
+* Cordova 
+
+patch `cordova.exec` API
+
+`cordova.exec(success, error, service, action, args);` 
+
+`success` and `error` will be patched with `Zone.wrap`.
+
+to load the patch, you should load in the following order.
+
+```
+<script src="zone.js"></script>
+<script src="cordova.js"></script>
+<script src="zone-patch-cordova.js"></script>
+```
+
 ## Usage
 
 By default, those APIs' support will not be loaded in zone.js or zone-node.js,
