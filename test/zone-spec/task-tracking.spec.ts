@@ -8,6 +8,8 @@
 
 import '../../lib/zone-spec/task-tracking';
 
+import {supportPatchXHROnProperty} from '../test-util';
+
 declare const global: any;
 
 describe('TaskTrackingZone', function() {
@@ -47,7 +49,9 @@ describe('TaskTrackingZone', function() {
             setTimeout(() => {
               expect(taskTrackingZoneSpec.macroTasks.length).toBe(0);
               expect(taskTrackingZoneSpec.microTasks.length).toBe(0);
-              expect(taskTrackingZoneSpec.eventTasks.length).not.toBe(0);
+              if (supportPatchXHROnProperty()) {
+                expect(taskTrackingZoneSpec.eventTasks.length).not.toBe(0);
+              }
               taskTrackingZoneSpec.clearEvents();
               expect(taskTrackingZoneSpec.eventTasks.length).toBe(0);
               done();
