@@ -610,7 +610,8 @@ var Zone$1 = (function (global) {
         scheduleMicroTask: scheduleMicroTask,
         showUncaughtError: function () { return !Zone[__symbol__('ignoreConsoleErrorUncaughtError')]; },
         patchEventTargetMethods: function () { return false; },
-        patchOnProperties: noop
+        patchOnProperties: noop,
+        patchMethod: function () { return noop; }
     };
     var _currentZoneFrame = { parent: null, zone: new Zone(null, null) };
     var _currentTask = null;
@@ -1342,8 +1343,14 @@ Zone.__load_patch('toString', function (global, Zone, api) {
     var originalFunctionToString = Function.prototype.toString;
     Function.prototype.toString = function () {
         if (typeof this === 'function') {
-            if (this[zoneSymbol('OriginalDelegate')]) {
-                return originalFunctionToString.apply(this[zoneSymbol('OriginalDelegate')], arguments);
+            var originalDelegate = this[zoneSymbol('OriginalDelegate')];
+            if (originalDelegate) {
+                if (typeof originalDelegate === 'function') {
+                    return originalFunctionToString.apply(this[zoneSymbol('OriginalDelegate')], arguments);
+                }
+                else {
+                    return Object.prototype.toString.call(originalDelegate);
+                }
             }
             if (this === Promise) {
                 var nativePromise = global[zoneSymbol('Promise')];

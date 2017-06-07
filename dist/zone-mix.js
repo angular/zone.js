@@ -610,7 +610,8 @@ var Zone$1 = (function (global) {
         scheduleMicroTask: scheduleMicroTask,
         showUncaughtError: function () { return !Zone[__symbol__('ignoreConsoleErrorUncaughtError')]; },
         patchEventTargetMethods: function () { return false; },
-        patchOnProperties: noop
+        patchOnProperties: noop,
+        patchMethod: function () { return noop; }
     };
     var _currentZoneFrame = { parent: null, zone: new Zone(null, null) };
     var _currentTask = null;
@@ -1556,8 +1557,14 @@ Zone.__load_patch('toString', function (global, Zone, api) {
     var originalFunctionToString = Function.prototype.toString;
     Function.prototype.toString = function () {
         if (typeof this === 'function') {
-            if (this[zoneSymbol('OriginalDelegate')]) {
-                return originalFunctionToString.apply(this[zoneSymbol('OriginalDelegate')], arguments);
+            var originalDelegate = this[zoneSymbol('OriginalDelegate')];
+            if (originalDelegate) {
+                if (typeof originalDelegate === 'function') {
+                    return originalFunctionToString.apply(this[zoneSymbol('OriginalDelegate')], arguments);
+                }
+                else {
+                    return Object.prototype.toString.call(originalDelegate);
+                }
             }
             if (this === Promise) {
                 var nativePromise = global[zoneSymbol('Promise')];
@@ -2278,6 +2285,15 @@ Zone.__load_patch('on_property', function (global, Zone, api) {
     propertyPatch();
     registerElementPatch(global);
 });
+Zone.__load_patch('canvas', function (global, Zone, api) {
+    var HTMLCanvasElement = global['HTMLCanvasElement'];
+    if (typeof HTMLCanvasElement !== 'undefined' && HTMLCanvasElement.prototype &&
+        HTMLCanvasElement.prototype.toBlob) {
+        patchMacroTask(HTMLCanvasElement.prototype, 'toBlob', function (self, args) {
+            return { name: 'HTMLCanvasElement.toBlob', target: self, callbackIndex: 0, args: args };
+        });
+    }
+});
 Zone.__load_patch('XHR', function (global, Zone, api) {
     // Treat XMLHTTPRequest as a macrotask.
     patchXHR(global);
@@ -2295,8 +2311,10 @@ Zone.__load_patch('XHR', function (global, Zone, api) {
             var data = task.data;
             // remove existing event listener
             var listener = data.target[XHR_LISTENER];
+            var oriAddListener = data.target[zoneSymbol('addEventListener')];
+            var oriRemoveListener = data.target[zoneSymbol('removeEventListener')];
             if (listener) {
-                data.target.removeEventListener('readystatechange', listener);
+                oriRemoveListener.apply(data.target, ['readystatechange', listener]);
             }
             var newListener = data.target[XHR_LISTENER] = function () {
                 if (data.target.readyState === data.target.DONE) {
@@ -2308,7 +2326,7 @@ Zone.__load_patch('XHR', function (global, Zone, api) {
                     }
                 }
             };
-            data.target.addEventListener('readystatechange', newListener);
+            oriAddListener.apply(data.target, ['readystatechange', newListener]);
             var storedTask = data.target[XHR_TASK];
             if (!storedTask) {
                 data.target[XHR_TASK] = task;
@@ -2390,6 +2408,7 @@ Zone.__load_patch('PromiseRejectionEvent', function (global, Zone, api) {
 Zone.__load_patch('util', function (global, Zone, api) {
     api.patchEventTargetMethods = patchEventTargetMethods;
     api.patchOnProperties = patchOnProperties;
+    api.patchMethod = patchMethod;
 });
 
 /**

@@ -22,7 +22,7 @@ Zone.__load_patch('mediaQuery', function (global, Zone, api) {
     if (!global['MediaQueryList']) {
         return;
     }
-    api.patchEventTargetMethods(_global['MediaQueryList'].prototype, 'addListener', 'removeListener', function (self, args) {
+    api.patchEventTargetMethods(global['MediaQueryList'].prototype, 'addListener', 'removeListener', function (self, args) {
         return {
             useCapturing: false,
             eventName: 'mediaQuery',

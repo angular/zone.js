@@ -1,3 +1,22 @@
+<a name="0.8.12"></a>
+## [0.8.12](https://github.com/angular/zone.js/compare/v0.8.11...0.8.12) (2017-06-07)
+
+
+### Bug Fixes
+
+* **doc:** fix [#793](https://github.com/angular/zone.js/issues/793), fix confuseing bluebird patch doc ([#794](https://github.com/angular/zone.js/issues/794)) ([0c5da04](https://github.com/angular/zone.js/commit/0c5da04))
+* **patch:** fix [#791](https://github.com/angular/zone.js/issues/791), fix mediaQuery/Notification patch uses wrong global ([#792](https://github.com/angular/zone.js/issues/792)) ([67634ae](https://github.com/angular/zone.js/commit/67634ae))
+* **toString:** fix [#802](https://github.com/angular/zone.js/issues/802), fix ios 9 MutationObserver toString error ([#803](https://github.com/angular/zone.js/issues/803)) ([68aa03e](https://github.com/angular/zone.js/commit/68aa03e))
+* **xhr:** inner onreadystatechange should not triigger Zone callback ([#800](https://github.com/angular/zone.js/issues/800)) ([7bd1418](https://github.com/angular/zone.js/commit/7bd1418))
+
+
+### Features
+
+* **patch:** fix [#696](https://github.com/angular/zone.js/issues/696), patch HTMLCanvasElement.toBlob as MacroTask ([#788](https://github.com/angular/zone.js/issues/788)) ([7ca3995](https://github.com/angular/zone.js/commit/7ca3995))
+* **patch:** fix [#758](https://github.com/angular/zone.js/issues/758), patch cordova.exec success/error with zone.wrap ([#789](https://github.com/angular/zone.js/issues/789)) ([857929d](https://github.com/angular/zone.js/commit/857929d))
+
+
+
 <a name="0.8.11"></a>
 ## [0.8.11](https://github.com/angular/zone.js/compare/v0.8.10...0.8.11) (2017-05-19)
 
