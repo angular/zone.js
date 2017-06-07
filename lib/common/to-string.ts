@@ -14,8 +14,13 @@ Zone.__load_patch('toString', (global: any, Zone: ZoneType, api: _ZonePrivate) =
   const originalFunctionToString = Function.prototype.toString;
   Function.prototype.toString = function() {
     if (typeof this === 'function') {
-      if (this[zoneSymbol('OriginalDelegate')]) {
-        return originalFunctionToString.apply(this[zoneSymbol('OriginalDelegate')], arguments);
+      const originalDelegate = this[zoneSymbol('OriginalDelegate')];
+      if (originalDelegate) {
+        if (typeof originalDelegate === 'function') {
+          return originalFunctionToString.apply(this[zoneSymbol('OriginalDelegate')], arguments);
+        } else {
+          return Object.prototype.toString.call(originalDelegate);
+        }
       }
       if (this === Promise) {
         const nativePromise = global[zoneSymbol('Promise')];

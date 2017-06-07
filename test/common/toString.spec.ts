@@ -17,6 +17,18 @@ describe('global function patch', () => {
       expect(Function.prototype.toString.call(setTimeout))
           .toEqual(Function.prototype.toString.call(g[zoneSymbol('setTimeout')]));
     });
+
+    it('MutationObserver toString should be the same with native version',
+       ifEnvSupports('MutationObserver', () => {
+         const nativeMutationObserver = g[zoneSymbol('MutationObserver')];
+         if (typeof nativeMutationObserver === 'function') {
+           expect(Function.prototype.toString.call(g['MutationObserver']))
+               .toEqual(Function.prototype.toString.call(nativeMutationObserver));
+         } else {
+           expect(Function.prototype.toString.call(g['MutationObserver']))
+               .toEqual(Object.prototype.toString.call(nativeMutationObserver));
+         }
+       }));
   });
 
   describe('isNative', () => {
