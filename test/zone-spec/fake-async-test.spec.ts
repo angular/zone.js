@@ -516,6 +516,45 @@ describe('FakeAsyncTestZoneSpec', () => {
     });
   });
 
+  describe('requestAnimationFrame', () => {
+    const functions =
+        ['requestAnimationFrame', 'webkitRequestAnimationFrame', 'mozRequestAnimationFrame'];
+    functions.forEach((fnName) => {
+      describe(fnName, ifEnvSupports(fnName, () => {
+                 it('should schedule a requestAnimationFrame with timeout of 16ms', () => {
+                   fakeAsyncTestZone.run(() => {
+                     let ran = false;
+                     requestAnimationFrame(() => {
+                       ran = true;
+                     });
+
+                     testZoneSpec.tick(6);
+                     expect(ran).toEqual(false);
+
+                     testZoneSpec.tick(10);
+                     expect(ran).toEqual(true);
+                   });
+                 });
+                 it('should cancel a scheduled requestAnimatiomFrame', () => {
+                   fakeAsyncTestZone.run(() => {
+                     let ran = false;
+                     const id = requestAnimationFrame(() => {
+                       ran = true;
+                     });
+
+                     testZoneSpec.tick(6);
+                     expect(ran).toEqual(false);
+
+                     cancelAnimationFrame(id);
+
+                     testZoneSpec.tick(10);
+                     expect(ran).toEqual(false);
+                   });
+                 });
+               }));
+    });
+  });
+
   describe('XHRs', ifEnvSupports('XMLHttpRequest', () => {
              it('should throw an exception if an XHR is initiated in the zone', () => {
                expect(() => {

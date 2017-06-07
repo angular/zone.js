@@ -297,8 +297,15 @@
               break;
             case 'XMLHttpRequest.send':
               throw new Error('Cannot make XHRs from within a fake async test.');
+            case 'requestAnimationFrame':
+            case 'webkitRequestAnimationFrame':
+            case 'mozRequestAnimationFrame':
+              // Simulate a requestAnimationFrame by using a setTimeout with 16 ms.
+              // (60 frames per second)
+              task.data['handleId'] = this._setTimeout(task.invoke, 16, (task.data as any)['args']);
+              break;
             default:
-              task = delegate.scheduleTask(target, task);
+              throw new Error('Unknown macroTask scheduled in fake async test: ' + task.source);
           }
           break;
         case 'eventTask':
@@ -311,6 +318,9 @@
     onCancelTask(delegate: ZoneDelegate, current: Zone, target: Zone, task: Task): any {
       switch (task.source) {
         case 'setTimeout':
+        case 'requestAnimationFrame':
+        case 'webkitRequestAnimationFrame':
+        case 'mozRequestAnimationFrame':
           return this._clearTimeout(task.data['handleId']);
         case 'setInterval':
           return this._clearInterval(task.data['handleId']);
