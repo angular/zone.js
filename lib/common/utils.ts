@@ -14,7 +14,7 @@
 // Hack since TypeScript isn't compiling this for a worker.
 declare const WorkerGlobalScope: any;
 
-export const zoneSymbol: (name: string) => string = (n) => `__zone_symbol__${n}`;
+export const zoneSymbol = Zone.__symbol__;
 const _global: any =
     typeof window === 'object' && window || typeof self === 'object' && self || global;
 
