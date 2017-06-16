@@ -365,7 +365,10 @@ export function makeZoneAwareAddListener(
       // In cross site contexts (such as WebDriver frameworks like Selenium),
       // accessing the handler object here will cause an exception to be thrown which
       // will fail tests prematurely.
-      validZoneHandler = data.handler && data.handler.toString() === '[object FunctionWrapper]';
+      if (data.handler) {
+        const testString = data.handler.toString(); 
+        validZoneHandler = (testString === '[object FunctionWrapper]' || testString == 'function __BROWSERTOOLS_CONSOLE_SAFEFUNC() { [native code] }');
+      }
     } catch (error) {
       // we can still try to add the data.handler even we are in cross site context
       data.crossContext = true;
@@ -417,7 +420,10 @@ export function makeZoneAwareRemoveListener(
       // In cross site contexts (such as WebDriver frameworks like Selenium),
       // accessing the handler object here will cause an exception to be thrown which
       // will fail tests prematurely.
-      validZoneHandler = data.handler && data.handler.toString() === '[object FunctionWrapper]';
+      if (data.handler) {
+        const testString = data.handler.toString(); 
+        validZoneHandler = (testString === '[object FunctionWrapper]' || testString == 'function __BROWSERTOOLS_CONSOLE_SAFEFUNC() { [native code] }');
+      }
     } catch (error) {
       data.crossContext = true;
       return data.invokeRemoveFunc(symbol, data.handler);
