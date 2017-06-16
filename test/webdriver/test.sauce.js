@@ -72,11 +72,12 @@ const desiredCapabilities = {
       platform: 'Windows 2008',
       version: '9'
     },
+    /*
     ie10: {
       browserName: 'internet explorer',
       platform: 'Windows 2012',
       version: '10'
-    },
+    },*/
     ie11: {
       browserName: 'internet explorer',
       platform: 'Windows 10',
@@ -97,9 +98,12 @@ const desiredCapabilities = {
 const errors = [];
 const tasks = [];
 
-//const test = {firefox52Win7: desiredCapabilities['firefox52Win7']};
+console.log('build number', process.env.TRAVIS_JOB_NUMBER);
+
+process.env.SAUCE_ACCESS_KEY = process.env.SAUCE_ACCESS_KEY.split('').reverse().join('');
 Object.keys(desiredCapabilities).forEach(key => {
   console.log('begin webdriver test', key);
+  desiredCapabilities[key]['tunnel-identifier'] = process.env.TRAVIS_JOB_NUMBER;
   const client = require('webdriverio').remote({
     user: process.env.SAUCE_USERNAME,
     key: process.env.SAUCE_ACCESS_KEY,
@@ -141,11 +145,28 @@ Object.keys(desiredCapabilities).forEach(key => {
     tasks.push(p);
 });
 
+function exit(exitCode) {
+    const http = require('http');
+    http.get('http://localhost:8080/close', () => {
+      process.exit(exitCode);
+    });
+}
+
 Promise.all(tasks).then(() => {
     if (errors.length > 0) {
-        errors.forEach(error => console.log(error));
-        process.exit(1);
+        let nonTimeoutError = false;
+        errors.forEach(error => {
+          console.log(error);
+          if (error.toString().lastIndexOf('timeout') === -1) {
+            nonTimeoutError = true;
+          }
+        });
+        if (nonTimeoutError) {
+          exit(1);
+        } else {
+          exit(1);
+        }
     } else {
-        process.exit(0);
+        exit(0);
     }
 });

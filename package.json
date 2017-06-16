@@ -24,8 +24,8 @@
     "lint": "gulp lint",
     "prepublish": "tsc && gulp build",
     "promisetest": "gulp promisetest",
-    "webdriver-start": "webdriver-manager update && webdriver-manager start && lite-server -c ./test/webdriver/server.conf.js && node test/webdriver/test.js",
-    "webdriver-http": "http-server .",
+    "webdriver-start": "webdriver-manager update && webdriver-manager start",
+    "webdriver-http": "node simple-server.js",
     "webdriver-test": "node test/webdriver/test.js",
     "webdriver-sauce-test": "node test/webdriver/test-sauce.js",
     "ws-client": "node ./test/ws-client.js",
@@ -48,7 +48,9 @@
   "bugs": {
     "url": "https://github.com/angular/zone.js/issues"
   },
-  "dependencies": {},
+  "dependencies": {
+    "ghooks": "^2.0.0"
+  },
   "devDependencies": {
     "@types/jasmine": "2.2.33",
     "@types/node": "^6.0.38",
@@ -67,7 +69,6 @@
     "gulp-tslint": "^7.0.1",
     "gulp-uglify": "^1.2.0",
     "gulp-util": "^3.0.7",
-    "http-server": "^0.10.0",
     "jasmine": "^2.4.1",
     "jasmine-core": "^2.2.0",
     "karma": "^0.13.14",
