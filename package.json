@@ -19,7 +19,7 @@
     "closure:test": "scripts/closure/closure_compiler.sh",
     "format": "gulp format:enforce",
     "karma-jasmine": "karma start karma-build-jasmine.conf.js",
-    "karma-jasmine:single": "karma start karma-build-jasmine.conf.json --single-run",
+    "karma-jasmine:single": "karma start karma-build-jasmine.conf.js --single-run",
     "karma-jasmine:autoclose": "npm run karma-jasmine:single && npm run ws-client",
     "lint": "gulp lint",
     "prepublish": "tsc && gulp build",
@@ -27,7 +27,7 @@
     "webdriver-start": "webdriver-manager update && webdriver-manager start",
     "webdriver-http": "node simple-server.js",
     "webdriver-test": "node test/webdriver/test.js",
-    "webdriver-sauce-test": "node test/webdriver/test-sauce.js",
+    "webdriver-sauce-test": "node test/webdriver/test.sauce.js",
     "ws-client": "node ./test/ws-client.js",
     "ws-server": "node ./test/ws-server.js",
     "tsc": "tsc",
@@ -48,9 +48,7 @@
   "bugs": {
     "url": "https://github.com/angular/zone.js/issues"
   },
-  "dependencies": {
-    "ghooks": "^2.0.0"
-  },
+  "dependencies": {},
   "devDependencies": {
     "@types/jasmine": "2.2.33",
     "@types/node": "^6.0.38",

@@ -6,15 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-// TODO: @JiaLiPassion, try to add it into travis/saucelabs test after saucelabs support Firefox 52+
-// requirement, Firefox 52+, webdriver-manager 12.0.4+, selenium-webdriver 3.3.0+
-// test step,
-// webdriver-manager update
-// webdriver-manager start
-// http-server test/webdriver
-// node test/webdriver/test.js
-
-// testcase1: removeEventHandler in firefox cross site context
 const webdriverio = require('webdriverio');
 const desiredCapabilities = {
     firefox52Win7: {
@@ -67,11 +58,12 @@ const desiredCapabilities = {
       platform: 'OS X 10.10',
       version: '10.2'
     },
+    /*
     ie9: {
       browserName: 'internet explorer',
       platform: 'Windows 2008',
       version: '9'
-    },
+    },*/
     /*
     ie10: {
       browserName: 'internet explorer',
@@ -98,12 +90,15 @@ const desiredCapabilities = {
 const errors = [];
 const tasks = [];
 
-console.log('build number', process.env.TRAVIS_JOB_NUMBER);
+if (process.env.TRAVIS) {
+  process.env.SAUCE_ACCESS_KEY = process.env.SAUCE_ACCESS_KEY.split('').reverse().join('');
+}
 
-process.env.SAUCE_ACCESS_KEY = process.env.SAUCE_ACCESS_KEY.split('').reverse().join('');
 Object.keys(desiredCapabilities).forEach(key => {
   console.log('begin webdriver test', key);
-  desiredCapabilities[key]['tunnel-identifier'] = process.env.TRAVIS_JOB_NUMBER;
+  if (process.env.TRAVIS) {
+    desiredCapabilities[key]['tunnel-identifier'] = process.env.TRAVIS_JOB_NUMBER;
+  }
   const client = require('webdriverio').remote({
     user: process.env.SAUCE_USERNAME,
     key: process.env.SAUCE_ACCESS_KEY,
@@ -114,12 +109,12 @@ Object.keys(desiredCapabilities).forEach(key => {
 
   const p = client
     .init()
-    .timeouts('script', 30000)
+    .timeouts('script', 60000)
     .url('http://localhost:8080/test/webdriver/test.html')
     .executeAsync(function(done) { window.setTimeout(done,1000) })
     .execute(function() 
       {
-        var elem = document.getElementById('thetext');
+        const elem = document.getElementById('thetext');
         const zone = window['Zone'] ? Zone.current.fork({name: 'webdriver'}) : null;
         if (zone) {
             zone.run(function() {
@@ -164,7 +159,7 @@ Promise.all(tasks).then(() => {
         if (nonTimeoutError) {
           exit(1);
         } else {
-          exit(1);
+          exit(0);
         }
     } else {
         exit(0);

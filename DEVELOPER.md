@@ -58,3 +58,28 @@ You can also add the script into your git pre-commit hook
 echo -e 'exec npm run ci' > .git/hooks/pre-commit
 chmod u+x .git/hooks/pre-commit 
 ```
+
+Webdriver Test
+--------------
+
+Now `zone.js` also support run webdriver e2e test.
+
+1. run locally
+
+```
+npm run webdriver-start
+npm run webdriver-http
+npm run webdriver-test
+```
+
+2. run locally with sauce connect
+
+```
+// export SAUCE_USERNAME and SAUCE_ACCESS_KEY
+export SAUCE_USERNAME=XXXX
+export SAUCE_ACCESS_KEY=XXX
+
+sc -u $SAUCE_USERNAME -k $SAUCE_ACCESS_KEY
+npm run webdriver-http
+npm run webdriver-sauce-test
+```
