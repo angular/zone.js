@@ -313,209 +313,316 @@ describe('Zone', function() {
         expect(eventListenerSpy).not.toHaveBeenCalled();
       });
 
-      it('should support addEventListener/removeEventListener with AddEventListenerOptions with capture setting',
-         ifEnvSupports(supportEventListenerOptions, function() {
-           let hookSpy = jasmine.createSpy('hook');
-           let cancelSpy = jasmine.createSpy('cancel');
-           const logs: string[] = [];
-           const zone = rootZone.fork({
-             name: 'spy',
-             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
-               hookSpy();
-               return parentZoneDelegate.scheduleTask(targetZone, task);
-             },
-             onCancelTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                            task: Task): any => {
-               cancelSpy();
-               return parentZoneDelegate.cancelTask(targetZone, task);
-             }
-           });
+      describe(
+          'should support addEventListener/removeEventListener with AddEventListenerOptions with capture setting',
+          ifEnvSupports(supportEventListenerOptions, function() {
+            let hookSpy: Spy;
+            let cancelSpy: Spy;
+            let logs: string[];
+            const zone = rootZone.fork({
+              name: 'spy',
+              onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone,
+                               targetZone: Zone, task: Task): any => {
+                hookSpy();
+                return parentZoneDelegate.scheduleTask(targetZone, task);
+              },
+              onCancelTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                             task: Task): any => {
+                cancelSpy();
+                return parentZoneDelegate.cancelTask(targetZone, task);
+              }
+            });
 
-           const docListener = () => {
-             logs.push('document');
-           };
-           const btnListener = () => {
-             logs.push('button');
-           };
+            const docListener = () => {
+              logs.push('document');
+            };
+            const btnListener = () => {
+              logs.push('button');
+            };
 
-           // test capture true
-           zone.run(function() {
-             (document as any).addEventListener('click', docListener, {capture: true});
-             button.addEventListener('click', btnListener);
-           });
+            beforeEach(() => {
+              logs = [];
+              hookSpy = jasmine.createSpy('hook');
+              cancelSpy = jasmine.createSpy('cancel');
+            });
 
-           button.dispatchEvent(clickEvent);
-           expect(hookSpy).toHaveBeenCalled();
+            it('should handle child event when addEventListener with capture true', () => {
+              // test capture true
+              zone.run(function() {
+                (document as any).addEventListener('click', docListener, {capture: true});
+                button.addEventListener('click', btnListener);
+              });
 
-           expect(logs).toEqual(['document', 'button']);
-           logs.splice(0);
+              button.dispatchEvent(clickEvent);
+              expect(hookSpy).toHaveBeenCalled();
 
-           (document as any).removeEventListener('click', docListener, {capture: true});
-           button.removeEventListener('click', btnListener);
-           expect(cancelSpy).toHaveBeenCalled();
+              expect(logs).toEqual(['document', 'button']);
+              logs = [];
 
-           button.dispatchEvent(clickEvent);
-           expect(logs).toEqual([]);
+              (document as any).removeEventListener('click', docListener, {capture: true});
+              button.removeEventListener('click', btnListener);
+              expect(cancelSpy).toHaveBeenCalled();
 
-           hookSpy = jasmine.createSpy('hook');
-           cancelSpy = jasmine.createSpy('cancel');
+              button.dispatchEvent(clickEvent);
+              expect(logs).toEqual([]);
+            });
 
-           // test capture false
-           zone.run(function() {
-             (document as any).addEventListener('click', docListener, {capture: false});
-             button.addEventListener('click', btnListener);
-           });
+            it('should handle child event when addEventListener with capture true', () => {
+              // test capture false
+              zone.run(function() {
+                (document as any).addEventListener('click', docListener, {capture: false});
+                button.addEventListener('click', btnListener);
+              });
 
-           button.dispatchEvent(clickEvent);
-           expect(hookSpy).toHaveBeenCalled();
-           expect(logs).toEqual(['button', 'document']);
-           logs.splice(0);
+              button.dispatchEvent(clickEvent);
+              expect(hookSpy).toHaveBeenCalled();
+              expect(logs).toEqual(['button', 'document']);
+              logs = [];
 
-           (document as any).removeEventListener('click', docListener, {capture: false});
-           button.removeEventListener('click', btnListener);
-           expect(cancelSpy).toHaveBeenCalled();
+              (document as any).removeEventListener('click', docListener, {capture: false});
+              button.removeEventListener('click', btnListener);
+              expect(cancelSpy).toHaveBeenCalled();
 
-           button.dispatchEvent(clickEvent);
-           expect(logs).toEqual([]);
-         }));
+              button.dispatchEvent(clickEvent);
+              expect(logs).toEqual([]);
+            });
 
-      it('should support mix useCapture with AddEventListenerOptions capture',
-         ifEnvSupports(supportEventListenerOptions, function() {
-           let hookSpy = jasmine.createSpy('hook');
-           let cancelSpy = jasmine.createSpy('cancel');
-           const logs: string[] = [];
-           const zone = rootZone.fork({
-             name: 'spy',
-             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
-               hookSpy();
-               return parentZoneDelegate.scheduleTask(targetZone, task);
-             },
-             onCancelTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                            task: Task): any => {
-               cancelSpy();
-               return parentZoneDelegate.cancelTask(targetZone, task);
-             }
-           });
+          }));
 
-           const docListener = () => {
-             logs.push('document options');
-           };
-           const docListener1 = () => {
-             logs.push('document useCapture');
-           };
-           const btnListener = () => {
-             logs.push('button');
-           };
+      describe(
+          'should ignore duplicate event handler',
+          ifEnvSupports(supportEventListenerOptions, function() {
+            let hookSpy: Spy;
+            let cancelSpy: Spy;
+            let logs: string[];
+            const zone = rootZone.fork({
+              name: 'spy',
+              onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone,
+                               targetZone: Zone, task: Task): any => {
+                hookSpy();
+                return parentZoneDelegate.scheduleTask(targetZone, task);
+              },
+              onCancelTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                             task: Task): any => {
+                cancelSpy();
+                return parentZoneDelegate.cancelTask(targetZone, task);
+              }
+            });
 
-           // test capture true
-           zone.run(function() {
-             (document as any).addEventListener('click', docListener, {capture: true});
-             document.addEventListener('click', docListener1, true);
-             button.addEventListener('click', btnListener);
-           });
+            const docListener = () => {
+              logs.push('document options');
+            };
 
-           button.dispatchEvent(clickEvent);
-           expect(hookSpy).toHaveBeenCalled();
-           expect(logs).toEqual(['document options', 'document useCapture', 'button']);
-           logs.splice(0);
+            beforeEach(() => {
+              logs = [];
+              hookSpy = jasmine.createSpy('hook');
+              cancelSpy = jasmine.createSpy('cancel');
+            });
 
-           (document as any).removeEventListener('click', docListener, {capture: true});
-           document.removeEventListener('click', docListener1, true);
-           button.removeEventListener('click', btnListener);
-           expect(cancelSpy).toHaveBeenCalled();
+            const testDuplicate = function(args1?: any, args2?: any) {
+              zone.run(function() {
+                if (args1) {
+                  (document as any).addEventListener('click', docListener, args1);
+                } else {
+                  (document as any).addEventListener('click', docListener);
+                }
+                if (args2) {
+                  (document as any).addEventListener('click', docListener, args2);
+                } else {
+                  (document as any).addEventListener('click', docListener);
+                }
+              });
 
-           button.dispatchEvent(clickEvent);
-           expect(logs).toEqual([]);
+              button.dispatchEvent(clickEvent);
+              expect(hookSpy).toHaveBeenCalled();
+              expect(logs).toEqual(['document options']);
+              logs = [];
 
-           hookSpy = jasmine.createSpy('hook');
-           cancelSpy = jasmine.createSpy('cancel');
-           // test removeEventListener by options which was added by useCapture and vice versa
-           zone.run(function() {
-             (document as any).addEventListener('click', docListener, {capture: true});
-             document.removeEventListener('click', docListener, true);
-           });
+              (document as any).removeEventListener('click', docListener, args1);
+              expect(cancelSpy).toHaveBeenCalled();
+              button.dispatchEvent(clickEvent);
+              expect(logs).toEqual([]);
+            };
 
-           button.dispatchEvent(clickEvent);
-           expect(hookSpy).toHaveBeenCalled();
-           expect(cancelSpy).toHaveBeenCalled();
-           expect(logs).toEqual([]);
+            it('should ignore duplicate handler', () => {
+              let captureFalse = [
+                undefined, false, {capture: false}, {capture: false, passive: false},
+                {passive: false}, {}
+              ];
+              let captureTrue = [true, {capture: true}, {capture: true, passive: false}];
+              for (let i = 0; i < captureFalse.length; i++) {
+                for (let j = 0; j < captureFalse.length; j++) {
+                  testDuplicate(captureFalse[i], captureFalse[j]);
+                }
+              }
+              for (let i = 0; i < captureTrue.length; i++) {
+                for (let j = 0; j < captureTrue.length; j++) {
+                  testDuplicate(captureTrue[i], captureTrue[j]);
+                }
+              }
+            });
+          }));
 
-           hookSpy = jasmine.createSpy('hook');
-           cancelSpy = jasmine.createSpy('cancel');
-           zone.run(function() {
-             document.addEventListener('click', docListener, true);
-             (document as any).removeEventListener('click', docListener, {capture: true});
-           });
+      describe(
+          'should support mix useCapture with AddEventListenerOptions capture',
+          ifEnvSupports(supportEventListenerOptions, function() {
+            let hookSpy: Spy;
+            let cancelSpy: Spy;
+            let logs: string[];
+            const zone = rootZone.fork({
+              name: 'spy',
+              onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone,
+                               targetZone: Zone, task: Task): any => {
+                hookSpy();
+                return parentZoneDelegate.scheduleTask(targetZone, task);
+              },
+              onCancelTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                             task: Task): any => {
+                cancelSpy();
+                return parentZoneDelegate.cancelTask(targetZone, task);
+              }
+            });
 
-           button.dispatchEvent(clickEvent);
-           expect(hookSpy).toHaveBeenCalled();
-           expect(cancelSpy).toHaveBeenCalled();
-           expect(logs).toEqual([]);
+            const docListener = () => {
+              logs.push('document options');
+            };
+            const docListener1 = () => {
+              logs.push('document useCapture');
+            };
+            const btnListener = () => {
+              logs.push('button');
+            };
 
-           hookSpy = jasmine.createSpy('hook');
-           cancelSpy = jasmine.createSpy('cancel');
-           // test removeEventListener by default  which was added by options without capture
-           // property
-           zone.run(function() {
-             (document as any).addEventListener('click', docListener, {passive: true});
-             (document as any).removeEventListener('click', docListener);
-           });
+            beforeEach(() => {
+              logs = [];
+              hookSpy = jasmine.createSpy('hook');
+              cancelSpy = jasmine.createSpy('cancel');
+            });
 
-           button.dispatchEvent(clickEvent);
-           expect(hookSpy).toHaveBeenCalled();
-           expect(cancelSpy).toHaveBeenCalled();
-           expect(logs).toEqual([]);
+            const testAddRemove = function(args1?: any, args2?: any) {
+              zone.run(function() {
+                if (args1) {
+                  (document as any).addEventListener('click', docListener, args1);
+                } else {
+                  (document as any).addEventListener('click', docListener);
+                }
+                if (args2) {
+                  (document as any).removeEventListener('click', docListener, args2);
+                } else {
+                  (document as any).removeEventListener('click', docListener);
+                }
+              });
 
-           hookSpy = jasmine.createSpy('hook');
-           cancelSpy = jasmine.createSpy('cancel');
-           // test removeEventListener by default which was added by empty options
-           zone.run(function() {
-             (document as any).addEventListener('click', docListener, {});
-             (document as any).removeEventListener('click', docListener);
-           });
+              button.dispatchEvent(clickEvent);
+              expect(cancelSpy).toHaveBeenCalled();
+              expect(logs).toEqual([]);
+            };
 
-           button.dispatchEvent(clickEvent);
-           expect(hookSpy).toHaveBeenCalled();
-           expect(cancelSpy).toHaveBeenCalled();
-           expect(logs).toEqual([]);
-         }));
+            it('should be able to add/remove same handler with mix options and capture',
+               function() {
+                 let captureFalse = [
+                   undefined, false, {capture: false}, {capture: false, passive: false},
+                   {passive: false}, {}
+                 ];
+                 let captureTrue = [true, {capture: true}, {capture: true, passive: false}];
+                 for (let i = 0; i < captureFalse.length; i++) {
+                   for (let j = 0; j < captureFalse.length; j++) {
+                     testAddRemove(captureFalse[i], captureFalse[j]);
+                   }
+                 }
+                 for (let i = 0; i < captureTrue.length; i++) {
+                   for (let j = 0; j < captureTrue.length; j++) {
+                     testAddRemove(captureTrue[i], captureTrue[j]);
+                   }
+                 }
+               });
 
-      it('should support addEventListener with empty options and treated by capture=false',
-         ifEnvSupports(supportEventListenerOptions, function() {
-           let hookSpy = jasmine.createSpy('hook');
-           const logs: string[] = [];
-           const zone = rootZone.fork({
-             name: 'spy',
-             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
-               hookSpy();
-               return parentZoneDelegate.scheduleTask(targetZone, task);
-             }
-           });
+            const testDifferent = function(args1?: any, args2?: any) {
+              zone.run(function() {
+                if (args1) {
+                  (document as any).addEventListener('click', docListener, args1);
+                } else {
+                  (document as any).addEventListener('click', docListener);
+                }
+                if (args2) {
+                  (document as any).addEventListener('click', docListener1, args2);
+                } else {
+                  (document as any).addEventListener('click', docListener1);
+                }
+              });
 
-           const docListener = () => {
-             logs.push('document options');
-           };
-           const btnListener = () => {
-             logs.push('button');
-           };
+              button.dispatchEvent(clickEvent);
+              expect(hookSpy).toHaveBeenCalled();
+              expect(logs.sort()).toEqual(['document options', 'document useCapture']);
+              logs = [];
 
-           zone.run(function() {
-             (document as any).addEventListener('click', docListener, {});
-             button.addEventListener('click', btnListener);
-           });
+              if (args1) {
+                (document as any).removeEventListener('click', docListener, args1);
+              } else {
+                (document as any).removeEventListener('click', docListener);
+              }
 
-           button.dispatchEvent(clickEvent);
+              button.dispatchEvent(clickEvent);
+              expect(logs).toEqual(['document useCapture']);
+              logs = [];
 
-           expect(hookSpy).toHaveBeenCalled();
-           hookSpy = jasmine.createSpy('hook');
-           expect(logs).toEqual(['button', 'document options']);
+              if (args2) {
+                (document as any).removeEventListener('click', docListener1, args2);
+              } else {
+                (document as any).removeEventListener('click', docListener1);
+              }
 
-           document.removeEventListener('click', docListener);
-           button.removeEventListener('click', btnListener);
-         }));
+              button.dispatchEvent(clickEvent);
+              expect(logs).toEqual([]);
+            };
+
+            it('should be able to add different handlers for same event', function() {
+              let captureFalse = [
+                undefined, false, {capture: false}, {capture: false, passive: false},
+                {passive: false}, {}
+              ];
+              let captureTrue = [true, {capture: true}, {capture: true, passive: false}];
+              for (let i = 0; i < captureFalse.length; i++) {
+                for (let j = 0; j < captureTrue.length; j++) {
+                  testDifferent(captureFalse[i], captureTrue[j]);
+                }
+              }
+              for (let i = 0; i < captureTrue.length; i++) {
+                for (let j = 0; j < captureFalse.length; j++) {
+                  testDifferent(captureTrue[i], captureFalse[j]);
+                }
+              }
+            });
+
+            it('should handle options.capture true with capture true correctly', function() {
+              zone.run(function() {
+                (document as any).addEventListener('click', docListener, {capture: true});
+                document.addEventListener('click', docListener1, true);
+                button.addEventListener('click', btnListener);
+              });
+
+              button.dispatchEvent(clickEvent);
+              expect(hookSpy).toHaveBeenCalled();
+              expect(logs).toEqual(['document options', 'document useCapture', 'button']);
+              logs = [];
+
+              (document as any).removeEventListener('click', docListener, {capture: true});
+              button.dispatchEvent(clickEvent);
+              expect(logs).toEqual(['document useCapture', 'button']);
+              logs = [];
+
+              document.removeEventListener('click', docListener1, true);
+              button.dispatchEvent(clickEvent);
+              expect(logs).toEqual(['button']);
+              logs = [];
+
+              button.removeEventListener('click', btnListener);
+              expect(cancelSpy).toHaveBeenCalled();
+
+              button.dispatchEvent(clickEvent);
+              expect(logs).toEqual([]);
+            });
+          }));
 
       it('should support addEventListener with AddEventListenerOptions once setting',
          ifEnvSupports(supportEventListenerOptions, function() {

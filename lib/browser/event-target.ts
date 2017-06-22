@@ -39,6 +39,7 @@ export function eventTargetPatch(_global: any) {
 
 const TRUE_STR = 'true';
 const FALSE_STR = 'false';
+const OPTIMIZED_ZONE_EVENT_TASK = zoneSymbol('optimizedZoneEventTask');
 
 
 const zoneSymbolEventNames: any = {};
@@ -220,7 +221,8 @@ export function patchEventTargetMethodsOptimized(obj: any) {
     taskData.capture = capture;
     taskData.eventName = eventName;
     taskData.isExisting = isExisting;
-    const task: any = zone.scheduleEventTask(source, delegate, null, customSchedule, customCancel);
+    const task: any = zone.scheduleEventTask(
+        source, delegate, OPTIMIZED_ZONE_EVENT_TASK, customSchedule, customCancel);
     task.options = options;
     task.target = target;
     task.capture = capture;

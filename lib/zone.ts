@@ -1139,6 +1139,8 @@ const Zone: ZoneType = (function(global: any) {
     }
   }
 
+  const OPTIMIZED_ZONE_EVENT_TASK = Zone.__symbol__('optimizedZoneEventTask');
+
   class ZoneTask<T extends TaskType> implements Task {
     public type: T;
     public source: string;
@@ -1162,12 +1164,12 @@ const Zone: ZoneType = (function(global: any) {
       this.cancelFn = cancelFn;
       this.callback = callback;
       const self = this;
-      if (type !== eventTask || options) {
+      if (type === eventTask && options === OPTIMIZED_ZONE_EVENT_TASK) {
+        this.invoke = ZoneTask.invokeTask;
+      } else {
         this.invoke = function() {
           return ZoneTask.invokeTask.apply(global, [self, this, <any>arguments]);
         };
-      } else {
-        this.invoke = ZoneTask.invokeTask;
       }
     }
 
