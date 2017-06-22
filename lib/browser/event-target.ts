@@ -39,12 +39,13 @@ export function eventTargetPatch(_global: any) {
 
 const TRUE_STR = 'true';
 const FALSE_STR = 'false';
+// an identifier to tell ZoneTask do not create a new invoke closure
 const OPTIMIZED_ZONE_EVENT_TASK = zoneSymbol('optimizedZoneEventTask');
-
 
 const zoneSymbolEventNames: any = {};
 const globalSources: any = {};
 
+//  predefine all __zone_symbol__ + eventName + true/false string
 eventNames.forEach((eventName: string) => {
   const falseEventName = eventName + FALSE_STR;
   const trueEventName = eventName + TRUE_STR;
@@ -55,6 +56,7 @@ eventNames.forEach((eventName: string) => {
   zoneSymbolEventNames[eventName][TRUE_STR] = symbolCapture;
 });
 
+//  predefine all task.source string
 WTF_ISSUE_555.split(',').forEach((target: string) => {
   const targets: any = globalSources[target] = {};
   eventNames.forEach((eventName: string) => {
@@ -62,23 +64,28 @@ WTF_ISSUE_555.split(',').forEach((target: string) => {
   });
 });
 
+// global shared zoneAwareCallback to handle all event callback with capture = false
 const globalZoneAwareCallback = function(event: Event) {
   const target = this || _global;
 
   const tasks = target[zoneSymbolEventNames[event.type][FALSE_STR]];
   if (tasks) {
+    // invoke all tasks which attached to current target with given event.type and capture = false
     for (let i = 0; i < tasks.length; i++) {
       const task = tasks[i];
       const delegate = task.callback;
       if (typeof delegate === 'object' && delegate.handleEvent) {
+        // create the bind version of handleEvnet when invoke
         task.callback = (event: Event) => delegate.handleEvent(event);
         task.originalDelegate = delegate;
       }
+      // invoke static task.invoke
       task.invoke(task, target, [event]);
     }
   }
 };
 
+// global shared zoneAwareCallback to handle all event callback with capture = true
 const globalZoneAwareCaptureCallback = function(event: Event) {
   const target = this || _global;
 
@@ -119,12 +126,16 @@ export function patchEventTargetMethodsOptimized(obj: any) {
     return;
   }
 
+  // a shared global taskData to pass data for scheduleEventTask
+  // so we do not need to create a new object just for pass some data
   const taskData: any = {};
 
   const nativeAddEventListener = proto[zoneSymbolAddEventListener] = proto.addEventListener;
   const nativeRemoveEventListener = proto[zoneSymbol('removeEventListener')] =
       proto.removeEventListener;
   const customSchedule = function(task: Task) {
+    // if there is already a task for the eventName + capture,
+    // just return, because we use the shared globalZoneAwareCallback here.
     if (taskData.isExisting) {
       return;
     }
@@ -135,7 +146,9 @@ export function patchEventTargetMethodsOptimized(obj: any) {
   };
 
   const customCancel = function(task: any) {
-    // call removeListener later
+    // if all tasks for the eventName + capture have gone,
+    // we will really remove the global evnet callback,
+    // if not, return
     if (!task.remove) {
       return;
     }
@@ -153,6 +166,9 @@ export function patchEventTargetMethodsOptimized(obj: any) {
       return nativeAddEventListener.apply(this, arguments);
     }
 
+    // don't create the bind delegate function for handleEvent
+    // case here to improve addEventListener performance
+    // we will create the bind delegate when invoke
     let isHandleEvent = false;
     if (typeof delegate === 'function') {
     } else {
@@ -180,6 +196,7 @@ export function patchEventTargetMethodsOptimized(obj: any) {
     const symbolEventNames = zoneSymbolEventNames[eventName];
     let symbolEventName;
     if (!symbolEventNames) {
+      // the code is duplicate, but I just want to get some better performance
       const falseEventName = eventName + FALSE_STR;
       const trueEventName = eventName + TRUE_STR;
       const symbol = '__zone_symbol__' + falseEventName;
@@ -194,13 +211,14 @@ export function patchEventTargetMethodsOptimized(obj: any) {
     let existingTasks = target[symbolEventName];
     let isExisting = false;
     if (existingTasks) {
+      // already have task registered
       isExisting = true;
       for (let i = 0; i < existingTasks.length; i++) {
         const existingTask = existingTasks[i];
         const typeOfDelegate = typeof delegate;
         if ((typeOfDelegate === 'function' && existingTask.callback === delegate) ||
             (typeOfDelegate === 'object' && existingTask.originalDelegate === delegate)) {
-          arguments[1] = capture ? globalZoneAwareCaptureCallback : globalZoneAwareCallback;
+          // same callback, same capture, same event name, just return
           return;
         }
       }
@@ -216,6 +234,8 @@ export function patchEventTargetMethodsOptimized(obj: any) {
     if (!source) {
       source = constructorName + '.addEventListener:' + eventName;
     }
+    // do not create a new object as task.data to pass those things
+    // just use the global shared one
     taskData.options = options;
     taskData.target = target;
     taskData.capture = capture;
@@ -223,11 +243,15 @@ export function patchEventTargetMethodsOptimized(obj: any) {
     taskData.isExisting = isExisting;
     const task: any = zone.scheduleEventTask(
         source, delegate, OPTIMIZED_ZONE_EVENT_TASK, customSchedule, customCancel);
+
+    // have to save those information to task in case
+    // application may call task.zone.cancelTask() directly
     task.options = options;
     task.target = target;
     task.capture = capture;
     task.eventName = eventName;
     if (isHandleEvent) {
+      // save original delegate for compare to check duplicate
       (task as any).originalDelegate = delegate;
     }
     existingTasks.push(task);
@@ -264,6 +288,8 @@ export function patchEventTargetMethodsOptimized(obj: any) {
             (typeOfDelegate === 'object' && existingTask.originalDelegate === delegate)) {
           existingTasks.splice(i, 1);
           if (existingTasks.length === 0) {
+            // all tasks for the eventName + capture have gone,
+            // remove globalZoneAwareCallback and remove the task cache from target
             (existingTask as any).remove = true;
             target[symbolEventName] = null;
           }
@@ -274,6 +300,7 @@ export function patchEventTargetMethodsOptimized(obj: any) {
     }
   };
 
+  // for native toString patch
   attachOriginToPatched(proto.addEventListener, nativeAddEventListener);
   attachOriginToPatched(proto.removeEventListener, nativeRemoveEventListener);
 }
