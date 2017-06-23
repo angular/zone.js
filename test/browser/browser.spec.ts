@@ -818,7 +818,7 @@ describe('Zone', function() {
            button.dispatchEvent(clickEvent);
 
            expect(hookSpy).not.toHaveBeenCalled();
-           expect(logs).toEqual(['<root>', ['<root>']]);
+           expect(logs).toEqual(['ProxyZone', 'ProxyZone']);
            logs = [];
 
            button.removeEventListener('click', listener1);

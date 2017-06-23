@@ -48,7 +48,7 @@ const globalSources: any = {};
 const _global: any =
     typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global;
 
-const isEnableIECheck = _global['__Zone_enable_IE_check'] || true;
+const isDisableIECheck = _global['__Zone_disable_IE_check'] || false;
 const isEnableCrossContextCheck = _global['__Zone_enable_cross_context_check'] || false;
 const ieOrEdge = isIEOrEdge();
 const FUNCTION_WRAPPER = '[object FunctionWrapper]';
@@ -167,30 +167,36 @@ export function patchEventTargetMethodsOptimized(obj: any) {
     ]);
   };
 
-  const checkIEAndCrossContext = function(nativeDelegate: any, delegate: any) {
-    if (isEnableIECheck && ieOrEdge) {
+  const checkIEAndCrossContext = function(
+      nativeDelegate: any, delegate: any, target: any, args: any) {
+    if (!isDisableIECheck && ieOrEdge) {
       if (isEnableCrossContextCheck) {
         try {
           const testString = delegate.toString();
           if ((testString === FUNCTION_WRAPPER || testString == BROWSER_TOOLS)) {
-            return nativeDelegate.apply(this, arguments);
+            nativeDelegate.apply(target, args);
+            return false;
           }
         } catch (error) {
-          return nativeDelegate.apply(this, arguments);
+          nativeDelegate.apply(target, args);
+          return false;
         }
       } else {
         const testString = delegate.toString();
         if ((testString === FUNCTION_WRAPPER || testString == BROWSER_TOOLS)) {
-          return nativeDelegate.apply(this, arguments);
+          nativeDelegate.apply(target, args);
+          return false;
         }
       }
     } else if (isEnableCrossContextCheck) {
       try {
         delegate.toString();
       } catch (error) {
-        return nativeDelegate.apply(this, arguments);
+        nativeDelegate.apply(target, args);
+        return false;
       }
     }
+    return true;
   };
 
   proto.addEventListener = function() {
@@ -212,7 +218,9 @@ export function patchEventTargetMethodsOptimized(obj: any) {
       isHandleEvent = true;
     }
 
-    checkIEAndCrossContext(nativeAddEventListener, delegate);
+    if (!checkIEAndCrossContext(nativeAddEventListener, delegate, target, arguments)) {
+      return;
+    }
 
     const eventName = arguments[0];
     const options = arguments[2];
@@ -311,8 +319,13 @@ export function patchEventTargetMethodsOptimized(obj: any) {
 
     const symbolEventNames = zoneSymbolEventNames[eventName];
     const delegate = arguments[1];
+    if (!delegate) {
+      return nativeRemoveEventListener.apply(this, arguments);
+    }
 
-    checkIEAndCrossContext(nativeAddEventListener, delegate);
+    if (!checkIEAndCrossContext(nativeRemoveEventListener, delegate, target, arguments)) {
+      return;
+    }
 
     let symbolEventName;
     if (symbolEventNames) {
