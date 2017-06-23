@@ -682,6 +682,82 @@ describe('Zone', function() {
            button.removeEventListener('click', listener);
          }));
 
+      it('should support reschedule eventTask',
+         ifEnvSupports(supportEventListenerOptions, function() {
+           let hookSpy1 = jasmine.createSpy('spy1');
+           let hookSpy2 = jasmine.createSpy('spy2');
+           let hookSpy3 = jasmine.createSpy('spy3');
+           let logs: string[] = [];
+           const isBlacklistedEvent = function(source: string) {
+             return source.lastIndexOf('click') !== -1;
+           };
+           const zone1 = Zone.current.fork({
+             name: 'zone1',
+             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+               if ((task.type === 'eventTask' || task.type === 'macroTask') &&
+                   isBlacklistedEvent(task.source)) {
+                 task.cancelScheduleRequest();
+
+                 return zone2.scheduleTask(task);
+               } else {
+                 return parentZoneDelegate.scheduleTask(targetZone, task);
+               }
+             },
+             onInvokeTask(
+                 parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task,
+                 applyThis: any, applyArgs: any) {
+               hookSpy1();
+               return parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
+             }
+           });
+           const zone2 = Zone.current.fork({
+             name: 'zone2',
+             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+               hookSpy2();
+               return parentZoneDelegate.scheduleTask(targetZone, task);
+             },
+             onInvokeTask(
+                 parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task,
+                 applyThis: any, applyArgs: any) {
+               hookSpy3();
+               return parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
+             }
+           });
+
+           const listener = function() {
+             logs.push(Zone.current.name);
+           };
+           zone1.run(() => {
+             button.addEventListener('click', listener);
+             button.addEventListener('mouseover', listener);
+           });
+
+           const clickEvent = document.createEvent('Event');
+           clickEvent.initEvent('click', true, true);
+           const mouseEvent = document.createEvent('Event');
+           mouseEvent.initEvent('mouseover', true, true);
+
+           button.dispatchEvent(clickEvent);
+           button.removeEventListener('click', listener);
+
+           expect(logs).toEqual(['zone2']);
+           expect(hookSpy1).not.toHaveBeenCalled();
+           expect(hookSpy2).toHaveBeenCalled();
+           expect(hookSpy3).toHaveBeenCalled();
+           logs = [];
+           hookSpy2 = jasmine.createSpy('hookSpy2');
+           hookSpy3 = jasmine.createSpy('hookSpy3');
+
+           button.dispatchEvent(mouseEvent);
+           button.removeEventListener('mouseover', listener);
+           expect(logs).toEqual(['zone1']);
+           expect(hookSpy1).toHaveBeenCalled();
+           expect(hookSpy2).not.toHaveBeenCalled();
+           expect(hookSpy3).not.toHaveBeenCalled();
+         }));
+
       it('should support inline event handler attributes', function() {
         const hookSpy = jasmine.createSpy('hook');
         const zone = rootZone.fork({

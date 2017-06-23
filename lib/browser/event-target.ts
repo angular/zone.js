@@ -147,7 +147,7 @@ export function patchEventTargetMethodsOptimized(obj: any) {
 
   const customCancel = function(task: any) {
     // if all tasks for the eventName + capture have gone,
-    // we will really remove the global evnet callback,
+    // we will really remove the global event callback,
     // if not, return
     if (!task.remove) {
       return;
