@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {attachOriginToPatched, zoneSymbol} from '../common/utils';
+import {attachOriginToPatched, isIEOrEdge, zoneSymbol} from '../common/utils';
 
 import {eventNames} from './property-descriptor';
 
@@ -44,6 +44,15 @@ const OPTIMIZED_ZONE_EVENT_TASK = zoneSymbol('optimizedZoneEventTask');
 
 const zoneSymbolEventNames: any = {};
 const globalSources: any = {};
+
+const _global: any =
+    typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global;
+
+const isEnableIECheck = _global['__Zone_enable_IE_check'] || true;
+const isEnableCrossContextCheck = _global['__Zone_enable_cross_context_check'] || false;
+const ieOrEdge = isIEOrEdge();
+const FUNCTION_WRAPPER = '[object FunctionWrapper]';
+const BROWSER_TOOLS = 'function __BROWSERTOOLS_CONSOLE_SAFEFUNC() { [native code] }';
 
 //  predefine all __zone_symbol__ + eventName + true/false string
 eventNames.forEach((eventName: string) => {
@@ -158,6 +167,32 @@ export function patchEventTargetMethodsOptimized(obj: any) {
     ]);
   };
 
+  const checkIEAndCrossContext = function(nativeDelegate: any, delegate: any) {
+    if (isEnableIECheck && ieOrEdge) {
+      if (isEnableCrossContextCheck) {
+        try {
+          const testString = delegate.toString();
+          if ((testString === FUNCTION_WRAPPER || testString == BROWSER_TOOLS)) {
+            return nativeDelegate.apply(this, arguments);
+          }
+        } catch (error) {
+          return nativeDelegate.apply(this, arguments);
+        }
+      } else {
+        const testString = delegate.toString();
+        if ((testString === FUNCTION_WRAPPER || testString == BROWSER_TOOLS)) {
+          return nativeDelegate.apply(this, arguments);
+        }
+      }
+    } else if (isEnableCrossContextCheck) {
+      try {
+        delegate.toString();
+      } catch (error) {
+        return nativeDelegate.apply(this, arguments);
+      }
+    }
+  };
+
   proto.addEventListener = function() {
     const target = this || _global;
     const targetZone = Zone.current;
@@ -170,13 +205,14 @@ export function patchEventTargetMethodsOptimized(obj: any) {
     // case here to improve addEventListener performance
     // we will create the bind delegate when invoke
     let isHandleEvent = false;
-    if (typeof delegate === 'function') {
-    } else {
+    if (typeof delegate !== 'function') {
       if (!delegate.handleEvent) {
         return nativeAddEventListener.apply(this, arguments);
       }
       isHandleEvent = true;
     }
+
+    checkIEAndCrossContext(nativeAddEventListener, delegate);
 
     const eventName = arguments[0];
     const options = arguments[2];
@@ -275,6 +311,9 @@ export function patchEventTargetMethodsOptimized(obj: any) {
 
     const symbolEventNames = zoneSymbolEventNames[eventName];
     const delegate = arguments[1];
+
+    checkIEAndCrossContext(nativeAddEventListener, delegate);
+
     let symbolEventName;
     if (symbolEventNames) {
       symbolEventName = symbolEventNames[capture ? TRUE_STR : FALSE_STR];

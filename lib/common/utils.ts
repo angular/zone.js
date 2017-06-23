@@ -675,3 +675,24 @@ export function findEventTask(target: any, evtName: string): Task[] {
 export function attachOriginToPatched(patched: Function, original: any) {
   (patched as any)[zoneSymbol('OriginalDelegate')] = original;
 }
+
+let isDetectedIEOrEdge = false;
+let ieOrEdge = false;
+
+export function isIEOrEdge() {
+  if (isDetectedIEOrEdge) {
+    return ieOrEdge;
+  }
+
+  isDetectedIEOrEdge = true;
+
+  try {
+    const ua = window.navigator.userAgent;
+    const msie = ua.indexOf('MSIE ');
+    if (ua.indexOf('MSIE ') !== -1 || ua.indexOf('Trident/') !== -1 || ua.indexOf('Edge/') !== -1) {
+      ieOrEdge = true;
+    }
+    return ieOrEdge;
+  } catch (error) {
+  }
+}

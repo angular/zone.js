@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {isBrowser, isMix, zoneSymbol} from '../../lib/common/utils';
+import {isBrowser, isIEOrEdge, isMix, zoneSymbol} from '../../lib/common/utils';
 import {ifEnvSupports, ifEnvSupportsWithDone} from '../test-util';
 
 import Spy = jasmine.Spy;
@@ -64,6 +64,12 @@ function supportCanvasTest() {
 }
 
 (supportCanvasTest as any).message = 'supportCanvasTest';
+
+function ieOrEdge() {
+  return isIEOrEdge();
+}
+
+(ieOrEdge as any).message = 'IE/Edge Test';
 
 describe('Zone', function() {
   const rootZone = Zone.current;
@@ -775,6 +781,54 @@ describe('Zone', function() {
         });
       });
 
+      it('should bypass addEventListener of FunctionWrapper and __BROWSERTOOLS_CONSOLE_SAFEFUNC of IE/Edge',
+         ifEnvSupports(ieOrEdge, function() {
+           const hookSpy = jasmine.createSpy('hook');
+           const zone = rootZone.fork({
+             name: 'spy',
+             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+               hookSpy();
+               return parentZoneDelegate.scheduleTask(targetZone, task);
+             }
+           });
+           let logs: string[] = [];
+
+           const listener1 = function() {
+             logs.push(Zone.current.name);
+           };
+
+           (listener1 as any).toString = function() {
+             return '[object FunctionWrapper]';
+           };
+
+           const listener2 = function() {
+             logs.push(Zone.current.name);
+           };
+
+           (listener2 as any).toString = function() {
+             return 'function __BROWSERTOOLS_CONSOLE_SAFEFUNC() { [native code] }';
+           };
+
+           zone.run(() => {
+             button.addEventListener('click', listener1);
+             button.addEventListener('click', listener2);
+           });
+
+           button.dispatchEvent(clickEvent);
+
+           expect(hookSpy).not.toHaveBeenCalled();
+           expect(logs).toEqual(['<root>', ['<root>']]);
+           logs = [];
+
+           button.removeEventListener('click', listener1);
+           button.removeEventListener('click', listener2);
+
+           button.dispatchEvent(clickEvent);
+
+           expect(hookSpy).not.toHaveBeenCalled();
+           expect(logs).toEqual([]);
+         }));
     });
 
     describe('unhandle promise rejection', () => {
