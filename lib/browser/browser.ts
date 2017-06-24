@@ -10,7 +10,7 @@ import {patchTimer} from '../common/timers';
 import {findEventTask, patchClass, patchEventTargetMethods, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, zoneSymbol} from '../common/utils';
 
 import {propertyPatch} from './define-property';
-import {eventTargetPatch, patchEventTargetMethodsOptimized} from './event-target';
+import {eventTargetPatch} from './event-target';
 import {propertyDescriptorPatch} from './property-descriptor';
 import {registerElementPatch} from './register-element';
 
@@ -38,12 +38,12 @@ Zone.__load_patch('blocking', (global: any, Zone: ZoneType, api: _ZonePrivate) =
 });
 
 Zone.__load_patch('EventTarget', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  eventTargetPatch(global);
+  eventTargetPatch(global, api);
   // patch XMLHttpRequestEventTarget's addEventListener/removeEventListener
   const XMLHttpRequestEventTarget = (global as any)['XMLHttpRequestEventTarget'];
   if (XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype) {
     // TODO: @JiaLiPassion, add this back later.
-    patchEventTargetMethodsOptimized(XMLHttpRequestEventTarget.prototype);
+    api.patchEventTargetMethodsOptimized(XMLHttpRequestEventTarget.prototype);
   }
   patchClass('MutationObserver');
   patchClass('WebKitMutationObserver');
