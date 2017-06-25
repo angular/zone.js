@@ -24,7 +24,7 @@ describe('nodejs EventEmitter', () => {
 
   function expectZoneA(value: string) {
     expectZoneACount++;
-    expect(Zone.current).toBe(zoneA);
+    expect(Zone.current.name).toBe('A');
     expect(value).toBe('test value');
   }
 

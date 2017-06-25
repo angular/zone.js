@@ -6,8 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import {findEventTasks} from '../common/events';
 import {patchTimer} from '../common/timers';
-import {findEventTask, patchClass, patchEventTargetMethods, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, zoneSymbol} from '../common/utils';
+import {patchClass, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, zoneSymbol} from '../common/utils';
 
 import {propertyPatch} from './define-property';
 import {eventTargetPatch} from './event-target';
@@ -43,7 +44,7 @@ Zone.__load_patch('EventTarget', (global: any, Zone: ZoneType, api: _ZonePrivate
   const XMLHttpRequestEventTarget = (global as any)['XMLHttpRequestEventTarget'];
   if (XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype) {
     // TODO: @JiaLiPassion, add this back later.
-    api.patchEventTargetMethodsOptimized(XMLHttpRequestEventTarget.prototype);
+    api.patchEventTargetMethods(XMLHttpRequestEventTarget.prototype);
   }
   patchClass('MutationObserver');
   patchClass('WebKitMutationObserver');
@@ -181,7 +182,7 @@ Zone.__load_patch('PromiseRejectionEvent', (global: any, Zone: ZoneType, api: _Z
   // handle unhandled promise rejection
   function findPromiseRejectionHandler(evtName: string) {
     return function(e: any) {
-      const eventTasks = findEventTask(global, evtName);
+      const eventTasks = findEventTasks(global, evtName);
       eventTasks.forEach(eventTask => {
         // windows has added unhandledrejection event listener
         // trigger the event listener
@@ -205,7 +206,6 @@ Zone.__load_patch('PromiseRejectionEvent', (global: any, Zone: ZoneType, api: _Z
 
 
 Zone.__load_patch('util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  api.patchEventTargetMethods = patchEventTargetMethods;
   api.patchOnProperties = patchOnProperties;
   api.patchMethod = patchMethod;
 });

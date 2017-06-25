@@ -9,8 +9,9 @@
 import './events';
 import './fs';
 
+import {findEventTasks} from '../common/events';
 import {patchTimer} from '../common/timers';
-import {findEventTask, isMix, patchMacroTask, patchMicroTask} from '../common/utils';
+import {isMix, patchMacroTask, patchMicroTask} from '../common/utils';
 
 const set = 'set';
 const clear = 'clear';
@@ -92,7 +93,7 @@ Zone.__load_patch(
       // handle unhandled promise rejection
       function findProcessPromiseRejectionHandler(evtName: string) {
         return function(e: any) {
-          const eventTasks = findEventTask(process, evtName);
+          const eventTasks = findEventTasks(process, evtName);
           eventTasks.forEach(eventTask => {
             // process has added unhandledrejection event listener
             // trigger the event listener
