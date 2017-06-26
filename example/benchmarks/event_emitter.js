@@ -31,7 +31,7 @@ function addRemoveCallback(reuse, useZone) {
       emitter.__zone_symbol__addListener('msg', callback);
   }
 
-  for (var i = 0; i < size; i++) {
+  for (let i = 0; i < size; i++) {
     const emitter = emitters[i];
     if (!reuse) callback = callbacks[i];
     if (useZone)
@@ -39,7 +39,7 @@ function addRemoveCallback(reuse, useZone) {
     else
       emitter.__zone_symbol__removeListener('msg', callback);
   }
-  var end = new Date();
+  const end = new Date();
   console.log(useZone ? 'use zone' : 'native', reuse ? 'reuse' : 'new');
   console.log("Execution time: %dms", end - start);
 }

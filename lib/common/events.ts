@@ -454,7 +454,7 @@ export function findEventTasks(target: any, eventName: string): Task[] {
   for (let prop in target) {
     const match = EVENT_NAME_SYMBOL_REGX.exec(prop);
     let evtName = match && match[1];
-    if (!eventName || evtName === eventName) {
+    if (evtName && (!eventName || evtName === eventName)) {
       const tasks: any = target[prop];
       if (tasks) {
         for (let i = 0; i < tasks.length; i++) {

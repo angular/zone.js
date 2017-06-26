@@ -781,6 +781,116 @@ describe('Zone', function() {
         });
       });
 
+      it('should be able to get eventListeners of specified event form EventTarget', function() {
+        const listener1 = function() {};
+        const listener2 = function() {};
+        const listener3 = {handleEvent: function(event: Event) {}};
+        const listener4 = function() {};
+
+        button.addEventListener('click', listener1);
+        button.addEventListener('click', listener2);
+        button.addEventListener('click', listener3);
+        button.addEventListener('mouseover', listener4);
+
+        const listeners = (button as any).eventListeners('click');
+        expect(listeners.length).toBe(3);
+        expect(listeners).toEqual([listener1, listener2, listener3]);
+        button.removeEventListener('click', listener1);
+        button.removeEventListener('click', listener2);
+        button.removeEventListener('click', listener3);
+      });
+
+      it('should be able to get all eventListeners form EventTarget without eventName', function() {
+        const listener1 = function() {};
+        const listener2 = function() {};
+        const listener3 = {handleEvent: function(event: Event) {}};
+
+        button.addEventListener('click', listener1);
+        button.addEventListener('mouseover', listener2);
+        button.addEventListener('mousehover', listener3);
+
+        const listeners = (button as any).eventListeners();
+        expect(listeners.length).toBe(3);
+        expect(listeners).toEqual([listener1, listener2, listener3]);
+        button.removeEventListener('click', listener1);
+        button.removeEventListener('mouseover', listener2);
+        button.removeEventListener('mousehover', listener3);
+      });
+
+      it('should be able to remove all listeners of specified event form EventTarget', function() {
+        let logs: string[] = [];
+        const listener1 = function() {
+          logs.push('listener1');
+        };
+        const listener2 = function() {
+          logs.push('listener2');
+        };
+        const listener3 = {
+          handleEvent: function(event: Event) {
+            logs.push('listener3');
+          }
+        };
+        const listener4 = function() {
+          logs.push('listener4');
+        };
+
+        button.addEventListener('mouseover', listener1);
+        button.addEventListener('mouseover', listener2);
+        button.addEventListener('mouseover', listener3);
+        button.addEventListener('click', listener4);
+
+        (button as any).removeAllListeners('mouseover');
+        const listeners = (button as any).eventListeners('mouseove');
+        expect(listeners.length).toBe(0);
+
+        const mouseEvent = document.createEvent('Event');
+        mouseEvent.initEvent('mouseover', true, true);
+
+        button.dispatchEvent(mouseEvent);
+        expect(logs).toEqual([]);
+
+        button.dispatchEvent(clickEvent);
+        expect(logs).toEqual(['listener4']);
+
+        button.removeEventListener('click', listener4);
+      });
+
+      it('should be able to remove all listeners of all events form EventTarget', function() {
+        let logs: string[] = [];
+        const listener1 = function() {
+          logs.push('listener1');
+        };
+        const listener2 = function() {
+          logs.push('listener2');
+        };
+        const listener3 = {
+          handleEvent: function(event: Event) {
+            logs.push('listener3');
+          }
+        };
+        const listener4 = function() {
+          logs.push('listener4');
+        };
+
+        button.addEventListener('mouseover', listener1);
+        button.addEventListener('mouseover', listener2);
+        button.addEventListener('mouseover', listener3);
+        button.addEventListener('click', listener4);
+
+        (button as any).removeAllListeners();
+        const listeners = (button as any).eventListeners('mouseove');
+        expect(listeners.length).toBe(0);
+
+        const mouseEvent = document.createEvent('Event');
+        mouseEvent.initEvent('mouseover', true, true);
+
+        button.dispatchEvent(mouseEvent);
+        expect(logs).toEqual([]);
+
+        button.dispatchEvent(clickEvent);
+        expect(logs).toEqual([]);
+      });
+
       it('should bypass addEventListener of FunctionWrapper and __BROWSERTOOLS_CONSOLE_SAFEFUNC of IE/Edge',
          ifEnvSupports(ieOrEdge, function() {
            const hookSpy = jasmine.createSpy('hook');
