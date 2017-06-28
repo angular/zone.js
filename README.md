@@ -31,7 +31,7 @@ See this video from ng-conf 2014 for a detailed explanation:
 ## See also
 * [async-listener](https://github.com/othiym23/async-listener) - a similar library for node
 * [Async stack traces in Chrome](http://www.html5rocks.com/en/tutorials/developertools/async-call-stack/)
-* [strongloop/zone](https://github.com/strongloop/zone)
+* [strongloop/zone](https://github.com/strongloop/zone) (Deprecated)
 * [vizone](https://github.com/gilbox/vizone) - control flow visualizer that uses zone.js
 
 ## Standard API support
@@ -41,7 +41,7 @@ zone.js patched most standard web APIs(such as DOM events, XMLHttpRequest...) an
 more details.
 
 ## Non standard API support
-
+s
 And now we are adding support to some non standard APIs, such as MediaQuery,
 Notification. Please see [NON-STANDARD-APIS.md](NON-STANDARD-APIS.md) for more details.
 
