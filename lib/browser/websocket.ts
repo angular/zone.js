@@ -21,10 +21,16 @@ export function apply(_global: any) {
     const socket = arguments.length > 1 ? new WS(a, b) : new WS(a);
     let proxySocket: any;
 
+    let proxySocketProto: any;
+
     // Safari 7.0 has non-configurable own 'onmessage' and friends properties on the socket instance
     const onmessageDesc = Object.getOwnPropertyDescriptor(socket, 'onmessage');
     if (onmessageDesc && onmessageDesc.configurable === false) {
       proxySocket = Object.create(socket);
+      // socket have own property descriptor 'onopen', 'onmessage', 'onclose', 'onerror'
+      // but proxySocket not, so we will keep socket as prototype and pass it to
+      // patchOnProperties method
+      proxySocketProto = socket;
       ['addEventListener', 'removeEventListener', 'send', 'close'].forEach(function(propName) {
         proxySocket[propName] = function() {
           return socket[propName].apply(socket, arguments);
@@ -35,7 +41,7 @@ export function apply(_global: any) {
       proxySocket = socket;
     }
 
-    patchOnProperties(proxySocket, ['close', 'error', 'message', 'open']);
+    patchOnProperties(proxySocket, ['close', 'error', 'message', 'open'], proxySocketProto);
 
     return proxySocket;
   };
