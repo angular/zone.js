@@ -41,6 +41,7 @@ zone.js patched most standard web APIs(such as DOM events, XMLHttpRequest...) an
 more details.
 
 ## Non standard API support
+
 And now we are adding support to some non standard APIs, such as MediaQuery,
 Notification. Please see [NON-STANDARD-APIS.md](NON-STANDARD-APIS.md) for more details.
 
