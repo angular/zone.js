@@ -11,7 +11,8 @@ import {zoneSymbol} from './utils';
 // look like native function
 Zone.__load_patch('toString', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   // patch Func.prototype.toString to let them look like native
-  const originalFunctionToString = Function.prototype.toString;
+  const originalFunctionToString = (Zone as any)['__zone_symbol__originalToString'] =
+      Function.prototype.toString;
   Function.prototype.toString = function() {
     if (typeof this === 'function') {
       const originalDelegate = this[zoneSymbol('OriginalDelegate')];

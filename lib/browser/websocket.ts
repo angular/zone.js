@@ -6,7 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {patchEventTargetMethods, patchOnProperties} from '../common/utils';
+import {patchEventTargetMethods} from '../common/events';
+import {patchOnProperties} from '../common/utils';
 
 // we have to patch the instance since the proto is non-configurable
 export function apply(_global: any) {

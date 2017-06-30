@@ -135,7 +135,7 @@ describe('ZoneAwareError', () => {
     }
     if (Object.prototype.hasOwnProperty.call(Error.prototype, 'fileName')) {
       // in firefox, error has fileName property
-      expect((<any>myError).fileName).toContain('zone');
+      expect((<any>myError).fileName).toBeTruthy();
     }
   });
 

@@ -320,8 +320,7 @@ interface _ZonePrivate {
   onUnhandledError: (error: Error) => void;
   microtaskDrainDone: () => void;
   showUncaughtError: () => boolean;
-  patchEventTargetMethods:
-      (obj: any, addFnName?: string, removeFnName?: string, metaCreator?: any) => boolean;
+  patchEventTargetMethods: (obj: any, options?: any) => boolean;
   patchOnProperties: (obj: any, properties: string[]) => void;
   patchMethod:
       (target: any, name: string,
@@ -1139,6 +1138,8 @@ const Zone: ZoneType = (function(global: any) {
     }
   }
 
+  const OPTIMIZED_ZONE_EVENT_TASK = Zone.__symbol__('optimizedZoneEventTask');
+
   class ZoneTask<T extends TaskType> implements Task {
     public type: T;
     public source: string;
@@ -1162,18 +1163,29 @@ const Zone: ZoneType = (function(global: any) {
       this.cancelFn = cancelFn;
       this.callback = callback;
       const self = this;
-      this.invoke = function() {
-        _numberOfNestedTaskFrames++;
-        try {
-          self.runCount++;
-          return self.zone.runTask(self, this, <any>arguments);
-        } finally {
-          if (_numberOfNestedTaskFrames == 1) {
-            drainMicroTaskQueue();
-          }
-          _numberOfNestedTaskFrames--;
+      if (type === eventTask && options === OPTIMIZED_ZONE_EVENT_TASK) {
+        this.invoke = ZoneTask.invokeTask;
+      } else {
+        this.invoke = function() {
+          return ZoneTask.invokeTask.apply(global, [self, this, <any>arguments]);
+        };
+      }
+    }
+
+    static invokeTask(task: any, target: any, args: any): any {
+      if (!task) {
+        task = this;
+      }
+      _numberOfNestedTaskFrames++;
+      try {
+        task.runCount++;
+        return task.zone.runTask(task, target, args);
+      } finally {
+        if (_numberOfNestedTaskFrames == 1) {
+          drainMicroTaskQueue();
         }
-      };
+        _numberOfNestedTaskFrames--;
+      }
     }
 
     get zone(): Zone {
@@ -1299,7 +1311,7 @@ const Zone: ZoneType = (function(global: any) {
     showUncaughtError: () => !(Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')],
     patchEventTargetMethods: () => false,
     patchOnProperties: noop,
-    patchMethod: () => noop
+    patchMethod: () => noop,
   };
   let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
   let _currentTask: Task = null;

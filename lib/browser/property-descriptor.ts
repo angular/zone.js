@@ -222,7 +222,7 @@ const IDBIndexEventNames =
     ['upgradeneeded', 'complete', 'abort', 'success', 'error', 'blocked', 'versionchange', 'close'];
 const websocketEventNames = ['close', 'error', 'open', 'message'];
 
-const eventNames = globalEventHandlersEventNames.concat(
+export const eventNames = globalEventHandlersEventNames.concat(
     webglEventNames, formEventNames, detailEventNames, documentEventNames, windowEventNames,
     htmlElementEventNames, ieElementEventNames);
 
