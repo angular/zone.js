@@ -24,6 +24,10 @@
     "lint": "gulp lint",
     "prepublish": "tsc && gulp build",
     "promisetest": "gulp promisetest",
+    "webdriver-start": "webdriver-manager update && webdriver-manager start",
+    "webdriver-http": "node simple-server.js",
+    "webdriver-test": "node test/webdriver/test.js",
+    "webdriver-sauce-test": "node test/webdriver/test.sauce.js",
     "ws-client": "node ./test/ws-client.js",
     "ws-server": "node ./test/ws-server.js",
     "tsc": "tsc",
@@ -77,12 +81,15 @@
     "nodejs-websocket": "^1.2.0",
     "promises-aplus-tests": "^2.1.2",
     "pump": "^1.0.1",
+    "selenium-webdriver": "^3.4.0",
     "systemjs": "^0.19.37",
     "ts-loader": "^0.6.0",
     "tslint": "^4.1.1",
     "tslint-eslint-rules": "^3.1.0",
     "typescript": "2.2.1",
     "vrsource-tslint-rules": "^4.0.0",
+    "webdriver-manager": "^12.0.6",
+    "webdriverio": "^4.8.0",
     "whatwg-fetch": "^2.0.1"
   }
 }
