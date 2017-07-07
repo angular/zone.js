@@ -15,7 +15,7 @@ declare const window: any;
 function notificationSupport() {
   const desc = window['Notification'] &&
       Object.getOwnPropertyDescriptor(window['Notification'].prototype, 'onerror');
-  return window['Notification'] && window['Notification'].prototype && desc.configurable;
+  return window['Notification'] && window['Notification'].prototype && desc && desc.configurable;
 }
 
 (<any>notificationSupport).message = 'Notification Support';

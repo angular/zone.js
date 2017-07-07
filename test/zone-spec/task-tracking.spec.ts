@@ -61,10 +61,11 @@ describe('TaskTrackingZone', function() {
         xhr.send();
         expect(taskTrackingZoneSpec.macroTasks.length).toBe(1);
         expect(taskTrackingZoneSpec.macroTasks[0].source).toBe('XMLHttpRequest.send');
-        expect(taskTrackingZoneSpec.eventTasks[0].source)
-            .toMatch(/\.addEventListener:readystatechange/);
+        if (supportPatchXHROnProperty()) {
+          expect(taskTrackingZoneSpec.eventTasks[0].source)
+              .toMatch(/\.addEventListener:readystatechange/);
+        }
       });
-
     });
   });
 

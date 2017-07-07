@@ -68,3 +68,21 @@ export function supportPatchXHROnProperty() {
   }
   return true;
 }
+
+let supportSetErrorStack = true;
+
+export function isSupportSetErrorStack() {
+  try {
+    throw new Error('test');
+  } catch (err) {
+    try {
+      err.stack = 'new stack';
+      supportSetErrorStack = err.stack === 'new stack';
+    } catch (error) {
+      supportSetErrorStack = false;
+    }
+  }
+  return supportSetErrorStack;
+}
+
+(isSupportSetErrorStack as any).message = 'supportSetErrorStack';
