@@ -249,10 +249,10 @@
       flushErrors();
     }
 
-    flush(): number {
+    flush(limit?: number): number {
       FakeAsyncTestZoneSpec.assertInZone();
       this.flushMicrotasks();
-      let elapsed = this._scheduler.flush();
+      let elapsed = this._scheduler.flush(limit);
       if (this._lastError !== null) {
         this._resetLastErrorAndThrow();
       }
