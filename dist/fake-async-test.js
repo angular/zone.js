@@ -237,10 +237,10 @@
             }
             flushErrors();
         };
-        FakeAsyncTestZoneSpec.prototype.flush = function () {
+        FakeAsyncTestZoneSpec.prototype.flush = function (limit) {
             FakeAsyncTestZoneSpec.assertInZone();
             this.flushMicrotasks();
-            var elapsed = this._scheduler.flush();
+            var elapsed = this._scheduler.flush(limit);
             if (this._lastError !== null) {
                 this._resetLastErrorAndThrow();
             }
@@ -278,8 +278,15 @@
                             break;
                         case 'XMLHttpRequest.send':
                             throw new Error('Cannot make XHRs from within a fake async test.');
+                        case 'requestAnimationFrame':
+                        case 'webkitRequestAnimationFrame':
+                        case 'mozRequestAnimationFrame':
+                            // Simulate a requestAnimationFrame by using a setTimeout with 16 ms.
+                            // (60 frames per second)
+                            task.data['handleId'] = this._setTimeout(task.invoke, 16, task.data['args']);
+                            break;
                         default:
-                            task = delegate.scheduleTask(target, task);
+                            throw new Error('Unknown macroTask scheduled in fake async test: ' + task.source);
                     }
                     break;
                 case 'eventTask':
@@ -291,6 +298,9 @@
         FakeAsyncTestZoneSpec.prototype.onCancelTask = function (delegate, current, target, task) {
             switch (task.source) {
                 case 'setTimeout':
+                case 'requestAnimationFrame':
+                case 'webkitRequestAnimationFrame':
+                case 'mozRequestAnimationFrame':
                     return this._clearTimeout(task.data['handleId']);
                 case 'setInterval':
                     return this._clearInterval(task.data['handleId']);

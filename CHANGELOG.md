@@ -1,3 +1,25 @@
+<a name="0.8.13"></a>
+## [0.8.13](https://github.com/angular/zone.js/compare/v0.8.12...0.8.13) (2017-07-12)
+
+
+### Bug Fixes
+
+* **promise:** fix [#806](https://github.com/angular/zone.js/issues/806), remove duplicate consolelog ([#807](https://github.com/angular/zone.js/issues/807)) ([f439fe2](https://github.com/angular/zone.js/commit/f439fe2))
+* **spec:** fakeAsyncTestSpec should handle requestAnimationFrame ([#805](https://github.com/angular/zone.js/issues/805)) ([8260f1d](https://github.com/angular/zone.js/commit/8260f1d)), closes [#804](https://github.com/angular/zone.js/issues/804)
+* **websocket:** fix [#824](https://github.com/angular/zone.js/issues/824), patch websocket onproperties correctly in PhantomJS ([#826](https://github.com/angular/zone.js/issues/826)) ([273cb85](https://github.com/angular/zone.js/commit/273cb85))
+
+
+### Features
+
+* **FakeAsyncTestZoneSpec:** FakeAsyncTestZoneSpec.flush() passes limit along to scheduler ([#831](https://github.com/angular/zone.js/issues/831)) ([667cd6f](https://github.com/angular/zone.js/commit/667cd6f))
+
+
+### Performance Improvements
+
+* **eventListener:** fix [#798](https://github.com/angular/zone.js/issues/798), improve EventTarget.addEventListener performance ([#812](https://github.com/angular/zone.js/issues/812)) ([b3a76d3](https://github.com/angular/zone.js/commit/b3a76d3))
+
+
+
 <a name="0.8.12"></a>
 ## [0.8.12](https://github.com/angular/zone.js/compare/v0.8.11...0.8.12) (2017-06-07)
 

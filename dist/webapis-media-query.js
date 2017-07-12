@@ -22,31 +22,7 @@ Zone.__load_patch('mediaQuery', function (global, Zone, api) {
     if (!global['MediaQueryList']) {
         return;
     }
-    api.patchEventTargetMethods(global['MediaQueryList'].prototype, 'addListener', 'removeListener', function (self, args) {
-        return {
-            useCapturing: false,
-            eventName: 'mediaQuery',
-            handler: args[0],
-            target: self || global,
-            name: 'mediaQuery',
-            invokeAddFunc: function (addFnSymbol, delegate) {
-                if (delegate && delegate.invoke) {
-                    return this.target[addFnSymbol](delegate.invoke);
-                }
-                else {
-                    return this.target[addFnSymbol](delegate);
-                }
-            },
-            invokeRemoveFunc: function (removeFnSymbol, delegate) {
-                if (delegate && delegate.invoke) {
-                    return this.target[removeFnSymbol](delegate.invoke);
-                }
-                else {
-                    return this.target[removeFnSymbol](delegate);
-                }
-            }
-        };
-    });
+    api.patchEventTargetMethods(global['MediaQueryList'].prototype, { addEventListenerFnName: 'addListener', removeEventListenerFnName: 'removeListener' });
 });
 
 })));

@@ -466,6 +466,7 @@ var Zone$1 = (function (global) {
         };
         return ZoneDelegate;
     }());
+    var OPTIMIZED_ZONE_EVENT_TASK = Zone.__symbol__('optimizedZoneEventTask');
     var ZoneTask = (function () {
         function ZoneTask(type, source, callback, options, scheduleFn, cancelFn) {
             this._zone = null;
@@ -479,20 +480,31 @@ var Zone$1 = (function (global) {
             this.cancelFn = cancelFn;
             this.callback = callback;
             var self = this;
-            this.invoke = function () {
-                _numberOfNestedTaskFrames++;
-                try {
-                    self.runCount++;
-                    return self.zone.runTask(self, this, arguments);
-                }
-                finally {
-                    if (_numberOfNestedTaskFrames == 1) {
-                        drainMicroTaskQueue();
-                    }
-                    _numberOfNestedTaskFrames--;
-                }
-            };
+            if (type === eventTask && options === OPTIMIZED_ZONE_EVENT_TASK) {
+                this.invoke = ZoneTask.invokeTask;
+            }
+            else {
+                this.invoke = function () {
+                    return ZoneTask.invokeTask.apply(global, [self, this, arguments]);
+                };
+            }
         }
+        ZoneTask.invokeTask = function (task, target, args) {
+            if (!task) {
+                task = this;
+            }
+            _numberOfNestedTaskFrames++;
+            try {
+                task.runCount++;
+                return task.zone.runTask(task, target, args);
+            }
+            finally {
+                if (_numberOfNestedTaskFrames == 1) {
+                    drainMicroTaskQueue();
+                }
+                _numberOfNestedTaskFrames--;
+            }
+        };
         Object.defineProperty(ZoneTask.prototype, "zone", {
             get: function () {
                 return this._zone;
@@ -611,7 +623,7 @@ var Zone$1 = (function (global) {
         showUncaughtError: function () { return !Zone[__symbol__('ignoreConsoleErrorUncaughtError')]; },
         patchEventTargetMethods: function () { return false; },
         patchOnProperties: noop,
-        patchMethod: function () { return noop; }
+        patchMethod: function () { return noop; },
     };
     var _currentZoneFrame = { parent: null, zone: new Zone(null, null) };
     var _currentTask = null;
@@ -642,7 +654,9 @@ Zone.__load_patch('ZoneAwarePromise', function (global, Zone, api) {
             if (rejection) {
                 console.error('Unhandled Promise rejection:', rejection instanceof Error ? rejection.message : rejection, '; Zone:', e.zone.name, '; Task:', e.task && e.task.source, '; Value:', rejection, rejection instanceof Error ? rejection.stack : undefined);
             }
-            console.error(e);
+            else {
+                console.error(e);
+            }
         }
     };
     api.microtaskDrainDone = function () {
@@ -971,277 +985,25 @@ Zone.__load_patch('ZoneAwarePromise', function (global, Zone, api) {
  * @fileoverview
  * @suppress {undefinedVars,globalThis}
  */
-var zoneSymbol = function (n) { return "__zone_symbol__" + n; };
-var _global = typeof window === 'object' && window || typeof self === 'object' && self || global;
+var zoneSymbol = Zone.__symbol__;
+var _global$1 = typeof window === 'object' && window || typeof self === 'object' && self || global;
 
 
 var isWebWorker = (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope);
 // Make sure to access `process` through `_global` so that WebPack does not accidently browserify
 // this code.
-var isNode = (!('nw' in _global) && typeof _global.process !== 'undefined' &&
-    {}.toString.call(_global.process) === '[object process]');
+var isNode = (!('nw' in _global$1) && typeof _global$1.process !== 'undefined' &&
+    {}.toString.call(_global$1.process) === '[object process]');
 
 // we are in electron of nw, so we are both browser and nodejs
 // Make sure to access `process` through `_global` so that WebPack does not accidently browserify
 // this code.
-var isMix = typeof _global.process !== 'undefined' &&
-    {}.toString.call(_global.process) === '[object process]' && !isWebWorker &&
+var isMix = typeof _global$1.process !== 'undefined' &&
+    {}.toString.call(_global$1.process) === '[object process]' && !isWebWorker &&
     !!(typeof window !== 'undefined' && window['HTMLElement']);
 
 
-var EVENT_TASKS = zoneSymbol('eventTasks');
-// compare the EventListenerOptionsOrCapture
-// 1. if the options is usCapture: boolean, compare the useCpature values directly
-// 2. if the options is EventListerOptions, only compare the capture
-function compareEventListenerOptions(left, right) {
-    var leftCapture = (typeof left === 'boolean') ?
-        left :
-        ((typeof left === 'object') ? (left && left.capture) : false);
-    var rightCapture = (typeof right === 'boolean') ?
-        right :
-        ((typeof right === 'object') ? (right && right.capture) : false);
-    return !!leftCapture === !!rightCapture;
-}
-function findExistingRegisteredTask(target, handler, name, options, remove) {
-    var eventTasks = target[EVENT_TASKS];
-    if (eventTasks) {
-        for (var i = 0; i < eventTasks.length; i++) {
-            var eventTask = eventTasks[i];
-            var data = eventTask.data;
-            var listener = data.handler;
-            if ((data.handler === handler || listener.listener === handler) &&
-                compareEventListenerOptions(data.options, options) && data.eventName === name) {
-                if (remove) {
-                    eventTasks.splice(i, 1);
-                }
-                return eventTask;
-            }
-        }
-    }
-    return null;
-}
-function findAllExistingRegisteredTasks(target, name, remove) {
-    var eventTasks = target[EVENT_TASKS];
-    if (eventTasks) {
-        var result = [];
-        for (var i = eventTasks.length - 1; i >= 0; i--) {
-            var eventTask = eventTasks[i];
-            var data = eventTask.data;
-            if (data.eventName === name) {
-                result.push(eventTask);
-                if (remove) {
-                    eventTasks.splice(i, 1);
-                }
-            }
-        }
-        return result;
-    }
-    return null;
-}
-function attachRegisteredEvent(target, eventTask, isPrepend) {
-    var eventTasks = target[EVENT_TASKS];
-    if (!eventTasks) {
-        eventTasks = target[EVENT_TASKS] = [];
-    }
-    if (isPrepend) {
-        eventTasks.unshift(eventTask);
-    }
-    else {
-        eventTasks.push(eventTask);
-    }
-}
-var defaultListenerMetaCreator = function (self, args) {
-    return {
-        options: args[2],
-        eventName: args[0],
-        handler: args[1],
-        target: self || _global,
-        name: args[0],
-        crossContext: false,
-        invokeAddFunc: function (addFnSymbol, delegate) {
-            // check if the data is cross site context, if it is, fallback to
-            // remove the delegate directly and try catch error
-            if (!this.crossContext) {
-                if (delegate && delegate.invoke) {
-                    return this.target[addFnSymbol](this.eventName, delegate.invoke, this.options);
-                }
-                else {
-                    return this.target[addFnSymbol](this.eventName, delegate, this.options);
-                }
-            }
-            else {
-                // add a if/else branch here for performance concern, for most times
-                // cross site context is false, so we don't need to try/catch
-                try {
-                    return this.target[addFnSymbol](this.eventName, delegate, this.options);
-                }
-                catch (err) {
-                    // do nothing here is fine, because objects in a cross-site context are unusable
-                }
-            }
-        },
-        invokeRemoveFunc: function (removeFnSymbol, delegate) {
-            // check if the data is cross site context, if it is, fallback to
-            // remove the delegate directly and try catch error
-            if (!this.crossContext) {
-                if (delegate && delegate.invoke) {
-                    return this.target[removeFnSymbol](this.eventName, delegate.invoke, this.options);
-                }
-                else {
-                    return this.target[removeFnSymbol](this.eventName, delegate, this.options);
-                }
-            }
-            else {
-                // add a if/else branch here for performance concern, for most times
-                // cross site context is false, so we don't need to try/catch
-                try {
-                    return this.target[removeFnSymbol](this.eventName, delegate, this.options);
-                }
-                catch (err) {
-                    // do nothing here is fine, because objects in a cross-site context are unusable
-                }
-            }
-        }
-    };
-};
-function makeZoneAwareAddListener(addFnName, removeFnName, useCapturingParam, allowDuplicates, isPrepend, metaCreator) {
-    if (useCapturingParam === void 0) { useCapturingParam = true; }
-    if (allowDuplicates === void 0) { allowDuplicates = false; }
-    if (isPrepend === void 0) { isPrepend = false; }
-    if (metaCreator === void 0) { metaCreator = defaultListenerMetaCreator; }
-    var addFnSymbol = zoneSymbol(addFnName);
-    var removeFnSymbol = zoneSymbol(removeFnName);
-    var defaultUseCapturing = useCapturingParam ? false : undefined;
-    function scheduleEventListener(eventTask) {
-        var meta = eventTask.data;
-        attachRegisteredEvent(meta.target, eventTask, isPrepend);
-        return meta.invokeAddFunc(addFnSymbol, eventTask);
-    }
-    function cancelEventListener(eventTask) {
-        var meta = eventTask.data;
-        findExistingRegisteredTask(meta.target, eventTask.invoke, meta.eventName, meta.options, true);
-        return meta.invokeRemoveFunc(removeFnSymbol, eventTask);
-    }
-    return function zoneAwareAddListener(self, args) {
-        var data = metaCreator(self, args);
-        data.options = data.options || defaultUseCapturing;
-        // - Inside a Web Worker, `this` is undefined, the context is `global`
-        // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
-        // see https://github.com/angular/zone.js/issues/190
-        var delegate = null;
-        if (typeof data.handler == 'function') {
-            delegate = data.handler;
-        }
-        else if (data.handler && data.handler.handleEvent) {
-            delegate = function (event) { return data.handler.handleEvent(event); };
-        }
-        var validZoneHandler = false;
-        try {
-            // In cross site contexts (such as WebDriver frameworks like Selenium),
-            // accessing the handler object here will cause an exception to be thrown which
-            // will fail tests prematurely.
-            validZoneHandler = data.handler && data.handler.toString() === '[object FunctionWrapper]';
-        }
-        catch (error) {
-            // we can still try to add the data.handler even we are in cross site context
-            data.crossContext = true;
-            return data.invokeAddFunc(addFnSymbol, data.handler);
-        }
-        // Ignore special listeners of IE11 & Edge dev tools, see
-        // https://github.com/angular/zone.js/issues/150
-        if (!delegate || validZoneHandler) {
-            return data.invokeAddFunc(addFnSymbol, data.handler);
-        }
-        if (!allowDuplicates) {
-            var eventTask = findExistingRegisteredTask(data.target, data.handler, data.eventName, data.options, false);
-            if (eventTask) {
-                // we already registered, so this will have noop.
-                return data.invokeAddFunc(addFnSymbol, eventTask);
-            }
-        }
-        var zone = Zone.current;
-        var source = data.target.constructor['name'] + '.' + addFnName + ':' + data.eventName;
-        zone.scheduleEventTask(source, delegate, data, scheduleEventListener, cancelEventListener);
-    };
-}
-function makeZoneAwareRemoveListener(fnName, useCapturingParam, metaCreator) {
-    if (useCapturingParam === void 0) { useCapturingParam = true; }
-    if (metaCreator === void 0) { metaCreator = defaultListenerMetaCreator; }
-    var symbol = zoneSymbol(fnName);
-    var defaultUseCapturing = useCapturingParam ? false : undefined;
-    return function zoneAwareRemoveListener(self, args) {
-        var data = metaCreator(self, args);
-        data.options = data.options || defaultUseCapturing;
-        // - Inside a Web Worker, `this` is undefined, the context is `global`
-        // - When `addEventListener` is called on the global context in strict mode, `this` is undefined
-        // see https://github.com/angular/zone.js/issues/190
-        var delegate = null;
-        if (typeof data.handler == 'function') {
-            delegate = data.handler;
-        }
-        else if (data.handler && data.handler.handleEvent) {
-            delegate = function (event) { return data.handler.handleEvent(event); };
-        }
-        var validZoneHandler = false;
-        try {
-            // In cross site contexts (such as WebDriver frameworks like Selenium),
-            // accessing the handler object here will cause an exception to be thrown which
-            // will fail tests prematurely.
-            validZoneHandler = data.handler && data.handler.toString() === '[object FunctionWrapper]';
-        }
-        catch (error) {
-            data.crossContext = true;
-            return data.invokeRemoveFunc(symbol, data.handler);
-        }
-        // Ignore special listeners of IE11 & Edge dev tools, see
-        // https://github.com/angular/zone.js/issues/150
-        if (!delegate || validZoneHandler) {
-            return data.invokeRemoveFunc(symbol, data.handler);
-        }
-        var eventTask = findExistingRegisteredTask(data.target, data.handler, data.eventName, data.options, true);
-        if (eventTask) {
-            eventTask.zone.cancelTask(eventTask);
-        }
-        else {
-            data.invokeRemoveFunc(symbol, data.handler);
-        }
-    };
-}
-function makeZoneAwareRemoveAllListeners(fnName) {
-    var symbol = zoneSymbol(fnName);
-    return function zoneAwareRemoveAllListener(self, args) {
-        var target = self || _global;
-        if (args.length === 0) {
-            // remove all listeners without eventName
-            target[EVENT_TASKS] = [];
-            // we don't cancel Task either, because call native eventEmitter.removeAllListeners will
-            // will do remove listener(cancelTask) for us
-            target[symbol]();
-            return;
-        }
-        var eventName = args[0];
-        // call this function just remove the related eventTask from target[EVENT_TASKS]
-        // we don't need useCapturing here because useCapturing is just for DOM, and
-        // removeAllListeners should only be called by node eventEmitter
-        // and we don't cancel Task either, because call native eventEmitter.removeAllListeners will
-        // will do remove listener(cancelTask) for us
-        findAllExistingRegisteredTasks(target, eventName, true);
-        target[symbol](eventName);
-    };
-}
-function makeZoneAwareListeners(fnName) {
-    return function zoneAwareEventListeners(self, args) {
-        var eventName = args[0];
-        var target = self || _global;
-        if (!target[EVENT_TASKS]) {
-            return [];
-        }
-        return target[EVENT_TASKS]
-            .filter(function (task) { return task.data['eventName'] === eventName; })
-            .map(function (task) { return task.data['handler']; });
-    };
-}
-
+var originalInstanceKey = zoneSymbol('originalInstance');
 // wrap some native API on `window`
 
 function patchMethod(target, name, patchFn) {
@@ -1310,21 +1072,6 @@ function patchMicroTask(obj, funcName, metaCreator) {
         }
     }; });
 }
-function findEventTask(target, evtName) {
-    var eventTasks = target[zoneSymbol('eventTasks')];
-    var result = [];
-    if (eventTasks) {
-        for (var i = 0; i < eventTasks.length; i++) {
-            var eventTask = eventTasks[i];
-            var data = eventTask.data;
-            var eventName = data && data.eventName;
-            if (eventName === evtName) {
-                result.push(eventTask);
-            }
-        }
-    }
-    return result;
-}
 function attachOriginToPatched(patched, original) {
     patched[zoneSymbol('OriginalDelegate')] = original;
 }
@@ -1340,7 +1087,8 @@ function attachOriginToPatched(patched, original) {
 // look like native function
 Zone.__load_patch('toString', function (global, Zone, api) {
     // patch Func.prototype.toString to let them look like native
-    var originalFunctionToString = Function.prototype.toString;
+    var originalFunctionToString = Zone['__zone_symbol__originalToString'] =
+        Function.prototype.toString;
     Function.prototype.toString = function () {
         if (typeof this === 'function') {
             var originalDelegate = this[zoneSymbol('OriginalDelegate')];
@@ -1384,6 +1132,400 @@ Zone.__load_patch('toString', function (global, Zone, api) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var TRUE_STR = 'true';
+var FALSE_STR = 'false';
+// an identifier to tell ZoneTask do not create a new invoke closure
+var OPTIMIZED_ZONE_EVENT_TASK = zoneSymbol('optimizedZoneEventTask');
+var zoneSymbolEventNames = {};
+var globalSources = {};
+var CONSTRUCTOR_NAME = 'name';
+var FUNCTION_TYPE = 'function';
+var OBJECT_TYPE = 'object';
+var ZONE_SYMBOL_PREFIX = '__zone_symbol__';
+var EVENT_NAME_SYMBOL_REGX = /^__zone_symbol__(\w+)(true|false)$/;
+var invokeTask = function (task, target, event) {
+    var delegate = task.callback;
+    if (typeof delegate === OBJECT_TYPE && delegate.handleEvent) {
+        // create the bind version of handleEvnet when invoke
+        task.callback = function (event) { return delegate.handleEvent(event); };
+        task.originalDelegate = delegate;
+    }
+    // invoke static task.invoke
+    task.invoke(task, target, [event]);
+};
+// global shared zoneAwareCallback to handle all event callback with capture = false
+var globalZoneAwareCallback = function (event) {
+    var target = this || _global;
+    var tasks = target[zoneSymbolEventNames[event.type][FALSE_STR]];
+    if (tasks) {
+        // invoke all tasks which attached to current target with given event.type and capture = false
+        for (var i = 0; i < tasks.length; i++) {
+            invokeTask(tasks[i], target, event);
+        }
+    }
+};
+// global shared zoneAwareCallback to handle all event callback with capture = true
+var globalZoneAwareCaptureCallback = function (event) {
+    var target = this || _global;
+    var tasks = target[zoneSymbolEventNames[event.type][TRUE_STR]];
+    if (tasks) {
+        for (var i = 0; i < tasks.length; i++) {
+            invokeTask(tasks[i], target, event);
+        }
+    }
+};
+function patchEventTargetMethods(obj, patchOptions) {
+    if (!obj) {
+        return false;
+    }
+    var ADD_EVENT_LISTENER = (patchOptions && patchOptions.addEventListenerFnName) || 'addEventListener';
+    var REMOVE_EVENT_LISTENER = (patchOptions && patchOptions.removeEventListenerFnName) || 'removeEventListener';
+    var LISTENERS_EVENT_LISTENER = (patchOptions && patchOptions.listenersFnName) || 'eventListeners';
+    var REMOVE_ALL_LISTENERS_EVENT_LISTENER = (patchOptions && patchOptions.removeAllFnName) || 'removeAllListeners';
+    var zoneSymbolAddEventListener = zoneSymbol(ADD_EVENT_LISTENER);
+    var ADD_EVENT_LISTENER_SOURCE = '.' + ADD_EVENT_LISTENER + ':';
+    var PREPEND_EVENT_LISTENER = 'prependListener';
+    var PREPEND_EVENT_LISTENER_SOURCE = '.' + PREPEND_EVENT_LISTENER + ':';
+    var useGlobalCallback = true;
+    if (patchOptions && patchOptions.useGlobalCallback !== undefined) {
+        useGlobalCallback = patchOptions.useGlobalCallback;
+    }
+    var validateHandler = patchOptions && patchOptions.validateHandler;
+    var checkDuplicate = true;
+    if (patchOptions && patchOptions.checkDuplicate !== undefined) {
+        checkDuplicate = patchOptions.checkDuplicate;
+    }
+    var returnTarget = false;
+    if (patchOptions && patchOptions.returnTarget !== undefined) {
+        returnTarget = patchOptions.returnTarget;
+    }
+    var proto = obj;
+    while (proto && !proto.hasOwnProperty(ADD_EVENT_LISTENER)) {
+        proto = Object.getPrototypeOf(proto);
+    }
+    if (!proto && obj[ADD_EVENT_LISTENER]) {
+        // somehow we did not find it, but we can see it. This happens on IE for Window properties.
+        proto = obj;
+    }
+    if (!proto) {
+        return false;
+    }
+    if (proto[zoneSymbolAddEventListener]) {
+        return false;
+    }
+    // a shared global taskData to pass data for scheduleEventTask
+    // so we do not need to create a new object just for pass some data
+    var taskData = {};
+    var nativeAddEventListener = proto[zoneSymbolAddEventListener] = proto[ADD_EVENT_LISTENER];
+    var nativeRemoveEventListener = proto[zoneSymbol(REMOVE_EVENT_LISTENER)] =
+        proto[REMOVE_EVENT_LISTENER];
+    var nativeListeners = proto[zoneSymbol(LISTENERS_EVENT_LISTENER)] =
+        proto[LISTENERS_EVENT_LISTENER];
+    var nativeRemoveAllListeners = proto[zoneSymbol(REMOVE_ALL_LISTENERS_EVENT_LISTENER)] =
+        proto[REMOVE_ALL_LISTENERS_EVENT_LISTENER];
+    var nativePrependEventListener;
+    if (patchOptions && patchOptions.prependEventListenerFnName) {
+        nativePrependEventListener = proto[zoneSymbol(patchOptions.prependEventListenerFnName)] =
+            proto[patchOptions.prependEventListenerFnName];
+    }
+    var customScheduleGlobal = function (task) {
+        // if there is already a task for the eventName + capture,
+        // just return, because we use the shared globalZoneAwareCallback here.
+        if (taskData.isExisting) {
+            return;
+        }
+        return nativeAddEventListener.apply(taskData.target, [
+            taskData.eventName,
+            taskData.capture ? globalZoneAwareCaptureCallback : globalZoneAwareCallback, taskData.options
+        ]);
+    };
+    var customCancelGlobal = function (task) {
+        // if all tasks for the eventName + capture have gone,
+        // we will really remove the global event callback,
+        // if not, return
+        if (!task.remove) {
+            return;
+        }
+        return nativeRemoveEventListener.apply(task.target, [
+            task.eventName, task.capture ? globalZoneAwareCaptureCallback : globalZoneAwareCallback,
+            task.options
+        ]);
+    };
+    var customScheduleNonGlobal = function (task) {
+        return nativeAddEventListener.apply(taskData.target, [taskData.eventName, task.invoke, taskData.options]);
+    };
+    var customSchedulePrepend = function (task) {
+        return nativePrependEventListener.apply(taskData.target, [taskData.eventName, task.invoke, taskData.options]);
+    };
+    var customCancelNonGlobal = function (task) {
+        return nativeRemoveEventListener.apply(task.target, [task.eventName, task.invoke, task.options]);
+    };
+    var customSchedule = useGlobalCallback ? customScheduleGlobal : customScheduleNonGlobal;
+    var customCancel = useGlobalCallback ? customCancelGlobal : customCancelNonGlobal;
+    var compareTaskCallbackVsDelegate = function (task, delegate) {
+        var typeOfDelegate = typeof delegate;
+        if ((typeOfDelegate === FUNCTION_TYPE && task.callback === delegate) ||
+            (typeOfDelegate === OBJECT_TYPE && task.originalDelegate === delegate)) {
+            // same callback, same capture, same event name, just return
+            return true;
+        }
+        return false;
+    };
+    var compare = (patchOptions && patchOptions.compareTaskCallbackVsDelegate) ?
+        patchOptions.compareTaskCallbackVsDelegate :
+        compareTaskCallbackVsDelegate;
+    var makeAddListener = function (nativeListener, addSource, customScheduleFn, customCancelFn, returnTarget, prepend) {
+        if (returnTarget === void 0) { returnTarget = false; }
+        if (prepend === void 0) { prepend = false; }
+        return function () {
+            var target = this || _global;
+            var targetZone = Zone.current;
+            var delegate = arguments[1];
+            if (!delegate) {
+                return nativeListener.apply(this, arguments);
+            }
+            // don't create the bind delegate function for handleEvent
+            // case here to improve addEventListener performance
+            // we will create the bind delegate when invoke
+            var isHandleEvent = false;
+            if (typeof delegate !== FUNCTION_TYPE) {
+                if (!delegate.handleEvent) {
+                    return nativeListener.apply(this, arguments);
+                }
+                isHandleEvent = true;
+            }
+            if (validateHandler && !validateHandler(nativeListener, delegate, target, arguments)) {
+                return;
+            }
+            var eventName = arguments[0];
+            var options = arguments[2];
+            var capture;
+            if (options === undefined) {
+                capture = false;
+            }
+            else if (options === true) {
+                capture = true;
+            }
+            else if (options === false) {
+                capture = false;
+            }
+            else {
+                capture = options ? !!options.capture : false;
+            }
+            var zone = Zone.current;
+            var symbolEventNames = zoneSymbolEventNames[eventName];
+            var symbolEventName;
+            if (!symbolEventNames) {
+                // the code is duplicate, but I just want to get some better performance
+                var falseEventName = eventName + FALSE_STR;
+                var trueEventName = eventName + TRUE_STR;
+                var symbol = ZONE_SYMBOL_PREFIX + falseEventName;
+                var symbolCapture = ZONE_SYMBOL_PREFIX + trueEventName;
+                zoneSymbolEventNames[eventName] = {};
+                zoneSymbolEventNames[eventName][FALSE_STR] = symbol;
+                zoneSymbolEventNames[eventName][TRUE_STR] = symbolCapture;
+                symbolEventName = capture ? symbolCapture : symbol;
+            }
+            else {
+                symbolEventName = symbolEventNames[capture ? TRUE_STR : FALSE_STR];
+            }
+            var existingTasks = target[symbolEventName];
+            var isExisting = false;
+            if (existingTasks) {
+                // already have task registered
+                isExisting = true;
+                if (checkDuplicate) {
+                    for (var i = 0; i < existingTasks.length; i++) {
+                        if (compare(existingTasks[i], delegate)) {
+                            // same callback, same capture, same event name, just return
+                            return;
+                        }
+                    }
+                }
+            }
+            else {
+                existingTasks = target[symbolEventName] = [];
+            }
+            var source;
+            var constructorName = target.constructor[CONSTRUCTOR_NAME];
+            var targetSource = globalSources[constructorName];
+            if (targetSource) {
+                source = targetSource[eventName];
+            }
+            if (!source) {
+                source = constructorName + addSource + eventName;
+            }
+            // do not create a new object as task.data to pass those things
+            // just use the global shared one
+            taskData.options = options;
+            taskData.target = target;
+            taskData.capture = capture;
+            taskData.eventName = eventName;
+            taskData.isExisting = isExisting;
+            var data = useGlobalCallback ? OPTIMIZED_ZONE_EVENT_TASK : null;
+            var task = zone.scheduleEventTask(source, delegate, data, customScheduleFn, customCancelFn);
+            // have to save those information to task in case
+            // application may call task.zone.cancelTask() directly
+            task.options = options;
+            task.target = target;
+            task.capture = capture;
+            task.eventName = eventName;
+            if (isHandleEvent) {
+                // save original delegate for compare to check duplicate
+                task.originalDelegate = delegate;
+            }
+            if (!prepend) {
+                existingTasks.push(task);
+            }
+            else {
+                existingTasks.unshift(task);
+            }
+            if (returnTarget) {
+                return target;
+            }
+        };
+    };
+    proto[ADD_EVENT_LISTENER] = makeAddListener(nativeAddEventListener, ADD_EVENT_LISTENER_SOURCE, customSchedule, customCancel, returnTarget);
+    if (nativePrependEventListener) {
+        proto[PREPEND_EVENT_LISTENER] = makeAddListener(nativePrependEventListener, PREPEND_EVENT_LISTENER_SOURCE, customSchedulePrepend, customCancel, returnTarget, true);
+    }
+    proto[REMOVE_EVENT_LISTENER] = function () {
+        var target = this || _global;
+        var eventName = arguments[0];
+        var options = arguments[2];
+        var capture;
+        if (options === undefined) {
+            capture = false;
+        }
+        else if (options === true) {
+            capture = true;
+        }
+        else if (options === false) {
+            capture = false;
+        }
+        else {
+            capture = options ? !!options.capture : false;
+        }
+        var delegate = arguments[1];
+        if (!delegate) {
+            return nativeRemoveEventListener.apply(this, arguments);
+        }
+        if (validateHandler &&
+            !validateHandler(nativeRemoveEventListener, delegate, target, arguments)) {
+            return;
+        }
+        var symbolEventNames = zoneSymbolEventNames[eventName];
+        var symbolEventName;
+        if (symbolEventNames) {
+            symbolEventName = symbolEventNames[capture ? TRUE_STR : FALSE_STR];
+        }
+        var existingTasks = symbolEventName && target[symbolEventName];
+        if (existingTasks) {
+            for (var i = 0; i < existingTasks.length; i++) {
+                var existingTask = existingTasks[i];
+                var typeOfDelegate = typeof delegate;
+                if (compare(existingTask, delegate)) {
+                    existingTasks.splice(i, 1);
+                    if (existingTasks.length === 0) {
+                        // all tasks for the eventName + capture have gone,
+                        // remove globalZoneAwareCallback and remove the task cache from target
+                        existingTask.remove = true;
+                        target[symbolEventName] = null;
+                    }
+                    existingTask.zone.cancelTask(existingTask);
+                    return;
+                }
+            }
+        }
+    };
+    proto[LISTENERS_EVENT_LISTENER] = function () {
+        var target = this || _global;
+        var eventName = arguments[0];
+        var listeners = [];
+        var tasks = findEventTasks(target, eventName);
+        for (var i = 0; i < tasks.length; i++) {
+            var task = tasks[i];
+            var delegate = task.originalDelegate ? task.originalDelegate : task.callback;
+            listeners.push(delegate);
+        }
+        return listeners;
+    };
+    proto[REMOVE_ALL_LISTENERS_EVENT_LISTENER] = function () {
+        var target = this || _global;
+        var eventName = arguments[0];
+        if (!eventName) {
+            var keys = Object.keys(target);
+            for (var i = 0; i < keys.length; i++) {
+                var prop = keys[i];
+                var match = EVENT_NAME_SYMBOL_REGX.exec(prop);
+                var evtName = match && match[1];
+                if (evtName && evtName !== 'removeListener') {
+                    this[REMOVE_ALL_LISTENERS_EVENT_LISTENER].apply(this, [evtName]);
+                }
+            }
+            this[REMOVE_ALL_LISTENERS_EVENT_LISTENER].apply(this, ['removeListener']);
+        }
+        else {
+            var symbolEventNames = zoneSymbolEventNames[eventName];
+            if (symbolEventNames) {
+                var symbolEventName = symbolEventNames[FALSE_STR];
+                var symbolCaptureEventName = symbolEventNames[TRUE_STR];
+                var tasks = target[symbolEventName];
+                var captureTasks = target[symbolCaptureEventName];
+                if (tasks) {
+                    var removeTasks = tasks.slice();
+                    for (var i = 0; i < removeTasks.length; i++) {
+                        var task = removeTasks[i];
+                        var delegate = task.originalDelegate ? task.originalDelegate : task.callback;
+                        this[REMOVE_EVENT_LISTENER].apply(this, [eventName, delegate, task.options]);
+                    }
+                }
+                if (captureTasks) {
+                    var removeTasks = captureTasks.slice();
+                    for (var i = 0; i < removeTasks.length; i++) {
+                        var task = removeTasks[i];
+                        var delegate = task.originalDelegate ? task.originalDelegate : task.callback;
+                        this[REMOVE_EVENT_LISTENER].apply(this, [eventName, delegate, task.options]);
+                    }
+                }
+            }
+        }
+    };
+    // for native toString patch
+    attachOriginToPatched(proto[ADD_EVENT_LISTENER], nativeAddEventListener);
+    attachOriginToPatched(proto[REMOVE_EVENT_LISTENER], nativeRemoveEventListener);
+    if (nativeRemoveAllListeners) {
+        attachOriginToPatched(proto[REMOVE_ALL_LISTENERS_EVENT_LISTENER], nativeRemoveAllListeners);
+    }
+    if (nativeListeners) {
+        attachOriginToPatched(proto[LISTENERS_EVENT_LISTENER], nativeListeners);
+    }
+    return true;
+}
+function findEventTasks(target, eventName) {
+    var foundTasks = [];
+    for (var prop in target) {
+        var match = EVENT_NAME_SYMBOL_REGX.exec(prop);
+        var evtName = match && match[1];
+        if (evtName && (!eventName || evtName === eventName)) {
+            var tasks = target[prop];
+            if (tasks) {
+                for (var i = 0; i < tasks.length; i++) {
+                    foundTasks.push(tasks[i]);
+                }
+            }
+        }
+    }
+    return foundTasks;
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 Zone.__load_patch('EventEmitter', function (global, Zone, api) {
     var callAndReturnFirstParam = function (fn) {
         return function (self, args) {
@@ -1398,24 +1540,29 @@ Zone.__load_patch('EventEmitter', function (global, Zone, api) {
     var EE_REMOVE_ALL_LISTENER = 'removeAllListeners';
     var EE_LISTENERS = 'listeners';
     var EE_ON = 'on';
-    var zoneAwareAddListener = callAndReturnFirstParam(makeZoneAwareAddListener(EE_ADD_LISTENER, EE_REMOVE_LISTENER, false, true, false));
-    var zoneAwarePrependListener = callAndReturnFirstParam(makeZoneAwareAddListener(EE_PREPEND_LISTENER, EE_REMOVE_LISTENER, false, true, true));
-    var zoneAwareRemoveListener = callAndReturnFirstParam(makeZoneAwareRemoveListener(EE_REMOVE_LISTENER, false));
-    var zoneAwareRemoveAllListeners = callAndReturnFirstParam(makeZoneAwareRemoveAllListeners(EE_REMOVE_ALL_LISTENER));
-    var zoneAwareListeners = makeZoneAwareListeners(EE_LISTENERS);
-    function patchEventEmitterMethods(obj) {
-        if (obj && obj.addListener) {
-            patchMethod(obj, EE_ADD_LISTENER, function () { return zoneAwareAddListener; });
-            patchMethod(obj, EE_PREPEND_LISTENER, function () { return zoneAwarePrependListener; });
-            patchMethod(obj, EE_REMOVE_LISTENER, function () { return zoneAwareRemoveListener; });
-            patchMethod(obj, EE_REMOVE_ALL_LISTENER, function () { return zoneAwareRemoveAllListeners; });
-            patchMethod(obj, EE_LISTENERS, function () { return zoneAwareListeners; });
-            obj[EE_ON] = obj[EE_ADD_LISTENER];
+    var compareTaskCallbackVsDelegate = function (task, delegate) {
+        if (task.callback === delegate || task.callback.listener === delegate) {
+            // same callback, same capture, same event name, just return
             return true;
         }
-        else {
-            return false;
+        return false;
+    };
+    function patchEventEmitterMethods(obj) {
+        var result = patchEventTargetMethods(obj, {
+            useGlobalCallback: false,
+            addEventListenerFnName: EE_ADD_LISTENER,
+            removeEventListenerFnName: EE_REMOVE_LISTENER,
+            prependEventListenerFnName: EE_PREPEND_LISTENER,
+            removeAllFnName: EE_REMOVE_ALL_LISTENER,
+            listenersFnName: EE_LISTENERS,
+            checkDuplicate: false,
+            returnTarget: true,
+            compareTaskCallbackVsDelegate: compareTaskCallbackVsDelegate
+        });
+        if (result) {
+            obj[EE_ON] = obj[EE_ADD_LISTENER];
         }
+        return result;
     }
     // EventEmitter
     var events;
@@ -1640,7 +1787,7 @@ Zone.__load_patch('handleUnhandledPromiseRejection', function (global, Zone, api
     // handle unhandled promise rejection
     function findProcessPromiseRejectionHandler(evtName) {
         return function (e) {
-            var eventTasks = findEventTask(process, evtName);
+            var eventTasks = findEventTasks(process, evtName);
             eventTasks.forEach(function (eventTask) {
                 // process has added unhandledrejection event listener
                 // trigger the event listener
