@@ -501,6 +501,26 @@ describe('FakeAsyncTestZoneSpec', () => {
           .toThrowError(
               'flush failed after reaching the limit of 20 tasks. Does your code use a polling timeout?');
     });
+
+    it('accepts a custom limit', function() {
+      expect(() => {
+        fakeAsyncTestZone.run(() => {
+          let z = 0;
+
+          let poll = () => {
+            setTimeout(() => {
+              z++;
+              poll();
+            }, 10);
+          };
+
+          poll();
+          testZoneSpec.flush(10);
+        });
+      })
+          .toThrowError(
+              'flush failed after reaching the limit of 10 tasks. Does your code use a polling timeout?');
+    });
   });
 
   describe('outside of FakeAsync Zone', () => {
