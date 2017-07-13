@@ -29,6 +29,9 @@ export const ZONE_SYMBOL_PREFIX = '__zone_symbol__';
 
 const EVENT_NAME_SYMBOL_REGX = /^__zone_symbol__(\w+)(true|false)$/;
 
+const _global =
+    typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global;
+
 export interface PatchEventTargetOptions {
   validateHandler?: (nativeDelegate: any, delegate: any, target: any, args: any) => boolean;
   addEventListenerFnName?: string;
