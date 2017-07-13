@@ -9,8 +9,13 @@ import {attachOriginToPatched, zoneSymbol} from './utils';
 
 export const TRUE_STR = 'true';
 export const FALSE_STR = 'false';
+
+export interface EventTaskData extends TaskData { readonly isUsingGlobalCallback?: boolean; }
+
 // an identifier to tell ZoneTask do not create a new invoke closure
-export const OPTIMIZED_ZONE_EVENT_TASK = zoneSymbol('optimizedZoneEventTask');
+export const OPTIMIZED_ZONE_EVENT_TASK_DATA: EventTaskData = {
+  isUsingGlobalCallback: true
+};
 
 export const zoneSymbolEventNames: any = {};
 export const globalSources: any = {};
@@ -291,7 +296,7 @@ export function patchEventTargetMethods(obj: any, patchOptions?: PatchEventTarge
       taskData.eventName = eventName;
       taskData.isExisting = isExisting;
 
-      const data = useGlobalCallback ? OPTIMIZED_ZONE_EVENT_TASK : null;
+      const data = useGlobalCallback ? OPTIMIZED_ZONE_EVENT_TASK_DATA : null;
       const task: any =
           zone.scheduleEventTask(source, delegate, data, customScheduleFn, customCancelFn);
 

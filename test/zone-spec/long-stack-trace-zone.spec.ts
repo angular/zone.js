@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {zoneSymbol} from '../../lib/common/utils';
+import {isBrowser, zoneSymbol} from '../../lib/common/utils';
 import {ifEnvSupports, isSupportSetErrorStack} from '../test-util';
 
 const defineProperty = (Object as any)[zoneSymbol('defineProperty')] || Object.defineProperty;
@@ -56,6 +56,24 @@ describe(
           }, 0);
         });
       });
+
+      it('should produce long stack traces for optimized eventTask',
+         ifEnvSupports(() => isBrowser, function() {
+           lstz.run(function() {
+             const button = document.createElement('button');
+             const clickEvent = document.createEvent('Event');
+             clickEvent.initEvent('click', true, true);
+             document.body.appendChild(button);
+
+             button.addEventListener('click', function() {
+               expectElapsed(log[0].stack, 1);
+             });
+
+             button.dispatchEvent(clickEvent);
+
+             document.body.removeChild(button);
+           });
+         }));
 
       it('should produce a long stack trace even if stack setter throws', (done) => {
         let wasStackAssigned = false;
