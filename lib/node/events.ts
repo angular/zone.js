@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {globalSources, patchEventTargetMethods, zoneSymbolEventNames} from '../common/events';
+import {globalSources, patchEventTarget, zoneSymbolEventNames} from '../common/events';
 
 Zone.__load_patch('EventEmitter', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   const callAndReturnFirstParam = (fn: (self: any, args: any[]) => any) => {
@@ -32,8 +32,8 @@ Zone.__load_patch('EventEmitter', (global: any, Zone: ZoneType, api: _ZonePrivat
     return false;
   };
 
-  function patchEventEmitterMethods(obj: any): boolean {
-    const result = patchEventTargetMethods(obj, {
+  function patchEventEmitterMethods(obj: any) {
+    const result = patchEventTarget(api, global, [obj], {
       useGlobalCallback: false,
       addEventListenerFnName: EE_ADD_LISTENER,
       removeEventListenerFnName: EE_REMOVE_LISTENER,
@@ -44,10 +44,9 @@ Zone.__load_patch('EventEmitter', (global: any, Zone: ZoneType, api: _ZonePrivat
       returnTarget: true,
       compareTaskCallbackVsDelegate: compareTaskCallbackVsDelegate
     });
-    if (result) {
+    if (result && result[0]) {
       obj[EE_ON] = obj[EE_ADD_LISTENER];
     }
-    return result;
   }
 
   // EventEmitter
