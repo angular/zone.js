@@ -781,6 +781,391 @@ describe('Zone', function() {
         });
       });
 
+      describe('should be able to remove eventListener during eventListener callback', function() {
+        it('should be able to remove first eventListener during eventListener callback',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               button.removeEventListener('click', listener1);
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+               }
+             };
+
+             button.addEventListener('click', listener1);
+             button.addEventListener('click', listener2);
+             button.addEventListener('click', listener3);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(3);
+             expect(logs).toEqual(['listener1', 'listener2', 'listener3']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(2);
+             expect(logs).toEqual(['listener2', 'listener3']);
+
+             button.removeEventListener('click', listener2);
+             button.removeEventListener('click', listener3);
+           });
+
+        it('should be able to remove middle eventListener during eventListener callback',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               button.removeEventListener('click', listener2);
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+               }
+             };
+
+             button.addEventListener('click', listener1);
+             button.addEventListener('click', listener2);
+             button.addEventListener('click', listener3);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(3);
+             expect(logs).toEqual(['listener1', 'listener2', 'listener3']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(2);
+             expect(logs).toEqual(['listener1', 'listener3']);
+
+             button.removeEventListener('click', listener1);
+             button.removeEventListener('click', listener3);
+           });
+
+        it('should be able to remove last eventListener during eventListener callback', function() {
+          let logs: string[] = [];
+          const listener1 = function() {
+            logs.push('listener1');
+          };
+          const listener2 = function() {
+            logs.push('listener2');
+          };
+          const listener3 = {
+            handleEvent: function(event: Event) {
+              logs.push('listener3');
+              button.removeEventListener('click', listener3);
+            }
+          };
+
+          button.addEventListener('click', listener1);
+          button.addEventListener('click', listener2);
+          button.addEventListener('click', listener3);
+
+          button.dispatchEvent(clickEvent);
+          expect(logs.length).toBe(3);
+          expect(logs).toEqual(['listener1', 'listener2', 'listener3']);
+
+          logs = [];
+          button.dispatchEvent(clickEvent);
+          expect(logs.length).toBe(2);
+          expect(logs).toEqual(['listener1', 'listener2']);
+
+          button.removeEventListener('click', listener1);
+          button.removeEventListener('click', listener2);
+        });
+
+        it('should be able to remove all afterward eventListener during eventListener callback',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+               button.removeEventListener('click', listener2);
+               button.removeEventListener('click', listener3);
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+               }
+             };
+
+             button.addEventListener('click', listener1);
+             button.addEventListener('click', listener2);
+             button.addEventListener('click', listener3);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(1);
+             expect(logs).toEqual(['listener1']);
+
+             button.removeEventListener('click', listener1);
+           });
+
+        it('should be able to remove part of afterward eventListener during eventListener callback',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+               button.removeEventListener('click', listener2);
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+               }
+             };
+
+             button.addEventListener('click', listener1);
+             button.addEventListener('click', listener2);
+             button.addEventListener('click', listener3);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(2);
+             expect(logs).toEqual(['listener1', 'listener3']);
+
+             button.removeEventListener('click', listener1);
+             button.removeEventListener('click', listener3);
+           });
+
+        it('should be able to remove all beforeward and afterward eventListener during eventListener callback',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+               button.removeEventListener('click', listener1);
+               button.removeEventListener('click', listener3);
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+               }
+             };
+
+             button.addEventListener('click', listener1);
+             button.addEventListener('click', listener2);
+             button.addEventListener('click', listener3);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(2);
+             expect(logs).toEqual(['listener1', 'listener2']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(1);
+             expect(logs).toEqual(['listener2']);
+
+             button.removeEventListener('click', listener2);
+           });
+
+        it('should be able to remove part of beforeward and afterward eventListener during eventListener callback',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+                 button.removeEventListener('click', listener2);
+                 button.removeEventListener('click', listener4);
+               }
+             };
+             const listener4 = function() {
+               logs.push('listener4');
+             };
+             const listener5 = function() {
+               logs.push('listener5');
+             };
+
+             button.addEventListener('click', listener1);
+             button.addEventListener('click', listener2);
+             button.addEventListener('click', listener3);
+             button.addEventListener('click', listener4);
+             button.addEventListener('click', listener5);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(4);
+             expect(logs).toEqual(['listener1', 'listener2', 'listener3', 'listener5']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(3);
+             expect(logs).toEqual(['listener1', 'listener3', 'listener5']);
+
+             button.removeEventListener('click', listener1);
+             button.removeEventListener('click', listener3);
+             button.removeEventListener('click', listener5);
+           });
+
+        it('should be able to remove all beforeward eventListener during eventListener callback',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+                 button.removeEventListener('click', listener1);
+                 button.removeEventListener('click', listener2);
+               }
+             };
+
+             button.addEventListener('click', listener1);
+             button.addEventListener('click', listener2);
+             button.addEventListener('click', listener3);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(3);
+             expect(logs).toEqual(['listener1', 'listener2', 'listener3']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(1);
+             expect(logs).toEqual(['listener3']);
+
+             button.removeEventListener('click', listener3);
+           });
+
+        it('should be able to remove part of beforeward eventListener during eventListener callback',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+                 button.removeEventListener('click', listener1);
+               }
+             };
+
+             button.addEventListener('click', listener1);
+             button.addEventListener('click', listener2);
+             button.addEventListener('click', listener3);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(3);
+             expect(logs).toEqual(['listener1', 'listener2', 'listener3']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(2);
+             expect(logs).toEqual(['listener2', 'listener3']);
+
+             button.removeEventListener('click', listener2);
+             button.removeEventListener('click', listener3);
+           });
+
+        it('should be able to remove all eventListeners during first eventListener callback',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               (button as any).removeAllListeners('click');
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+               }
+             };
+
+             button.addEventListener('click', listener1);
+             button.addEventListener('click', listener2);
+             button.addEventListener('click', listener3);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(1);
+             expect(logs).toEqual(['listener1']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(0);
+           });
+
+        it('should be able to remove all eventListeners during middle eventListener callback',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               (button as any).removeAllListeners('click');
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+               }
+             };
+
+             button.addEventListener('click', listener1);
+             button.addEventListener('click', listener2);
+             button.addEventListener('click', listener3);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(2);
+             expect(logs).toEqual(['listener1', 'listener2']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(0);
+           });
+
+        it('should be able to remove all eventListeners during last eventListener callback',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+                 (button as any).removeAllListeners('click');
+               }
+             };
+
+             button.addEventListener('click', listener1);
+             button.addEventListener('click', listener2);
+             button.addEventListener('click', listener3);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(3);
+             expect(logs).toEqual(['listener1', 'listener2', 'listener3']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(0);
+           });
+      });
+
       it('should be able to get eventListeners of specified event form EventTarget', function() {
         const listener1 = function() {};
         const listener2 = function() {};

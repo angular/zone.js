@@ -45,6 +45,11 @@ export interface PatchEventTargetOptions {
 export function patchEventTarget(
     api: _ZonePrivate, _global: any, apis: any[], patchOptions?: PatchEventTargetOptions) {
   const invokeTask = function(task: any, target: any, event: Event) {
+    // for better performance, check isRemoved which is set
+    // by removeEventListener
+    if (task.isRemoved) {
+      return;
+    }
     const delegate = task.callback;
     if (typeof delegate === OBJECT_TYPE && delegate.handleEvent) {
       // create the bind version of handleEvnet when invoke
@@ -62,8 +67,16 @@ export function patchEventTarget(
     const tasks = target[zoneSymbolEventNames[event.type][FALSE_STR]];
     if (tasks) {
       // invoke all tasks which attached to current target with given event.type and capture = false
-      for (let i = 0; i < tasks.length; i++) {
-        invokeTask(tasks[i], target, event);
+      if (tasks.length === 1) {
+        invokeTask(tasks[0], target, event);
+      } else {
+        // https://github.com/angular/zone.js/issues/836
+        // copy the tasks array before invoke, to avoid
+        // the callback will remove itself or other listener
+        const copyTasks = tasks.slice();
+        for (let i = 0; i < copyTasks.length; i++) {
+          invokeTask(copyTasks[i], target, event);
+        }
       }
     }
   };
@@ -74,8 +87,17 @@ export function patchEventTarget(
 
     const tasks = target[zoneSymbolEventNames[event.type][TRUE_STR]];
     if (tasks) {
-      for (let i = 0; i < tasks.length; i++) {
-        invokeTask(tasks[i], target, event);
+      // invoke all tasks which attached to current target with given event.type and capture = false
+      if (tasks.length === 1) {
+        invokeTask(tasks[0], target, event);
+      } else {
+        // https://github.com/angular/zone.js/issues/836
+        // copy the tasks array before invoke, to avoid
+        // the callback will remove itself or other listener
+        const copyTasks = tasks.slice();
+        for (let i = 0; i < copyTasks.length; i++) {
+          invokeTask(copyTasks[i], target, event);
+        }
       }
     }
   };
@@ -169,7 +191,7 @@ export function patchEventTarget(
       // if all tasks for the eventName + capture have gone,
       // we will really remove the global event callback,
       // if not, return
-      if (!task.remove) {
+      if (!task.allRemoved) {
         return;
       }
       return nativeRemoveEventListener.apply(task.target, [
@@ -372,10 +394,12 @@ export function patchEventTarget(
           const typeOfDelegate = typeof delegate;
           if (compare(existingTask, delegate)) {
             existingTasks.splice(i, 1);
+            // set isRemoved to data for faster invokeTask check
+            (existingTask as any).isRemoved = true;
             if (existingTasks.length === 0) {
               // all tasks for the eventName + capture have gone,
               // remove globalZoneAwareCallback and remove the task cache from target
-              (existingTask as any).remove = true;
+              (existingTask as any).allRemoved = true;
               target[symbolEventName] = null;
             }
             existingTask.zone.cancelTask(existingTask);
