@@ -52,7 +52,7 @@ Zone.__load_patch('EventTarget', (global: any, Zone: ZoneType, api: _ZonePrivate
 });
 
 Zone.__load_patch('on_property', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  propertyDescriptorPatch(global);
+  propertyDescriptorPatch(api, global);
   propertyPatch();
   registerElementPatch(global);
 });

@@ -6,9 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-const _global: any =
-    typeof window === 'object' && window || typeof self === 'object' && self || global;
-
 // simulate @angular/facade/src/error.ts
 class BaseError extends Error {
   /** @internal **/
