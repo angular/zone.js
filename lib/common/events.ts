@@ -54,12 +54,12 @@ export function patchEventTarget(
     // invoke static task.invoke
     task.invoke(task, target, [event]);
   };
-
-  // global shared zoneAwareCallback to handle all event callback with capture = false
-  const globalZoneAwareCallback = function(event: Event) {
+  
+  // global shared zoneAwareCallback to handle all event callback with possible capture
+  const globalZoneAwareCallbackBase = function(event: Event, capture: string) {
     const target = this || _global;
 
-    const tasks = target[zoneSymbolEventNames[event.type][FALSE_STR]];
+    const tasks = target[zoneSymbolEventNames[event.type][capture]];
     if (tasks) {
       // invoke all tasks which attached to current target with given event.type and capture = false
       for (let i = 0; i < tasks.length; i++) {
@@ -68,16 +68,14 @@ export function patchEventTarget(
     }
   };
 
+  // global shared zoneAwareCallback to handle all event callback with capture = false
+  const globalZoneAwareCallback = function(event: Event) {
+    globalZoneAwareCallbackBase(event, FALSE_STR);
+  };
+
   // global shared zoneAwareCallback to handle all event callback with capture = true
   const globalZoneAwareCaptureCallback = function(event: Event) {
-    const target = this || _global;
-
-    const tasks = target[zoneSymbolEventNames[event.type][TRUE_STR]];
-    if (tasks) {
-      for (let i = 0; i < tasks.length; i++) {
-        invokeTask(tasks[i], target, event);
-      }
-    }
+    globalZoneAwareCallbackBase(event, TRUE_STR);
   };
 
   function patchEventTargetMethods(obj: any, patchOptions?: PatchEventTargetOptions) {
