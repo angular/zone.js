@@ -18,3 +18,4 @@ import '../lib/zone-spec/sync-test';
 import '../lib/zone-spec/task-tracking';
 import '../lib/zone-spec/wtf';
 import '../lib/extra/cordova';
+import '../lib/rxjs/rxjs';

@@ -10,3 +10,4 @@ import '../zone';
 import '../common/promise';
 import '../common/to-string';
 import './node';
+import '../rxjs/rxjs';
