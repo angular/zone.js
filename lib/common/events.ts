@@ -69,7 +69,7 @@ export function patchEventTarget(
     }
     const delegate = task.callback;
     if (typeof delegate === OBJECT_TYPE && delegate.handleEvent) {
-      // create the bind version of handleEvnet when invoke
+      // create the bind version of handleEvent when invoke
       task.callback = (event: Event) => delegate.handleEvent(event);
       task.originalDelegate = delegate;
     }
@@ -77,7 +77,9 @@ export function patchEventTarget(
     task.invoke(task, target, [event]);
     const options = task.options;
     if (options && typeof options === 'object' && options.once) {
-      // remove listener here
+      // if options.once is true, after invoke once remove listener here
+      // only browser need to do this, nodejs eventEmitter will cal removeListener
+      // inside EventEmitter.once
       const delegate = task.originalDelegate ? task.originalDelegate : task.callback;
       target[REMOVE_EVENT_LISTENER].apply(target, [event.type, delegate, options]);
     }
@@ -90,6 +92,7 @@ export function patchEventTarget(
     const tasks = target[zoneSymbolEventNames[event.type][FALSE_STR]];
     if (tasks) {
       // invoke all tasks which attached to current target with given event.type and capture = false
+      // for performance concern, if task.length === 1, just invoke
       if (tasks.length === 1) {
         invokeTask(tasks[0], target, event);
       } else {
@@ -111,6 +114,7 @@ export function patchEventTarget(
     const tasks = target[zoneSymbolEventNames[event.type][TRUE_STR]];
     if (tasks) {
       // invoke all tasks which attached to current target with given event.type and capture = false
+      // for performance concern, if task.length === 1, just invoke
       if (tasks.length === 1) {
         invokeTask(tasks[0], target, event);
       } else {
@@ -480,10 +484,15 @@ export function patchEventTarget(
           const prop = keys[i];
           const match = EVENT_NAME_SYMBOL_REGX.exec(prop);
           let evtName = match && match[1];
+          // in nodejs EventEmitter, removeListener event is
+          // used for monitoring the removeListener call,
+          // so just keep removeListener eventListener until
+          // all other eventListeners are removed
           if (evtName && evtName !== 'removeListener') {
             this[REMOVE_ALL_LISTENERS_EVENT_LISTENER].apply(this, [evtName]);
           }
         }
+        // remove removeListener listener finally
         this[REMOVE_ALL_LISTENERS_EVENT_LISTENER].apply(this, ['removeListener']);
       } else {
         const symbolEventNames = zoneSymbolEventNames[eventName];
