@@ -9,7 +9,7 @@ Zone.__load_patch('mediaQuery', (global: any, Zone: ZoneType, api: _ZonePrivate)
   if (!global['MediaQueryList']) {
     return;
   }
-  api.patchEventTargetMethods(
-      global['MediaQueryList'].prototype,
+  api.patchEventTarget(
+      global, [global['MediaQueryList'].prototype],
       {addEventListenerFnName: 'addListener', removeEventListenerFnName: 'removeListener'});
 });

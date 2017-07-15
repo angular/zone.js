@@ -633,7 +633,7 @@ describe('Zone', function() {
       it('should support addEventListener with AddEventListenerOptions once setting',
          ifEnvSupports(supportEventListenerOptions, function() {
            let hookSpy = jasmine.createSpy('hook');
-           const eventListenerSpy = jasmine.createSpy('eventListener');
+           let logs: string[] = [];
            const zone = rootZone.fork({
              name: 'spy',
              onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
@@ -644,17 +644,164 @@ describe('Zone', function() {
            });
 
            zone.run(function() {
-             (button as any).addEventListener('click', eventListenerSpy, {once: true});
+             (button as any).addEventListener('click', function() {
+               logs.push('click');
+             }, {once: true});
            });
 
            button.dispatchEvent(clickEvent);
 
            expect(hookSpy).toHaveBeenCalled();
-           hookSpy = jasmine.createSpy('hook');
-           expect(eventListenerSpy).toHaveBeenCalled();
+           expect(logs.length).toBe(1);
+           expect(logs).toEqual(['click']);
+           logs = [];
 
            button.dispatchEvent(clickEvent);
-           expect(hookSpy).not.toHaveBeenCalled();
+           expect(logs.length).toBe(0);
+         }));
+
+      it('should support addEventListener with AddEventListenerOptions once setting and capture',
+         ifEnvSupports(supportEventListenerOptions, function() {
+           let hookSpy = jasmine.createSpy('hook');
+           let logs: string[] = [];
+           const zone = rootZone.fork({
+             name: 'spy',
+             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+               hookSpy();
+               return parentZoneDelegate.scheduleTask(targetZone, task);
+             }
+           });
+
+           zone.run(function() {
+             (button as any).addEventListener('click', function() {
+               logs.push('click');
+             }, {once: true, capture: true});
+           });
+
+           button.dispatchEvent(clickEvent);
+
+           expect(hookSpy).toHaveBeenCalled();
+           expect(logs.length).toBe(1);
+           expect(logs).toEqual(['click']);
+           logs = [];
+
+           button.dispatchEvent(clickEvent);
+           expect(logs.length).toBe(0);
+         }));
+
+
+      it('should support add multipe listeners with AddEventListenerOptions once setting and same capture after normal listener',
+         ifEnvSupports(supportEventListenerOptions, function() {
+           let logs: string[] = [];
+
+           button.addEventListener('click', function() {
+             logs.push('click');
+           }, true);
+           (button as any).addEventListener('click', function() {
+             logs.push('once click');
+           }, {once: true, capture: true});
+
+           button.dispatchEvent(clickEvent);
+
+           expect(logs.length).toBe(2);
+           expect(logs).toEqual(['click', 'once click']);
+           logs = [];
+
+           button.dispatchEvent(clickEvent);
+           expect(logs.length).toBe(1);
+           expect(logs).toEqual(['click']);
+         }));
+
+      it('should support add multipe listeners with AddEventListenerOptions once setting and mixed capture after normal listener',
+         ifEnvSupports(supportEventListenerOptions, function() {
+           let logs: string[] = [];
+
+           button.addEventListener('click', function() {
+             logs.push('click');
+           });
+           (button as any).addEventListener('click', function() {
+             logs.push('once click');
+           }, {once: true, capture: true});
+
+           button.dispatchEvent(clickEvent);
+
+           expect(logs.length).toBe(2);
+           expect(logs).toEqual(['click', 'once click']);
+           logs = [];
+
+           button.dispatchEvent(clickEvent);
+           expect(logs.length).toBe(1);
+           expect(logs).toEqual(['click']);
+         }));
+
+      it('should support add multipe listeners with AddEventListenerOptions once setting before normal listener',
+         ifEnvSupports(supportEventListenerOptions, function() {
+           let logs: string[] = [];
+
+           (button as any).addEventListener('click', function() {
+             logs.push('once click');
+           }, {once: true});
+
+           button.addEventListener('click', function() {
+             logs.push('click');
+           });
+
+           button.dispatchEvent(clickEvent);
+
+           expect(logs.length).toBe(2);
+           expect(logs).toEqual(['once click', 'click']);
+           logs = [];
+
+           button.dispatchEvent(clickEvent);
+           expect(logs.length).toBe(1);
+           expect(logs).toEqual(['click']);
+         }));
+
+      it('should support add multipe listeners with AddEventListenerOptions once setting with same capture before normal listener',
+         ifEnvSupports(supportEventListenerOptions, function() {
+           let logs: string[] = [];
+
+           (button as any).addEventListener('click', function() {
+             logs.push('once click');
+           }, {once: true, capture: true});
+
+           button.addEventListener('click', function() {
+             logs.push('click');
+           }, true);
+
+           button.dispatchEvent(clickEvent);
+
+           expect(logs.length).toBe(2);
+           expect(logs).toEqual(['once click', 'click']);
+           logs = [];
+
+           button.dispatchEvent(clickEvent);
+           expect(logs.length).toBe(1);
+           expect(logs).toEqual(['click']);
+         }));
+
+      it('should support add multipe listeners with AddEventListenerOptions once setting with mixed capture before normal listener',
+         ifEnvSupports(supportEventListenerOptions, function() {
+           let logs: string[] = [];
+
+           (button as any).addEventListener('click', function() {
+             logs.push('once click');
+           }, {once: true, capture: true});
+
+           button.addEventListener('click', function() {
+             logs.push('click');
+           });
+
+           button.dispatchEvent(clickEvent);
+
+           expect(logs.length).toBe(2);
+           expect(logs).toEqual(['once click', 'click']);
+           logs = [];
+
+           button.dispatchEvent(clickEvent);
+           expect(logs.length).toBe(1);
+           expect(logs).toEqual(['click']);
          }));
 
       it('should support addEventListener with AddEventListenerOptions passive setting',
@@ -687,6 +834,172 @@ describe('Zone', function() {
 
            button.removeEventListener('click', listener);
          }));
+
+      it('should support remove event listener by call zone.cancelTask directly', function() {
+        let logs: string[] = [];
+        let eventTask: Task;
+        const zone = rootZone.fork({
+          name: 'spy',
+          onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                           task: Task): any => {
+            eventTask = task;
+            return parentZoneDelegate.scheduleTask(targetZone, task);
+          }
+        });
+
+        zone.run(() => {
+          button.addEventListener('click', function() {
+            logs.push('click');
+          });
+        });
+        let listeners = (button as any).eventListeners('click');
+        expect(listeners.length).toBe(1);
+        eventTask.zone.cancelTask(eventTask);
+
+        listeners = (button as any).eventListeners('click');
+        button.dispatchEvent(clickEvent);
+        expect(logs.length).toBe(0);
+        expect(listeners.length).toBe(0);
+      });
+
+      it('should support remove event listener by call zone.cancelTask directly with capture=true',
+         function() {
+           let logs: string[] = [];
+           let eventTask: Task;
+           const zone = rootZone.fork({
+             name: 'spy',
+             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+               eventTask = task;
+               return parentZoneDelegate.scheduleTask(targetZone, task);
+             }
+           });
+
+           zone.run(() => {
+             button.addEventListener('click', function() {
+               logs.push('click');
+             }, true);
+           });
+           let listeners = (button as any).eventListeners('click');
+           expect(listeners.length).toBe(1);
+           eventTask.zone.cancelTask(eventTask);
+
+           listeners = (button as any).eventListeners('click');
+           button.dispatchEvent(clickEvent);
+           expect(logs.length).toBe(0);
+           expect(listeners.length).toBe(0);
+         });
+
+      it('should support remove event listeners by call zone.cancelTask directly with multiple listeners',
+         function() {
+           let logs: string[] = [];
+           let eventTask: Task;
+           const zone = rootZone.fork({
+             name: 'spy',
+             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+               eventTask = task;
+               return parentZoneDelegate.scheduleTask(targetZone, task);
+             }
+           });
+
+           zone.run(() => {
+             button.addEventListener('click', function() {
+               logs.push('click1');
+             });
+           });
+           button.addEventListener('click', function() {
+             logs.push('click2');
+           });
+           let listeners = (button as any).eventListeners('click');
+           expect(listeners.length).toBe(2);
+
+           button.dispatchEvent(clickEvent);
+           expect(logs.length).toBe(2);
+           expect(logs).toEqual(['click1', 'click2']);
+           eventTask.zone.cancelTask(eventTask);
+           logs = [];
+
+           listeners = (button as any).eventListeners('click');
+           button.dispatchEvent(clickEvent);
+           expect(logs.length).toBe(1);
+           expect(listeners.length).toBe(1);
+           expect(logs).toEqual(['click2']);
+         });
+
+      it('should support remove event listeners by call zone.cancelTask directly with multiple listeners with same capture=true',
+         function() {
+           let logs: string[] = [];
+           let eventTask: Task;
+           const zone = rootZone.fork({
+             name: 'spy',
+             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+               eventTask = task;
+               return parentZoneDelegate.scheduleTask(targetZone, task);
+             }
+           });
+
+           zone.run(() => {
+             button.addEventListener('click', function() {
+               logs.push('click1');
+             }, true);
+           });
+           button.addEventListener('click', function() {
+             logs.push('click2');
+           }, true);
+           let listeners = (button as any).eventListeners('click');
+           expect(listeners.length).toBe(2);
+
+           button.dispatchEvent(clickEvent);
+           expect(logs.length).toBe(2);
+           expect(logs).toEqual(['click1', 'click2']);
+           eventTask.zone.cancelTask(eventTask);
+           logs = [];
+
+           listeners = (button as any).eventListeners('click');
+           button.dispatchEvent(clickEvent);
+           expect(logs.length).toBe(1);
+           expect(listeners.length).toBe(1);
+           expect(logs).toEqual(['click2']);
+         });
+
+      it('should support remove event listeners by call zone.cancelTask directly with multiple listeners with mixed capture',
+         function() {
+           let logs: string[] = [];
+           let eventTask: Task;
+           const zone = rootZone.fork({
+             name: 'spy',
+             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+               eventTask = task;
+               return parentZoneDelegate.scheduleTask(targetZone, task);
+             }
+           });
+
+           zone.run(() => {
+             button.addEventListener('click', function() {
+               logs.push('click1');
+             }, true);
+           });
+           button.addEventListener('click', function() {
+             logs.push('click2');
+           });
+           let listeners = (button as any).eventListeners('click');
+           expect(listeners.length).toBe(2);
+
+           button.dispatchEvent(clickEvent);
+           expect(logs.length).toBe(2);
+           expect(logs).toEqual(['click1', 'click2']);
+           eventTask.zone.cancelTask(eventTask);
+           logs = [];
+
+           listeners = (button as any).eventListeners('click');
+           button.dispatchEvent(clickEvent);
+           expect(logs.length).toBe(1);
+           expect(listeners.length).toBe(1);
+           expect(logs).toEqual(['click2']);
+         });
 
       it('should support reschedule eventTask',
          ifEnvSupports(supportEventListenerOptions, function() {
@@ -782,75 +1095,10 @@ describe('Zone', function() {
       });
 
       describe('should be able to remove eventListener during eventListener callback', function() {
-        it('should be able to remove first eventListener during eventListener callback',
-           function() {
-             let logs: string[] = [];
-             const listener1 = function() {
-               button.removeEventListener('click', listener1);
-               logs.push('listener1');
-             };
-             const listener2 = function() {
-               logs.push('listener2');
-             };
-             const listener3 = {
-               handleEvent: function(event: Event) {
-                 logs.push('listener3');
-               }
-             };
-
-             button.addEventListener('click', listener1);
-             button.addEventListener('click', listener2);
-             button.addEventListener('click', listener3);
-
-             button.dispatchEvent(clickEvent);
-             expect(logs.length).toBe(3);
-             expect(logs).toEqual(['listener1', 'listener2', 'listener3']);
-
-             logs = [];
-             button.dispatchEvent(clickEvent);
-             expect(logs.length).toBe(2);
-             expect(logs).toEqual(['listener2', 'listener3']);
-
-             button.removeEventListener('click', listener2);
-             button.removeEventListener('click', listener3);
-           });
-
-        it('should be able to remove middle eventListener during eventListener callback',
-           function() {
-             let logs: string[] = [];
-             const listener1 = function() {
-               logs.push('listener1');
-             };
-             const listener2 = function() {
-               button.removeEventListener('click', listener2);
-               logs.push('listener2');
-             };
-             const listener3 = {
-               handleEvent: function(event: Event) {
-                 logs.push('listener3');
-               }
-             };
-
-             button.addEventListener('click', listener1);
-             button.addEventListener('click', listener2);
-             button.addEventListener('click', listener3);
-
-             button.dispatchEvent(clickEvent);
-             expect(logs.length).toBe(3);
-             expect(logs).toEqual(['listener1', 'listener2', 'listener3']);
-
-             logs = [];
-             button.dispatchEvent(clickEvent);
-             expect(logs.length).toBe(2);
-             expect(logs).toEqual(['listener1', 'listener3']);
-
-             button.removeEventListener('click', listener1);
-             button.removeEventListener('click', listener3);
-           });
-
-        it('should be able to remove last eventListener during eventListener callback', function() {
+        it('should be able to remove eventListener during eventListener callback', function() {
           let logs: string[] = [];
           const listener1 = function() {
+            button.removeEventListener('click', listener1);
             logs.push('listener1');
           };
           const listener2 = function() {
@@ -859,7 +1107,6 @@ describe('Zone', function() {
           const listener3 = {
             handleEvent: function(event: Event) {
               logs.push('listener3');
-              button.removeEventListener('click', listener3);
             }
           };
 
@@ -874,13 +1121,112 @@ describe('Zone', function() {
           logs = [];
           button.dispatchEvent(clickEvent);
           expect(logs.length).toBe(2);
-          expect(logs).toEqual(['listener1', 'listener2']);
+          expect(logs).toEqual(['listener2', 'listener3']);
 
-          button.removeEventListener('click', listener1);
           button.removeEventListener('click', listener2);
+          button.removeEventListener('click', listener3);
         });
 
-        it('should be able to remove all afterward eventListener during eventListener callback',
+        it('should be able to remove eventListener during eventListener callback with capture=true',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               button.removeEventListener('click', listener1, true);
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+               }
+             };
+
+             button.addEventListener('click', listener1, true);
+             button.addEventListener('click', listener2, true);
+             button.addEventListener('click', listener3, true);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(3);
+             expect(logs).toEqual(['listener1', 'listener2', 'listener3']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(2);
+             expect(logs).toEqual(['listener2', 'listener3']);
+
+             button.removeEventListener('click', listener2, true);
+             button.removeEventListener('click', listener3, true);
+           });
+
+        it('should be able to remove handleEvent eventListener during eventListener callback',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+                 button.removeEventListener('click', listener3);
+               }
+             };
+
+             button.addEventListener('click', listener1);
+             button.addEventListener('click', listener2);
+             button.addEventListener('click', listener3);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(3);
+             expect(logs).toEqual(['listener1', 'listener2', 'listener3']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(2);
+             expect(logs).toEqual(['listener1', 'listener2']);
+
+             button.removeEventListener('click', listener1);
+             button.removeEventListener('click', listener2);
+           });
+
+        it('should be able to remove handleEvent eventListener during eventListener callback with capture=true',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+                 button.removeEventListener('click', listener3, true);
+               }
+             };
+
+             button.addEventListener('click', listener1, true);
+             button.addEventListener('click', listener2, true);
+             button.addEventListener('click', listener3, true);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(3);
+             expect(logs).toEqual(['listener1', 'listener2', 'listener3']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(2);
+             expect(logs).toEqual(['listener1', 'listener2']);
+
+             button.removeEventListener('click', listener1, true);
+             button.removeEventListener('click', listener2, true);
+           });
+
+        it('should be able to remove multiple eventListeners during eventListener callback',
            function() {
              let logs: string[] = [];
              const listener1 = function() {
@@ -908,7 +1254,35 @@ describe('Zone', function() {
              button.removeEventListener('click', listener1);
            });
 
-        it('should be able to remove part of afterward eventListener during eventListener callback',
+        it('should be able to remove multiple eventListeners during eventListener callback with capture=true',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+               button.removeEventListener('click', listener2, true);
+               button.removeEventListener('click', listener3, true);
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+               }
+             };
+
+             button.addEventListener('click', listener1, true);
+             button.addEventListener('click', listener2, true);
+             button.addEventListener('click', listener3, true);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(1);
+             expect(logs).toEqual(['listener1']);
+
+             button.removeEventListener('click', listener1, true);
+           });
+
+        it('should be able to remove part of other eventListener during eventListener callback',
            function() {
              let logs: string[] = [];
              const listener1 = function() {
@@ -934,6 +1308,34 @@ describe('Zone', function() {
 
              button.removeEventListener('click', listener1);
              button.removeEventListener('click', listener3);
+           });
+
+        it('should be able to remove part of other eventListener during eventListener callback with capture=true',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+               button.removeEventListener('click', listener2, true);
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+               }
+             };
+
+             button.addEventListener('click', listener1, true);
+             button.addEventListener('click', listener2, true);
+             button.addEventListener('click', listener3, true);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(2);
+             expect(logs).toEqual(['listener1', 'listener3']);
+
+             button.removeEventListener('click', listener1, true);
+             button.removeEventListener('click', listener3, true);
            });
 
         it('should be able to remove all beforeward and afterward eventListener during eventListener callback',
@@ -967,6 +1369,39 @@ describe('Zone', function() {
              expect(logs).toEqual(['listener2']);
 
              button.removeEventListener('click', listener2);
+           });
+
+        it('should be able to remove all beforeward and afterward eventListener during eventListener callback with capture=true',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+               button.removeEventListener('click', listener1, true);
+               button.removeEventListener('click', listener3, true);
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+               }
+             };
+
+             button.addEventListener('click', listener1, true);
+             button.addEventListener('click', listener2, true);
+             button.addEventListener('click', listener3, true);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(2);
+             expect(logs).toEqual(['listener1', 'listener2']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(1);
+             expect(logs).toEqual(['listener2']);
+
+             button.removeEventListener('click', listener2, true);
            });
 
         it('should be able to remove part of beforeward and afterward eventListener during eventListener callback',
@@ -1012,6 +1447,49 @@ describe('Zone', function() {
              button.removeEventListener('click', listener5);
            });
 
+        it('should be able to remove part of beforeward and afterward eventListener during eventListener callback with capture=true',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+                 button.removeEventListener('click', listener2, true);
+                 button.removeEventListener('click', listener4, true);
+               }
+             };
+             const listener4 = function() {
+               logs.push('listener4');
+             };
+             const listener5 = function() {
+               logs.push('listener5');
+             };
+
+             button.addEventListener('click', listener1, true);
+             button.addEventListener('click', listener2, true);
+             button.addEventListener('click', listener3, true);
+             button.addEventListener('click', listener4, true);
+             button.addEventListener('click', listener5, true);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(4);
+             expect(logs).toEqual(['listener1', 'listener2', 'listener3', 'listener5']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(3);
+             expect(logs).toEqual(['listener1', 'listener3', 'listener5']);
+
+             button.removeEventListener('click', listener1, true);
+             button.removeEventListener('click', listener3, true);
+             button.removeEventListener('click', listener5, true);
+           });
+
         it('should be able to remove all beforeward eventListener during eventListener callback',
            function() {
              let logs: string[] = [];
@@ -1043,6 +1521,39 @@ describe('Zone', function() {
              expect(logs).toEqual(['listener3']);
 
              button.removeEventListener('click', listener3);
+           });
+
+        it('should be able to remove all beforeward eventListener during eventListener callback with capture=true',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+                 button.removeEventListener('click', listener1, true);
+                 button.removeEventListener('click', listener2, true);
+               }
+             };
+
+             button.addEventListener('click', listener1, true);
+             button.addEventListener('click', listener2, true);
+             button.addEventListener('click', listener3, true);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(3);
+             expect(logs).toEqual(['listener1', 'listener2', 'listener3']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(1);
+             expect(logs).toEqual(['listener3']);
+
+             button.removeEventListener('click', listener3, true);
            });
 
         it('should be able to remove part of beforeward eventListener during eventListener callback',
@@ -1078,6 +1589,39 @@ describe('Zone', function() {
              button.removeEventListener('click', listener3);
            });
 
+        it('should be able to remove part of beforeward eventListener during eventListener callback with capture=true',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+                 button.removeEventListener('click', listener1, true);
+               }
+             };
+
+             button.addEventListener('click', listener1, true);
+             button.addEventListener('click', listener2, true);
+             button.addEventListener('click', listener3, true);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(3);
+             expect(logs).toEqual(['listener1', 'listener2', 'listener3']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(2);
+             expect(logs).toEqual(['listener2', 'listener3']);
+
+             button.removeEventListener('click', listener2, true);
+             button.removeEventListener('click', listener3, true);
+           });
+
         it('should be able to remove all eventListeners during first eventListener callback',
            function() {
              let logs: string[] = [];
@@ -1097,6 +1641,35 @@ describe('Zone', function() {
              button.addEventListener('click', listener1);
              button.addEventListener('click', listener2);
              button.addEventListener('click', listener3);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(1);
+             expect(logs).toEqual(['listener1']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(0);
+           });
+
+        it('should be able to remove all eventListeners during first eventListener callback with capture=true',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               (button as any).removeAllListeners('click');
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+               }
+             };
+
+             button.addEventListener('click', listener1, true);
+             button.addEventListener('click', listener2, true);
+             button.addEventListener('click', listener3, true);
 
              button.dispatchEvent(clickEvent);
              expect(logs.length).toBe(1);
@@ -1136,6 +1709,35 @@ describe('Zone', function() {
              expect(logs.length).toBe(0);
            });
 
+        it('should be able to remove all eventListeners during middle eventListener callback with capture=true',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               (button as any).removeAllListeners('click');
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+               }
+             };
+
+             button.addEventListener('click', listener1, true);
+             button.addEventListener('click', listener2, true);
+             button.addEventListener('click', listener3, true);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(2);
+             expect(logs).toEqual(['listener1', 'listener2']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(0);
+           });
+
         it('should be able to remove all eventListeners during last eventListener callback',
            function() {
              let logs: string[] = [];
@@ -1155,6 +1757,35 @@ describe('Zone', function() {
              button.addEventListener('click', listener1);
              button.addEventListener('click', listener2);
              button.addEventListener('click', listener3);
+
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(3);
+             expect(logs).toEqual(['listener1', 'listener2', 'listener3']);
+
+             logs = [];
+             button.dispatchEvent(clickEvent);
+             expect(logs.length).toBe(0);
+           });
+
+        it('should be able to remove all eventListeners during last eventListener callback with capture=true',
+           function() {
+             let logs: string[] = [];
+             const listener1 = function() {
+               logs.push('listener1');
+             };
+             const listener2 = function() {
+               logs.push('listener2');
+             };
+             const listener3 = {
+               handleEvent: function(event: Event) {
+                 logs.push('listener3');
+                 (button as any).removeAllListeners('click');
+               }
+             };
+
+             button.addEventListener('click', listener1, true);
+             button.addEventListener('click', listener2, true);
+             button.addEventListener('click', listener3, true);
 
              button.dispatchEvent(clickEvent);
              expect(logs.length).toBe(3);
@@ -1239,6 +1870,84 @@ describe('Zone', function() {
 
         button.removeEventListener('click', listener4);
       });
+
+      it('should be able to remove all listeners of specified event form EventTarget with capture=true',
+         function() {
+           let logs: string[] = [];
+           const listener1 = function() {
+             logs.push('listener1');
+           };
+           const listener2 = function() {
+             logs.push('listener2');
+           };
+           const listener3 = {
+             handleEvent: function(event: Event) {
+               logs.push('listener3');
+             }
+           };
+           const listener4 = function() {
+             logs.push('listener4');
+           };
+
+           button.addEventListener('mouseover', listener1, true);
+           button.addEventListener('mouseover', listener2, true);
+           button.addEventListener('mouseover', listener3, true);
+           button.addEventListener('click', listener4, true);
+
+           (button as any).removeAllListeners('mouseover');
+           const listeners = (button as any).eventListeners('mouseove');
+           expect(listeners.length).toBe(0);
+
+           const mouseEvent = document.createEvent('Event');
+           mouseEvent.initEvent('mouseover', true, true);
+
+           button.dispatchEvent(mouseEvent);
+           expect(logs).toEqual([]);
+
+           button.dispatchEvent(clickEvent);
+           expect(logs).toEqual(['listener4']);
+
+           button.removeEventListener('click', listener4);
+         });
+
+      it('should be able to remove all listeners of specified event form EventTarget with mixed capture',
+         function() {
+           let logs: string[] = [];
+           const listener1 = function() {
+             logs.push('listener1');
+           };
+           const listener2 = function() {
+             logs.push('listener2');
+           };
+           const listener3 = {
+             handleEvent: function(event: Event) {
+               logs.push('listener3');
+             }
+           };
+           const listener4 = function() {
+             logs.push('listener4');
+           };
+
+           button.addEventListener('mouseover', listener1, true);
+           button.addEventListener('mouseover', listener2, false);
+           button.addEventListener('mouseover', listener3, true);
+           button.addEventListener('click', listener4, true);
+
+           (button as any).removeAllListeners('mouseover');
+           const listeners = (button as any).eventListeners('mouseove');
+           expect(listeners.length).toBe(0);
+
+           const mouseEvent = document.createEvent('Event');
+           mouseEvent.initEvent('mouseover', true, true);
+
+           button.dispatchEvent(mouseEvent);
+           expect(logs).toEqual([]);
+
+           button.dispatchEvent(clickEvent);
+           expect(logs).toEqual(['listener4']);
+
+           button.removeEventListener('click', listener4);
+         });
 
       it('should be able to remove all listeners of all events form EventTarget', function() {
         let logs: string[] = [];

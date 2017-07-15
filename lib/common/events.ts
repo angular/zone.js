@@ -43,7 +43,24 @@ export interface PatchEventTargetOptions {
 }
 
 export function patchEventTarget(
-    api: _ZonePrivate, _global: any, apis: any[], patchOptions?: PatchEventTargetOptions) {
+    _global: any, apis: any[], patchOptions?: PatchEventTargetOptions) {
+  const ADD_EVENT_LISTENER =
+      (patchOptions && patchOptions.addEventListenerFnName) || 'addEventListener';
+  const REMOVE_EVENT_LISTENER =
+      (patchOptions && patchOptions.removeEventListenerFnName) || 'removeEventListener';
+
+  const LISTENERS_EVENT_LISTENER =
+      (patchOptions && patchOptions.listenersFnName) || 'eventListeners';
+  const REMOVE_ALL_LISTENERS_EVENT_LISTENER =
+      (patchOptions && patchOptions.removeAllFnName) || 'removeAllListeners';
+
+  const zoneSymbolAddEventListener = zoneSymbol(ADD_EVENT_LISTENER);
+
+  const ADD_EVENT_LISTENER_SOURCE = '.' + ADD_EVENT_LISTENER + ':';
+
+  const PREPEND_EVENT_LISTENER = 'prependListener';
+  const PREPEND_EVENT_LISTENER_SOURCE = '.' + PREPEND_EVENT_LISTENER + ':';
+
   const invokeTask = function(task: any, target: any, event: Event) {
     // for better performance, check isRemoved which is set
     // by removeEventListener
@@ -58,6 +75,12 @@ export function patchEventTarget(
     }
     // invoke static task.invoke
     task.invoke(task, target, [event]);
+    const options = task.options;
+    if (options && typeof options === 'object' && options.once) {
+      // remove listener here
+      const delegate = task.originalDelegate ? task.originalDelegate : task.callback;
+      target[REMOVE_EVENT_LISTENER].apply(target, [event.type, delegate, options]);
+    }
   };
 
   // global shared zoneAwareCallback to handle all event callback with capture = false
@@ -106,22 +129,6 @@ export function patchEventTarget(
     if (!obj) {
       return false;
     }
-    const ADD_EVENT_LISTENER =
-        (patchOptions && patchOptions.addEventListenerFnName) || 'addEventListener';
-    const REMOVE_EVENT_LISTENER =
-        (patchOptions && patchOptions.removeEventListenerFnName) || 'removeEventListener';
-
-    const LISTENERS_EVENT_LISTENER =
-        (patchOptions && patchOptions.listenersFnName) || 'eventListeners';
-    const REMOVE_ALL_LISTENERS_EVENT_LISTENER =
-        (patchOptions && patchOptions.removeAllFnName) || 'removeAllListeners';
-
-    const zoneSymbolAddEventListener = zoneSymbol(ADD_EVENT_LISTENER);
-
-    const ADD_EVENT_LISTENER_SOURCE = '.' + ADD_EVENT_LISTENER + ':';
-
-    const PREPEND_EVENT_LISTENER = 'prependListener';
-    const PREPEND_EVENT_LISTENER_SOURCE = '.' + PREPEND_EVENT_LISTENER + ':';
 
     let useGlobalCallback = true;
     if (patchOptions && patchOptions.useGlobalCallback !== undefined) {
@@ -188,6 +195,34 @@ export function patchEventTarget(
     };
 
     const customCancelGlobal = function(task: any) {
+      // if task is not marked as isRemoved, this call is directly
+      // from Zone.prototype.cancelTask, we should remove the task
+      // from tasksList of target first
+      if (!task.isRemoved) {
+        const symbolEventNames = zoneSymbolEventNames[task.eventName];
+        let symbolEventName;
+        if (symbolEventNames) {
+          symbolEventName = symbolEventNames[task.capture ? TRUE_STR : FALSE_STR];
+        }
+        const existingTasks = symbolEventName && task.target[symbolEventName];
+        if (existingTasks) {
+          for (let i = 0; i < existingTasks.length; i++) {
+            const existingTask = existingTasks[i];
+            if (existingTask === task) {
+              existingTasks.splice(i, 1);
+              // set isRemoved to data for faster invokeTask check
+              task.isRemoved = true;
+              if (existingTasks.length === 0) {
+                // all tasks for the eventName + capture have gone,
+                // remove globalZoneAwareCallback and remove the task cache from target
+                task.allRemoved = true;
+                task.target[symbolEventName] = null;
+              }
+              break;
+            }
+          }
+        }
+      }
       // if all tasks for the eventName + capture have gone,
       // we will really remove the global event callback,
       // if not, return
@@ -262,6 +297,7 @@ export function patchEventTarget(
         const options = arguments[2];
 
         let capture;
+        let once = false;
         if (options === undefined) {
           capture = false;
         } else if (options === true) {
@@ -270,6 +306,7 @@ export function patchEventTarget(
           capture = false;
         } else {
           capture = options ? !!options.capture : false;
+          once = options ? !!options.once : false;
         }
 
         const zone = Zone.current;
@@ -316,6 +353,12 @@ export function patchEventTarget(
         // do not create a new object as task.data to pass those things
         // just use the global shared one
         taskData.options = options;
+        if (once) {
+          // if addEventListener with once options, we don't pass it to
+          // native addEventListener, instead we keep the once setting
+          // and handle ourselves.
+          taskData.options.once = false;
+        }
         taskData.target = target;
         taskData.capture = capture;
         taskData.eventName = eventName;
@@ -327,6 +370,9 @@ export function patchEventTarget(
 
         // have to save those information to task in case
         // application may call task.zone.cancelTask() directly
+        if (once) {
+          options.once = true;
+        }
         task.options = options;
         task.target = target;
         task.capture = capture;
@@ -486,7 +532,6 @@ export function patchEventTarget(
     results[i] = patchEventTargetMethods(apis[i], patchOptions);
   }
 
-  api.patchEventTargetMethods = patchEventTargetMethods;
   return results;
 }
 

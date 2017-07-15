@@ -101,7 +101,8 @@ export function eventTargetPatch(_global: any, api: _ZonePrivate) {
     const type = _global[apis[i]];
     apiTypes.push(type && type.prototype);
   }
-  patchEventTarget(api, _global, apiTypes, {validateHandler: checkIEAndCrossContext});
+  patchEventTarget(_global, apiTypes, {validateHandler: checkIEAndCrossContext});
+  api.patchEventTarget = patchEventTarget;
 
   return true;
 }

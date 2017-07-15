@@ -43,8 +43,7 @@ Zone.__load_patch('EventTarget', (global: any, Zone: ZoneType, api: _ZonePrivate
   // patch XMLHttpRequestEventTarget's addEventListener/removeEventListener
   const XMLHttpRequestEventTarget = (global as any)['XMLHttpRequestEventTarget'];
   if (XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype) {
-    // TODO: @JiaLiPassion, add this back later.
-    api.patchEventTargetMethods(XMLHttpRequestEventTarget.prototype);
+    api.patchEventTarget(global, [XMLHttpRequestEventTarget.prototype]);
   }
   patchClass('MutationObserver');
   patchClass('WebKitMutationObserver');
