@@ -22,7 +22,7 @@ Zone.__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
 
   const Observable = rxjs.Observable;
 
-  rxjs.Observable = function () {
+  rxjs.Observable = function() {
     Observable.apply(this, arguments);
     this._zone = Zone.current;
     return this;
@@ -46,7 +46,8 @@ Zone.__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
           if (subscriber && !subscriber._zone) {
             subscriber._zone = currentZone;
           }
-          const tearDownLogic = _zone !== Zone.current ? _zone.run(_subscribe, this, arguments) : _subscribe.apply(this, arguments);
+          const tearDownLogic = _zone !== Zone.current ? _zone.run(_subscribe, this, arguments) :
+                                                         _subscribe.apply(this, arguments);
           if (tearDownLogic && typeof tearDownLogic === 'function') {
             const patchedTeadDownLogic = function() {
               if (_zone && _zone !== Zone.current) {
@@ -54,13 +55,13 @@ Zone.__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
               } else {
                 return tearDownLogic.apply(this, arguments);
               }
-            }
+            };
             return patchedTeadDownLogic;
           }
           return tearDownLogic;
-        }  
+        };
       }
-    }    
+    }
 
     if (this.operator && _zone && _zone !== currentZone) {
       const call = this.operator.call;
@@ -70,12 +71,12 @@ Zone.__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
           subscriber._zone = currentZone;
         }
         return _zone.run(call, this, arguments);
-      }
+      };
     }
     const result = subscribe.apply(this, arguments);
     if (this._subscribe) {
       this._subscribe._zone = undefined;
-    }    
+    }
     result._zone = Zone.current;
     return result;
   };
@@ -84,7 +85,7 @@ Zone.__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
     const observable = lift.apply(this, arguments);
     observable._zone = Zone.current;
     return observable;
-  }
+  };
 
   const Subscriber = rxjs.Subscriber;
 
@@ -93,7 +94,7 @@ Zone.__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   const complete = Subscriber.prototype.complete;
   const unsubscribe = Subscriber.prototype.unsubscribe;
 
-  Subscriber.prototype.next = function () {
+  Subscriber.prototype.next = function() {
     const currentZone = Zone.current;
     const observableZone = this._zone;
 
@@ -102,9 +103,9 @@ Zone.__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
     } else {
       return next.apply(this, arguments);
     }
-  }
+  };
 
-  Subscriber.prototype.error = function () {
+  Subscriber.prototype.error = function() {
     const currentZone = Zone.current;
     const observableZone = this._zone;
 
@@ -113,9 +114,9 @@ Zone.__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
     } else {
       return error.apply(this, arguments);
     }
-  }
+  };
 
-  Subscriber.prototype.complete = function () {
+  Subscriber.prototype.complete = function() {
     const currentZone = Zone.current;
     const observableZone = this._zone;
 
@@ -124,9 +125,9 @@ Zone.__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
     } else {
       return complete.apply(this, arguments);
     }
-  }
+  };
 
-  Subscriber.prototype.unsubscribe = function () {
+  Subscriber.prototype.unsubscribe = function() {
     const currentZone = Zone.current;
     const observableZone = this._zone;
 
@@ -135,21 +136,5 @@ Zone.__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
     } else {
       return unsubscribe.apply(this, arguments);
     }
-  }
-
-  /*const Subscription = rxjs.Subscription;
-  const add = Subscription.prototype.add;
-
-  Subscription.prototype.add = function() {
-    const tearDownLogic = arguments.length > 0 ? arguments[0] : undefined;
-    if (!tearDownLogic) {
-      return add(this, arguments);
-    }
-    const zone = tearDownLogic._zone;
-    if (zone && zone !== Zone.current) {
-      return zone.run(add, this, arguments);
-    } else {
-      return add.apply(this, arguments);
-    }
-  }*/
+  };
 });
