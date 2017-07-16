@@ -25,36 +25,65 @@ Zone.__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   rxjs.Observable = function () {
     Observable.apply(this, arguments);
     this._zone = Zone.current;
-
-    const _subscribe = this._subscribe;
-    this._subscribe = function () {
-      const currentZone = Zone.current;
-      const observableZone = this._zone;
-      let sub;
-      if (observableZone && observableZone !== currentZone) {
-        sub = observableZone.run(_subscribe, this, arguments);
-        if (sub) {
-          sub._zone = observableZone;
-        }
-      } else {
-        sub = _subscribe.apply(this, arguments);
-        if (sub) {
-          sub._zone = currentZone;
-        }
-      }
-      return sub;
-    };
     return this;
   };
 
   rxjs.Observable.prototype = Observable.prototype;
+
   const subscribe = Observable.prototype.subscribe;
+  const lift = Observable.prototype.lift;
+
   Observable.prototype.subscribe = function() {
-    const sub = subscribe.apply(this, arguments);
-    if (sub) {
-      sub._zone = Zone.current;
+    const _zone = this._zone;
+    const currentZone = Zone.current;
+
+    if (this._subscribe && typeof this._subscribe === 'function') {
+      this._subscribe._zone = this._zone;
+      const _subscribe = this._subscribe;
+      if (_zone) {
+        this._subscribe = function() {
+          const subscriber = arguments.length > 0 ? arguments[0] : undefined;
+          if (subscriber && !subscriber._zone) {
+            subscriber._zone = currentZone;
+          }
+          const tearDownLogic = _zone !== Zone.current ? _zone.run(_subscribe, this, arguments) : _subscribe.apply(this, arguments);
+          if (tearDownLogic && typeof tearDownLogic === 'function') {
+            const patchedTeadDownLogic = function() {
+              if (_zone && _zone !== Zone.current) {
+                return _zone.run(tearDownLogic, this, arguments);
+              } else {
+                return tearDownLogic.apply(this, arguments);
+              }
+            }
+            return patchedTeadDownLogic;
+          }
+          return tearDownLogic;
+        }  
+      }
+    }    
+
+    if (this.operator && _zone && _zone !== currentZone) {
+      const call = this.operator.call;
+      this.operator.call = function() {
+        const subscriber = arguments.length > 0 ? arguments[0] : undefined;
+        if (!subscriber._zone) {
+          subscriber._zone = currentZone;
+        }
+        return _zone.run(call, this, arguments);
+      }
     }
-    return sub;
+    const result = subscribe.apply(this, arguments);
+    if (this._subscribe) {
+      this._subscribe._zone = undefined;
+    }    
+    result._zone = Zone.current;
+    return result;
+  };
+
+  Observable.prototype.lift = function() {
+    const observable = lift.apply(this, arguments);
+    observable._zone = Zone.current;
+    return observable;
   }
 
   const Subscriber = rxjs.Subscriber;
@@ -107,4 +136,20 @@ Zone.__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
       return unsubscribe.apply(this, arguments);
     }
   }
+
+  /*const Subscription = rxjs.Subscription;
+  const add = Subscription.prototype.add;
+
+  Subscription.prototype.add = function() {
+    const tearDownLogic = arguments.length > 0 ? arguments[0] : undefined;
+    if (!tearDownLogic) {
+      return add(this, arguments);
+    }
+    const zone = tearDownLogic._zone;
+    if (zone && zone !== Zone.current) {
+      return zone.run(add, this, arguments);
+    } else {
+      return add.apply(this, arguments);
+    }
+  }*/
 });

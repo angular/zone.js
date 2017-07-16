@@ -66,7 +66,7 @@ describe('Zone interaction', () => {
     expect(log).toEqual(['setup', 'error', 'cleanup']);
   });
 
-  xit('should run methods in the zone of declaration when nexting synchronously', () => {
+  it('should run methods in the zone of declaration when nexting synchronously', () => {
     const log: string[] = [];
     const rootZone: Zone = Zone.current;
     const constructorZone: Zone = Zone.current.fork({ name: 'Constructor Zone'});
@@ -99,7 +99,7 @@ describe('Zone interaction', () => {
     expect(log).toEqual(['next', 'complete', 'cleanup']);
   });
 
-  xit('should run operators in the zone of declaration', () => {
+  it('should run operators in the zone of declaration', () => {
     const log: string[] = [];
     const rootZone: Zone = Zone.current;
     const constructorZone: Zone = Zone.current.fork({ name: 'Constructor Zone'});
