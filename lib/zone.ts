@@ -320,7 +320,7 @@ interface _ZonePrivate {
   onUnhandledError: (error: Error) => void;
   microtaskDrainDone: () => void;
   showUncaughtError: () => boolean;
-  patchEventTargetMethods: (obj: any, options?: any) => boolean;
+  patchEventTarget: (global: any, apis: any[], options?: any) => boolean[];
   patchOnProperties: (obj: any, properties: string[]) => void;
   patchMethod:
       (target: any, name: string,
@@ -1307,7 +1307,7 @@ const Zone: ZoneType = (function(global: any) {
     microtaskDrainDone: noop,
     scheduleMicroTask: scheduleMicroTask,
     showUncaughtError: () => !(Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')],
-    patchEventTargetMethods: () => false,
+    patchEventTarget: () => [],
     patchOnProperties: noop,
     patchMethod: () => noop,
   };

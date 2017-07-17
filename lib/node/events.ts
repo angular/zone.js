@@ -33,7 +33,7 @@ Zone.__load_patch('EventEmitter', (global: any, Zone: ZoneType, api: _ZonePrivat
   };
 
   function patchEventEmitterMethods(obj: any) {
-    const result = patchEventTarget(api, global, [obj], {
+    const result = patchEventTarget(global, [obj], {
       useGlobalCallback: false,
       addEventListenerFnName: EE_ADD_LISTENER,
       removeEventListenerFnName: EE_REMOVE_LISTENER,
