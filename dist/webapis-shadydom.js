@@ -27,12 +27,12 @@ Zone.__load_patch('shadydom', function (global, Zone, api) {
     if (windowPrototype && windowPrototype.hasOwnProperty('addEventListener')) {
         windowPrototype[Zone.__symbol__('addEventListener')] = null;
         windowPrototype[Zone.__symbol__('removeEventListener')] = null;
-        api.patchEventTargetMethods(windowPrototype);
+        api.patchEventTarget(global, [windowPrototype]);
     }
     if (Node.prototype.hasOwnProperty('addEventListener')) {
         Node.prototype[Zone.__symbol__('addEventListener')] = null;
         Node.prototype[Zone.__symbol__('removeEventListener')] = null;
-        api.patchEventTargetMethods(Node.prototype);
+        api.patchEventTarget(global, [Node.prototype]);
     }
 });
 
