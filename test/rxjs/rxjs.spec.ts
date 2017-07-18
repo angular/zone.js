@@ -150,4 +150,49 @@ describe('Zone interaction', () => {
     expect(log).toEqual(['map: MyValue', 'next', 'complete', 'cleanup']);
   });
 
+  it('should run operators in the zone of declaration with Observable.create', () => {
+    const log: string[] = [];
+    const rootZone: Zone = Zone.current;
+    const constructorZone: Zone = Zone.current.fork({name: 'Constructor Zone'});
+    const operatorZone: Zone = Zone.current.fork({name: 'Operator Zone'});
+    const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
+    let observable: any = constructorZone.run(() => Observable.create((subscriber: any) => {
+      // Execute the `next`/`complete` in different zone, and assert that
+      // correct zone
+      // is restored.
+      rootZone.run(() => {
+        subscriber.next('MyValue');
+        subscriber.complete();
+      });
+      return () => {
+        expect(Zone.current.name).toEqual(constructorZone.name);
+        log.push('cleanup');
+      };
+    }));
+
+    observable = operatorZone.run(() => observable.map((value: any) => {
+      expect(Zone.current.name).toEqual(operatorZone.name);
+      log.push('map: ' + value);
+      return value;
+    }));
+
+    subscriptionZone.run(
+        () => observable.subscribe(
+            () => {
+              expect(Zone.current.name).toEqual(subscriptionZone.name);
+              log.push('next');
+            },
+            (e: any) => {
+              expect(Zone.current.name).toEqual(subscriptionZone.name);
+              log.push('error: ' + e);
+            },
+            () => {
+              expect(Zone.current.name).toEqual(subscriptionZone.name);
+              log.push('complete');
+            }));
+
+    expect(log).toEqual(['map: MyValue', 'next', 'complete', 'cleanup']);
+  });
+
+
 });
