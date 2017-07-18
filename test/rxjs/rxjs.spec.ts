@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-const rxjs = require('rxjs');
+const rxjs = require('Rx');
 const Observable = rxjs.Observable;
 const Subscriber = rxjs.Subscriber;
 

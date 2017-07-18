@@ -5,136 +5,145 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-Zone.__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  let rxjs;
 
-  const subscribeSource = 'rxjs.subscribe';
-  const nextSource = 'rxjs.Subscriber.next';
-  const errorSource = 'rxjs.Subscriber.error';
-  const completeSource = 'rxjs.Subscriber.complete';
-  const unsubscribeSource = 'rxjs.Subscriber.unsubscribe';
-
-  try {
-    rxjs = require('rxjs');
-  } catch (error) {
-    return;
+declare let define: any;
+(function(root: any, factory: (Rx: any) => any) {
+  if (typeof define === 'function' && define.amd) {
+    // AMD
+    define(['Rx'], factory);
+  } else if (typeof exports === 'object') {
+    // Node, CommonJS-like
+    module.exports = factory(require('rxjs'));
+  } else {
+    root.returnExports = factory(root.Rx);
   }
+}(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global,
+  (Rx: any) => {
+    Zone.__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+      const subscribeSource = 'rxjs.subscribe';
+      const nextSource = 'rxjs.Subscriber.next';
+      const errorSource = 'rxjs.Subscriber.error';
+      const completeSource = 'rxjs.Subscriber.complete';
+      const unsubscribeSource = 'rxjs.Subscriber.unsubscribe';
 
-  const Observable = rxjs.Observable;
+      const Observable = Rx.Observable;
 
-  rxjs.Observable = function() {
-    Observable.apply(this, arguments);
-    this._zone = Zone.current;
-    return this;
-  };
-
-  rxjs.Observable.prototype = Observable.prototype;
-
-  const subscribe = Observable.prototype.subscribe;
-  const lift = Observable.prototype.lift;
-
-  Observable.prototype.subscribe = function() {
-    const _zone = this._zone;
-    const currentZone = Zone.current;
-
-    if (this._subscribe && typeof this._subscribe === 'function') {
-      this._subscribe._zone = this._zone;
-      const _subscribe = this._subscribe;
-      if (_zone) {
-        this._subscribe = function() {
-          const subscriber = arguments.length > 0 ? arguments[0] : undefined;
-          if (subscriber && !subscriber._zone) {
-            subscriber._zone = currentZone;
-          }
-          const tearDownLogic = _zone !== Zone.current ? _zone.run(_subscribe, this, arguments) :
-                                                         _subscribe.apply(this, arguments);
-          if (tearDownLogic && typeof tearDownLogic === 'function') {
-            const patchedTeadDownLogic = function() {
-              if (_zone && _zone !== Zone.current) {
-                return _zone.run(tearDownLogic, this, arguments);
-              } else {
-                return tearDownLogic.apply(this, arguments);
-              }
-            };
-            return patchedTeadDownLogic;
-          }
-          return tearDownLogic;
-        };
-      }
-    }
-
-    if (this.operator && _zone && _zone !== currentZone) {
-      const call = this.operator.call;
-      this.operator.call = function() {
-        const subscriber = arguments.length > 0 ? arguments[0] : undefined;
-        if (!subscriber._zone) {
-          subscriber._zone = currentZone;
-        }
-        return _zone.run(call, this, arguments);
+      Rx.Observable = function() {
+        Observable.apply(this, arguments);
+        this._zone = Zone.current;
+        return this;
       };
-    }
-    const result = subscribe.apply(this, arguments);
-    if (this._subscribe) {
-      this._subscribe._zone = undefined;
-    }
-    result._zone = Zone.current;
-    return result;
-  };
 
-  Observable.prototype.lift = function() {
-    const observable = lift.apply(this, arguments);
-    observable._zone = Zone.current;
-    return observable;
-  };
+      Rx.Observable.prototype = Observable.prototype;
 
-  const Subscriber = rxjs.Subscriber;
+      const subscribe = Observable.prototype.subscribe;
+      const lift = Observable.prototype.lift;
 
-  const next = Subscriber.prototype.next;
-  const error = Subscriber.prototype.error;
-  const complete = Subscriber.prototype.complete;
-  const unsubscribe = Subscriber.prototype.unsubscribe;
+      Observable.prototype.subscribe = function() {
+        const _zone = this._zone;
+        const currentZone = Zone.current;
 
-  Subscriber.prototype.next = function() {
-    const currentZone = Zone.current;
-    const observableZone = this._zone;
+        if (this._subscribe && typeof this._subscribe === 'function') {
+          this._subscribe._zone = this._zone;
+          const _subscribe = this._subscribe;
+          if (_zone) {
+            this._subscribe = function() {
+              const args = Array.prototype.slice.call(arguments);
+              const subscriber = args.length > 0 ? args[0] : undefined;
+              if (subscriber && !subscriber._zone) {
+                subscriber._zone = currentZone;
+              }
+              const tearDownLogic = _zone !== Zone.current ? _zone.run(_subscribe, this, args) :
+                                                             _subscribe.apply(this, args);
+              if (tearDownLogic && typeof tearDownLogic === 'function') {
+                const patchedTeadDownLogic = function() {
+                  if (_zone && _zone !== Zone.current) {
+                    return _zone.run(tearDownLogic, this, arguments);
+                  } else {
+                    return tearDownLogic.apply(this, arguments);
+                  }
+                };
+                return patchedTeadDownLogic;
+              }
+              return tearDownLogic;
+            };
+          }
+        }
 
-    if (observableZone && observableZone !== currentZone) {
-      return observableZone.run(next, this, arguments, nextSource);
-    } else {
-      return next.apply(this, arguments);
-    }
-  };
+        if (this.operator && _zone && _zone !== currentZone) {
+          const call = this.operator.call;
+          this.operator.call = function() {
+            const args = Array.prototype.slice.call(arguments);
+            const subscriber = args.length > 0 ? args[0] : undefined;
+            if (!subscriber._zone) {
+              subscriber._zone = currentZone;
+            }
+            return _zone.run(call, this, args);
+          };
+        }
+        const result = subscribe.apply(this, arguments);
+        if (this._subscribe) {
+          this._subscribe._zone = undefined;
+        }
+        result._zone = Zone.current;
+        return result;
+      };
 
-  Subscriber.prototype.error = function() {
-    const currentZone = Zone.current;
-    const observableZone = this._zone;
+      Observable.prototype.lift = function() {
+        const observable = lift.apply(this, arguments);
+        observable._zone = Zone.current;
+        return observable;
+      };
 
-    if (observableZone && observableZone !== currentZone) {
-      return observableZone.run(error, this, arguments, errorSource);
-    } else {
-      return error.apply(this, arguments);
-    }
-  };
+      const Subscriber = Rx.Subscriber;
 
-  Subscriber.prototype.complete = function() {
-    const currentZone = Zone.current;
-    const observableZone = this._zone;
+      const next = Subscriber.prototype.next;
+      const error = Subscriber.prototype.error;
+      const complete = Subscriber.prototype.complete;
+      const unsubscribe = Subscriber.prototype.unsubscribe;
 
-    if (observableZone && observableZone !== currentZone) {
-      return observableZone.run(complete, this, arguments, completeSource);
-    } else {
-      return complete.apply(this, arguments);
-    }
-  };
+      Subscriber.prototype.next = function() {
+        const currentZone = Zone.current;
+        const observableZone = this._zone;
 
-  Subscriber.prototype.unsubscribe = function() {
-    const currentZone = Zone.current;
-    const observableZone = this._zone;
+        if (observableZone && observableZone !== currentZone) {
+          return observableZone.run(next, this, arguments, nextSource);
+        } else {
+          return next.apply(this, arguments);
+        }
+      };
 
-    if (observableZone && observableZone !== currentZone) {
-      return observableZone.run(unsubscribe, this, arguments, unsubscribeSource);
-    } else {
-      return unsubscribe.apply(this, arguments);
-    }
-  };
-});
+      Subscriber.prototype.error = function() {
+        const currentZone = Zone.current;
+        const observableZone = this._zone;
+
+        if (observableZone && observableZone !== currentZone) {
+          return observableZone.run(error, this, arguments, errorSource);
+        } else {
+          return error.apply(this, arguments);
+        }
+      };
+
+      Subscriber.prototype.complete = function() {
+        const currentZone = Zone.current;
+        const observableZone = this._zone;
+
+        if (observableZone && observableZone !== currentZone) {
+          return observableZone.run(complete, this, arguments, completeSource);
+        } else {
+          return complete.apply(this, arguments);
+        }
+      };
+
+      Subscriber.prototype.unsubscribe = function() {
+        const currentZone = Zone.current;
+        const observableZone = this._zone;
+
+        if (observableZone && observableZone !== currentZone) {
+          return observableZone.run(unsubscribe, this, arguments, unsubscribeSource);
+        } else {
+          return unsubscribe.apply(this, arguments);
+        }
+      };
+    });
+  }));
