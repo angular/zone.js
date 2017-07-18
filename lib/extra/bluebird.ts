@@ -11,9 +11,10 @@ Zone.__load_patch('bluebird', (global: any, Zone: ZoneType, api: _ZonePrivate) =
   // global.Promise is not Bluebird, and Bluebird is just be
   // used by other libraries such as sequelize, so I think it is
   // safe to just expose a method to patch Bluebird explicitly
-  (Zone as any)[Zone.__symbol__('bluebird')] = function patchBluebird(Bluebird: any) {
+  const BLUEBIRD = 'bluebird';
+  (Zone as any)[Zone.__symbol__(BLUEBIRD)] = function patchBluebird(Bluebird: any) {
     Bluebird.setScheduler((fn: Function) => {
-      Zone.current.scheduleMicroTask('bluebird', fn);
+      Zone.current.scheduleMicroTask(BLUEBIRD, fn);
     });
   };
 });

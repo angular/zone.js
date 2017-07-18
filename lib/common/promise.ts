@@ -48,10 +48,12 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
     }
   };
 
+  const UNHANDLED_PROMISE_REJECTION_HANDLER_SYMBOL = __symbol__('unhandledPromiseRejectionHandler');
+
   function handleUnhandledRejection(e: any) {
     api.onUnhandledError(e);
     try {
-      const handler = (Zone as any)[__symbol__('unhandledPromiseRejectionHandler')];
+      const handler = (Zone as any)[UNHANDLED_PROMISE_REJECTION_HANDLER_SYMBOL];
       if (handler && typeof handler === 'function') {
         handler.apply(this, [e]);
       }
@@ -104,18 +106,23 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
     };
   };
 
+  const TYPE_ERROR = 'Promise resolved with itself';
+  const OBJECT = 'object';
+  const FUNCTION = 'function';
+  const CURRENT_TASK_SYMBOL = __symbol__('currentTask');
+
   // Promise Resolution
   function resolvePromise(
       promise: ZoneAwarePromise<any>, state: boolean, value: any): ZoneAwarePromise<any> {
     const onceWrapper = once();
     if (promise === value) {
-      throw new TypeError('Promise resolved with itself');
+      throw new TypeError(TYPE_ERROR);
     }
     if ((promise as any)[symbolState] === UNRESOLVED) {
       // should only get value.then once based on promise spec.
       let then: any = null;
       try {
-        if (typeof value === 'object' || typeof value === 'function') {
+        if (typeof value === OBJECT || typeof value === FUNCTION) {
           then = value && value.then;
         }
       } catch (err) {
@@ -130,7 +137,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
           (value as any)[symbolState] !== UNRESOLVED) {
         clearRejectedNoCatch(<Promise<any>>value);
         resolvePromise(promise, (value as any)[symbolState], (value as any)[symbolValue]);
-      } else if (state !== REJECTED && typeof then === 'function') {
+      } else if (state !== REJECTED && typeof then === FUNCTION) {
         try {
           then.apply(value, [
             onceWrapper(makeResolver(promise, state)), onceWrapper(makeResolver(promise, false))
@@ -148,7 +155,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
         // record task information in value when error occurs, so we can
         // do some additional work such as render longStackTrace
         if (state === REJECTED && value instanceof Error) {
-          (value as any)[__symbol__('currentTask')] = Zone.currentTask;
+          (value as any)[CURRENT_TASK_SYMBOL] = Zone.currentTask;
         }
 
         for (let i = 0; i < queue.length;) {
@@ -176,6 +183,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
     return promise;
   }
 
+  const REJECTION_HANDLED_HANDLER = __symbol__('rejectionHandledHandler');
   function clearRejectedNoCatch(promise: ZoneAwarePromise<any>): void {
     if ((promise as any)[symbolState] === REJECTED_NO_CATCH) {
       // if the promise is rejected no catch status
@@ -184,8 +192,8 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       // windows.rejectionhandled eventHandler or nodejs rejectionHandled
       // eventHandler
       try {
-        const handler = (Zone as any)[__symbol__('rejectionHandledHandler')];
-        if (handler && typeof handler === 'function') {
+        const handler = (Zone as any)[REJECTION_HANDLED_HANDLER];
+        if (handler && typeof handler === FUNCTION) {
           handler.apply(this, [{rejection: (promise as any)[symbolValue], promise: promise}]);
         }
       } catch (err) {
@@ -204,8 +212,8 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       onFulfilled?: (value: R) => U, onRejected?: (error: any) => U): void {
     clearRejectedNoCatch(promise);
     const delegate = (promise as any)[symbolState] ?
-        (typeof onFulfilled === 'function') ? onFulfilled : forwardResolution :
-        (typeof onRejected === 'function') ? onRejected : forwardRejection;
+        (typeof onFulfilled === FUNCTION) ? onFulfilled : forwardResolution :
+        (typeof onRejected === FUNCTION) ? onRejected : forwardRejection;
     zone.scheduleMicroTask(source, () => {
       try {
         resolvePromise(
@@ -216,9 +224,11 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
     });
   }
 
+  const ZONE_AWARE_PROMISE_TO_STRING = 'function ZoneAwarePromise() { [native code] }';
+
   class ZoneAwarePromise<R> implements Promise<R> {
     static toString() {
-      return 'function ZoneAwarePromise() { [native code] }';
+      return ZONE_AWARE_PROMISE_TO_STRING;
     }
 
     static resolve<R>(value: R): Promise<R> {
@@ -364,7 +374,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
     patchThen(NativePromise);
 
     let fetch = global['fetch'];
-    if (typeof fetch == 'function') {
+    if (typeof fetch == FUNCTION) {
       global['fetch'] = zoneify(fetch);
     }
   }
