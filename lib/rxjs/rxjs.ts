@@ -8,14 +8,14 @@
 
 declare let define: any;
 (function(root: any, factory: (Rx: any) => any) {
-  if (typeof define === 'function' && define.amd) {
-    // AMD
-    define(['Rx'], factory);
-  } else if (typeof exports === 'object') {
+  if (typeof exports === 'object' && typeof module !== 'undefined') {
     // Node, CommonJS-like
     module.exports = factory(require('rxjs'));
+  } else if (typeof define === 'function' && define.amd) {
+    // AMD
+    define(['rxjs'], factory);
   } else {
-    root.returnExports = factory(root.Rx);
+    factory(root.Rx);
   }
 }(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global,
   (Rx: any) => {

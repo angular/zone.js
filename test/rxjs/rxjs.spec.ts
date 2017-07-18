@@ -6,7 +6,12 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-const rxjs = require('Rx');
+let rxjs;
+if (typeof exports === 'object') {
+  rxjs = require('rxjs');
+} else {
+  rxjs = (window as any).Rx;
+}
 const Observable = rxjs.Observable;
 const Subscriber = rxjs.Subscriber;
 
