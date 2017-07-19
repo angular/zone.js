@@ -27,29 +27,16 @@ declare let define: any;
       const completeSource = 'rxjs.Subscriber.complete';
       const unsubscribeSource = 'rxjs.Subscriber.unsubscribe';
 
-      const Observable = Rx.Observable;
-
-      // monkey-patch Observable to save the
-      // current zone as ConstructorZone
-      Rx.Observable = function() {
-        Observable.apply(this, arguments);
-        this._zone = Zone.current;
-
+      const patchObservableInstance = function(observable: any) {
+        observable._zone = Zone.current;
         // patch inner function this._subscribe to check
         // SubscriptionZone is same with ConstuctorZone or not
-        if (this._subscribe && typeof this._subscribe === 'function' && !this._originalSubscribe) {
-          this._originalSubscribe = this._subscribe;
-          this._subscribe = _patchedSubscribe;
+        if (observable._subscribe && typeof observable._subscribe === 'function' &&
+            !observable._originalSubscribe) {
+          observable._originalSubscribe = observable._subscribe;
+          observable._subscribe = _patchedSubscribe;
         }
-
-        return this;
       };
-
-      Rx.Observable.prototype = Observable.prototype;
-
-      const subscribe = Observable.prototype.subscribe;
-      const lift = Observable.prototype.lift;
-      const create = Observable.create;
 
       const _patchedSubscribe = function() {
         const currentZone = Zone.current;
@@ -84,124 +71,174 @@ declare let define: any;
         return tearDownLogic;
       };
 
-      // patch Observable.prototype.subscribe
-      // if SubscripitionZone is different with ConstructorZone
-      // we should run _subscribe in ConstructorZone and
-      // create sinke in SubscriptionZone,
-      // and tearDown should also run into ConstructorZone
-      Observable.prototype.subscribe = function() {
-        const _zone = this._zone;
-        const currentZone = Zone.current;
+      const patchObservable = function(Rx: any, observableType: string) {
+        const symbol = Zone.__symbol__(observableType);
+        if (Rx[symbol]) {
+          // has patched
+          return;
+        }
 
-        // if operator is involved, we should also
-        // patch the call method to save the Subscription zone
-        if (this.operator && _zone && _zone !== currentZone) {
-          const call = this.operator.call;
-          this.operator.call = function() {
-            const args = Array.prototype.slice.call(arguments);
-            const subscriber = args.length > 0 ? args[0] : undefined;
-            if (!subscriber._zone) {
-              subscriber._zone = currentZone;
+        const Observable = Rx[symbol] = Rx[observableType];
+        if (!Observable) {
+          // the subclass of Observable not loaded
+          return;
+        }
+
+        // monkey-patch Observable to save the
+        // current zone as ConstructorZone
+        const patchedObservable: any = Rx[observableType] = function() {
+          Observable.apply(this, arguments);
+          patchObservableInstance(this);
+          return this;
+        };
+
+        patchedObservable.prototype = Observable.prototype;
+        Object.keys(Observable).forEach(key => {
+          patchedObservable[key] = Observable[key];
+        });
+
+        const ObservablePrototype: any = Observable.prototype;
+        const symbolSubscribe = Zone.__symbol__('subscribe');
+
+        if (!ObservablePrototype[symbolSubscribe]) {
+          const subscribe = ObservablePrototype[symbolSubscribe] = ObservablePrototype.subscribe;
+          // patch Observable.prototype.subscribe
+          // if SubscripitionZone is different with ConstructorZone
+          // we should run _subscribe in ConstructorZone and
+          // create sinke in SubscriptionZone,
+          // and tearDown should also run into ConstructorZone
+          Observable.prototype.subscribe = function() {
+            const _zone = this._zone;
+            const currentZone = Zone.current;
+
+            // if operator is involved, we should also
+            // patch the call method to save the Subscription zone
+            if (this.operator && _zone && _zone !== currentZone) {
+              const call = this.operator.call;
+              this.operator.call = function() {
+                const args = Array.prototype.slice.call(arguments);
+                const subscriber = args.length > 0 ? args[0] : undefined;
+                if (!subscriber._zone) {
+                  subscriber._zone = currentZone;
+                }
+                return _zone.run(call, this, args);
+              };
             }
-            return _zone.run(call, this, args);
+            const result = subscribe.apply(this, arguments);
+            // the result is the subscriber sink,
+            // we save the current Zone here
+            result._zone = currentZone;
+            return result;
           };
         }
-        const result = subscribe.apply(this, arguments);
-        // the result is the subscriber sink,
-        // we save the current Zone here
-        result._zone = currentZone;
-        return result;
-      };
 
-      // patch lift method to save ConstructorZone of Observable
-      Observable.prototype.lift = function() {
-        const observable = lift.apply(this, arguments);
-        observable._zone = Zone.current;
-        // patch inner function this._subscribe to check
-        // SubscriptionZone is same with ConstuctorZone or not
-        if (observable._subscribe && typeof observable._subscribe === 'function' &&
-            !observable._originalSubscribe) {
-          observable._originalSubscribe = observable._subscribe;
-          observable._subscribe = _patchedSubscribe;
+        const symbolLift = Zone.__symbol__('lift');
+        if (!ObservablePrototype[symbolLift]) {
+          const lift = ObservablePrototype[symbolLift] = ObservablePrototype.lift;
+
+          // patch lift method to save ConstructorZone of Observable
+          Observable.prototype.lift = function() {
+            const observable = lift.apply(this, arguments);
+            patchObservableInstance(observable);
+
+            return observable;
+          };
         }
 
-        return observable;
-      };
+        const symbolCreate = Zone.__symbol__('create');
+        if (!Observable[symbolCreate]) {
+          const create = Observable[symbolCreate] = Observable.create;
+          // patch create method to save ConstructorZone of Observable
+          Rx.Observable.create = function() {
+            const observable = create.apply(this, arguments);
+            patchObservableInstance(observable);
 
-      // patch create method to save ConstructorZone of Observable
-      Rx.Observable.create = function() {
-        const observable = create.apply(this, arguments);
-        observable._zone = Zone.current;
-        // patch inner function this._subscribe to check
-        // SubscriptionZone is same with ConstuctorZone or not
-        if (observable._subscribe && typeof observable._subscribe === 'function' &&
-            !observable._originalSubscribe) {
-          observable._originalSubscribe = observable._subscribe;
-          observable._subscribe = _patchedSubscribe;
-        }
-
-        return observable;
-      };
-
-      const Subscriber = Rx.Subscriber;
-
-      const next = Subscriber.prototype.next;
-      const error = Subscriber.prototype.error;
-      const complete = Subscriber.prototype.complete;
-      const unsubscribe = Subscriber.prototype.unsubscribe;
-
-      // patch Subscriber.next to make sure it run
-      // into SubscriptionZone
-      Subscriber.prototype.next = function() {
-        const currentZone = Zone.current;
-        const subscriptionZone = this._zone;
-
-        // for performance concern, check Zone.current
-        // equal with this._zone(SubscriptionZone) or not
-        if (subscriptionZone && subscriptionZone !== currentZone) {
-          return subscriptionZone.run(next, this, arguments, nextSource);
-        } else {
-          return next.apply(this, arguments);
+            return observable;
+          };
         }
       };
 
-      Subscriber.prototype.error = function() {
-        const currentZone = Zone.current;
-        const subscriptionZone = this._zone;
+      const patchSubscriber = function() {
+        const Subscriber = Rx.Subscriber;
 
-        // for performance concern, check Zone.current
-        // equal with this._zone(SubscriptionZone) or not
-        if (subscriptionZone && subscriptionZone !== currentZone) {
-          return subscriptionZone.run(error, this, arguments, nextSource);
-        } else {
-          return error.apply(this, arguments);
-        }
+        const next = Subscriber.prototype.next;
+        const error = Subscriber.prototype.error;
+        const complete = Subscriber.prototype.complete;
+        const unsubscribe = Subscriber.prototype.unsubscribe;
+
+        // patch Subscriber.next to make sure it run
+        // into SubscriptionZone
+        Subscriber.prototype.next = function() {
+          const currentZone = Zone.current;
+          const subscriptionZone = this._zone;
+
+          // for performance concern, check Zone.current
+          // equal with this._zone(SubscriptionZone) or not
+          if (subscriptionZone && subscriptionZone !== currentZone) {
+            return subscriptionZone.run(next, this, arguments, nextSource);
+          } else {
+            return next.apply(this, arguments);
+          }
+        };
+
+        Subscriber.prototype.error = function() {
+          const currentZone = Zone.current;
+          const subscriptionZone = this._zone;
+
+          // for performance concern, check Zone.current
+          // equal with this._zone(SubscriptionZone) or not
+          if (subscriptionZone && subscriptionZone !== currentZone) {
+            return subscriptionZone.run(error, this, arguments, nextSource);
+          } else {
+            return error.apply(this, arguments);
+          }
+        };
+
+        Subscriber.prototype.complete = function() {
+          const currentZone = Zone.current;
+          const subscriptionZone = this._zone;
+
+          // for performance concern, check Zone.current
+          // equal with this._zone(SubscriptionZone) or not
+          if (subscriptionZone && subscriptionZone !== currentZone) {
+            return subscriptionZone.run(complete, this, arguments, nextSource);
+          } else {
+            return complete.apply(this, arguments);
+          }
+        };
+
+        Subscriber.prototype.unsubscribe = function() {
+          const currentZone = Zone.current;
+          const subscriptionZone = this._zone;
+
+          // for performance concern, check Zone.current
+          // equal with this._zone(SubscriptionZone) or not
+          if (subscriptionZone && subscriptionZone !== currentZone) {
+            return subscriptionZone.run(unsubscribe, this, arguments, nextSource);
+          } else {
+            return unsubscribe.apply(this, arguments);
+          }
+        };
       };
 
-      Subscriber.prototype.complete = function() {
-        const currentZone = Zone.current;
-        const subscriptionZone = this._zone;
-
-        // for performance concern, check Zone.current
-        // equal with this._zone(SubscriptionZone) or not
-        if (subscriptionZone && subscriptionZone !== currentZone) {
-          return subscriptionZone.run(complete, this, arguments, nextSource);
-        } else {
-          return complete.apply(this, arguments);
+      const patchObservableFactoryCreator = function(obj: any, factoryName: string) {
+        const symbol = Zone.__symbol__(factoryName);
+        if (obj[symbol]) {
+          return;
         }
+        const factoryCreator: any = obj[symbol] = obj[factoryName];
+        obj[factoryName] = function() {
+          const factory: any = factoryCreator.apply(this, arguments);
+          return function() {
+            const observable = factory.apply(this, arguments);
+            patchObservableInstance(observable);
+            return observable;
+          };
+        };
       };
 
-      Subscriber.prototype.unsubscribe = function() {
-        const currentZone = Zone.current;
-        const subscriptionZone = this._zone;
-
-        // for performance concern, check Zone.current
-        // equal with this._zone(SubscriptionZone) or not
-        if (subscriptionZone && subscriptionZone !== currentZone) {
-          return subscriptionZone.run(unsubscribe, this, arguments, nextSource);
-        } else {
-          return unsubscribe.apply(this, arguments);
-        }
-      };
+      patchObservable(Rx, 'Observable');
+      patchSubscriber();
+      patchObservableFactoryCreator(Rx.Observable, 'bindCallback');
     });
   }));

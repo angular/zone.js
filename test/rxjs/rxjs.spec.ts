@@ -6,14 +6,12 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-let rxjs;
+let rxjs: any;
 if (typeof window !== 'undefined') {
   rxjs = (window as any).Rx;
 } else if (typeof exports === 'object' && typeof module !== undefined) {
-  rxjs = require('rxjs');
+  rxjs = require('rxjs/Rx');
 }
-const Observable = rxjs.Observable;
-const Subscriber = rxjs.Subscriber;
 
 /**
  * The point of these tests, is to ensure that all callbacks execute in the Zone which was active
@@ -33,16 +31,15 @@ describe('Zone interaction', () => {
     const constructorZone: Zone = Zone.current.fork({name: 'Constructor Zone'});
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     let subscriber: any = null;
-    const observable: any =
-        constructorZone.run(() => new Observable((_subscriber: any) => {
-                              subscriber = _subscriber;
-                              log.push('setup');
-                              expect(Zone.current.name).toEqual(constructorZone.name);
-                              return () => {
-                                expect(Zone.current.name).toEqual(constructorZone.name);
-                                log.push('cleanup');
-                              };
-                            }));
+    const observable: any = constructorZone.run(() => new rxjs.Observable((_subscriber: any) => {
+      subscriber = _subscriber;
+      log.push('setup');
+      expect(Zone.current.name).toEqual(constructorZone.name);
+      return () => {
+        expect(Zone.current.name).toEqual(constructorZone.name);
+        log.push('cleanup');
+      };
+    }));
     subscriptionZone.run(
         () => observable.subscribe(
             () => {
@@ -75,20 +72,19 @@ describe('Zone interaction', () => {
     const rootZone: Zone = Zone.current;
     const constructorZone: Zone = Zone.current.fork({name: 'Constructor Zone'});
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
-    const observable: any =
-        constructorZone.run(() => new Observable((subscriber: any) => {
-                              // Execute the `next`/`complete` in different zone, and assert that
-                              // correct zone
-                              // is restored.
-                              rootZone.run(() => {
-                                subscriber.next('MyValue');
-                                subscriber.complete();
-                              });
-                              return () => {
-                                expect(Zone.current.name).toEqual(constructorZone.name);
-                                log.push('cleanup');
-                              };
-                            }));
+    const observable: any = constructorZone.run(() => new rxjs.Observable((subscriber: any) => {
+      // Execute the `next`/`complete` in different zone, and assert that
+      // correct zone
+      // is restored.
+      rootZone.run(() => {
+        subscriber.next('MyValue');
+        subscriber.complete();
+      });
+      return () => {
+        expect(Zone.current.name).toEqual(constructorZone.name);
+        log.push('cleanup');
+      };
+    }));
 
     subscriptionZone.run(
         () => observable.subscribe(
@@ -111,52 +107,7 @@ describe('Zone interaction', () => {
     const constructorZone: Zone = Zone.current.fork({name: 'Constructor Zone'});
     const operatorZone: Zone = Zone.current.fork({name: 'Operator Zone'});
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
-    let observable: any =
-        constructorZone.run(() => new Observable((subscriber: any) => {
-                              // Execute the `next`/`complete` in different zone, and assert that
-                              // correct zone
-                              // is restored.
-                              rootZone.run(() => {
-                                subscriber.next('MyValue');
-                                subscriber.complete();
-                              });
-                              return () => {
-                                expect(Zone.current.name).toEqual(constructorZone.name);
-                                log.push('cleanup');
-                              };
-                            }));
-
-    observable = operatorZone.run(() => observable.map((value: any) => {
-      expect(Zone.current.name).toEqual(operatorZone.name);
-      log.push('map: ' + value);
-      return value;
-    }));
-
-    subscriptionZone.run(
-        () => observable.subscribe(
-            () => {
-              expect(Zone.current.name).toEqual(subscriptionZone.name);
-              log.push('next');
-            },
-            (e: any) => {
-              expect(Zone.current.name).toEqual(subscriptionZone.name);
-              log.push('error: ' + e);
-            },
-            () => {
-              expect(Zone.current.name).toEqual(subscriptionZone.name);
-              log.push('complete');
-            }));
-
-    expect(log).toEqual(['map: MyValue', 'next', 'complete', 'cleanup']);
-  });
-
-  it('should run operators in the zone of declaration with Observable.create', () => {
-    const log: string[] = [];
-    const rootZone: Zone = Zone.current;
-    const constructorZone: Zone = Zone.current.fork({name: 'Constructor Zone'});
-    const operatorZone: Zone = Zone.current.fork({name: 'Operator Zone'});
-    const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
-    let observable: any = constructorZone.run(() => Observable.create((subscriber: any) => {
+    let observable: any = constructorZone.run(() => new rxjs.Observable((subscriber: any) => {
       // Execute the `next`/`complete` in different zone, and assert that
       // correct zone
       // is restored.
@@ -194,5 +145,98 @@ describe('Zone interaction', () => {
     expect(log).toEqual(['map: MyValue', 'next', 'complete', 'cleanup']);
   });
 
+  it('should run subscribe in zone of declaration with Observable.create', () => {
+    const log: string[] = [];
+    const constructorZone: Zone = Zone.current.fork({name: 'Constructor Zone'});
+    let observable: any = constructorZone.run(() => rxjs.Observable.create((subscriber: any) => {
+      subscriber.next(1);
+      subscriber.complete();
+      return () => {
+        expect(Zone.current.name).toEqual(constructorZone.name);
+        log.push('cleanup');
+      };
+    }));
 
+    observable.subscribe(() => {
+      log.push('next');
+    });
+
+    expect(log).toEqual(['next', 'cleanup']);
+  });
+
+  it('should run in the zone when subscribe is called to the same Subject', () => {
+    const log: string[] = [];
+    const constructorZone: Zone = Zone.current.fork({name: 'Constructor Zone'});
+    const subscriptionZone1: Zone = Zone.current.fork({name: 'Subscription Zone 1'});
+    const subscriptionZone2: Zone = Zone.current.fork({name: 'Subscription Zone 2'});
+
+    let subject: any;
+
+    constructorZone.run(() => {
+      subject = new rxjs.Subject();
+    });
+
+    let subscription1: any;
+    let subscription2: any;
+
+    subscriptionZone1.run(() => {
+      subscription1 = subject.subscribe(
+          () => {
+            expect(Zone.current.name).toEqual(subscriptionZone1.name);
+            log.push('next1');
+          },
+          () => {},
+          () => {
+            expect(Zone.current.name).toEqual(subscriptionZone1.name);
+            log.push('complete1');
+          });
+    });
+
+    subscriptionZone2.run(() => {
+      subscription2 = subject.subscribe(
+          () => {
+            expect(Zone.current.name).toEqual(subscriptionZone2.name);
+            log.push('next2');
+          },
+          () => {},
+          () => {
+            expect(Zone.current.name).toEqual(subscriptionZone2.name);
+            log.push('complete2');
+          });
+    });
+
+    subject.next(1);
+    subject.complete();
+
+    expect(log).toEqual(['next1', 'next2', 'complete1', 'complete2']);
+  });
+
+  it('bindCallback func callback should run in the correct zone', () => {
+    let log: string[] = [];
+    const constructorZone: Zone = Zone.current.fork({name: 'Constructor Zone'});
+    const triggerZone: Zone = Zone.current.fork({name: 'Trigger Zone'});
+    const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
+
+    let func: any;
+    let boundFunc: any;
+    let observable: any;
+
+    constructorZone.run(() => {
+      func = function(arg0: any, callback: Function) {
+        expect(Zone.current.name).toEqual(constructorZone.name);
+        callback(arg0);
+      };
+      boundFunc = rxjs.Observable.bindCallback(func);
+      observable = boundFunc('test');
+    });
+
+    subscriptionZone.run(() => {
+      observable.subscribe((arg: any) => {
+        expect(Zone.current.name).toEqual(subscriptionZone.name);
+        log.push('next' + arg);
+      });
+    });
+
+    expect(log).toEqual(['nexttest']);
+  });
 });
