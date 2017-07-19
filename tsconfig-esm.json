@@ -18,6 +18,7 @@
     "node_modules",
     "build",
     "build-esm",
-    "dist"
+    "dist",
+    "lib/closure"
   ]
 }
