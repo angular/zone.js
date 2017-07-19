@@ -119,9 +119,10 @@ declare let define: any;
         observable._zone = Zone.current;
         // patch inner function this._subscribe to check
         // SubscriptionZone is same with ConstuctorZone or not
-        if (this._subscribe && typeof this._subscribe === 'function' && !this._originalSubscribe) {
-          this._originalSubscribe = this._subscribe;
-          this._subscribe = _patchedSubscribe;
+        if (observable._subscribe && typeof observable._subscribe === 'function' &&
+            !observable._originalSubscribe) {
+          observable._originalSubscribe = observable._subscribe;
+          observable._subscribe = _patchedSubscribe;
         }
 
         return observable;
@@ -133,9 +134,10 @@ declare let define: any;
         observable._zone = Zone.current;
         // patch inner function this._subscribe to check
         // SubscriptionZone is same with ConstuctorZone or not
-        if (this._subscribe && typeof this._subscribe === 'function' && !this._originalSubscribe) {
-          this._originalSubscribe = this._subscribe;
-          this._subscribe = _patchedSubscribe;
+        if (observable._subscribe && typeof observable._subscribe === 'function' &&
+            !observable._originalSubscribe) {
+          observable._originalSubscribe = observable._subscribe;
+          observable._subscribe = _patchedSubscribe;
         }
 
         return observable;
