@@ -127,7 +127,9 @@ declare let define: any;
             const result = subscribe.apply(this, arguments);
             // the result is the subscriber sink,
             // we save the current Zone here
-            result._zone = currentZone;
+            if (!result._zone) {
+              result._zone = currentZone;
+            }
             return result;
           };
         }

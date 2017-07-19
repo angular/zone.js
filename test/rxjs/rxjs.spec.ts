@@ -211,7 +211,7 @@ describe('Zone interaction', () => {
     expect(log).toEqual(['next1', 'next2', 'complete1', 'complete2']);
   });
 
-  it('bindCallback func callback should run in the correct zone', () => {
+  it('bindCallback func callback should run in the correct zone', (done: any) => {
     let log: string[] = [];
     const constructorZone: Zone = Zone.current.fork({name: 'Constructor Zone'});
     const triggerZone: Zone = Zone.current.fork({name: 'Trigger Zone'});
@@ -238,5 +238,46 @@ describe('Zone interaction', () => {
     });
 
     expect(log).toEqual(['nexttest']);
+    log.length = 0;
+
+    constructorZone.run(() => {
+      func = function(arg0: any, callback: Function) {
+        expect(Zone.current.name).toEqual(constructorZone.name);
+        callback(arg0);
+      };
+      boundFunc = rxjs.Observable.bindCallback(func, (arg: any) => {
+        return 'selector' + arg;
+      });
+      observable = boundFunc('test');
+    });
+
+    subscriptionZone.run(() => {
+      observable.subscribe((arg: any) => {
+        expect(Zone.current.name).toEqual(subscriptionZone.name);
+        log.push('next' + arg);
+      });
+    });
+
+    expect(log).toEqual(['nextselectortest']);
+    log.length = 0;
+
+    constructorZone.run(() => {
+      func = function(arg0: any, callback: Function) {
+        expect(Zone.current.name).toEqual(constructorZone.name);
+        callback(arg0);
+      };
+      boundFunc = rxjs.Observable.bindCallback(func, null, rxjs.Scheduler.async);
+      observable = boundFunc('test');
+    });
+
+    subscriptionZone.run(() => {
+      observable.subscribe((arg: any) => {
+        expect(Zone.current.name).toEqual(subscriptionZone.name);
+        log.push('next' + arg);
+        done();
+      });
+    });
+
+    expect(log).toEqual([]);
   });
 });
