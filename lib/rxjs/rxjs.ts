@@ -19,6 +19,7 @@ declare let define: any;
   }
 }(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global,
   (Rx: any) => {
+    'use strict';
     Zone.__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
       const subscribeSource = 'rxjs.subscribe';
       const nextSource = 'rxjs.Subscriber.next';
@@ -33,6 +34,14 @@ declare let define: any;
       Rx.Observable = function() {
         Observable.apply(this, arguments);
         this._zone = Zone.current;
+
+        // patch inner function this._subscribe to check
+        // SubscriptionZone is same with ConstuctorZone or not
+        if (this._subscribe && typeof this._subscribe === 'function' && !this._originalSubscribe) {
+          this._originalSubscribe = this._subscribe;
+          this._subscribe = _patchedSubscribe;
+        }
+
         return this;
       };
 
@@ -42,6 +51,39 @@ declare let define: any;
       const lift = Observable.prototype.lift;
       const create = Observable.create;
 
+      const _patchedSubscribe = function() {
+        const currentZone = Zone.current;
+        const _zone = this._zone;
+
+        const args = Array.prototype.slice.call(arguments);
+        const subscriber = args.length > 0 ? args[0] : undefined;
+        // also keep currentZone in Subscriber
+        // for later Subscriber.next/error/complete method
+        if (subscriber && !subscriber._zone) {
+          subscriber._zone = currentZone;
+        }
+        // _subscribe should run in ConstructorZone
+        // but for performance concern, we should check
+        // whether ConsturctorZone === Zone.current here
+        const tearDownLogic = _zone !== Zone.current ?
+            _zone.run(this._originalSubscribe, this, args) :
+            this._originalSubscribe.apply(this, args);
+        if (tearDownLogic && typeof tearDownLogic === 'function') {
+          const patchedTearDownLogic = function() {
+            // tearDownLogic should also run in ConstructorZone
+            // but for performance concern, we should check
+            // whether ConsturctorZone === Zone.current here
+            if (_zone && _zone !== Zone.current) {
+              return _zone.run(tearDownLogic, this, arguments);
+            } else {
+              return tearDownLogic.apply(this, arguments);
+            }
+          };
+          return patchedTearDownLogic;
+        }
+        return tearDownLogic;
+      };
+
       // patch Observable.prototype.subscribe
       // if SubscripitionZone is different with ConstructorZone
       // we should run _subscribe in ConstructorZone and
@@ -50,43 +92,6 @@ declare let define: any;
       Observable.prototype.subscribe = function() {
         const _zone = this._zone;
         const currentZone = Zone.current;
-
-        // patch inner function this._subscribe to check
-        // SubscriptionZone is same with ConstuctorZone or not
-        if (this._subscribe && typeof this._subscribe === 'function') {
-          this._subscribe._zone = this._zone;
-          const _subscribe = this._subscribe;
-          if (_zone) {
-            this._subscribe = function() {
-              const args = Array.prototype.slice.call(arguments);
-              const subscriber = args.length > 0 ? args[0] : undefined;
-              // also keep currentZone in Subscriber
-              // for later Subscriber.next/error/complete method
-              if (subscriber && !subscriber._zone) {
-                subscriber._zone = currentZone;
-              }
-              // _subscribe should run in ConstructorZone
-              // but for performance concern, we should check
-              // whether ConsturctorZone === Zone.current here
-              const tearDownLogic = _zone !== Zone.current ? _zone.run(_subscribe, this, args) :
-                                                             _subscribe.apply(this, args);
-              if (tearDownLogic && typeof tearDownLogic === 'function') {
-                const patchedTearDownLogic = function() {
-                  // tearDownLogic should also run in ConstructorZone
-                  // but for performance concern, we should check
-                  // whether ConsturctorZone === Zone.current here
-                  if (_zone && _zone !== Zone.current) {
-                    return _zone.run(tearDownLogic, this, arguments);
-                  } else {
-                    return tearDownLogic.apply(this, arguments);
-                  }
-                };
-                return patchedTearDownLogic;
-              }
-              return tearDownLogic;
-            };
-          }
-        }
 
         // if operator is involved, we should also
         // patch the call method to save the Subscription zone
@@ -102,12 +107,6 @@ declare let define: any;
           };
         }
         const result = subscribe.apply(this, arguments);
-        // clean up _subscribe._zone to prevent
-        // the same _subscribe being used in multiple
-        // Observable instances.
-        if (this._subscribe) {
-          this._subscribe._zone = undefined;
-        }
         // the result is the subscriber sink,
         // we save the current Zone here
         result._zone = currentZone;
@@ -118,6 +117,13 @@ declare let define: any;
       Observable.prototype.lift = function() {
         const observable = lift.apply(this, arguments);
         observable._zone = Zone.current;
+        // patch inner function this._subscribe to check
+        // SubscriptionZone is same with ConstuctorZone or not
+        if (this._subscribe && typeof this._subscribe === 'function' && !this._originalSubscribe) {
+          this._originalSubscribe = this._subscribe;
+          this._subscribe = _patchedSubscribe;
+        }
+
         return observable;
       };
 
@@ -125,6 +131,13 @@ declare let define: any;
       Rx.Observable.create = function() {
         const observable = create.apply(this, arguments);
         observable._zone = Zone.current;
+        // patch inner function this._subscribe to check
+        // SubscriptionZone is same with ConstuctorZone or not
+        if (this._subscribe && typeof this._subscribe === 'function' && !this._originalSubscribe) {
+          this._originalSubscribe = this._subscribe;
+          this._subscribe = _patchedSubscribe;
+        }
+
         return observable;
       };
 

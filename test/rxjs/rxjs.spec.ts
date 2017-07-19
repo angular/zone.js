@@ -7,10 +7,10 @@
  */
 
 let rxjs;
-if (typeof exports === 'object') {
-  rxjs = require('rxjs');
-} else {
+if (typeof window !== 'undefined') {
   rxjs = (window as any).Rx;
+} else if (typeof exports === 'object' && typeof module !== undefined) {
+  rxjs = require('rxjs');
 }
 const Observable = rxjs.Observable;
 const Subscriber = rxjs.Subscriber;
