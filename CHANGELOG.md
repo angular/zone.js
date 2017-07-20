@@ -1,4 +1,21 @@
 <a name="0.8.14"></a>
+## [0.8.14](https://github.com/angular/zone.js/compare/v0.8.13...0.8.14) (2017-07-20)
+
+
+### Bug Fixes
+
+* **event:** fix [#836](https://github.com/angular/zone.js/issues/836), handle event callback call removeEventListener case ([#839](https://github.com/angular/zone.js/issues/839)) ([f301fa2](https://github.com/angular/zone.js/commit/f301fa2))
+* **event:** fix memory leak for once, add more test cases ([#841](https://github.com/angular/zone.js/issues/841)) ([2143d9c](https://github.com/angular/zone.js/commit/2143d9c))
+* **task:** fix [#832](https://github.com/angular/zone.js/issues/832), fix [#835](https://github.com/angular/zone.js/issues/835), task.data should be an object ([#834](https://github.com/angular/zone.js/issues/834)) ([3a4bfbd](https://github.com/angular/zone.js/commit/3a4bfbd))
+
+
+### Features
+
+* **rxjs:** fix [#830](https://github.com/angular/zone.js/issues/830), monkey patch rxjs to make rxjs run in correct zone ([#843](https://github.com/angular/zone.js/issues/843)) ([1ed83d0](https://github.com/angular/zone.js/commit/1ed83d0))
+
+
+
+<a name="0.8.14"></a>
 ## [0.8.14](https://github.com/angular/zone.js/compare/v0.8.13...0.8.14) (2017-07-18)
 
 
