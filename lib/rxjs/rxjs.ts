@@ -230,4 +230,5 @@ import * as Rx from 'rxjs/Rx';
   patchObservable(Rx, 'Observable');
   patchSubscriber();
   patchObservableFactoryCreator(Rx.Observable, 'bindCallback');
+  patchObservableFactoryCreator(Rx.Observable, 'bindNodeCallback');
 });
