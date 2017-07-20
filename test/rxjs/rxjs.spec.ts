@@ -6,7 +6,12 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import * as Rx from 'rxjs/Rx';
+let Rx: any;
+if (typeof window !== 'undefined') {
+  Rx = (window as any).Rx;
+} else if (typeof exports === 'object' && typeof module !== undefined) {
+  Rx = require('rxjs/Rx');
+}
 
 /**
  * The point of these tests, is to ensure that all callbacks execute in the Zone which was active
