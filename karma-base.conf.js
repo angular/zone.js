@@ -13,7 +13,7 @@ module.exports = function (config) {
       'node_modules/systemjs/dist/system-polyfills.js',
       'node_modules/systemjs/dist/system.src.js',
       'node_modules/whatwg-fetch/fetch.js',
-      'node_modules/rxjs/bundles/Rx.js',
+      {pattern: 'node_modules/rxjs/bundles/Rx.js', watched: true, served: true, included: false},
       {pattern: 'test/assets/**/*.*', watched: true, served: true, included: false},
       {pattern: 'build/**/*.js.map', watched: true, served: true, included: false},
       {pattern: 'build/**/*.js', watched: true, served: true, included: false}

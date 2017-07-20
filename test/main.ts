@@ -15,12 +15,18 @@ declare const __karma__: {
 __karma__.loaded = function() {};
 (window as any).global = window;
 
-System.config(
-    {defaultJSExtensions: true, map: {'rxjs/Rx': 'base/node_modules/rxjs/bundles/Rx.js'}});
 let browserPatchedPromise: any = null;
 if ((window as any)[(Zone as any).__symbol__('setTimeout')]) {
+  System.config({
+    defaultJSExtensions: true,
+    map: {'rxjs/Rx': 'base/build/test/global-rxjs.js'},
+  });
   browserPatchedPromise = Promise.resolve('browserPatched');
 } else {
+  System.config({
+    defaultJSExtensions: true,
+    map: {'rxjs/Rx': 'base/node_modules/rxjs/bundles/Rx.js'},
+  });
   // this means that Zone has not patched the browser yet, which means we must be running in
   // build mode and need to load the browser patch.
   browserPatchedPromise = System.import('/base/build/test/browser-zone-setup');
