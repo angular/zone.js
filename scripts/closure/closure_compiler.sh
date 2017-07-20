@@ -1,7 +1,7 @@
 # compile closure test source file
 $(npm bin)/tsc -p .
 # Run the Google Closure compiler java runnable with zone externs
-java -jar node_modules/google-closure-compiler/compiler.jar --flagfile 'scripts/closure/closure_flagfile' --externs './dist/zone_externs.js'
+java -jar node_modules/google-closure-compiler/compiler.jar --flagfile 'scripts/closure/closure_flagfile' --externs 'lib/closure/zone_externs.js'
 
 # the names of Zone exposed API should be kept correctly with zone externs, test program should exit with 0.
 node build/closure/closure-bundle.js

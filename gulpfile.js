@@ -207,6 +207,11 @@ gulp.task('build/rxjs.min.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/rxjs/rxjs.ts', 'zone-patch-rxjs.min.js', true, cb);
 });
 
+gulp.task('build/closure.js', function() {
+  return gulp.src('./lib/closure/zone_externs.js')
+             .pipe(gulp.dest('./dist'));
+});
+
 gulp.task('build', [
   'build/zone.js',
   'build/zone.js.d.ts',
@@ -241,7 +246,8 @@ gulp.task('build', [
   'build/fake-async-test.js',
   'build/sync-test.js',
   'build/rxjs.js',
-  'build/rxjs.min.js'
+  'build/rxjs.min.js',
+  'build/closure.js'
 ]);
 
 gulp.task('test/node', ['compile'], function(cb) {
