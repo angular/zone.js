@@ -15,8 +15,11 @@ declare const __karma__: {
 __karma__.loaded = function() {};
 (window as any).global = window;
 
-System.config(
-    {defaultJSExtensions: true, map: {'rxjs/Rx': 'base/node_modules/rxjs/bundles/Rx.js'}});
+System.config({
+  defaultJSExtensions: true,
+  map: {'rxjs/Rx': 'base/node_modules/rxjs/bundles/Rx.js'},
+  meta: {'node_modules/rxjs/bundles/Rx.js': {format: 'global'}}
+});
 let browserPatchedPromise: any = null;
 if ((window as any)[(Zone as any).__symbol__('setTimeout')]) {
   browserPatchedPromise = Promise.resolve('browserPatched');

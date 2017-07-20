@@ -15,6 +15,7 @@ import * as Rx from 'rxjs/Rx';
   const errorSource = 'rxjs.Subscriber.error';
   const completeSource = 'rxjs.Subscriber.complete';
   const unsubscribeSource = 'rxjs.Subscriber.unsubscribe';
+  const teardownSource = 'rxjs.Subscriber.teardownLogic';
 
   const patchObservableInstance = function(observable: any) {
     observable._zone = Zone.current;
@@ -41,15 +42,16 @@ import * as Rx from 'rxjs/Rx';
     // _subscribe should run in ConstructorZone
     // but for performance concern, we should check
     // whether ConsturctorZone === Zone.current here
-    const tearDownLogic = _zone !== Zone.current ? _zone.run(this._originalSubscribe, this, args) :
-                                                   this._originalSubscribe.apply(this, args);
+    const tearDownLogic = _zone !== Zone.current ?
+        _zone.run(this._originalSubscribe, this, args, subscribeSource) :
+        this._originalSubscribe.apply(this, args);
     if (tearDownLogic && typeof tearDownLogic === 'function') {
       const patchedTearDownLogic = function() {
         // tearDownLogic should also run in ConstructorZone
         // but for performance concern, we should check
         // whether ConsturctorZone === Zone.current here
         if (_zone && _zone !== Zone.current) {
-          return _zone.run(tearDownLogic, this, arguments);
+          return _zone.run(tearDownLogic, this, arguments, teardownSource);
         } else {
           return tearDownLogic.apply(this, arguments);
         }
@@ -61,14 +63,10 @@ import * as Rx from 'rxjs/Rx';
 
   const patchObservable = function(Rx: any, observableType: string) {
     const symbolObservable = symbol(observableType);
-    if (Rx[symbolObservable]) {
-      // has patched
-      return;
-    }
 
-    const Observable = Rx[symbolObservable] = Rx[observableType];
-    if (!Observable) {
-      // the subclass of Observable not loaded
+    const Observable = Rx[observableType];
+    if (!Observable || Observable[symbolObservable]) {
+      // the subclass of Observable not loaded or have been patched
       return;
     }
 
@@ -81,6 +79,8 @@ import * as Rx from 'rxjs/Rx';
     };
 
     patchedObservable.prototype = Observable.prototype;
+    patchedObservable[symbolObservable] = Observable;
+
     Object.keys(Observable).forEach(key => {
       patchedObservable[key] = Observable[key];
     });
@@ -109,7 +109,7 @@ import * as Rx from 'rxjs/Rx';
             if (!subscriber._zone) {
               subscriber._zone = currentZone;
             }
-            return _zone.run(call, this, args);
+            return _zone.run(call, this, args, subscribeSource);
           };
         }
         const result = subscribe.apply(this, arguments);
@@ -136,8 +136,8 @@ import * as Rx from 'rxjs/Rx';
     }
 
     const symbolCreate = symbol('create');
-    if (!Observable[symbolCreate]) {
-      const create = Observable[symbolCreate] = Observable.create;
+    if (!patchedObservable[symbolCreate]) {
+      const create = patchedObservable[symbolCreate] = Observable.create;
       // patch create method to save ConstructorZone of Observable
       Rx.Observable.create = function() {
         const observable = create.apply(this, arguments);
@@ -178,7 +178,7 @@ import * as Rx from 'rxjs/Rx';
       // for performance concern, check Zone.current
       // equal with this._zone(SubscriptionZone) or not
       if (subscriptionZone && subscriptionZone !== currentZone) {
-        return subscriptionZone.run(error, this, arguments, nextSource);
+        return subscriptionZone.run(error, this, arguments, errorSource);
       } else {
         return error.apply(this, arguments);
       }
@@ -191,7 +191,7 @@ import * as Rx from 'rxjs/Rx';
       // for performance concern, check Zone.current
       // equal with this._zone(SubscriptionZone) or not
       if (subscriptionZone && subscriptionZone !== currentZone) {
-        return subscriptionZone.run(complete, this, arguments, nextSource);
+        return subscriptionZone.run(complete, this, arguments, completeSource);
       } else {
         return complete.apply(this, arguments);
       }
@@ -204,7 +204,7 @@ import * as Rx from 'rxjs/Rx';
       // for performance concern, check Zone.current
       // equal with this._zone(SubscriptionZone) or not
       if (subscriptionZone && subscriptionZone !== currentZone) {
-        return subscriptionZone.run(unsubscribe, this, arguments, nextSource);
+        return subscriptionZone.run(unsubscribe, this, arguments, unsubscribeSource);
       } else {
         return unsubscribe.apply(this, arguments);
       }
