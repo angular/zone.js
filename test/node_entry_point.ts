@@ -22,6 +22,7 @@ import '../lib/zone-spec/proxy';
 import '../lib/zone-spec/sync-test';
 import '../lib/zone-spec/task-tracking';
 import '../lib/zone-spec/wtf';
+import '../lib/rxjs/rxjs';
 
 // Setup test environment
 import './test-env-setup-jasmine';

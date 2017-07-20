@@ -199,6 +199,14 @@ gulp.task('build/sync-test.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/zone-spec/sync-test.ts', 'sync-test.js', false, cb);
 });
 
+gulp.task('build/rxjs.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/rxjs/rxjs.ts', 'zone-patch-rxjs.js', false, cb);
+});
+
+gulp.task('build/rxjs.min.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/rxjs/rxjs.ts', 'zone-patch-rxjs.min.js', true, cb);
+});
+
 gulp.task('build/closure.js', function() {
   return gulp.src('./lib/closure/zone_externs.js')
              .pipe(gulp.dest('./dist'));
@@ -237,6 +245,8 @@ gulp.task('build', [
   'build/async-test.js',
   'build/fake-async-test.js',
   'build/sync-test.js',
+  'build/rxjs.js',
+  'build/rxjs.min.js',
   'build/closure.js'
 ]);
 
