@@ -13,6 +13,5 @@ module.exports = function (config) {
   config.files.push('build/lib/zone.js');
   config.files.push('build/lib/common/promise.js');
   config.files.push('build/lib/common/error-rewrite.js');
-  config.files.push('build/lib/rxjs/rxjs.js');
   config.files.push('build/test/main.js');
 };

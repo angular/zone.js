@@ -6,12 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-let rxjs: any;
-if (typeof window !== 'undefined') {
-  rxjs = (window as any).Rx;
-} else if (typeof exports === 'object' && typeof module !== undefined) {
-  rxjs = require('rxjs/Rx');
-}
+import * as Rx from 'rxjs/Rx';
 
 /**
  * The point of these tests, is to ensure that all callbacks execute in the Zone which was active
@@ -31,7 +26,7 @@ describe('Zone interaction', () => {
     const constructorZone: Zone = Zone.current.fork({name: 'Constructor Zone'});
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     let subscriber: any = null;
-    const observable: any = constructorZone.run(() => new rxjs.Observable((_subscriber: any) => {
+    const observable: any = constructorZone.run(() => new Rx.Observable((_subscriber: any) => {
       subscriber = _subscriber;
       log.push('setup');
       expect(Zone.current.name).toEqual(constructorZone.name);
@@ -72,7 +67,7 @@ describe('Zone interaction', () => {
     const rootZone: Zone = Zone.current;
     const constructorZone: Zone = Zone.current.fork({name: 'Constructor Zone'});
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
-    const observable: any = constructorZone.run(() => new rxjs.Observable((subscriber: any) => {
+    const observable: any = constructorZone.run(() => new Rx.Observable((subscriber: any) => {
       // Execute the `next`/`complete` in different zone, and assert that
       // correct zone
       // is restored.
@@ -107,7 +102,7 @@ describe('Zone interaction', () => {
     const constructorZone: Zone = Zone.current.fork({name: 'Constructor Zone'});
     const operatorZone: Zone = Zone.current.fork({name: 'Operator Zone'});
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
-    let observable: any = constructorZone.run(() => new rxjs.Observable((subscriber: any) => {
+    let observable: any = constructorZone.run(() => new Rx.Observable((subscriber: any) => {
       // Execute the `next`/`complete` in different zone, and assert that
       // correct zone
       // is restored.
@@ -148,7 +143,7 @@ describe('Zone interaction', () => {
   it('should run subscribe in zone of declaration with Observable.create', () => {
     const log: string[] = [];
     const constructorZone: Zone = Zone.current.fork({name: 'Constructor Zone'});
-    let observable: any = constructorZone.run(() => rxjs.Observable.create((subscriber: any) => {
+    let observable: any = constructorZone.run(() => Rx.Observable.create((subscriber: any) => {
       subscriber.next(1);
       subscriber.complete();
       return () => {
@@ -173,7 +168,7 @@ describe('Zone interaction', () => {
     let subject: any;
 
     constructorZone.run(() => {
-      subject = new rxjs.Subject();
+      subject = new Rx.Subject();
     });
 
     let subscription1: any;
@@ -226,7 +221,7 @@ describe('Zone interaction', () => {
         expect(Zone.current.name).toEqual(constructorZone.name);
         callback(arg0);
       };
-      boundFunc = rxjs.Observable.bindCallback(func);
+      boundFunc = Rx.Observable.bindCallback(func);
       observable = boundFunc('test');
     });
 
@@ -245,7 +240,7 @@ describe('Zone interaction', () => {
         expect(Zone.current.name).toEqual(constructorZone.name);
         callback(arg0);
       };
-      boundFunc = rxjs.Observable.bindCallback(func, (arg: any) => {
+      boundFunc = Rx.Observable.bindCallback(func, (arg: any) => {
         return 'selector' + arg;
       });
       observable = boundFunc('test');
@@ -266,7 +261,7 @@ describe('Zone interaction', () => {
         expect(Zone.current.name).toEqual(constructorZone.name);
         callback(arg0);
       };
-      boundFunc = rxjs.Observable.bindCallback(func, null, rxjs.Scheduler.async);
+      boundFunc = Rx.Observable.bindCallback(func, null, Rx.Scheduler.async);
       observable = boundFunc('test');
     });
 
@@ -280,4 +275,6 @@ describe('Zone interaction', () => {
 
     expect(log).toEqual([]);
   });
+
+
 });
