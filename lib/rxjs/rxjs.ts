@@ -227,6 +227,19 @@ import * as Rx from 'rxjs/Rx';
     };
   };
 
+  const patchObservableFactory = function(obj: any, factoryName: string) {
+    const symbolFactory: string = symbol(factoryName);
+    if (obj[symbolFactory]) {
+      return;
+    }
+    const factory: any = obj[symbolFactory] = obj[factoryName];
+    obj[factoryName] = function() {
+      const observable = factory.apply(this, arguments);
+      patchObservableInstance(observable);
+      return observable;
+    };
+  };
+
   const patchImmediate = function(asap: any) {
     if (!asap) {
       return;
@@ -265,5 +278,6 @@ import * as Rx from 'rxjs/Rx';
   patchSubscriber();
   patchObservableFactoryCreator(Rx.Observable, 'bindCallback');
   patchObservableFactoryCreator(Rx.Observable, 'bindNodeCallback');
+  patchObservableFactory(Rx.Observable, 'defer');
   patchImmediate(Rx.Scheduler.asap);
 });
