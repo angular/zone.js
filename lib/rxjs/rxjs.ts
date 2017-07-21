@@ -227,8 +227,43 @@ import * as Rx from 'rxjs/Rx';
     };
   };
 
+  const patchImmediate = function(asap: any) {
+    if (!asap) {
+      return;
+    }
+
+    const scheduleSymbol = symbol('scheduleSymbol');
+    const flushSymbol = symbol('flushSymbol');
+    const zoneSymbol = symbol('zone');
+    if (asap[scheduleSymbol]) {
+      return;
+    }
+
+    const schedule = asap[scheduleSymbol] = asap.schedule;
+    asap.schedule = function() {
+      const args = Array.prototype.slice.call(arguments);
+      const work = args.length > 0 ? args[0] : undefined;
+      const delay = args.length > 1 ? args[1] : 0;
+      const state = (args.length > 2 ? args[2] : undefined) || {};
+      state[zoneSymbol] = Zone.current;
+
+      const patchedWork = function() {
+        const workArgs = Array.prototype.slice.call(arguments);
+        const action = workArgs.length > 0 ? workArgs[0] : undefined;
+        const scheduleZone = action && action[zoneSymbol];
+        if (scheduleZone && scheduleZone !== Zone.current) {
+          return scheduleZone.run(work, this, arguments);
+        } else {
+          return work.apply(this, arguments);
+        }
+      };
+      return schedule.apply(this, [patchedWork, delay, state]);
+    };
+  };
+
   patchObservable(Rx, 'Observable');
   patchSubscriber();
   patchObservableFactoryCreator(Rx.Observable, 'bindCallback');
   patchObservableFactoryCreator(Rx.Observable, 'bindNodeCallback');
+  patchImmediate(Rx.Scheduler.asap);
 });
