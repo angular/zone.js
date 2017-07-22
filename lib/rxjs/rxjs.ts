@@ -279,5 +279,7 @@ import * as Rx from 'rxjs/Rx';
   patchObservableFactoryCreator(Rx.Observable, 'bindCallback');
   patchObservableFactoryCreator(Rx.Observable, 'bindNodeCallback');
   patchObservableFactory(Rx.Observable, 'defer');
+  patchObservableFactory(Rx.Observable, 'forkJoin');
+  patchObservableFactory(Rx.Observable, 'from');
   patchImmediate(Rx.Scheduler.asap);
 });

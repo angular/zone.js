@@ -48,6 +48,7 @@ describe('Observable.bindNodeCallback', () => {
         callback(null, arg);
       };
       boundFunc = Rx.Observable.bindNodeCallback(func, (arg: any) => {
+        expect(Zone.current.name).toEqual(constructorZone.name);
         return 'selector' + arg;
       });
       observable = boundFunc('test');

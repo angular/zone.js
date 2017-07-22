@@ -48,6 +48,7 @@ describe('Observable.bindCallback', () => {
         callback(arg0);
       };
       boundFunc = Rx.Observable.bindCallback(func, (arg: any) => {
+        expect(Zone.current.name).toEqual(constructorZone.name);
         return 'selector' + arg;
       });
       observable = boundFunc('test');
@@ -64,7 +65,6 @@ describe('Observable.bindCallback', () => {
   });
 
   it('bindCallback with async scheduler should run in correct zone', asyncTest((done: any) => {
-       Error.stackTraceLimit = 100;
        constructorZone.run(() => {
          func = function(arg0: any, callback: Function) {
            expect(Zone.current.name).toEqual(constructorZone.name);

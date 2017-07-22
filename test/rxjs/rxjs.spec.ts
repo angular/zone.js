@@ -11,3 +11,6 @@ import './rxjs.bindNodeCallback.spec';
 import './rxjs.combineLatest.spec';
 import './rxjs.concat.spec';
 import './rxjs.defer.spec';
+import './rxjs.empty.spec';
+import './rxjs.forkjoin.spec';
+import './rxjs.from.spec';
