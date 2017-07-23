@@ -14,3 +14,6 @@ import './rxjs.defer.spec';
 import './rxjs.empty.spec';
 import './rxjs.forkjoin.spec';
 import './rxjs.from.spec';
+import './rxjs.fromEvent.spec';
+import './rxjs.fromPromise.spec';
+import './rxjs.interval.spec';

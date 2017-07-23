@@ -240,6 +240,36 @@ import * as Rx from 'rxjs/Rx';
     };
   };
 
+  const patchObservableFactoryArgs = function(obj: any, factoryName: string) {
+    const symbolFactory: string = symbol(factoryName);
+    if (obj[symbolFactory]) {
+      return;
+    }
+    const factory: any = obj[symbolFactory] = obj[factoryName];
+    obj[factoryName] = function() {
+      const initZone = Zone.current;
+      const args = Array.prototype.slice.call(arguments);
+      for (let i = 0; i < args.length; i++) {
+        const arg = args[i];
+        if (typeof arg === 'function') {
+          args[i] = function() {
+            const argArgs = Array.prototype.slice.call(arguments);
+            const runningZone = Zone.current;
+            if (initZone && runningZone && initZone !== runningZone) {
+              return initZone.run(arg, this, argArgs);
+            } else {
+              return arg.apply(this, argArgs);
+            }
+          };
+        }
+      }
+
+      const observable = factory.apply(this, args);
+      patchObservableInstance(observable);
+      return observable;
+    };
+  };
+
   const patchImmediate = function(asap: any) {
     if (!asap) {
       return;
@@ -281,5 +311,6 @@ import * as Rx from 'rxjs/Rx';
   patchObservableFactory(Rx.Observable, 'defer');
   patchObservableFactory(Rx.Observable, 'forkJoin');
   patchObservableFactory(Rx.Observable, 'from');
+  patchObservableFactoryArgs(Rx.Observable, 'fromEventPattern');
   patchImmediate(Rx.Scheduler.asap);
 });
