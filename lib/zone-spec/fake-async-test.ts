@@ -14,6 +14,7 @@
     args: any[];
     delay: number;
     isPeriodic: boolean;
+    isRequestAnimationFrame: boolean;
   }
 
   interface MicroTaskScheduledFunction {
@@ -35,7 +36,7 @@
 
     scheduleFunction(
         cb: Function, delay: number, args: any[] = [], isPeriodic: boolean = false,
-        id: number = -1): number {
+        isRequestAnimationFrame: boolean = false, id: number = -1): number {
       let currentId: number = id < 0 ? this.nextId++ : id;
       let endTime = this._currentTime + delay;
 
@@ -46,7 +47,8 @@
         func: cb,
         args: args,
         delay: delay,
-        isPeriodic: isPeriodic
+        isPeriodic: isPeriodic,
+        isRequestAnimationFrame: isRequestAnimationFrame
       };
       let i = 0;
       for (; i < this._schedulerQueue.length; i++) {
@@ -100,7 +102,8 @@
               ' tasks. Does your code use a polling timeout?');
         }
         // If the only remaining tasks are periodic, finish flushing.
-        if (!(this._schedulerQueue.filter(task => !task.isPeriodic).length)) {
+        if (!(this._schedulerQueue.filter(task => !task.isPeriodic && !task.isRequestAnimationFrame)
+                  .length)) {
           break;
         }
         let current = this._schedulerQueue.shift();
@@ -131,7 +134,7 @@
     pendingPeriodicTimers: number[] = [];
     pendingTimers: number[] = [];
 
-    constructor(namePrefix: string) {
+    constructor(namePrefix: string, private trackPendingRequestAnimationFrame = false) {
       this.name = 'fakeAsyncTestZone for ' + namePrefix;
     }
 
@@ -174,7 +177,7 @@
       return () => {
         // Requeue the timer callback if it's not been canceled.
         if (this.pendingPeriodicTimers.indexOf(id) !== -1) {
-          this._scheduler.scheduleFunction(fn, interval, args, true, id);
+          this._scheduler.scheduleFunction(fn, interval, args, true, false, id);
         }
       };
     }
@@ -185,12 +188,14 @@
       };
     }
 
-    private _setTimeout(fn: Function, delay: number, args: any[]): number {
+    private _setTimeout(fn: Function, delay: number, args: any[], isTimer = true): number {
       let removeTimerFn = this._dequeueTimer(this._scheduler.nextId);
       // Queue the callback and dequeue the timer on success and error.
       let cb = this._fnAndFlush(fn, {onSuccess: removeTimerFn, onError: removeTimerFn});
-      let id = this._scheduler.scheduleFunction(cb, delay, args);
-      this.pendingTimers.push(id);
+      let id = this._scheduler.scheduleFunction(cb, delay, args, false, !isTimer);
+      if (isTimer) {
+        this.pendingTimers.push(id);
+      }
       return id;
     }
 
@@ -302,7 +307,9 @@
             case 'mozRequestAnimationFrame':
               // Simulate a requestAnimationFrame by using a setTimeout with 16 ms.
               // (60 frames per second)
-              task.data['handleId'] = this._setTimeout(task.invoke, 16, (task.data as any)['args']);
+              task.data['handleId'] = this._setTimeout(
+                  task.invoke, 16, (task.data as any)['args'],
+                  this.trackPendingRequestAnimationFrame);
               break;
             default:
               throw new Error('Unknown macroTask scheduled in fake async test: ' + task.source);
