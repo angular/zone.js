@@ -23,7 +23,7 @@ describe('Observable.audit', () => {
          const source = Rx.Observable.interval(100);
          return source.audit(ev => {
            expect(Zone.current.name).toEqual(constructorZone1.name);
-           return Rx.Observable.interval(350);
+           return Rx.Observable.interval(360);
          });
        });
 

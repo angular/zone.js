@@ -145,7 +145,7 @@ describe('Observable.buffer', () => {
        expect(log).toEqual([]);
      }, Zone.root));
 
-  it('bufferWhen func callback should run in the correct zone', asyncTest((done: any) => {
+  xit('bufferWhen func callback should run in the correct zone', asyncTest((done: any) => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {

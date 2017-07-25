@@ -33,3 +33,4 @@ import './rxjs.Observable.count.spec';
 import './rxjs.Observable.debounce.spec';
 import './rxjs.Observable.default.spec';
 import './rxjs.Observable.delay.spec';
+import './rxjs.Observable.notification.spec';
