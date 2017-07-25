@@ -55,7 +55,7 @@ describe('Observable.audit', () => {
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
          const source = Rx.Observable.interval(100);
-         return source.auditTime(350);
+         return source.auditTime(360);
        });
 
        subscriptionZone.run(() => {

@@ -16,7 +16,7 @@ describe('Observable.buffer', () => {
     log = [];
   });
 
-  it('audit func callback should run in the correct zone', asyncTest((done: any) => {
+  it('buffer func callback should run in the correct zone', asyncTest((done: any) => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
@@ -114,23 +114,22 @@ describe('Observable.buffer', () => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         const source = Rx.Observable.interval(100);
-         const opening = Rx.Observable.interval(200);
+         const source = Rx.Observable.interval(10);
+         const opening = Rx.Observable.interval(25);
          const closingSelector = (v: any) => {
            expect(Zone.current.name).toEqual(constructorZone1.name);
-           return v % 3 === 0 ? Rx.Observable.interval(10) : Rx.Observable.empty();
+           return v % 2 === 0 ? Rx.Observable.of(v) : Rx.Observable.empty();
          };
          return source.bufferToggle(opening, closingSelector);
        });
 
+       let i = 0;
        subscriptionZone.run(() => {
          const subscriber = observable1.subscribe(
              (result: any) => {
                expect(Zone.current.name).toEqual(subscriptionZone.name);
                log.push(result);
-               if (result[0] >= 3) {
-                 subscriber.complete();
-               }
+               subscriber.complete();
              },
              () => {
                fail('should not call error');
@@ -138,7 +137,7 @@ describe('Observable.buffer', () => {
              () => {
                log.push('completed');
                expect(Zone.current.name).toEqual(subscriptionZone.name);
-               expect(log).toEqual([[1], [], [], [7], 'completed']);
+               expect(log).toEqual([[], 'completed']);
                done();
              });
        });
@@ -153,16 +152,17 @@ describe('Observable.buffer', () => {
          const source = Rx.Observable.interval(100);
          return source.bufferWhen(() => {
            expect(Zone.current.name).toEqual(constructorZone1.name);
-           return Rx.Observable.interval(200);
+           return Rx.Observable.interval(220);
          });
        });
 
+       let i = 0;
        subscriptionZone.run(() => {
          const subscriber = observable1.subscribe(
              (result: any) => {
                expect(Zone.current.name).toEqual(subscriptionZone.name);
                log.push(result);
-               if (result[0] >= 3) {
+               if (i++ >= 3) {
                  subscriber.complete();
                }
              },
@@ -172,7 +172,7 @@ describe('Observable.buffer', () => {
              () => {
                log.push('completed');
                expect(Zone.current.name).toEqual(subscriptionZone.name);
-               expect(log).toEqual([[0], [1, 2], [3, 4], 'completed']);
+               expect(log).toEqual([[0, 1], [2, 3], [4, 5], [6, 7], 'completed']);
                done();
              });
        });
