@@ -59,12 +59,7 @@ describe('Observable instance method concat', () => {
        const constructorZone3: Zone = Zone.current.fork({name: 'Constructor Zone3'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         return new Rx.Observable(subscriber => {
-           expect(Zone.current.name).toEqual(constructorZone1.name);
-           subscriber.next(1);
-           subscriber.next(2);
-           subscriber.complete();
-         });
+         return Rx.Observable.of(1, 2);
        });
 
        observable2 = constructorZone2.run(() => {
