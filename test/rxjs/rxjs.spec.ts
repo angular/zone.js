@@ -39,3 +39,10 @@ import './rxjs.Observable.do.spec';
 import './rxjs.Observable.collection.spec';
 // TODO: @JiaLiPassion, add exhaust test
 import './rxjs.Observable.merge.spec';
+import './rxjs.Observable.multicast.spec';
+import './rxjs.Observable.map.spec';
+import './rxjs.Observable.race.spec';
+import './rxjs.Observable.sample.spec';
+import './rxjs.Observable.take.spec';
+import './rxjs.Observable.timeout.spec';
+import './rxjs.Observable.window.spec';

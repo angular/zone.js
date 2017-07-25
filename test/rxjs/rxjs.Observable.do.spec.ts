@@ -15,7 +15,7 @@ describe('Observable.do', () => {
     log = [];
   });
 
-  it('notification func callback should run in the correct zone', () => {
+  it('do func callback should run in the correct zone', () => {
     const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
     const doZone1: Zone = Zone.current.fork({name: 'Do Zone1'});
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});

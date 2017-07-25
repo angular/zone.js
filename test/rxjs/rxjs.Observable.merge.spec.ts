@@ -159,4 +159,82 @@ describe('Observable.merge', () => {
           });
     });
   });
+
+  it('switch func callback should run in the correct zone', () => {
+    const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
+    const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
+    observable1 = constructorZone1.run(() => {
+      return Rx.Observable.range(0, 3)
+          .map(function(x: any) {
+            return Rx.Observable.range(x, 3);
+          })
+          .switch ();
+    });
+
+    subscriptionZone.run(() => {
+      observable1.subscribe(
+          (result: any) => {
+            log.push(result);
+            expect(Zone.current.name).toEqual(subscriptionZone.name);
+          },
+          (err: any) => {
+            fail('should not call error');
+          },
+          () => {
+            log.push('completed');
+            expect(Zone.current.name).toEqual(subscriptionZone.name);
+            expect(log).toEqual([0, 1, 2, 1, 2, 3, 2, 3, 4, 'completed']);
+          });
+    });
+  });
+
+  it('switchMap func callback should run in the correct zone', () => {
+    const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
+    const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
+    observable1 = constructorZone1.run(() => {
+      return Rx.Observable.range(0, 3).switchMap(function(x: any) {
+        return Rx.Observable.range(x, 3);
+      });
+    });
+
+    subscriptionZone.run(() => {
+      observable1.subscribe(
+          (result: any) => {
+            log.push(result);
+            expect(Zone.current.name).toEqual(subscriptionZone.name);
+          },
+          (err: any) => {
+            fail('should not call error');
+          },
+          () => {
+            log.push('completed');
+            expect(Zone.current.name).toEqual(subscriptionZone.name);
+            expect(log).toEqual([0, 1, 2, 1, 2, 3, 2, 3, 4, 'completed']);
+          });
+    });
+  });
+
+  it('switchMapTo func callback should run in the correct zone', () => {
+    const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
+    const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
+    observable1 = constructorZone1.run(() => {
+      return Rx.Observable.range(0, 3).switchMapTo('a');
+    });
+
+    subscriptionZone.run(() => {
+      observable1.subscribe(
+          (result: any) => {
+            log.push(result);
+            expect(Zone.current.name).toEqual(subscriptionZone.name);
+          },
+          (err: any) => {
+            fail('should not call error');
+          },
+          () => {
+            log.push('completed');
+            expect(Zone.current.name).toEqual(subscriptionZone.name);
+            expect(log).toEqual(['a', 'a', 'a', 'completed']);
+          });
+    });
+  });
 });

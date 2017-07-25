@@ -8,7 +8,7 @@
 import * as Rx from 'rxjs/Rx';
 import {asyncTest} from '../test-util';
 
-describe('Observable.audit', () => {
+describe('Observable.timeout', () => {
   let log: string[];
   let observable1: any;
 
@@ -16,68 +16,48 @@ describe('Observable.audit', () => {
     log = [];
   });
 
-  it('audit func callback should run in the correct zone', asyncTest((done: any) => {
+  it('timeout func callback should run in the correct zone', asyncTest((done: any) => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         const source = Rx.Observable.interval(100);
-         return source.audit(ev => {
-           expect(Zone.current.name).toEqual(constructorZone1.name);
-           return Rx.Observable.interval(150);
-         });
+         return Rx.Observable.of(1).timeout(10);
        });
 
        subscriptionZone.run(() => {
-         const subscriber = observable1.subscribe(
+         observable1.subscribe(
              (result: any) => {
-               expect(Zone.current.name).toEqual(subscriptionZone.name);
                log.push(result);
-               if (result >= 3) {
-                 subscriber.complete();
-               }
+               expect(Zone.current.name).toEqual(subscriptionZone.name);
              },
-             () => {
+             (err: any) => {
                fail('should not call error');
              },
              () => {
                log.push('completed');
                expect(Zone.current.name).toEqual(subscriptionZone.name);
-               expect(log).toEqual([1, 3, 'completed']);
+               expect(log).toEqual([1, 'completed']);
                done();
              });
        });
-
-       expect(log).toEqual([]);
      }, Zone.root));
 
-  it('auditTime func callback should run in the correct zone', asyncTest((done: any) => {
+  it('promise should run in the correct zone', asyncTest((done: any) => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
-       observable1 = constructorZone1.run(() => {
-         const source = Rx.Observable.interval(100);
-         return source.auditTime(360);
+       const promise: any = constructorZone1.run(() => {
+         return Rx.Observable.of(1).toPromise();
        });
 
        subscriptionZone.run(() => {
-         const subscriber = observable1.subscribe(
+         promise.then(
              (result: any) => {
                expect(Zone.current.name).toEqual(subscriptionZone.name);
-               log.push(result);
-               if (result >= 7) {
-                 subscriber.complete();
-               }
-             },
-             () => {
-               fail('should not call error');
-             },
-             () => {
-               log.push('completed');
-               expect(Zone.current.name).toEqual(subscriptionZone.name);
-               expect(log).toEqual([3, 7, 'completed']);
+               expect(result).toEqual(1);
                done();
+             },
+             (err: any) => {
+               fail('should not call error');
              });
        });
-
-       expect(log).toEqual([]);
      }, Zone.root));
 });
