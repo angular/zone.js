@@ -134,3 +134,21 @@ Zone.__load_patch('crypto', (global: any, Zone: ZoneType, api: _ZonePrivate) => 
     });
   }
 });
+
+Zone.__load_patch('console', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+  const consoleMethods =
+      ['dir', 'log', 'info', 'error', 'warn', 'assert', 'debug', 'timeEnd', 'trace'];
+  consoleMethods.forEach((m: string) => {
+    const originalMethod = (console as any)[Zone.__symbol__(m)] = (console as any)[m];
+    if (originalMethod) {
+      (console as any)[m] = function() {
+        const args = Array.prototype.slice.call(arguments);
+        if (Zone.current === Zone.root) {
+          return originalMethod.apply(this, args);
+        } else {
+          return Zone.root.run(originalMethod, this, args);
+        }
+      };
+    }
+  });
+});
