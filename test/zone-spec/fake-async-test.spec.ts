@@ -555,6 +555,13 @@ describe('FakeAsyncTestZoneSpec', () => {
                      expect(ran).toEqual(true);
                    });
                  });
+                 it('does not count as a pending timer', () => {
+                   fakeAsyncTestZone.run(() => {
+                     requestAnimationFrame(() => {});
+                   });
+                   expect(testZoneSpec.pendingTimers.length).toBe(0);
+                   expect(testZoneSpec.pendingPeriodicTimers.length).toBe(0);
+                 });
                  it('should cancel a scheduled requestAnimatiomFrame', () => {
                    fakeAsyncTestZone.run(() => {
                      let ran = false;
