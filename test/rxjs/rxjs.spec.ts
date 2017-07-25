@@ -34,3 +34,8 @@ import './rxjs.Observable.debounce.spec';
 import './rxjs.Observable.default.spec';
 import './rxjs.Observable.delay.spec';
 import './rxjs.Observable.notification.spec';
+import './rxjs.Observable.distinct.spec';
+import './rxjs.Observable.do.spec';
+import './rxjs.Observable.collection.spec';
+// TODO: @JiaLiPassion, add exhaust test
+import './rxjs.Observable.merge.spec';

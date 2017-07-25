@@ -44,9 +44,7 @@ describe('Observable.merge', () => {
              () => {
                log.push('completed');
                expect(Zone.current.name).toEqual(subscriptionZone.name);
-               expect(log).toEqual([
-                 'observable10', 'observable20', 'completed'
-               ]);
+               expect(log).toEqual(['observable10', 'observable20', 'completed']);
                done();
              });
        });

@@ -146,37 +146,37 @@ describe('Observable.buffer', () => {
      }, Zone.root));
 
   xit('bufferWhen func callback should run in the correct zone', asyncTest((done: any) => {
-       const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
-       const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
-       observable1 = constructorZone1.run(() => {
-         const source = Rx.Observable.interval(100);
-         return source.bufferWhen(() => {
-           expect(Zone.current.name).toEqual(constructorZone1.name);
-           return Rx.Observable.interval(220);
-         });
-       });
+        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
+        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
+        observable1 = constructorZone1.run(() => {
+          const source = Rx.Observable.interval(100);
+          return source.bufferWhen(() => {
+            expect(Zone.current.name).toEqual(constructorZone1.name);
+            return Rx.Observable.interval(220);
+          });
+        });
 
-       let i = 0;
-       subscriptionZone.run(() => {
-         const subscriber = observable1.subscribe(
-             (result: any) => {
-               expect(Zone.current.name).toEqual(subscriptionZone.name);
-               log.push(result);
-               if (i++ >= 3) {
-                 subscriber.complete();
-               }
-             },
-             () => {
-               fail('should not call error');
-             },
-             () => {
-               log.push('completed');
-               expect(Zone.current.name).toEqual(subscriptionZone.name);
-               expect(log).toEqual([[0, 1], [2, 3], [4, 5], [6, 7], 'completed']);
-               done();
-             });
-       });
+        let i = 0;
+        subscriptionZone.run(() => {
+          const subscriber = observable1.subscribe(
+              (result: any) => {
+                expect(Zone.current.name).toEqual(subscriptionZone.name);
+                log.push(result);
+                if (i++ >= 3) {
+                  subscriber.complete();
+                }
+              },
+              () => {
+                fail('should not call error');
+              },
+              () => {
+                log.push('completed');
+                expect(Zone.current.name).toEqual(subscriptionZone.name);
+                expect(log).toEqual([[0, 1], [2, 3], [4, 5], [6, 7], 'completed']);
+                done();
+              });
+        });
 
-       expect(log).toEqual([]);
-     }, Zone.root));
+        expect(log).toEqual([]);
+      }, Zone.root));
 });

@@ -6,9 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import * as Rx from 'rxjs/Rx';
-import {asyncTest} from '../test-util';
 
-describe('Observable.notification', () => {
+describe('Observable.do', () => {
   let log: string[];
   let observable1: any;
 
@@ -18,30 +17,33 @@ describe('Observable.notification', () => {
 
   it('notification func callback should run in the correct zone', () => {
     const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
+    const doZone1: Zone = Zone.current.fork({name: 'Do Zone1'});
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     const error = new Error('test');
     observable1 = constructorZone1.run(() => {
-      const notifA = new Rx.Notification('N', 'A');
-      const notifB = new Rx.Notification('N', 'B');
-      const notifE = new Rx.Notification('E', void 0, error);
-      const materialized = Rx.Observable.of(notifA, notifB, notifE);
-      return materialized.dematerialize();
+      return Rx.Observable.of(1);
+    });
+
+    observable1 = doZone1.run(() => {
+      return observable1.do((v: any) => {
+        log.push(v);
+        expect(Zone.current.name).toEqual(doZone1.name);
+      });
     });
 
     subscriptionZone.run(() => {
       observable1.subscribe(
           (result: any) => {
-            log.push(result);
+            log.push('result' + result);
             expect(Zone.current.name).toEqual(subscriptionZone.name);
           },
           (err: any) => {
-            log.push(err);
-            expect(Zone.current.name).toEqual(subscriptionZone.name);
+            fail('should not call error');
           },
           () => {
             log.push('completed');
             expect(Zone.current.name).toEqual(subscriptionZone.name);
-            expect(log).toEqual(['A', 'B', error]);
+            expect(log).toEqual([1, 'result1', 'completed']);
           });
     });
   });
