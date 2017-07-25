@@ -26,6 +26,7 @@ describe('Observable.zip', () => {
 
     const observable3: any = constructorZone1.run(() => {
       return Rx.Observable.zip(observable1, observable2, function(n: number, str: string) {
+        expect(Zone.current.name).toEqual(constructorZone1.name);
         return {n: n, str: str};
       });
     });

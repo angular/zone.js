@@ -270,6 +270,42 @@ import * as Rx from 'rxjs/Rx';
     };
   };
 
+  const patchMulticast = function() {
+    const obj: any = Rx.Observable.prototype;
+    const factoryName: string = 'multicast';
+    const symbolFactory: string = symbol(factoryName);
+    if (obj[symbolFactory]) {
+      return;
+    }
+    const factory: any = obj[symbolFactory] = obj[factoryName];
+    obj[factoryName] = function() {
+      const _zone: any = Zone.current;
+      const args = Array.prototype.slice.call(arguments);
+      let subjectOrSubjectFactory: any = args.length > 0 ? args[0] : undefined;
+      if (typeof subjectOrSubjectFactory !== 'function') {
+        const originalFactory: any = subjectOrSubjectFactory;
+        subjectOrSubjectFactory = function() {
+          return originalFactory;
+        };
+      }
+      args[0] = function() {
+        let subject: any;
+        if (_zone && _zone !== Zone.current) {
+          subject = _zone.run(subjectOrSubjectFactory, this, arguments);
+        } else {
+          subject = subjectOrSubjectFactory.apply(this, arguments);
+        }
+        if (subject && _zone) {
+          subject._zone = _zone;
+        }
+        return subject;
+      };
+      const observable = factory.apply(this, args);
+      patchObservableInstance(observable);
+      return observable;
+    };
+  };
+
   const patchImmediate = function(asap: any) {
     if (!asap) {
       return;
@@ -311,5 +347,6 @@ import * as Rx from 'rxjs/Rx';
   patchObservableFactory(Rx.Observable, 'defer');
   patchObservableFactory(Rx.Observable, 'forkJoin');
   patchObservableFactoryArgs(Rx.Observable, 'fromEventPattern');
+  patchMulticast();
   patchImmediate(Rx.Scheduler.asap);
 });

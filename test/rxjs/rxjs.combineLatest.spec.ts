@@ -25,7 +25,7 @@ describe('Observable.combineLatest', () => {
     log = [];
   });
 
-  it('bindCallback func callback should run in the correct zone', () => {
+  it('combineLatest func should run in the correct zone', () => {
     observable1 = constructorZone1.run(() => new Rx.Observable((_subscriber) => {
       subscriber1 = _subscriber;
       expect(Zone.current.name).toEqual(constructorZone1.name);
@@ -53,5 +53,39 @@ describe('Observable.combineLatest', () => {
     subscriber2.next(3);
 
     expect(log).toEqual(['setup1', 'setup2', [1, 2], [1, 3]]);
+  });
+
+  it('combineLatest func with project function should run in the correct zone', () => {
+    observable1 = constructorZone1.run(() => new Rx.Observable((_subscriber) => {
+      subscriber1 = _subscriber;
+      expect(Zone.current.name).toEqual(constructorZone1.name);
+      log.push('setup1');
+    }));
+    observable2 = constructorZone2.run(() => new Rx.Observable((_subscriber) => {
+      subscriber2 = _subscriber;
+      expect(Zone.current.name).toEqual(constructorZone2.name);
+      log.push('setup2');
+    }));
+
+    constructorZone3.run(() => {
+      combinedObservable =
+          Rx.Observable.combineLatest(observable1, observable2, (x: number, y: number) => {
+            expect(Zone.current.name).toEqual(constructorZone3.name);
+            return x + y;
+          });
+    });
+
+    subscriptionZone.run(() => {
+      combinedObservable.subscribe((combined: any) => {
+        expect(Zone.current.name).toEqual(subscriptionZone.name);
+        log.push(combined);
+      });
+    });
+
+    subscriber1.next(1);
+    subscriber2.next(2);
+    subscriber2.next(3);
+
+    expect(log).toEqual(['setup1', 'setup2', 3, 4]);
   });
 });

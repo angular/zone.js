@@ -8,7 +8,7 @@
 import * as Rx from 'rxjs/Rx';
 import {asyncTest} from '../test-util';
 
-describe('Observable.buffer', () => {
+xdescribe('Observable.buffer', () => {
   let log: string[];
   let observable1: any;
 

@@ -9,7 +9,7 @@ import * as Rx from 'rxjs/Rx';
 
 // TODO: @JiaLiPassion, Observable.prototype.multicast return a readonly _subscribe
 // should find another way to patch subscribe
-xdescribe('Observable.multicast', () => {
+describe('Observable.multicast', () => {
   let log: string[];
   const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
   const doZone1: Zone = Zone.current.fork({name: 'Do Zone1'});
@@ -70,6 +70,9 @@ xdescribe('Observable.multicast', () => {
           });
     });
 
-    expect(log).toEqual(['']);
+    expect(log).toEqual([
+      'do1', 'onetest', 'twotest', 'do2', 'onetest', 'twotest', 'do3', 'onetest', 'twotest', 'do1',
+      'test', 'do2', 'test', 'do3', 'test', 'completed'
+    ]);
   });
 });
