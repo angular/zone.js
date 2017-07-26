@@ -502,7 +502,7 @@ describe('FakeAsyncTestZoneSpec', () => {
               'flush failed after reaching the limit of 20 tasks. Does your code use a polling timeout?');
     });
 
-    it('accepts a custom limit', function() {
+    it('accepts a custom limit', () => {
       expect(() => {
         fakeAsyncTestZone.run(() => {
           let z = 0;
@@ -520,6 +520,42 @@ describe('FakeAsyncTestZoneSpec', () => {
       })
           .toThrowError(
               'flush failed after reaching the limit of 10 tasks. Does your code use a polling timeout?');
+    });
+
+    it('can flush periodic timers if flushPeriodic is true', () => {
+      fakeAsyncTestZone.run(() => {
+        let x = 0;
+
+        setInterval(() => {
+          x++;
+        }, 10);
+
+        let elapsed = testZoneSpec.flush(20, true);
+
+        expect(elapsed).toEqual(10);
+        expect(x).toEqual(1);
+      });
+    });
+
+    it('can flush multiple periodic timers if flushPeriodic is true', () => {
+      fakeAsyncTestZone.run(() => {
+        let x = 0;
+        let y = 0;
+
+        setInterval(() => {
+          x++;
+        }, 10);
+
+        setInterval(() => {
+          y++;
+        }, 100);
+
+        let elapsed = testZoneSpec.flush(20, true);
+
+        expect(elapsed).toEqual(100);
+        expect(x).toEqual(10);
+        expect(y).toEqual(1);
+      });
     });
   });
 
@@ -576,6 +612,27 @@ describe('FakeAsyncTestZoneSpec', () => {
 
                      testZoneSpec.tick(10);
                      expect(ran).toEqual(false);
+                   });
+                 });
+                 it('is not flushed when flushPeriodic is false', () => {
+                   let ran = false;
+                   fakeAsyncTestZone.run(() => {
+                     requestAnimationFrame(() => {
+                       ran = true;
+                     });
+                     testZoneSpec.flush(20);
+                     expect(ran).toEqual(false);
+                   });
+                 });
+                 it('is flushed when flushPeriodic is true', () => {
+                   let ran = false;
+                   fakeAsyncTestZone.run(() => {
+                     requestAnimationFrame(() => {
+                       ran = true;
+                     });
+                     const elapsed = testZoneSpec.flush(20, true);
+                     expect(elapsed).toEqual(16);
+                     expect(ran).toEqual(true);
                    });
                  });
                }));

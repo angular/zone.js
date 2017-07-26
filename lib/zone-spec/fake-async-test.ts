@@ -91,9 +91,10 @@
       this._currentTime = finalTime;
     }
 
-    flush(limit: number = 20): number {
+    flush(limit: number = 20, flushPeriodic = false): number {
       const startTime = this._currentTime;
       let count = 0;
+      let seenTimers: number[] = [];
       while (this._schedulerQueue.length > 0) {
         count++;
         if (count > limit) {
@@ -101,12 +102,28 @@
               'flush failed after reaching the limit of ' + limit +
               ' tasks. Does your code use a polling timeout?');
         }
-        // If the only remaining tasks are periodic, finish flushing.
-        if (!(this._schedulerQueue.filter(task => !task.isPeriodic && !task.isRequestAnimationFrame)
-                  .length)) {
-          break;
+        if (!flushPeriodic) {
+          // flush only non-periodic timers.
+          // If the only remaining tasks are periodic(or requestAnimationFrame), finish flushing.
+          if (this._schedulerQueue.filter(task => !task.isPeriodic && !task.isRequestAnimationFrame)
+                  .length === 0) {
+            break;
+          }
+        } else {
+          // flushPeriodic has been requested.
+          // Stop when all timer id-s have been seen at least once.
+          if (this._schedulerQueue
+                  .filter(
+                      task =>
+                          seenTimers.indexOf(task.id) === -1 || this._currentTime === task.endTime)
+                  .length === 0) {
+            break;
+          }
         }
         let current = this._schedulerQueue.shift();
+        if (seenTimers.indexOf(current.id) === -1) {
+          seenTimers.push(current.id);
+        }
         this._currentTime = current.endTime;
         let retval = current.func.apply(global, current.args);
         if (!retval) {
@@ -254,10 +271,10 @@
       flushErrors();
     }
 
-    flush(limit?: number): number {
+    flush(limit?: number, flushPeriodic?: boolean): number {
       FakeAsyncTestZoneSpec.assertInZone();
       this.flushMicrotasks();
-      let elapsed = this._scheduler.flush(limit);
+      let elapsed = this._scheduler.flush(limit, flushPeriodic);
       if (this._lastError !== null) {
         this._resetLastErrorAndThrow();
       }
