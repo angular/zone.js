@@ -28,9 +28,10 @@
             // Current simulated time in millis.
             this._currentTime = 0;
         }
-        Scheduler.prototype.scheduleFunction = function (cb, delay, args, isPeriodic, id) {
+        Scheduler.prototype.scheduleFunction = function (cb, delay, args, isPeriodic, isRequestAnimationFrame, id) {
             if (args === void 0) { args = []; }
             if (isPeriodic === void 0) { isPeriodic = false; }
+            if (isRequestAnimationFrame === void 0) { isRequestAnimationFrame = false; }
             if (id === void 0) { id = -1; }
             var currentId = id < 0 ? this.nextId++ : id;
             var endTime = this._currentTime + delay;
@@ -41,7 +42,8 @@
                 func: cb,
                 args: args,
                 delay: delay,
-                isPeriodic: isPeriodic
+                isPeriodic: isPeriodic,
+                isRequestAnimationFrame: isRequestAnimationFrame
             };
             var i = 0;
             for (; i < this._schedulerQueue.length; i++) {
@@ -83,21 +85,42 @@
             }
             this._currentTime = finalTime;
         };
-        Scheduler.prototype.flush = function (limit) {
+        Scheduler.prototype.flush = function (limit, flushPeriodic) {
+            var _this = this;
             if (limit === void 0) { limit = 20; }
+            if (flushPeriodic === void 0) { flushPeriodic = false; }
             var startTime = this._currentTime;
             var count = 0;
+            var seenTimers = [];
             while (this._schedulerQueue.length > 0) {
                 count++;
                 if (count > limit) {
                     throw new Error('flush failed after reaching the limit of ' + limit +
                         ' tasks. Does your code use a polling timeout?');
                 }
-                // If the only remaining tasks are periodic, finish flushing.
-                if (!(this._schedulerQueue.filter(function (task) { return !task.isPeriodic; }).length)) {
-                    break;
+                if (!flushPeriodic) {
+                    // flush only non-periodic timers.
+                    // If the only remaining tasks are periodic(or requestAnimationFrame), finish flushing.
+                    if (this._schedulerQueue.filter(function (task) { return !task.isPeriodic && !task.isRequestAnimationFrame; })
+                        .length === 0) {
+                        break;
+                    }
+                }
+                else {
+                    // flushPeriodic has been requested.
+                    // Stop when all timer id-s have been seen at least once.
+                    if (this._schedulerQueue
+                        .filter(function (task) {
+                        return seenTimers.indexOf(task.id) === -1 || _this._currentTime === task.endTime;
+                    })
+                        .length === 0) {
+                        break;
+                    }
                 }
                 var current = this._schedulerQueue.shift();
+                if (seenTimers.indexOf(current.id) === -1) {
+                    seenTimers.push(current.id);
+                }
                 this._currentTime = current.endTime;
                 var retval = current.func.apply(global, current.args);
                 if (!retval) {
@@ -110,7 +133,9 @@
         return Scheduler;
     }());
     var FakeAsyncTestZoneSpec = (function () {
-        function FakeAsyncTestZoneSpec(namePrefix) {
+        function FakeAsyncTestZoneSpec(namePrefix, trackPendingRequestAnimationFrame) {
+            if (trackPendingRequestAnimationFrame === void 0) { trackPendingRequestAnimationFrame = false; }
+            this.trackPendingRequestAnimationFrame = trackPendingRequestAnimationFrame;
             this._scheduler = new Scheduler();
             this._microtasks = [];
             this._lastError = null;
@@ -166,7 +191,7 @@
             return function () {
                 // Requeue the timer callback if it's not been canceled.
                 if (_this.pendingPeriodicTimers.indexOf(id) !== -1) {
-                    _this._scheduler.scheduleFunction(fn, interval, args, true, id);
+                    _this._scheduler.scheduleFunction(fn, interval, args, true, false, id);
                 }
             };
         };
@@ -176,12 +201,15 @@
                 FakeAsyncTestZoneSpec._removeTimer(_this.pendingPeriodicTimers, id);
             };
         };
-        FakeAsyncTestZoneSpec.prototype._setTimeout = function (fn, delay, args) {
+        FakeAsyncTestZoneSpec.prototype._setTimeout = function (fn, delay, args, isTimer) {
+            if (isTimer === void 0) { isTimer = true; }
             var removeTimerFn = this._dequeueTimer(this._scheduler.nextId);
             // Queue the callback and dequeue the timer on success and error.
             var cb = this._fnAndFlush(fn, { onSuccess: removeTimerFn, onError: removeTimerFn });
-            var id = this._scheduler.scheduleFunction(cb, delay, args);
-            this.pendingTimers.push(id);
+            var id = this._scheduler.scheduleFunction(cb, delay, args, false, !isTimer);
+            if (isTimer) {
+                this.pendingTimers.push(id);
+            }
             return id;
         };
         FakeAsyncTestZoneSpec.prototype._clearTimeout = function (id) {
@@ -237,10 +265,10 @@
             }
             flushErrors();
         };
-        FakeAsyncTestZoneSpec.prototype.flush = function (limit) {
+        FakeAsyncTestZoneSpec.prototype.flush = function (limit, flushPeriodic) {
             FakeAsyncTestZoneSpec.assertInZone();
             this.flushMicrotasks();
-            var elapsed = this._scheduler.flush(limit);
+            var elapsed = this._scheduler.flush(limit, flushPeriodic);
             if (this._lastError !== null) {
                 this._resetLastErrorAndThrow();
             }
@@ -283,7 +311,7 @@
                         case 'mozRequestAnimationFrame':
                             // Simulate a requestAnimationFrame by using a setTimeout with 16 ms.
                             // (60 frames per second)
-                            task.data['handleId'] = this._setTimeout(task.invoke, 16, task.data['args']);
+                            task.data['handleId'] = this._setTimeout(task.invoke, 16, task.data['args'], this.trackPendingRequestAnimationFrame);
                             break;
                         default:
                             throw new Error('Unknown macroTask scheduled in fake async test: ' + task.source);

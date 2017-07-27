@@ -1,3 +1,30 @@
+<a name="0.8.16"></a>
+## [0.8.16](https://github.com/angular/zone.js/compare/v0.8.15...0.8.16) (2017-07-27)
+
+
+### Bug Fixes
+
+* **console:** console.log in nodejs should run in root Zone ([#855](https://github.com/angular/zone.js/issues/855)) ([5900d3a](https://github.com/angular/zone.js/commit/5900d3a))
+* **promise:** fix [#850](https://github.com/angular/zone.js/issues/850), check Promise.then writable ([#851](https://github.com/angular/zone.js/issues/851)) ([6e44cab](https://github.com/angular/zone.js/commit/6e44cab))
+* **spec:** do not count requestAnimationFrame as a pending timer ([#854](https://github.com/angular/zone.js/issues/854)) ([eca04b0](https://github.com/angular/zone.js/commit/eca04b0))
+
+
+### Features
+
+* **spec:** add an option to FakeAsyncTestZoneSpec to flush periodic timers ([#857](https://github.com/angular/zone.js/issues/857)) ([5c5ca1a](https://github.com/angular/zone.js/commit/5c5ca1a))
+
+
+
+<a name="0.8.15"></a>
+## [0.8.15](https://github.com/angular/zone.js/compare/v0.8.13...0.8.15) (2017-07-27)
+
+
+### Features
+
+* **rxjs:** fix [#830](https://github.com/angular/zone.js/issues/830), monkey patch rxjs to make rxjs run in correct zone ([#843](https://github.com/angular/zone.js/issues/843)) ([1ed83d0](https://github.com/angular/zone.js/commit/1ed83d0))
+
+
+
 <a name="0.8.14"></a>
 ## [0.8.14](https://github.com/angular/zone.js/compare/v0.8.13...0.8.14) (2017-07-20)
 

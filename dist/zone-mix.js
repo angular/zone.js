@@ -938,6 +938,12 @@ Zone.__load_patch('ZoneAwarePromise', function (global, Zone, api) {
         var originalThen = proto.then;
         // Keep a reference to the original method.
         proto[symbolThen] = originalThen;
+        // check Ctor.prototype.then propertyDescritor is writable or not
+        // in meteor env, writable is false, we have to make it to be true.
+        var prop = Object.getOwnPropertyDescriptor(Ctor.prototype, 'then');
+        if (prop && prop.writable === false && prop.configurable) {
+            Object.defineProperty(Ctor.prototype, 'then', { writable: true });
+        }
         Ctor.prototype.then = function (onResolve, onReject) {
             var _this = this;
             var wrapped = new ZoneAwarePromise(function (resolve, reject) {
@@ -2928,6 +2934,23 @@ Zone.__load_patch('crypto', function (global, Zone, api) {
             });
         });
     }
+});
+Zone.__load_patch('console', function (global, Zone, api) {
+    var consoleMethods = ['dir', 'log', 'info', 'error', 'warn', 'assert', 'debug', 'timeEnd', 'trace'];
+    consoleMethods.forEach(function (m) {
+        var originalMethod = console[Zone.__symbol__(m)] = console[m];
+        if (originalMethod) {
+            console[m] = function () {
+                var args = Array.prototype.slice.call(arguments);
+                if (Zone.current === Zone.root) {
+                    return originalMethod.apply(this, args);
+                }
+                else {
+                    return Zone.root.run(originalMethod, this, args);
+                }
+            };
+        }
+    });
 });
 
 /**
