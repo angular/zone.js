@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {patchMethod, patchProperty, zoneSymbol} from '../../lib/common/utils';
+import {patchMethod, patchProperty, patchPrototype, zoneSymbol} from '../../lib/common/utils';
 
 describe('utils', function() {
 
@@ -77,6 +77,169 @@ describe('utils', function() {
       const desc = Object.getOwnPropertyDescriptor(TestType.prototype, 'nonConfigurableProperty');
       expect(desc.writable).toBeTruthy();
       expect(!desc.get).toBeTruthy();
+    });
+  });
+
+  describe('patchPrototype', () => {
+    it('non configurable property desc should be patched', () => {
+      'use strict';
+      const TestFunction: any = function() {};
+      const log: string[] = [];
+      Object.defineProperties(TestFunction.prototype, {
+        'property1': {
+          value: function Property1(callback: Function) {
+            Zone.root.run(callback);
+          },
+          writable: true,
+          configurable: true,
+          enumerable: true
+        },
+        'property2': {
+          value: function Property2(callback: Function) {
+            Zone.root.run(callback);
+          },
+          writable: true,
+          configurable: false,
+          enumerable: true
+        }
+      });
+
+      const zone = Zone.current.fork({name: 'patch'});
+
+      zone.run(() => {
+        const instance = new TestFunction();
+        instance.property1(() => {
+          log.push('property1' + Zone.current.name);
+        });
+        instance.property2(() => {
+          log.push('property2' + Zone.current.name);
+        });
+      });
+      expect(log).toEqual(['property1<root>', 'property2<root>']);
+      log.length = 0;
+
+      patchPrototype(TestFunction.prototype, ['property1', 'property2']);
+
+      zone.run(() => {
+        const instance = new TestFunction();
+        instance.property1(() => {
+          log.push('property1' + Zone.current.name);
+        });
+        instance.property2(() => {
+          log.push('property2' + Zone.current.name);
+        });
+      });
+      expect(log).toEqual(['property1patch', 'property2patch']);
+    });
+
+    it('non writable property desc should not be patched', () => {
+      'use strict';
+      const TestFunction: any = function() {};
+      const log: string[] = [];
+      Object.defineProperties(TestFunction.prototype, {
+        'property1': {
+          value: function Property1(callback: Function) {
+            Zone.root.run(callback);
+          },
+          writable: true,
+          configurable: true,
+          enumerable: true
+        },
+        'property2': {
+          value: function Property2(callback: Function) {
+            Zone.root.run(callback);
+          },
+          writable: false,
+          configurable: true,
+          enumerable: true
+        }
+      });
+
+      const zone = Zone.current.fork({name: 'patch'});
+
+      zone.run(() => {
+        const instance = new TestFunction();
+        instance.property1(() => {
+          log.push('property1' + Zone.current.name);
+        });
+        instance.property2(() => {
+          log.push('property2' + Zone.current.name);
+        });
+      });
+      expect(log).toEqual(['property1<root>', 'property2<root>']);
+      log.length = 0;
+
+      patchPrototype(TestFunction.prototype, ['property1', 'property2']);
+
+      zone.run(() => {
+        const instance = new TestFunction();
+        instance.property1(() => {
+          log.push('property1' + Zone.current.name);
+        });
+        instance.property2(() => {
+          log.push('property2' + Zone.current.name);
+        });
+      });
+      expect(log).toEqual(['property1patch', 'property2<root>']);
+    });
+
+    it('readonly property desc should not be patched', () => {
+      'use strict';
+      const TestFunction: any = function() {};
+      const log: string[] = [];
+      Object.defineProperties(TestFunction.prototype, {
+        'property1': {
+          get: function() {
+            if (!this._property1) {
+              this._property1 = function Property2(callback: Function) {
+                Zone.root.run(callback);
+              };
+            }
+            return this._property1;
+          },
+          set: function(func: Function) {
+            this._property1 = func;
+          },
+          configurable: true,
+          enumerable: true
+        },
+        'property2': {
+          get: function() {
+            return function Property2(callback: Function) {
+              Zone.root.run(callback);
+            };
+          },
+          configurable: true,
+          enumerable: true
+        }
+      });
+
+      const zone = Zone.current.fork({name: 'patch'});
+
+      zone.run(() => {
+        const instance = new TestFunction();
+        instance.property1(() => {
+          log.push('property1' + Zone.current.name);
+        });
+        instance.property2(() => {
+          log.push('property2' + Zone.current.name);
+        });
+      });
+      expect(log).toEqual(['property1<root>', 'property2<root>']);
+      log.length = 0;
+
+      patchPrototype(TestFunction.prototype, ['property1', 'property2']);
+
+      zone.run(() => {
+        const instance = new TestFunction();
+        instance.property1(() => {
+          log.push('property1' + Zone.current.name);
+        });
+        instance.property2(() => {
+          log.push('property2' + Zone.current.name);
+        });
+      });
+      expect(log).toEqual(['property1patch', 'property2<root>']);
     });
   });
 });

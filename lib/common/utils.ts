@@ -33,6 +33,10 @@ export function patchPrototype(prototype: any, fnNames: string[]) {
     const name = fnNames[i];
     const delegate = prototype[name];
     if (delegate) {
+      const prototypeDesc = Object.getOwnPropertyDescriptor(prototype, name);
+      if (!isPropertyWritable(prototypeDesc)) {
+        continue;
+      }
       prototype[name] = ((delegate: Function) => {
         const patched: any = function() {
           return delegate.apply(this, bindArguments(<any>arguments, source + '.' + name));
@@ -42,6 +46,22 @@ export function patchPrototype(prototype: any, fnNames: string[]) {
       })(delegate);
     }
   }
+}
+
+export function isPropertyWritable(propertyDesc: any) {
+  if (!propertyDesc) {
+    return true;
+  }
+
+  if (propertyDesc.writable === false) {
+    return false;
+  }
+
+  if (typeof propertyDesc.get === 'function' && typeof propertyDesc.set === 'undefined') {
+    return false;
+  }
+
+  return true;
 }
 
 export const isWebWorker: boolean =
