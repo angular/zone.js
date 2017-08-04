@@ -214,6 +214,9 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
       return;
     }
     const factoryCreator: any = obj[symbolFactory] = obj[factoryName];
+    if (!factoryCreator) {
+      return;
+    }
     obj[factoryName] = function() {
       const factory: any = factoryCreator.apply(this, arguments);
       return function() {
@@ -230,6 +233,9 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
       return;
     }
     const factory: any = obj[symbolFactory] = obj[factoryName];
+    if (!factory) {
+      return;
+    }
     obj[factoryName] = function() {
       const observable = factory.apply(this, arguments);
       patchObservableInstance(observable);
@@ -243,6 +249,9 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
       return;
     }
     const factory: any = obj[symbolFactory] = obj[factoryName];
+    if (!factory) {
+      return;
+    }
     obj[factoryName] = function() {
       const initZone = Zone.current;
       const args = Array.prototype.slice.call(arguments);
@@ -275,6 +284,9 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
       return;
     }
     const factory: any = obj[symbolFactory] = obj[factoryName];
+    if (!factory) {
+      return;
+    }
     obj[factoryName] = function() {
       const _zone: any = Zone.current;
       const args = Array.prototype.slice.call(arguments);
