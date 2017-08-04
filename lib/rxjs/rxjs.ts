@@ -83,7 +83,8 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
           } else if (this.constructor === Observable) {
             return _subscribe;
           }
-          return (<any>this).__proto__._subscribe;
+          const proto = Object.getPrototypeOf(this);
+          return proto && proto._subscribe;
         },
         set: function(this: Observable<any>, subscribe: any) {
           (this as any)._zone = Zone.current;
@@ -116,7 +117,11 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
       _zoneUnsubscribe: {value: null, writable: true, configurable: true},
       _unsubscribe: {
         get: function(this: Subscription) {
-          return (this as any)._zoneUnsubscribe || (<any>this).__proto__._unsubscribe;
+          if ((this as any)._zoneUnsubscribe) {
+            return (this as any)._zoneUnsubscribe;
+          }
+          const proto = Object.getPrototypeOf(this);
+          return proto && proto._unsubscribe;
         },
         set: function(this: Subscription, unsubscribe: any) {
           (this as any)._zone = Zone.current;
