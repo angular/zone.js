@@ -144,6 +144,7 @@ describe('Zone interaction', () => {
     const log: string[] = [];
     const constructorZone: Zone = Zone.current.fork({name: 'Constructor Zone'});
     let observable: any = constructorZone.run(() => Rx.Observable.create((subscriber: any) => {
+      expect(Zone.current.name).toEqual(constructorZone.name);
       subscriber.next(1);
       subscriber.complete();
       return () => {

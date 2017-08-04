@@ -57,12 +57,11 @@ describe('Observable.throw', () => {
              (error: any) => {
                log.push(error);
                expect(Zone.current.name).toEqual(subscriptionZone.name);
+               expect(log).toEqual([error]);
+               done();
              },
              () => {
-               log.push('completed');
-               expect(Zone.current.name).toEqual(subscriptionZone.name);
-               expect(log).toEqual([error, 'completed']);
-               done();
+               fail('should not call complete');
              });
        });
 

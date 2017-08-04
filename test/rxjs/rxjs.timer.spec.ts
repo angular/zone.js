@@ -39,6 +39,7 @@ describe('Observable.timer', () => {
                log.push('completed');
                expect(Zone.current.name).toEqual(subscriptionZone.name);
                expect(log).toEqual([0, 1, 2, 3, 'completed']);
+               done();
              });
        });
        expect(log).toEqual([]);

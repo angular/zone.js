@@ -29,7 +29,13 @@ function generateScript(inFile, outFile, minify, callback) {
               + '*\n'
               + '* Use of this source code is governed by an MIT-style license that can be\n'
               + '* found in the LICENSE file at https://angular.io/license\n'
-              + '*/'
+              + '*/',
+          globals: {
+            'rxjs/Observable': 'Rx',
+            'rxjs/Subscriber': 'Rx',
+            'rxjs/Subscription': 'Rx',
+            'rxjs/scheduler/asap': 'Rx.Scheduler'
+          }
         }))
         .pipe(rename(outFile)),
   ];
