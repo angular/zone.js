@@ -5,6 +5,10 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/**
+ * @fileoverview
+ * @suppress {missingRequire}
+ */
 import {attachOriginToPatched, zoneSymbol} from './utils';
 
 export const TRUE_STR = 'true';
