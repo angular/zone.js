@@ -33,7 +33,7 @@ Zone.__load_patch('node_timers', (global: any, Zone: ZoneType, api: _ZonePrivate
         globalUseTimeoutFromTimer = true;
         return originSetTimeout.apply(this, arguments);
       };
-      const detectTimeout = global.setTimeout(noop, 100);
+      const detectTimeout = global.setTimeout(() => {}, 100);
       clearTimeout(detectTimeout);
       timers.setTimeout = originSetTimeout;
     }
