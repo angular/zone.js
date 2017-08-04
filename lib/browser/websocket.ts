@@ -15,7 +15,7 @@ export function apply(api: _ZonePrivate, _global: any) {
   // On Safari window.EventTarget doesn't exist so need to patch WS add/removeEventListener
   // On older Chrome, no need since EventTarget was already patched
   if (!(<any>_global).EventTarget) {
-    patchEventTarget(api, _global, [WS.prototype]);
+    patchEventTarget(_global, [WS.prototype]);
   }
   (<any>_global).WebSocket = function(a: any, b: any) {
     const socket = arguments.length > 1 ? new WS(a, b) : new WS(a);

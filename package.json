@@ -36,7 +36,7 @@
     "tsc:w": "tsc -w -p .",
     "test": "npm run tsc && concurrently \"npm run tsc:w\" \"npm run ws-server\" \"npm run karma-jasmine\"",
     "test:phantomjs": "npm run tsc && concurrently \"npm run tsc:w\" \"npm run ws-server\" \"npm run karma-jasmine:phantomjs\"",
-    "test:phantomjs-single": "concurrently \"npm run ws-server\" \"npm run karma-jasmine-phantomjs:autoclose\"",
+    "test:phantomjs-single": "npm run tsc && concurrently \"npm run ws-server\" \"npm run karma-jasmine-phantomjs:autoclose\"",
     "test:single": "npm run tsc && concurrently \"npm run ws-server\" \"npm run karma-jasmine:autoclose\"",
     "test-dist": "concurrently \"npm run tsc:w\" \"npm run ws-server\" \"karma start karma-dist-jasmine.conf.js\"",
     "test-node": "gulp test/node",
