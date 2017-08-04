@@ -34,7 +34,8 @@ function generateScript(inFile, outFile, minify, callback) {
             'rxjs/Observable': 'Rx',
             'rxjs/Subscriber': 'Rx',
             'rxjs/Subscription': 'Rx',
-            'rxjs/scheduler/asap': 'Rx.Scheduler'
+            'rxjs/scheduler/asap': 'Rx.Scheduler',
+            'rxjs/symbol/rxSubscriber': 'Rx.Symbol'
           }
         }))
         .pipe(rename(outFile)),
