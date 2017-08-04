@@ -19,3 +19,4 @@ exports.defer = globalRx.Observable.defer;
 exports.forkJoin = globalRx.Observable.forkJoin;
 exports.fromEventPattern = globalRx.Observable.fromEventPattern;
 exports.multicast = globalRx.Observable.multicast;
+exports.rxSubscriber = globalRx.Symbol.rxSubscriber;

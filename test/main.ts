@@ -28,7 +28,8 @@ System.config({
     'rxjs/scheduler/asap': 'base/build/test/global-rxjs.js',
     'rxjs/Subject': 'base/build/test/global-rxjs.js',
     'rxjs/Subscriber': 'base/build/test/global-rxjs.js',
-    'rxjs/Subscription': 'base/build/test/global-rxjs.js'
+    'rxjs/Subscription': 'base/build/test/global-rxjs.js',
+    'rxjs/symbol/rxSubscriber': 'base/build/test/global-rxjs.js',
   },
 });
 
