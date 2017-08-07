@@ -91,10 +91,11 @@
       this._currentTime = finalTime;
     }
 
-    flush(limit: number = 20, flushPeriodic = false): number {
+    flush(limit = 20, flushPeriodic = false, tick?: (elapsed: number) => void): number {
       const startTime = this._currentTime;
+      let lastCurrentTime = this._currentTime;
       let count = 0;
-      let seenTimers: number[] = [];
+      const seenTimers: number[] = [];
       while (this._schedulerQueue.length > 0) {
         count++;
         if (count > limit) {
@@ -120,12 +121,17 @@
             break;
           }
         }
-        let current = this._schedulerQueue.shift();
+        const current = this._schedulerQueue.shift();
         if (seenTimers.indexOf(current.id) === -1) {
           seenTimers.push(current.id);
         }
+        lastCurrentTime = this._currentTime;
         this._currentTime = current.endTime;
-        let retval = current.func.apply(global, current.args);
+        if (tick) {
+          // Tick any secondary schedulers like Jasmine mock Date.
+          tick(this._currentTime - lastCurrentTime);
+        }
+        const retval = current.func.apply(global, current.args);
         if (!retval) {
           // Uncaught exception in the current scheduled function. Stop processing the queue.
           break;
@@ -271,10 +277,10 @@
       flushErrors();
     }
 
-    flush(limit?: number, flushPeriodic?: boolean): number {
+    flush(limit?: number, flushPeriodic?: boolean, tick?: (elapsed: number) => void): number {
       FakeAsyncTestZoneSpec.assertInZone();
       this.flushMicrotasks();
-      let elapsed = this._scheduler.flush(limit, flushPeriodic);
+      const elapsed = this._scheduler.flush(limit, flushPeriodic, tick);
       if (this._lastError !== null) {
         this._resetLastErrorAndThrow();
       }
