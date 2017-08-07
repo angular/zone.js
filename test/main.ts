@@ -16,21 +16,7 @@ __karma__.loaded = function() {};
 (window as any).global = window;
 System.config({
   defaultJSExtensions: true,
-  map: {
-    'rxjs/Rx': 'base/build/test/global-rxjs.js',
-    'rxjs/Observable': 'base/build/test/global-rxjs.js',
-    'rxjs/add/observable/bindCallback': 'base/build/test/global-rxjs.js',
-    'rxjs/add/observable/bindNodeCallback': 'base/build/test/global-rxjs.js',
-    'rxjs/add/observable/defer': 'base/build/test/global-rxjs.js',
-    'rxjs/add/observable/forkJoin': 'base/build/test/global-rxjs.js',
-    'rxjs/add/observable/fromEventPattern': 'base/build/test/global-rxjs.js',
-    'rxjs/add/operator/multicast': 'base/build/test/global-rxjs.js',
-    'rxjs/scheduler/asap': 'base/build/test/global-rxjs.js',
-    'rxjs/Subject': 'base/build/test/global-rxjs.js',
-    'rxjs/Subscriber': 'base/build/test/global-rxjs.js',
-    'rxjs/Subscription': 'base/build/test/global-rxjs.js',
-    'rxjs/symbol/rxSubscriber': 'base/build/test/global-rxjs.js',
-  },
+  map: {'rxjs': 'base/node_modules/rxjs'},
 });
 
 let browserPatchedPromise: any = null;
