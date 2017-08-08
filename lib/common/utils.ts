@@ -283,15 +283,21 @@ export function patchMethod(
     // somehow we did not find it, but we can see it. This happens on IE for Window properties.
     proto = target;
   }
+
   const delegateName = zoneSymbol(name);
   let delegate: Function;
   if (proto && !(delegate = proto[delegateName])) {
     delegate = proto[delegateName] = proto[name];
-    const patchDelegate = patchFn(delegate, delegateName, name);
-    proto[name] = function() {
-      return patchDelegate(this, arguments as any);
-    };
-    attachOriginToPatched(proto[name], delegate);
+    // check whether proto[name] is writable
+    // some property is readonly in safari, such as HtmlCanvasElement.prototype.toBlob
+    const desc = proto && Object.getOwnPropertyDescriptor(proto, name);
+    if (isPropertyWritable(desc)) {
+      const patchDelegate = patchFn(delegate, delegateName, name);
+      proto[name] = function() {
+        return patchDelegate(this, arguments as any);
+      };
+      attachOriginToPatched(proto[name], delegate);
+    }
   }
   return delegate;
 }
