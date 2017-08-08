@@ -90,7 +90,7 @@ export function isSupportSetErrorStack() {
 export function asyncTest(testFn: Function, zone: Zone = Zone.current) {
   const AsyncTestZoneSpec = (Zone as any)['AsyncTestZoneSpec'];
   return (done: Function) => {
-    let asyncTestZone: Zone = zone.fork(new AsyncTestZoneSpec(done, (error: Error) => {
+    let asyncTestZone: Zone = zone.fork(new AsyncTestZoneSpec(() => {}, (error: Error) => {
       fail(error);
     }, 'asyncTest'));
     asyncTestZone.run(testFn, this, [done]);
