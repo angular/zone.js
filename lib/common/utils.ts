@@ -170,7 +170,7 @@ export function patchProperty(obj: any, prop: string, prototype?: any) {
     if (!target) {
       return null;
     }
-    if (target.hasOwnProperty(eventNameSymbol)) {
+    if (target[eventNameSymbol]) {
       return wrapFn;
     } else if (originalDescGet) {
       // result will be null when use inline event attribute,

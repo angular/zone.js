@@ -20,13 +20,11 @@ describe('Observable.combine', () => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         const source = Rx.Observable.interval(10);
-         const highOrder = source
-                               .map((src: any) => {
-                                 expect(Zone.current.name).toEqual(constructorZone1.name);
-                                 return Rx.Observable.interval(50).take(3);
-                               })
-                               .take(2);
+         const source = Rx.Observable.of(1, 2);
+         const highOrder = source.map((src: any) => {
+           expect(Zone.current.name).toEqual(constructorZone1.name);
+           return Rx.Observable.of(src);
+         });
          return highOrder.combineAll();
        });
 
@@ -42,12 +40,10 @@ describe('Observable.combine', () => {
              () => {
                log.push('completed');
                expect(Zone.current.name).toEqual(subscriptionZone.name);
-               expect(log).toEqual([[0, 0], [1, 0], [1, 1], [2, 1], [2, 2], 'completed']);
+               expect(log).toEqual([[1, 2], 'completed']);
                done();
              });
        });
-
-       expect(log).toEqual([]);
      }, Zone.root));
 
   it('combineAll func callback should run in the correct zone with project function',
