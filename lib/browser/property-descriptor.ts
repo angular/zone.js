@@ -215,7 +215,7 @@ const webglEventNames = ['webglcontextrestored', 'webglcontextlost', 'webglconte
 const formEventNames = ['autocomplete', 'autocompleteerror'];
 const detailEventNames = ['toggle'];
 const frameEventNames = ['load'];
-const frameSetEventNames = ['blur', 'error', 'focus', 'load', 'resize', 'scroll'];
+const frameSetEventNames = ['blur', 'error', 'focus', 'load', 'resize', 'scroll', 'messageerror'];
 const marqueeEventNames = ['bounce', 'finish', 'start'];
 
 const XMLHttpRequestEventNames = [
@@ -241,7 +241,7 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
     if (isBrowser) {
       // in IE/Edge, onProp not exist in window object, but in WindowPrototype
       // so we need to pass WindowPrototype to check onProp exist or not
-      patchOnProperties(window, eventNames, Object.getPrototypeOf(window));
+      patchOnProperties(window, eventNames.concat(['messageerror']), Object.getPrototypeOf(window));
       patchOnProperties(Document.prototype, eventNames);
 
       if (typeof(<any>window)['SVGElement'] !== 'undefined') {
@@ -319,20 +319,21 @@ function canPatchViaPropertyDescriptor() {
     Object.defineProperty(XMLHttpRequest.prototype, 'onreadystatechange', xhrDesc || {});
     return result;
   } else {
+    const SYMBOL_FAKE_ONREADYSTATECHANGE = zoneSymbol('fakeonreadystatechange');
     Object.defineProperty(XMLHttpRequest.prototype, 'onreadystatechange', {
       enumerable: true,
       configurable: true,
       get: function() {
-        return this[zoneSymbol('fakeonreadystatechange')];
+        return this[SYMBOL_FAKE_ONREADYSTATECHANGE];
       },
       set: function(value) {
-        this[zoneSymbol('fakeonreadystatechange')] = value;
+        this[SYMBOL_FAKE_ONREADYSTATECHANGE] = value;
       }
     });
     const req = new XMLHttpRequest();
     const detectFunc = () => {};
     req.onreadystatechange = detectFunc;
-    const result = (req as any)[zoneSymbol('fakeonreadystatechange')] === detectFunc;
+    const result = (req as any)[SYMBOL_FAKE_ONREADYSTATECHANGE] === detectFunc;
     req.onreadystatechange = null;
     return result;
   }

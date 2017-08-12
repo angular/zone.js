@@ -127,11 +127,14 @@ describe('Zone', function() {
 
           function checkIsOnPropertiesPatched(target: any) {
             for (let prop in target) {
-              if (prop.substr(0, 2) === 'on') {
+              if (prop.substr(0, 2) === 'on' && prop.length > 2) {
                 target[prop] = noop;
-                expect(target[Zone.__symbol__('_' + prop)]).toBeTruthy();
+                if (!target[Zone.__symbol__('ON_PROPERTY' + prop.substr(2))]) {
+                  console.log('prop', prop);
+                }
+                expect(target[Zone.__symbol__('ON_PROPERTY' + prop.substr(2))]).toBeTruthy();
                 target[prop] = null;
-                expect(!target[Zone.__symbol__('_' + prop)]).toBeTruthy();
+                expect(!target[Zone.__symbol__('ON_PROPERTY' + prop.substr(2))]).toBeTruthy();
               }
             }
           }
@@ -188,7 +191,7 @@ describe('Zone', function() {
           it('window onresize should be patched',
              ifEnvSupports(canPatchOnProperty(window, 'onmousedown'), function() {
                window.onresize = eventListenerSpy;
-               const innerResizeProp: any = (window as any)[zoneSymbol('_onresize')];
+               const innerResizeProp: any = (window as any)[zoneSymbol('ON_PROPERTYresize')];
                expect(innerResizeProp).toBeTruthy();
                innerResizeProp();
                expect(eventListenerSpy).toHaveBeenCalled();

@@ -624,6 +624,8 @@ type AmbientZone = Zone;
 type AmbientZoneDelegate = ZoneDelegate;
 
 const Zone: ZoneType = (function(global: any) {
+  const FUNCTION = 'function';
+
   const performance: {mark(name: string): void; measure(name: string, label: string): void;} =
       global['performance'];
   function mark(name: string) {
@@ -720,7 +722,7 @@ const Zone: ZoneType = (function(global: any) {
     }
 
     public wrap<T extends Function>(callback: T, source: string): T {
-      if (typeof callback !== 'function') {
+      if (typeof callback !== FUNCTION) {
         throw new Error('Expecting function got: ' + callback);
       }
       const _callback = this._zoneDelegate.intercept(this, callback, source);

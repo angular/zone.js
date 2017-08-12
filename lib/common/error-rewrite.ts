@@ -104,9 +104,10 @@ Zone.__load_patch('Error', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
       // We got called with a `new` operator AND we are subclass of ZoneAwareError
       // in that case we have to copy all of our properties to `this`.
       Object.keys(error).concat('stack', 'message').forEach((key) => {
-        if ((error as any)[key] !== undefined) {
+        const value = (error as any)[key];
+        if (value !== undefined) {
           try {
-            this[key] = (error as any)[key];
+            this[key] = value;
           } catch (e) {
             // ignore the assignment in case it is a setter and it throws.
           }
@@ -166,6 +167,7 @@ Zone.__load_patch('Error', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
     });
   }
 
+  const ZONE_CAPTURESTACKTRACE = 'zoneCaptureStackTrace';
   Object.defineProperty(ZoneAwareError, 'prepareStackTrace', {
     get: function() {
       return NativeError.prepareStackTrace;
@@ -181,7 +183,7 @@ Zone.__load_patch('Error', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
           for (let i = 0; i < structuredStackTrace.length; i++) {
             const st = structuredStackTrace[i];
             // remove the first function which name is zoneCaptureStackTrace
-            if (st.getFunctionName() === 'zoneCaptureStackTrace') {
+            if (st.getFunctionName() === ZONE_CAPTURESTACKTRACE) {
               structuredStackTrace.splice(i, 1);
               break;
             }
@@ -196,6 +198,15 @@ Zone.__load_patch('Error', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   // run/runGuarded/runTask frames. This is done by creating a detect zone and then threading
   // the execution through all of the above methods so that we can look at the stack trace and
   // find the frames of interest.
+  const ZONE_AWARE_ERROR = 'ZoneAwareError';
+  const ERROR_DOT = 'Error.';
+  const EMPTY = '';
+  const RUN_GUARDED = 'runGuarded';
+  const RUN_TASK = 'runTask';
+  const RUN = 'run';
+  const BRACKETS = '(';
+  const AT = '@';
+
   let detectZone: Zone = Zone.current.fork({
     name: 'detect',
     onHandleError: function(parentZD: ZoneDelegate, current: Zone, target: Zone, error: any):
@@ -215,18 +226,18 @@ Zone.__load_patch('Error', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
                 // Chrome: at Zone.run (http://localhost:9876/base/build/lib/zone.js:100:24)
                 // FireFox: Zone.prototype.run@http://localhost:9876/base/build/lib/zone.js:101:24
                 // Safari: run@http://localhost:9876/base/build/lib/zone.js:101:24
-                let fnName: string = frame.split('(')[0].split('@')[0];
+                let fnName: string = frame.split(BRACKETS)[0].split(AT)[0];
                 let frameType = FrameType.transition;
-                if (fnName.indexOf('ZoneAwareError') !== -1) {
+                if (fnName.indexOf(ZONE_AWARE_ERROR) !== -1) {
                   zoneAwareFrame1 = frame;
-                  zoneAwareFrame2 = frame.replace('Error.', '');
+                  zoneAwareFrame2 = frame.replace(ERROR_DOT, EMPTY);
                   blackListedStackFrames[zoneAwareFrame2] = FrameType.blackList;
                 }
-                if (fnName.indexOf('runGuarded') !== -1) {
+                if (fnName.indexOf(RUN_GUARDED) !== -1) {
                   runGuardedFrame = true;
-                } else if (fnName.indexOf('runTask') !== -1) {
+                } else if (fnName.indexOf(RUN_TASK) !== -1) {
                   runTaskFrame = true;
-                } else if (fnName.indexOf('run') !== -1) {
+                } else if (fnName.indexOf(RUN) !== -1) {
                   runFrame = true;
                 } else {
                   frameType = FrameType.blackList;

@@ -24,6 +24,12 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
   cancelName += nameSuffix;
 
   const tasksByHandleId: {[id: number]: Task} = {};
+  const NUMBER = 'number';
+  const STRING = 'string';
+  const FUNCTION = 'function';
+  const INTERVAL = 'Interval';
+  const TIMEOUT = 'Timeout';
+  const NOT_SCHEDULED = 'notScheduled';
 
   function scheduleTask(task: Task) {
     const data = <TimerOptions>task.data;
@@ -31,7 +37,7 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
       try {
         task.invoke.apply(this, arguments);
       } finally {
-        if (typeof data.handleId === 'number') {
+        if (typeof data.handleId === NUMBER) {
           // Node returns complex objects as handleIds
           delete tasksByHandleId[data.handleId];
         }
@@ -39,7 +45,7 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
     }
     data.args[0] = timer;
     data.handleId = setNative.apply(window, data.args);
-    if (typeof data.handleId === 'number') {
+    if (typeof data.handleId === NUMBER) {
       // Node returns complex objects as handleIds -> no need to keep them around. Additionally,
       // this throws an
       // exception in older node versions and has no effect there, because of the stringified key.
@@ -49,7 +55,7 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
   }
 
   function clearTask(task: Task) {
-    if (typeof(<TimerOptions>task.data).handleId === 'number') {
+    if (typeof(<TimerOptions>task.data).handleId === NUMBER) {
       // Node returns complex objects as handleIds
       delete tasksByHandleId[(<TimerOptions>task.data).handleId];
     }
@@ -58,12 +64,12 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
 
   setNative =
       patchMethod(window, setName, (delegate: Function) => function(self: any, args: any[]) {
-        if (typeof args[0] === 'function') {
+        if (typeof args[0] === FUNCTION) {
           const zone = Zone.current;
           const options: TimerOptions = {
             handleId: null,
-            isPeriodic: nameSuffix === 'Interval',
-            delay: (nameSuffix === 'Timeout' || nameSuffix === 'Interval') ? args[1] || 0 : null,
+            isPeriodic: nameSuffix === INTERVAL,
+            delay: (nameSuffix === TIMEOUT || nameSuffix === INTERVAL) ? args[1] || 0 : null,
             args: args
           };
           const task = zone.scheduleMacroTask(setName, args[0], options, scheduleTask, clearTask);
@@ -74,8 +80,8 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
           const handle: any = (<TimerOptions>task.data).handleId;
           // check whether handle is null, because some polyfill or browser
           // may return undefined from setTimeout/setInterval/setImmediate/requestAnimationFrame
-          if (handle && handle.ref && handle.unref && typeof handle.ref === 'function' &&
-              typeof handle.unref === 'function') {
+          if (handle && handle.ref && handle.unref && typeof handle.ref === FUNCTION &&
+              typeof handle.unref === FUNCTION) {
             (<any>task).ref = (<any>handle).ref.bind(handle);
             (<any>task).unref = (<any>handle).unref.bind(handle);
           }
@@ -88,9 +94,9 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
 
   clearNative =
       patchMethod(window, cancelName, (delegate: Function) => function(self: any, args: any[]) {
-        const task: Task = typeof args[0] === 'number' ? tasksByHandleId[args[0]] : args[0];
-        if (task && typeof task.type === 'string') {
-          if (task.state !== 'notScheduled' &&
+        const task: Task = typeof args[0] === NUMBER ? tasksByHandleId[args[0]] : args[0];
+        if (task && typeof task.type === STRING) {
+          if (task.state !== NOT_SCHEDULED &&
               (task.cancelFn && task.data.isPeriodic || task.runCount === 0)) {
             // Do not cancel already canceled functions
             task.zone.cancelTask(task);

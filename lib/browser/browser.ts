@@ -91,34 +91,52 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
       return pendingTask;
     }
 
+    const SYMBOL_ADDEVENTLISTENER = zoneSymbol('addEventListener');
+    const SYMBOL_REMOVEEVENTLISTENER = zoneSymbol('removeEventListener');
+
+    let oriAddListener = (XMLHttpRequest.prototype as any)[SYMBOL_ADDEVENTLISTENER];
+    let oriRemoveListener = (XMLHttpRequest.prototype as any)[SYMBOL_REMOVEEVENTLISTENER];
+    if (!oriAddListener) {
+      const XMLHttpRequestEventTarget = window['XMLHttpRequestEventTarget'];
+      if (XMLHttpRequestEventTarget) {
+        oriAddListener = XMLHttpRequestEventTarget.prototype[SYMBOL_ADDEVENTLISTENER];
+        oriRemoveListener = XMLHttpRequestEventTarget.prototype[SYMBOL_REMOVEEVENTLISTENER];
+      }
+    }
+
+    const READY_STATE_CHANGE = 'readystatechange';
+    const SCHEDULED = 'scheduled';
+
     function scheduleTask(task: Task) {
       (XMLHttpRequest as any)[XHR_SCHEDULED] = false;
       const data = <XHROptions>task.data;
+      const target = data.target;
       // remove existing event listener
-      const listener = data.target[XHR_LISTENER];
-      const oriAddListener = data.target[zoneSymbol('addEventListener')];
-      const oriRemoveListener = data.target[zoneSymbol('removeEventListener')];
+      const listener = target[XHR_LISTENER];
+      if (!oriAddListener) {
+        oriAddListener = target[SYMBOL_ADDEVENTLISTENER];
+        oriRemoveListener = target[SYMBOL_REMOVEEVENTLISTENER];
+      }
 
       if (listener) {
-        oriRemoveListener.apply(data.target, ['readystatechange', listener]);
+        oriRemoveListener.apply(target, [READY_STATE_CHANGE, listener]);
       }
-      const newListener = data.target[XHR_LISTENER] = () => {
-        if (data.target.readyState === data.target.DONE) {
+      const newListener = target[XHR_LISTENER] = () => {
+        if (target.readyState === target.DONE) {
           // sometimes on some browsers XMLHttpRequest will fire onreadystatechange with
           // readyState=4 multiple times, so we need to check task state here
-          if (!data.aborted && (XMLHttpRequest as any)[XHR_SCHEDULED] &&
-              task.state === 'scheduled') {
+          if (!data.aborted && (XMLHttpRequest as any)[XHR_SCHEDULED] && task.state === SCHEDULED) {
             task.invoke();
           }
         }
       };
-      oriAddListener.apply(data.target, ['readystatechange', newListener]);
+      oriAddListener.apply(target, [READY_STATE_CHANGE, newListener]);
 
-      const storedTask: Task = data.target[XHR_TASK];
+      const storedTask: Task = target[XHR_TASK];
       if (!storedTask) {
-        data.target[XHR_TASK] = task;
+        target[XHR_TASK] = task;
       }
-      sendNative.apply(data.target, data.args);
+      sendNative.apply(target, data.args);
       (XMLHttpRequest as any)[XHR_SCHEDULED] = true;
       return task;
     }
@@ -139,6 +157,7 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
           return openNative.apply(self, args);
         });
 
+    const XMLHTTPREQUEST_SOURCE = 'XMLHttpRequest.send';
     const sendNative: Function = patchMethod(
         window.XMLHttpRequest.prototype, 'send', () => function(self: any, args: any[]) {
           const zone = Zone.current;
@@ -149,15 +168,17 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
             const options: XHROptions =
                 {target: self, isPeriodic: false, delay: null, args: args, aborted: false};
             return zone.scheduleMacroTask(
-                'XMLHttpRequest.send', placeholderCallback, options, scheduleTask, clearTask);
+                XMLHTTPREQUEST_SOURCE, placeholderCallback, options, scheduleTask, clearTask);
           }
         });
+
+    const STRING_TYPE = 'string';
 
     const abortNative = patchMethod(
         window.XMLHttpRequest.prototype, 'abort',
         (delegate: Function) => function(self: any, args: any[]) {
           const task: Task = findPendingTask(self);
-          if (task && typeof task.type == 'string') {
+          if (task && typeof task.type == STRING_TYPE) {
             // If the XHR has already completed, do nothing.
             // If the XHR has already been aborted, do nothing.
             // Fix #569, call abort multiple times before done will cause
@@ -206,7 +227,6 @@ Zone.__load_patch('PromiseRejectionEvent', (global: any, Zone: ZoneType, api: _Z
         findPromiseRejectionHandler('rejectionhandled');
   }
 });
-
 
 Zone.__load_patch('util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   api.patchOnProperties = patchOnProperties;
