@@ -17,6 +17,7 @@ export function patchAsProxy(
   if (!Target) {
     return;
   }
+
   // On Safari window.EventTarget doesn't exist so need to patch WS add/removeEventListener
   // On older Chrome, no need since EventTarget was already patched
   // Or
@@ -52,36 +53,76 @@ export function patchAsProxy(
 
     // Safari 7.0 or phantomjs has non-configurable own 'onmessage' and friends properties
     // on the target instance
-    const desc = Object.getOwnPropertyDescriptor(instance, 'on' + onProperties[0]);
-    if (desc && desc.configurable === false) {
+    // so we try to find the descriptor on object prototype chain.
+    let desc;
+    const property = onProperties.length > 0 ? 'on' + onProperties[0] : undefined;
+    let obj = instance;
+    if (property) {
+      while (obj) {
+        const proto = Object.getPrototypeOf(obj);
+        if (!proto) {
+          break;
+        }
+        desc = Object.getOwnPropertyDescriptor(proto, property);
+        obj = proto;
+
+        if (desc) {
+          proxyTargetProto = obj;
+          break;
+        }
+      }
+    }
+    // if we can't find the descriptior in prototype chain
+    // just use the instance itself.
+    if (!proxyTargetProto) {
+      proxyTargetProto = instance;
+    }
+
+    if (!desc || desc.configurable === false) {
+      // we can't find descriptor or desc.configurable is false
+      // we have to create a proxy object
       proxyTarget = Object.create(instance);
       // instance have own property descriptor of onProperties
       // but proxyTarget not, so we will keep instance as prototype and pass it to
       // patchOnProperties method
-      proxyTargetProto = instance;
-      funcProperties.concat('addEventListener', 'removeEventListener').forEach(function(propName) {
-        proxyTarget[propName] = function() {
-          const args = Array.prototype.slice.call(arguments);
-          if (propName === 'addEventListener' || propName === 'removeEventListener') {
-            const eventName = args.length > 0 ? args[0] : undefined;
-            if (eventName) {
-              const propertySymbol = Zone.__symbol__('ON_PROPERTY' + eventName);
-              instance[propertySymbol] = proxyTarget[propertySymbol];
+      for (const propName in instance) {
+        if (typeof instance[propName] === 'function') {
+          proxyTarget[propName] = function() {
+            const args = Array.prototype.slice.call(arguments);
+            if (propName === 'addEventListener' || propName === 'removeEventListener') {
+              const eventName = args.length > 0 ? args[0] : undefined;
+              if (eventName) {
+                // for eventListener performance handling
+                const propertySymbol = Zone.__symbol__('ON_PROPERTY' + eventName);
+                instance[propertySymbol] = proxyTarget[propertySymbol];
+              }
             }
-          }
-          return instance[propName].apply(instance, args);
-        };
-      });
+            return instance[propName].apply(instance, args);
+          };
+        } else {
+          Object.defineProperty(proxyTarget, propName, {
+            get: function() {
+              return instance[propName];
+            },
+            set: function(value) {
+              instance[propName] = value;
+            }
+          });
+        }
+      };
     } else {
       // we can patch the real socket
       proxyTarget = instance;
     }
 
+    // patch all on properties as eventTasks
     patchOnProperties(proxyTarget, onProperties, proxyTargetProto);
 
     return proxyTarget;
   };
+
+  // copy all static properties.
   for (const prop in Target) {
     _global[targetName][prop] = Target[prop];
   }
-}
+};
