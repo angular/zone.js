@@ -45,13 +45,21 @@ Zone.__load_patch('blocking', (global: any, Zone: ZoneType, api: _ZonePrivate) =
 Zone.__load_patch('EventTarget', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   eventTargetPatch(global, api);
   // patch XMLHttpRequestEventTarget's addEventListener/removeEventListener
-  const XMLHttpRequestEventTarget = (global as any)['XMLHttpRequestEventTarget'];
+  const XMLHttpRequestEventTarget = global['XMLHttpRequestEventTarget'];
   if (XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype) {
     api.patchEventTarget(global, [XMLHttpRequestEventTarget.prototype]);
   }
   patchClass('MutationObserver');
   patchClass('WebKitMutationObserver');
-  patchClass('FileReader');
+  // FileReader's onProperty should be patched
+  // and if FileReader not implements EventTarget
+  // we should patch FileReader.prototype.addEventListener
+  const FileReader = global['FileReader'];
+  if (FileReader && FileReader.prototype) {
+    patchOnProperties(
+        FileReader.prototype, ['abort', 'error', 'load', 'loadstart', 'loadend', 'progress']);
+    api.patchEventTarget(global, [FileReader.prototype]);
+  }
 });
 
 Zone.__load_patch('on_property', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
