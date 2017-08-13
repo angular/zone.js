@@ -12,6 +12,7 @@
 
 import {isBrowser, isMix, isNode, patchClass, patchOnProperties, zoneSymbol} from '../common/utils';
 
+import * as fileReaderPatch from './file-reader';
 import * as webSocketPatch from './websocket';
 
 const globalEventHandlersEventNames = [
@@ -278,6 +279,9 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
     if (supportsWebSocket) {
       patchOnProperties(WebSocket.prototype, websocketEventNames);
     }
+    
+    patchOnProperties(
+        FileReader.prototype, ['abort', 'error', 'load', 'loadstart', 'loadend', 'progress']);
   } else {
     // Safari, Android browsers (Jelly Bean)
     patchViaCapturingAllTheEvents();
@@ -285,6 +289,7 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
     if (supportsWebSocket) {
       webSocketPatch.apply(api, _global);
     }
+    fileReaderPatch.apply(api, _global);
   }
 }
 

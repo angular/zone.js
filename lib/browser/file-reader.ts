@@ -10,5 +10,8 @@ import {patchAsProxy} from '../common/proxy-patch';
 
 // we have to patch the instance since the proto is non-configurable
 export function apply(api: _ZonePrivate, _global: any) {
-  patchAsProxy(api, _global, 'WebSocket', ['send', 'close'], ['message', 'error', 'close', 'open']);
+  patchAsProxy(
+      api, _global, 'FileReader',
+      ['abort', 'readAsArrayBuffer', 'readAsBinaryString', 'readAsDataURL', 'readAsText'],
+      ['abort', 'error', 'load', 'loadstart', 'loadend', 'progress']);
 }

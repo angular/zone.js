@@ -51,15 +51,6 @@ Zone.__load_patch('EventTarget', (global: any, Zone: ZoneType, api: _ZonePrivate
   }
   patchClass('MutationObserver');
   patchClass('WebKitMutationObserver');
-  // FileReader's onProperty should be patched
-  // and if FileReader not implements EventTarget
-  // we should patch FileReader.prototype.addEventListener
-  const FileReader = global['FileReader'];
-  if (FileReader && FileReader.prototype) {
-    patchOnProperties(
-        FileReader.prototype, ['abort', 'error', 'load', 'loadstart', 'loadend', 'progress']);
-    api.patchEventTarget(global, [FileReader.prototype]);
-  }
 });
 
 Zone.__load_patch('on_property', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
