@@ -12,6 +12,7 @@
 
 import {isBrowser, isMix, isNode, patchClass, patchOnProperties, zoneSymbol} from '../common/utils';
 
+import * as fileReaderPatch from './file-reader';
 import * as webSocketPatch from './websocket';
 
 const globalEventHandlersEventNames = [
@@ -236,6 +237,7 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
   }
 
   const supportsWebSocket = typeof WebSocket !== 'undefined';
+  const supportsFileReader = typeof FileReader !== 'undefined';
   if (canPatchViaPropertyDescriptor()) {
     // for browsers that we can patch the descriptor:  Chrome & Firefox
     if (isBrowser) {
@@ -278,12 +280,25 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
     if (supportsWebSocket) {
       patchOnProperties(WebSocket.prototype, websocketEventNames);
     }
+    if (supportsFileReader) {
+      let FileReaderPatchPrototype = null;
+      const desc = Object.getOwnPropertyDescriptor(FileReader.prototype, 'onabort');
+      if (!desc || desc.configurable === false) {
+        FileReaderPatchPrototype = new FileReader();
+      }
+      patchOnProperties(
+          FileReader.prototype, ['abort', 'error', 'load', 'loadstart', 'loadend', 'progress'],
+          FileReaderPatchPrototype);
+    }
   } else {
     // Safari, Android browsers (Jelly Bean)
     patchViaCapturingAllTheEvents();
     patchClass('XMLHttpRequest');
     if (supportsWebSocket) {
       webSocketPatch.apply(api, _global);
+    }
+    if (supportsFileReader) {
+      fileReaderPatch.apply(api, _global);
     }
   }
 }
