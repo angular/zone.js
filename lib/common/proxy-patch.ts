@@ -11,8 +11,7 @@ import {patchOnProperties} from './utils';
 
 // we have to patch the instance since the proto is non-configurable
 export function patchAsProxy(
-    api: _ZonePrivate, _global: any, targetName: string, funcProperties: string[],
-    onProperties: string[]) {
+    api: _ZonePrivate, _global: any, targetName: string, onProperties?: string[]) {
   const Target = (<any>_global)[targetName];
   if (!Target) {
     return;
@@ -55,7 +54,7 @@ export function patchAsProxy(
     // on the target instance
     // so we try to find the descriptor on object prototype chain.
     let desc;
-    const property = onProperties.length > 0 ? 'on' + onProperties[0] : undefined;
+    const property = onProperties && onProperties.length > 0 ? 'on' + onProperties[0] : undefined;
     let obj = instance;
     if (property) {
       while (obj) {

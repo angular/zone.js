@@ -280,18 +280,11 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
     if (supportsWebSocket) {
       patchOnProperties(WebSocket.prototype, websocketEventNames);
     }
-    console.log('supportsFileReader', supportsFileReader);
     if (supportsFileReader) {
       let FileReaderPatchPrototype = null;
       const desc = Object.getOwnPropertyDescriptor(FileReader.prototype, 'onabort');
-      console.log('desc', desc);
       if (!desc || desc.configurable === false) {
-        const detectFileReader = new FileReader();
-        const instanceDesc = Object.getOwnPropertyDescriptor(detectFileReader, 'onabort');
-        console.log('instanceDesc', instanceDesc);
-        if (instanceDesc) {
-          FileReaderPatchPrototype = detectFileReader;
-        }
+        FileReaderPatchPrototype = new FileReader();
       }
       patchOnProperties(
           FileReader.prototype, ['abort', 'error', 'load', 'loadstart', 'loadend', 'progress'],
