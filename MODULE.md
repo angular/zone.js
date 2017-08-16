@@ -55,6 +55,27 @@ Below is the full list of current support modules.
 |handleUnhandledPromiseRejection|NodeJS handle unhandledPromiseRejection from ZoneAwarePromise|__Zone_disable_handleUnhandledPromiseRejection = true|
 |crypto|NodeJS patch crypto function as macroTask|__Zone_disable_crypto = true|
 
+- on_property
+
+you can also disable specified on_property by setting `__Zone_ignore_on_properties`, for example,
+if you want to disable `window.onmessage` and `HTMLElement.prototype.onclick` from zone.js patching,
+you can do like this.
+
+```
+ <script>
+    __Zone_ignore_on_properties = [
+      {
+        target: window,
+        ignoreProperties: ['message']
+      }, {
+        target: HTMLElement.prototype,
+        ignoreProperties: ['click']
+      }
+    ];
+  </script>
+  <script src="../dist/zone.js"></script>
+```
+
 - Angular(2+)
 
 Angular use zone.js to manage async operations and decide when to perform change detection, so in Angular, 
