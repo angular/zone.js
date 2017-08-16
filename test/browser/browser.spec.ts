@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import {patchFilteredProperties} from '../../lib/browser/property-descriptor';
 import {isBrowser, isIEOrEdge, isMix, zoneSymbol} from '../../lib/common/utils';
 import {ifEnvSupports, ifEnvSupportsWithDone} from '../test-util';
 
@@ -173,6 +174,28 @@ describe('Zone', function() {
 
           it('should patch all possbile on properties on xhr', function() {
             checkIsOnPropertiesPatched(new XMLHttpRequest());
+          });
+
+          it('should not patch ignored on properties', function() {
+            const TestTarget: any = (window as any)['TestTarget'];
+            patchFilteredProperties(
+                TestTarget.prototype, ['prop1', 'prop2'], global['__Zone_ignore_on_properties']);
+            const testTarget = new TestTarget();
+            Zone.current.fork({name: 'test'}).run(() => {
+              testTarget.onprop1 = function() {
+                // onprop1 should not be patched
+                expect(Zone.current.name).toEqual('test1');
+              };
+              testTarget.onprop2 = function() {
+                // onprop2 should be patched
+                expect(Zone.current.name).toEqual('test');
+              };
+            });
+
+            Zone.current.fork({name: 'test1'}).run(() => {
+              testTarget.dispatchEvent('prop1');
+              testTarget.dispatchEvent('prop2');
+            });
           });
 
           it('window onclick should be in zone',
