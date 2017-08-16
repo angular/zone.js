@@ -230,7 +230,7 @@ export const eventNames = globalEventHandlersEventNames.concat(
     webglEventNames, formEventNames, detailEventNames, documentEventNames, windowEventNames,
     htmlElementEventNames, ieElementEventNames);
 
-interface IgnoreProperty {
+export interface IgnoreProperty {
   target: any;
   ignoreProperties: string[];
 }
