@@ -130,9 +130,6 @@ describe('Zone', function() {
             for (let prop in target) {
               if (prop.substr(0, 2) === 'on' && prop.length > 2) {
                 target[prop] = noop;
-                if (!target[Zone.__symbol__('ON_PROPERTY' + prop.substr(2))]) {
-                  console.log('prop', prop);
-                }
                 expect(target[Zone.__symbol__('ON_PROPERTY' + prop.substr(2))]).toBeTruthy();
                 target[prop] = null;
                 expect(!target[Zone.__symbol__('ON_PROPERTY' + prop.substr(2))]).toBeTruthy();

@@ -28,7 +28,6 @@
   global.cordova = fakeCordova;
 
   const TestTarget = global.TestTarget = function() {};
-  TestTarget.prototype = {};
 
   Object.defineProperties(TestTarget.prototype, {
     'onprop1': {configurable: true, writable: true},
