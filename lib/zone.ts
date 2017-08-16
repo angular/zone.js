@@ -1123,16 +1123,16 @@ const Zone: ZoneType = (function(global: any) {
 
     _updateTaskCount(type: TaskType, count: number) {
       const counts = this._taskCounts;
-      const prev = (counts as any)[type];
-      const next = (counts as any)[type] = prev + count;
+      const prev = counts[type];
+      const next = counts[type] = prev + count;
       if (next < 0) {
         throw new Error('More tasks executed then were scheduled.');
       }
       if (prev == 0 || next == 0) {
         const isEmpty: HasTaskState = {
-          microTask: counts.microTask > 0,
-          macroTask: counts.macroTask > 0,
-          eventTask: counts.eventTask > 0,
+          microTask: counts['microTask'] > 0,
+          macroTask: counts['macroTask'] > 0,
+          eventTask: counts['eventTask'] > 0,
           change: type
         };
         this.hasTask(this.zone, isEmpty);
