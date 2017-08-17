@@ -51,6 +51,7 @@ Zone.__load_patch('EventTarget', (global: any, Zone: ZoneType, api: _ZonePrivate
   }
   patchClass('MutationObserver');
   patchClass('WebKitMutationObserver');
+  patchClass('IntersectionObserver');
   patchClass('FileReader');
 });
 
