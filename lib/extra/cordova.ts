@@ -22,3 +22,20 @@ Zone.__load_patch('cordova', (global: any, Zone: ZoneType, api: _ZonePrivate) =>
         });
   }
 });
+
+Zone.__load_patch('cordova.FileReader', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+  if (global.cordova && typeof global['FileReader'] !== 'undefined') {
+    document.addEventListener('deviceReady', () => {
+      const FileReader = global['FileReader'];
+      ['abort', 'error', 'load', 'loadstart', 'loadend', 'progress'].forEach(prop => {
+        const eventNameSymbol = Zone.__symbol__('ON_PROPERTY' + prop);
+        Object.defineProperty(FileReader.prototype, eventNameSymbol, {
+          configurable: true,
+          get: function() {
+            return this._realReader && this._realReader[eventNameSymbol];
+          }
+        });
+      });
+    });
+  }
+});
