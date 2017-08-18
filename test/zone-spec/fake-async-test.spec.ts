@@ -557,6 +557,31 @@ describe('FakeAsyncTestZoneSpec', () => {
         expect(y).toEqual(1);
       });
     });
+
+    it('can flush till the last periodic task is processed', () => {
+      fakeAsyncTestZone.run(() => {
+        let x = 0;
+        let y = 0;
+
+        setInterval(() => {
+          x++;
+        }, 10);
+
+        // This shouldn't cause the flush to throw an exception even though
+        // it would require 100 iterations of the shorter timer.
+        setInterval(() => {
+          y++;
+        }, 1000);
+
+        let elapsed = testZoneSpec.flush(20, true);
+
+        // Should stop right after the longer timer has been processed.
+        expect(elapsed).toEqual(1000);
+
+        expect(x).toEqual(100);
+        expect(y).toEqual(1);
+      });
+    });
   });
 
   describe('outside of FakeAsync Zone', () => {

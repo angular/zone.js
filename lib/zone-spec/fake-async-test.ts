@@ -70,8 +70,13 @@
       }
     }
 
-    tick(millis: number = 0): void {
+    tick(millis: number = 0, doTick?: (elapsed: number) => void): void {
       let finalTime = this._currentTime + millis;
+      let lastCurrentTime = 0;
+      if (this._schedulerQueue.length === 0 && doTick) {
+        doTick(millis);
+        return;
+      }
       while (this._schedulerQueue.length > 0) {
         let current = this._schedulerQueue[0];
         if (finalTime < current.endTime) {
@@ -80,7 +85,11 @@
         } else {
           // Time to run scheduled function. Remove it from the head of queue.
           let current = this._schedulerQueue.shift();
+          lastCurrentTime = this._currentTime;
           this._currentTime = current.endTime;
+          if (doTick) {
+            doTick(this._currentTime - lastCurrentTime);
+          }
           let retval = current.func.apply(global, current.args);
           if (!retval) {
             // Uncaught exception in the current scheduled function. Stop processing the queue.
@@ -91,11 +100,30 @@
       this._currentTime = finalTime;
     }
 
-    flush(limit = 20, flushPeriodic = false, tick?: (elapsed: number) => void): number {
+    flush(limit = 20, flushPeriodic = false, doTick?: (elapsed: number) => void): number {
+      if (flushPeriodic) {
+        return this.flushPeriodic(doTick);
+      } else {
+        return this.flushNonPeriodic(limit, doTick);
+      }
+    }
+
+    private flushPeriodic(doTick?: (elapsed: number) => void): number {
+      if (this._schedulerQueue.length === 0) {
+        return 0;
+      }
+      // Find the last task currently queued in the scheduler queue and tick
+      // till that time.
       const startTime = this._currentTime;
-      let lastCurrentTime = this._currentTime;
+      const lastTask = this._schedulerQueue[this._schedulerQueue.length - 1];
+      this.tick(lastTask.endTime - startTime, doTick);
+      return this._currentTime - startTime;
+    }
+
+    private flushNonPeriodic(limit: number, doTick?: (elapsed: number) => void): number {
+      const startTime = this._currentTime;
+      let lastCurrentTime = 0;
       let count = 0;
-      const seenTimers: number[] = [];
       while (this._schedulerQueue.length > 0) {
         count++;
         if (count > limit) {
@@ -103,33 +131,20 @@
               'flush failed after reaching the limit of ' + limit +
               ' tasks. Does your code use a polling timeout?');
         }
-        if (!flushPeriodic) {
-          // flush only non-periodic timers.
-          // If the only remaining tasks are periodic(or requestAnimationFrame), finish flushing.
-          if (this._schedulerQueue.filter(task => !task.isPeriodic && !task.isRequestAnimationFrame)
-                  .length === 0) {
-            break;
-          }
-        } else {
-          // flushPeriodic has been requested.
-          // Stop when all timer id-s have been seen at least once.
-          if (this._schedulerQueue
-                  .filter(
-                      task =>
-                          seenTimers.indexOf(task.id) === -1 || this._currentTime === task.endTime)
-                  .length === 0) {
-            break;
-          }
+
+        // flush only non-periodic timers.
+        // If the only remaining tasks are periodic(or requestAnimationFrame), finish flushing.
+        if (this._schedulerQueue.filter(task => !task.isPeriodic && !task.isRequestAnimationFrame)
+                .length === 0) {
+          break;
         }
+
         const current = this._schedulerQueue.shift();
-        if (seenTimers.indexOf(current.id) === -1) {
-          seenTimers.push(current.id);
-        }
         lastCurrentTime = this._currentTime;
         this._currentTime = current.endTime;
-        if (tick) {
-          // Tick any secondary schedulers like Jasmine mock Date.
-          tick(this._currentTime - lastCurrentTime);
+        if (doTick) {
+          // Update any secondary schedulers like Jasmine mock Date.
+          doTick(this._currentTime - lastCurrentTime);
         }
         const retval = current.func.apply(global, current.args);
         if (!retval) {
@@ -253,10 +268,10 @@
       throw error;
     }
 
-    tick(millis: number = 0): void {
+    tick(millis: number = 0, doTick?: (elapsed: number) => void): void {
       FakeAsyncTestZoneSpec.assertInZone();
       this.flushMicrotasks();
-      this._scheduler.tick(millis);
+      this._scheduler.tick(millis, doTick);
       if (this._lastError !== null) {
         this._resetLastErrorAndThrow();
       }
@@ -277,10 +292,10 @@
       flushErrors();
     }
 
-    flush(limit?: number, flushPeriodic?: boolean, tick?: (elapsed: number) => void): number {
+    flush(limit?: number, flushPeriodic?: boolean, doTick?: (elapsed: number) => void): number {
       FakeAsyncTestZoneSpec.assertInZone();
       this.flushMicrotasks();
-      const elapsed = this._scheduler.flush(limit, flushPeriodic, tick);
+      const elapsed = this._scheduler.flush(limit, flushPeriodic, doTick);
       if (this._lastError !== null) {
         this._resetLastErrorAndThrow();
       }
