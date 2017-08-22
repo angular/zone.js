@@ -340,7 +340,7 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
         const action = workArgs.length > 0 ? workArgs[0] : undefined;
         const scheduleZone = action && action[zoneSymbol];
         if (scheduleZone && scheduleZone !== Zone.current) {
-          return scheduleZone.run(work, this, arguments);
+          return scheduleZone.runGuarded(work, this, arguments);
         } else {
           return work.apply(this, arguments);
         }

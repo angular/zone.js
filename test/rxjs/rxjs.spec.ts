@@ -7,6 +7,7 @@
  */
 import '../../lib/rxjs/rxjs';
 import './rxjs.common.spec';
+import './rxjs.asap.spec';
 import './rxjs.bindCallback.spec';
 import './rxjs.bindNodeCallback.spec';
 import './rxjs.combineLatest.spec';
