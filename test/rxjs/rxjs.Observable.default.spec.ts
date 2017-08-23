@@ -20,9 +20,7 @@ describe('Observable.defaultIfEmpty', () => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.interval(100)
-             .takeUntil(Rx.Observable.timer(50))
-             .defaultIfEmpty('empty');
+         return Rx.Observable.of().defaultIfEmpty('empty');
        });
 
        subscriptionZone.run(() => {

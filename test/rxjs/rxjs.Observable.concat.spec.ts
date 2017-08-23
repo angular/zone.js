@@ -140,7 +140,7 @@ describe('Observable instance method concat', () => {
        constructorZone2.run(() => {
          concatObservable = observable1.concatMap((v: any) => {
            expect(Zone.current.name).toEqual(constructorZone2.name);
-           return Rx.Observable.interval(10).take(2);
+           return Rx.Observable.of(0, 1);
          });
        });
 
@@ -159,8 +159,6 @@ describe('Observable instance method concat', () => {
                done();
              });
        });
-
-       expect(log).toEqual([]);
      }, Zone.root));
 
   it('concatMapTo func callback should run in the correct zone', asyncTest((done: any) => {
@@ -179,7 +177,7 @@ describe('Observable instance method concat', () => {
        });
 
        constructorZone2.run(() => {
-         concatObservable = observable1.concatMapTo(Rx.Observable.interval(10).take(2));
+         concatObservable = observable1.concatMapTo(Rx.Observable.of(0, 1));
        });
 
        subscriptionZone.run(() => {
@@ -197,7 +195,5 @@ describe('Observable instance method concat', () => {
                done();
              });
        });
-
-       expect(log).toEqual([]);
      }, Zone.root));
 });

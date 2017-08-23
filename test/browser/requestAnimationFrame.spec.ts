@@ -25,6 +25,8 @@ describe('requestAnimationFrame', function() {
                });
 
                it('should bind to same zone when called recursively', function(done) {
+                 const originalTimeout: number = (<any>jasmine).DEFAULT_TIMEOUT_INTERVAL;
+                 (<any>jasmine).DEFAULT_TIMEOUT_INTERVAL = 5000;
                  Zone.current.fork({name: 'TestZone'}).run(() => {
                    let frames = 0;
                    let previousTimeStamp = 0;
@@ -36,6 +38,7 @@ describe('requestAnimationFrame', function() {
                      previousTimeStamp = timestamp;
 
                      if (frames++ > 15) {
+                       (<any>jasmine).DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
                        return done();
                      }
                      rAF(frameCallback);

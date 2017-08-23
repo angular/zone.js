@@ -68,6 +68,7 @@ const globalEventHandlersEventNames = [
   'mouseover',
   'mouseup',
   'mousewheel',
+  'orientationchange',
   'pause',
   'play',
   'playing',
@@ -105,6 +106,7 @@ const globalEventHandlersEventNames = [
   'touchcancel',
   'touchmove',
   'touchstart',
+  'touchend',
   'transitioncancel',
   'transitionend',
   'waiting',
@@ -113,7 +115,8 @@ const globalEventHandlersEventNames = [
 const documentEventNames = [
   'afterscriptexecute', 'beforescriptexecute', 'DOMContentLoaded', 'fullscreenchange',
   'mozfullscreenchange', 'webkitfullscreenchange', 'msfullscreenchange', 'fullscreenerror',
-  'mozfullscreenerror', 'webkitfullscreenerror', 'msfullscreenerror', 'readystatechange'
+  'mozfullscreenerror', 'webkitfullscreenerror', 'msfullscreenerror', 'readystatechange',
+  'visibilitychange'
 ];
 const windowEventNames = [
   'absolutedeviceorientation',
