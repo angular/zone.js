@@ -1,3 +1,31 @@
+<a name="0.8.17"></a>
+## [0.8.17](https://github.com/angular/zone.js/compare/v0.8.16...0.8.17) (2017-08-23)
+
+
+### Bug Fixes
+
+* readonly property should not be patched ([#860](https://github.com/angular/zone.js/issues/860)) ([7fbd655](https://github.com/angular/zone.js/commit/7fbd655))
+* suppress closure warnings/errors ([#861](https://github.com/angular/zone.js/issues/861)) ([deae751](https://github.com/angular/zone.js/commit/deae751))
+* **module:** fix [#875](https://github.com/angular/zone.js/issues/875), can disable requestAnimationFrame ([#876](https://github.com/angular/zone.js/issues/876)) ([fcf187c](https://github.com/angular/zone.js/commit/fcf187c))
+* **node:** remove reference to 'noop' ([#865](https://github.com/angular/zone.js/issues/865)) ([4032ddf](https://github.com/angular/zone.js/commit/4032ddf))
+* **patch:** fix [#869](https://github.com/angular/zone.js/issues/869), should not patch readonly method ([#871](https://github.com/angular/zone.js/issues/871)) ([31d38c1](https://github.com/angular/zone.js/commit/31d38c1))
+* **rxjs:** asap should runGuarded to let error inZone ([#884](https://github.com/angular/zone.js/issues/884)) ([ce3f12f](https://github.com/angular/zone.js/commit/ce3f12f))
+* **rxjs:** fix [#863](https://github.com/angular/zone.js/issues/863), fix asap scheduler issue, add testcases ([#848](https://github.com/angular/zone.js/issues/848)) ([cbc58c1](https://github.com/angular/zone.js/commit/cbc58c1))
+* **spec:** fix flush() behavior in handling periodic timers ([#881](https://github.com/angular/zone.js/issues/881)) ([eed776c](https://github.com/angular/zone.js/commit/eed776c))
+* **task:** fix closure compatibility issue with ZoneDelegate._updateTaskCount ([#878](https://github.com/angular/zone.js/issues/878)) ([a03b84b](https://github.com/angular/zone.js/commit/a03b84b))
+
+
+### Features
+
+* **cordova:** fix [#868](https://github.com/angular/zone.js/issues/868), patch cordova FileReader ([#879](https://github.com/angular/zone.js/issues/879)) ([b1e5970](https://github.com/angular/zone.js/commit/b1e5970))
+* **onProperty:** fix [#875](https://github.com/angular/zone.js/issues/875), can disable patch specified onProperties ([#877](https://github.com/angular/zone.js/issues/877)) ([a733688](https://github.com/angular/zone.js/commit/a733688))
+* **patch:** fix [#833](https://github.com/angular/zone.js/issues/833), add IntersectionObserver support ([#880](https://github.com/angular/zone.js/issues/880)) ([f27ff14](https://github.com/angular/zone.js/commit/f27ff14))
+* **performance:** onProperty handler use global wrapFn, other performance improve. ([#872](https://github.com/angular/zone.js/issues/872)) ([a66595a](https://github.com/angular/zone.js/commit/a66595a))
+* **performance:** reuse microTaskQueue native promise ([#874](https://github.com/angular/zone.js/issues/874)) ([7ee8bcd](https://github.com/angular/zone.js/commit/7ee8bcd))
+* **spec:** add a 'tick' callback to flush() ([#866](https://github.com/angular/zone.js/issues/866)) ([02cd40e](https://github.com/angular/zone.js/commit/02cd40e))
+
+
+
 <a name="0.8.16"></a>
 ## [0.8.16](https://github.com/angular/zone.js/compare/v0.8.15...0.8.16) (2017-07-27)
 
