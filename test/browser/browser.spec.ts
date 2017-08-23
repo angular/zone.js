@@ -2122,6 +2122,24 @@ describe('Zone', function() {
          }));
     });
 
+    it('IntersectionObserver should run callback in zone',
+       ifEnvSupportsWithDone('IntersectionObserver', (done: Function) => {
+         const div = document.createElement('div');
+         const options: any = {root: div, rootMargin: '0px', threshold: 0};
+
+         const zone = Zone.current.fork({name: 'intersectionObserverZone'});
+
+         zone.run(() => {
+           const observer = new IntersectionObserver(() => {
+             expect(Zone.current.name).toEqual(zone.name);
+             observer.unobserve(div);
+             done();
+           }, options);
+           observer.observe(div);
+         });
+         document.body.appendChild(div);
+       }));
+
     it('HTMLCanvasElement.toBlob should be a ZoneAware MacroTask',
        ifEnvSupportsWithDone(supportCanvasTest, (done: Function) => {
          const canvas = document.createElement('canvas');
