@@ -26,4 +26,42 @@
   };
 
   global.cordova = fakeCordova;
+
+  const TestTarget = global.TestTarget = function() {};
+
+  Object.defineProperties(TestTarget.prototype, {
+    'onprop1': {configurable: true, writable: true},
+    'onprop2': {configurable: true, writable: true},
+    'addEventListener': {
+      configurable: true,
+      writable: true,
+      value: function(eventName: string, callback: Function) {
+        if (!this.events) {
+          this.events = {};
+        }
+        this.events.eventName = {zone: Zone.current, callback: callback};
+      }
+    },
+    'removeEventListener': {
+      configurable: true,
+      writable: true,
+      value: function(eventName: string, callback: Function) {
+        if (!this.events) {
+          return;
+        }
+        this.events.eventName = null;
+      }
+    },
+    'dispatchEvent': {
+      configurable: true,
+      writable: true,
+      value: function(eventName: string) {
+        const zoneCallback = this.events && this.events.eventName;
+        zoneCallback && zoneCallback.zone.run(zoneCallback.callback, this, [{type: eventName}]);
+      }
+    }
+  });
+
+  global['__Zone_ignore_on_properties'] =
+      [{target: TestTarget.prototype, ignoreProperties: ['prop1']}];
 })(typeof window === 'object' && window || typeof self === 'object' && self || global);
