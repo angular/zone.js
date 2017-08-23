@@ -1251,14 +1251,20 @@ const Zone: ZoneType = (function(global: any) {
   const symbolThen = __symbol__('then');
   let _microTaskQueue: Task[] = [];
   let _isDrainingMicrotaskQueue: boolean = false;
+  let nativeMicroTaskQueuePromise: any;
 
   function scheduleMicroTask(task?: MicroTask) {
     // if we are not running in any task, and there has not been anything scheduled
     // we must bootstrap the initial task creation by manually scheduling the drain
     if (_numberOfNestedTaskFrames === 0 && _microTaskQueue.length === 0) {
       // We are not running in Task, so we need to kickstart the microtask queue.
-      if (global[symbolPromise]) {
-        global[symbolPromise].resolve(0)[symbolThen](drainMicroTaskQueue);
+      if (!nativeMicroTaskQueuePromise) {
+        if (global[symbolPromise]) {
+          nativeMicroTaskQueuePromise = global[symbolPromise].resolve(0);
+        }
+      }
+      if (nativeMicroTaskQueuePromise) {
+        nativeMicroTaskQueuePromise[symbolThen](drainMicroTaskQueue);
       } else {
         global[symbolSetTimeout](drainMicroTaskQueue, 0);
       }
