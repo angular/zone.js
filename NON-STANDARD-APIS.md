@@ -103,3 +103,61 @@ for example, if you want to add MediaQuery patch, you should do like this.
   <script src="path/zone.js"></script> 
   <script src="path/webapis-media-query.js"></script> 
 ```  
+
+* rxjs
+
+`zone.js` also provide a `rxjs` patch to make sure rxjs Observable/Subscription/Operator run in correct zone.
+for detail please refer to [pull request 843](https://github.com/angular/zone.js/pull/843), the following sample code describe the idea.
+
+```
+const constructorZone = Zone.current.fork({name: 'constructor'});
+const subscriptionZone = Zone.current.fork({name: 'subscription'});
+const operatorZone = Zone.current.fork({name: 'operator'});
+
+let observable;
+let subscriber;
+constructorZone.run(() => {
+  observable = new Observable((_subscriber) => {
+    subscriber = _subscriber;
+    console.log('current zone when construct observable:', Zone.current.name); // will output constructor.
+    return () => {
+      console.log('current zone when unsubscribe observable:', Zone.current.name); // will output constructor.
+    }
+  });
+});
+
+subscriptionZone.run(() => {
+  observable.subscribe(() => {
+    console.log('current zone when subscription next', Zone.current.name); // will output subscription. 
+  }, () => {
+    console.log('current zone when subscription error', Zone.current.name); // will output subscription. 
+  }, () => {
+    console.log('current zone when subscription complete', Zone.current.name); // will output subscription. 
+  });
+});
+
+operatorZone.run(() => {
+  observable.map(() => {
+    console.log('current zone when map operator', Zone.current.name); // will output operator. 
+  });
+});
+```
+
+currently basically all `rxjs` API include
+
+- Observable
+- Subscription
+- Subscriber
+- Operators 
+- Scheduler 
+
+are patched, so they will run in the correct zone.
+
+## Usage.
+
+for example, in angular application, you can load this patch in your `app.module.ts`.
+
+```
+import 'zone.js/dist/zone-patch-rxjs';
+```
+
