@@ -25,6 +25,9 @@ Zone.__load_patch('timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => 
   patchTimer(global, set, clear, 'Timeout');
   patchTimer(global, set, clear, 'Interval');
   patchTimer(global, set, clear, 'Immediate');
+});
+
+Zone.__load_patch('requestAnimationFrame', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   patchTimer(global, 'request', 'cancel', 'AnimationFrame');
   patchTimer(global, 'mozRequest', 'mozCancel', 'AnimationFrame');
   patchTimer(global, 'webkitRequest', 'webkitCancel', 'AnimationFrame');

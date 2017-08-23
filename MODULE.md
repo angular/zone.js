@@ -34,6 +34,7 @@ Below is the full list of current support modules.
 |--|--|--|
 |on_property|target.onProp will become zone aware target.addEventListener(prop)|__Zone_disable_on_property = true|
 |timers|setTimeout/setInterval/setImmediate will be patched as Zone MacroTask|__Zone_disable_timer = true|
+|requestAnimationFrame|requestAnimationFrame will be patched as Zone MacroTask|__Zone_disable_requestAnimationFrame = true|
 |blocking|alert/prompt/confirm will be patched as Zone.run|__Zone_disable_blocking = true|
 |EventTarget|target.addEventListener will be patched as Zone aware EventTask|__Zone_disable_EventTarget = true|
 |IE BrowserTools check|in IE, browser tool will not use zone patched eventListener|__Zone_disable_IE_check = true|
