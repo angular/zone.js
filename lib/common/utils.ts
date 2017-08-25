@@ -170,8 +170,9 @@ export function patchProperty(obj: any, prop: string, prototype?: any) {
     if (!target) {
       return null;
     }
-    if (target[eventNameSymbol]) {
-      return wrapFn;
+    const listener = target[eventNameSymbol];
+    if (listener) {
+      return listener;
     } else if (originalDescGet) {
       // result will be null when use inline event attribute,
       // such as <button onclick="func();">OK</button>

@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {ifEnvSupports, supportPatchXHROnProperty} from '../test-util';
+import {ifEnvSupports, ifEnvSupportsWithDone, supportPatchXHROnProperty} from '../test-util';
 
 describe('XMLHttpRequest', function() {
   let testZone: Zone;
@@ -280,4 +280,27 @@ describe('XMLHttpRequest', function() {
       req.send();
     });
   });
+
+  it('should return origin listener when call xhr.onreadystatechange',
+     ifEnvSupportsWithDone(supportPatchXHROnProperty, function(done: Function) {
+       testZone.run(function() {
+         // sometimes this case will cause timeout
+         // so we set it longer
+         const req = new XMLHttpRequest();
+         req.open('get', '/', true);
+         const interval = (<any>jasmine).DEFAULT_TIMEOUT_INTERVAL;
+         (<any>jasmine).DEFAULT_TIMEOUT_INTERVAL = 5000;
+         const listener = req.onreadystatechange = function() {
+           if (req.readyState === 4) {
+             (<any>jasmine).DEFAULT_TIMEOUT_INTERVAL = interval;
+             done();
+           }
+         };
+         expect(req.onreadystatechange).toBe(listener);
+         req.onreadystatechange = function() {
+           return listener.apply(this, arguments);
+         };
+         req.send();
+       });
+     }));
 });
