@@ -664,25 +664,26 @@ describe('FakeAsyncTestZoneSpec', () => {
     });
   });
 
-  describe('XHRs', ifEnvSupports('XMLHttpRequest', () => {
-             it('should throw an exception if an XHR is initiated in the zone', () => {
-               expect(() => {
-                 fakeAsyncTestZone.run(() => {
-                   let finished = false;
-                   let req = new XMLHttpRequest();
+  describe(
+      'XHRs', ifEnvSupports('XMLHttpRequest', () => {
+        it('should throw an exception if an XHR is initiated in the zone', () => {
+          expect(() => {
+            fakeAsyncTestZone.run(() => {
+              let finished = false;
+              let req = new XMLHttpRequest();
 
-                   req.onreadystatechange = () => {
-                     if (req.readyState === XMLHttpRequest.DONE) {
-                       finished = true;
-                     }
-                   };
+              req.onreadystatechange = () => {
+                if (req.readyState === XMLHttpRequest.DONE) {
+                  finished = true;
+                }
+              };
 
-                   req.open('GET', '/', true);
-                   req.send();
-                 });
-               }).toThrowError('Cannot make XHRs from within a fake async test.');
-             });
-           }));
+              req.open('GET', '/test', true);
+              req.send();
+            });
+          }).toThrowError('Cannot make XHRs from within a fake async test. Request URL: /test');
+        });
+      }));
 
   describe('node process', ifEnvSupports(supportNode, () => {
              it('should be able to schedule microTask with additional arguments', () => {

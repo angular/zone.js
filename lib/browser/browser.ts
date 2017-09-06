@@ -82,9 +82,11 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   const XHR_SYNC = zoneSymbol('xhrSync');
   const XHR_LISTENER = zoneSymbol('xhrListener');
   const XHR_SCHEDULED = zoneSymbol('xhrScheduled');
+  const XHR_URL = zoneSymbol('xhrURL');
 
   interface XHROptions extends TaskData {
     target: any;
+    url: string;
     args: any[];
     aborted: boolean;
   }
@@ -158,6 +160,7 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
     const openNative: Function = patchMethod(
         window.XMLHttpRequest.prototype, 'open', () => function(self: any, args: any[]) {
           self[XHR_SYNC] = args[2] == false;
+          self[XHR_URL] = args[1];
           return openNative.apply(self, args);
         });
 
@@ -169,8 +172,14 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
             // if the XHR is sync there is no task to schedule, just execute the code.
             return sendNative.apply(self, args);
           } else {
-            const options: XHROptions =
-                {target: self, isPeriodic: false, delay: null, args: args, aborted: false};
+            const options: XHROptions = {
+              target: self,
+              url: self[XHR_URL],
+              isPeriodic: false,
+              delay: null,
+              args: args,
+              aborted: false
+            };
             return zone.scheduleMacroTask(
                 XMLHTTPREQUEST_SOURCE, placeholderCallback, options, scheduleTask, clearTask);
           }
