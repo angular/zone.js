@@ -193,7 +193,7 @@ describe('FakeAsyncTestZoneSpec', () => {
     it('should not run cancelled timer', () => {
       fakeAsyncTestZone.run(() => {
         let ran = false;
-        let id = setTimeout(() => {
+        let id: any = setTimeout(() => {
           ran = true;
         }, 10);
         clearTimeout(id);

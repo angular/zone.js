@@ -10,7 +10,9 @@
  * @suppress {missingRequire}
  */
 
-import {patchMethod} from './utils';
+import {patchMethod, zoneSymbol} from './utils';
+
+const taskSymbol = zoneSymbol('zoneTask');
 
 interface TimerOptions extends TaskData {
   handleId: number;
@@ -38,27 +40,22 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
         task.invoke.apply(this, arguments);
       } finally {
         if (typeof data.handleId === NUMBER) {
-          // Node returns complex objects as handleIds
+          // in non-nodejs env, we remove timerId
+          // from local cache
           delete tasksByHandleId[data.handleId];
+        } else if (data.handleId) {
+          // Node returns complex objects as handleIds
+          // we remove task reference from timer object
+          (data.handleId as any)[taskSymbol] = null;
         }
       }
     }
     data.args[0] = timer;
     data.handleId = setNative.apply(window, data.args);
-    if (typeof data.handleId === NUMBER) {
-      // Node returns complex objects as handleIds -> no need to keep them around. Additionally,
-      // this throws an
-      // exception in older node versions and has no effect there, because of the stringified key.
-      tasksByHandleId[data.handleId] = task;
-    }
     return task;
   }
 
   function clearTask(task: Task) {
-    if (typeof(<TimerOptions>task.data).handleId === NUMBER) {
-      // Node returns complex objects as handleIds
-      delete tasksByHandleId[(<TimerOptions>task.data).handleId];
-    }
     return clearNative((<TimerOptions>task.data).handleId);
   }
 
@@ -78,12 +75,25 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
           }
           // Node.js must additionally support the ref and unref functions.
           const handle: any = (<TimerOptions>task.data).handleId;
+          if (typeof handle === NUMBER) {
+            // for non nodejs env, we save handleId: task
+            // mapping in local cache for clearTimeout
+            tasksByHandleId[handle] = task;
+          } else if (handle) {
+            // for nodejs env, we save task
+            // reference in timerId Object for clearTimeout
+            handle[taskSymbol] = task;
+          }
+
           // check whether handle is null, because some polyfill or browser
           // may return undefined from setTimeout/setInterval/setImmediate/requestAnimationFrame
           if (handle && handle.ref && handle.unref && typeof handle.ref === FUNCTION &&
               typeof handle.unref === FUNCTION) {
             (<any>task).ref = (<any>handle).ref.bind(handle);
             (<any>task).unref = (<any>handle).unref.bind(handle);
+          }
+          if (typeof handle === NUMBER || handle) {
+            return handle;
           }
           return task;
         } else {
@@ -94,10 +104,27 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
 
   clearNative =
       patchMethod(window, cancelName, (delegate: Function) => function(self: any, args: any[]) {
-        const task: Task = typeof args[0] === NUMBER ? tasksByHandleId[args[0]] : args[0];
+        const id = args[0];
+        let task: Task;
+        if (typeof id === NUMBER) {
+          // non nodejs env.
+          task = tasksByHandleId[id];
+        } else {
+          // nodejs env.
+          task = id && id[taskSymbol];
+          // other environments.
+          if (!task) {
+            task = id;
+          }
+        }
         if (task && typeof task.type === STRING) {
           if (task.state !== NOT_SCHEDULED &&
               (task.cancelFn && task.data.isPeriodic || task.runCount === 0)) {
+            if (typeof id === NUMBER) {
+              delete tasksByHandleId[id];
+            } else if (id) {
+              id[taskSymbol] = null;
+            }
             // Do not cancel already canceled functions
             task.zone.cancelTask(task);
           }

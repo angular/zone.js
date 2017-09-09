@@ -24,14 +24,14 @@ describe('TaskTrackingZone', function() {
 
   it('should track tasks', (done: Function) => {
     taskTrackingZone.run(() => {
-      const microTask = taskTrackingZone.scheduleMicroTask('test1', () => {});
+      taskTrackingZone.scheduleMicroTask('test1', () => {});
       expect(taskTrackingZoneSpec.microTasks.length).toBe(1);
       expect(taskTrackingZoneSpec.microTasks[0].source).toBe('test1');
 
-      const macroTask = setTimeout(() => {}) as any as Task;
+      setTimeout(() => {});
       expect(taskTrackingZoneSpec.macroTasks.length).toBe(1);
       expect(taskTrackingZoneSpec.macroTasks[0].source).toBe('setTimeout');
-      taskTrackingZone.cancelTask(macroTask);
+      taskTrackingZone.cancelTask(taskTrackingZoneSpec.macroTasks[0]);
       expect(taskTrackingZoneSpec.macroTasks.length).toBe(0);
 
       setTimeout(() => {
@@ -71,10 +71,10 @@ describe('TaskTrackingZone', function() {
 
   it('should capture task creation stacktrace', (done) => {
     taskTrackingZone.run(() => {
-      const task: any = setTimeout(() => {
+      setTimeout(() => {
         done();
-      }) as any as Task;
-      expect(task['creationLocation']).toBeTruthy();
+      });
+      expect((taskTrackingZoneSpec.macroTasks[0] as any)['creationLocation']).toBeTruthy();
     });
   });
 });
