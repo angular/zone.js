@@ -62,7 +62,7 @@ chmod u+x .git/hooks/pre-commit
 Webdriver Test
 --------------
 
-Now `zone.js` also support run webdriver e2e test.
+`zone.js` also supports running webdriver e2e tests.
 
 1. run locally
 
