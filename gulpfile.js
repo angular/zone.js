@@ -23,6 +23,13 @@ function generateScript(inFile, outFile, minify, callback) {
         .pipe(rollup({
           entry: inFile,
           format: 'umd',
+          onwarn: function (warning) {
+            // https://github.com/rollup/rollup/wiki/Troubleshooting#this-is-undefined
+            if (warning.code === 'THIS_IS_UNDEFINED') {
+              return;
+            }
+            console.error(warning.message);
+          },
           banner: '/**\n'
               + '* @license\n'
               + '* Copyright Google Inc. All Rights Reserved.\n'
@@ -75,12 +82,16 @@ gulp.task('compile-esm', function(cb) {
   tsc('tsconfig-esm.json', cb);
 });
 
+gulp.task('compile-esm-node', function(cb) {
+  tsc('tsconfig-esm-node.json', cb);
+});
+
 gulp.task('build/zone.js.d.ts', ['compile-esm'], function() {
   return gulp.src('./build-esm/lib/zone.d.ts').pipe(rename('zone.js.d.ts')).pipe(gulp.dest('./dist'));
 });
 
 // Zone for Node.js environment.
-gulp.task('build/zone-node.js', ['compile-esm'], function(cb) {
+gulp.task('build/zone-node.js', ['compile-esm-node'], function(cb) {
   return generateScript('./lib/node/rollup-main.ts', 'zone-node.js', false, cb);
 });
 
@@ -90,7 +101,7 @@ gulp.task('build/zone.js', ['compile-esm'], function(cb) {
 });
 
 // Zone for electron/nw environment.
-gulp.task('build/zone-mix.js', ['compile-esm'], function(cb) {
+gulp.task('build/zone-mix.js', ['compile-esm-node'], function(cb) {
     return generateScript('./lib/mix/rollup-mix.ts', 'zone-mix.js', false, cb);
 });
 
