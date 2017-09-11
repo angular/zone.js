@@ -6,7 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import {isNode} from '../../lib/common/utils';
 import {ifEnvSupports} from '../test-util';
+
 declare const global: any;
 
 class MicroTaskQueueZoneSpec implements ZoneSpec {
@@ -365,6 +367,28 @@ describe(
               expect(value).toEqual(['resolution', 'v1']);
             });
           });
+
+          it('should resolve generators', ifEnvSupports(
+                                              () => {
+                                                return isNode;
+                                              },
+                                              () => {
+                                                const generators: any = function*() {
+                                                  yield Promise.resolve(1);
+                                                  yield Promise.resolve(2);
+                                                  return;
+                                                };
+                                                queueZone.run(() => {
+                                                  let value = null;
+                                                  Promise.all(generators()).then(val => {
+                                                    value = val;
+                                                  });
+                                                  // expect(Zone.current.get('queue').length).toEqual(2);
+                                                  flushMicrotasks();
+                                                  expect(value).toEqual([1, 2]);
+                                                });
+
+                                              }));
         });
       });
 

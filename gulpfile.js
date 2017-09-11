@@ -78,6 +78,10 @@ gulp.task('compile', function(cb) {
   tsc('tsconfig.json', cb);
 });
 
+gulp.task('compile-node', function(cb) {
+  tsc('tsconfig-node.json', cb);
+});
+
 gulp.task('compile-esm', function(cb) {
   tsc('tsconfig-esm.json', cb);
 });
@@ -268,7 +272,7 @@ gulp.task('build', [
   'build/closure.js'
 ]);
 
-gulp.task('test/node', ['compile'], function(cb) {
+gulp.task('test/node', ['compile-node'], function(cb) {
   var JasmineRunner = require('jasmine');
   var jrunner = new JasmineRunner();
 

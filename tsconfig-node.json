@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "module": "commonjs",
+    "target": "es5",
+    "noImplicitAny": true,
+    "noImplicitReturns": false,
+    "noImplicitThis": false,
+    "outDir": "build",
+    "inlineSourceMap": true,
+    "inlineSources": true,
+    "declaration": false,
+    "downlevelIteration": true,
+    "noEmitOnError": false,
+    "stripInternal": false,
+    "lib": ["es5", "dom", "es2015.promise"]
+  },
+  "exclude": [
+    "node_modules",
+    "build",
+    "build-esm",
+    "dist",
+    "lib/closure"
+  ]
+}
