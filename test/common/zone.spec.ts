@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import {zoneSymbol} from '../../lib/common/utils';
 
 describe('Zone', function() {
   const rootZone = Zone.current;
@@ -326,17 +327,23 @@ describe('Zone', function() {
         Zone.assertZonePatched();
       });
 
-      it('should throw when Promise has been patched', () => {
-        class WrongPromise {}
+      it('should keep ZoneAwarePromise has been patched', () => {
+        class WrongPromise {
+          static resolve(value: any) {}
+
+          then() {}
+        }
 
         const ZoneAwarePromise = global.Promise;
+        const NativePromise = (global as any)[zoneSymbol('Promise')];
         global.Promise = WrongPromise;
         try {
           expect(ZoneAwarePromise).toBeTruthy();
-          expect(() => Zone.assertZonePatched()).toThrow();
+          Zone.assertZonePatched();
+          expect(global.Promise).toBe(ZoneAwarePromise);
         } finally {
           // restore it.
-          global.Promise = ZoneAwarePromise;
+          global.Promise = NativePromise;
         }
         Zone.assertZonePatched();
       });
