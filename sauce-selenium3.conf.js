@@ -5,11 +5,11 @@ module.exports = function (config) {
   config.files.unshift('test/saucelabs.js');
 
   var customLaunchers = {
-    'SL_SAFARI10': {
+    'SL_CHROME60': {
       base: 'SauceLabs',
-      browserName: 'Safari',
-      platform: 'macOS 10.12',
-      version: '10.0'
+      browserName: 'Chrome',
+      platform: 'Windows 10',
+      version: '60.0'
     }
   };
 
@@ -23,7 +23,7 @@ module.exports = function (config) {
       recordVideo: false,
       recordScreenshots: false,
       options:  {
-          'selenium-version': '3.3.0',
+          'selenium-version': '3.5.0',
           'command-timeout': 600,
           'idle-timeout': 600,
           'max-duration': 5400

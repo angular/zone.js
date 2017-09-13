@@ -10,10 +10,20 @@ module.exports = function (config) {
       browserName: 'chrome',
       version: '48'
     },
+    'SL_CHROME_60': {
+      base: 'SauceLabs',
+      browserName: 'chrome',
+      version: '60'
+    },
     'SL_FIREFOX': {
       base: 'SauceLabs',
       browserName: 'firefox',
       version: '52'
+    },
+    'SL_FIREFOX_54': {
+      base: 'SauceLabs',
+      browserName: 'firefox',
+      version: '54'
     },
     /*'SL_SAFARI7': {
       base: 'SauceLabs',
@@ -32,6 +42,12 @@ module.exports = function (config) {
       browserName: 'safari',
       platform: 'OS X 10.11',
       version: '9.0'
+    },
+    'SL_SAFARI10': {
+      base: 'SauceLabs',
+      browserName: 'safari',
+      platform: 'OS X 10.11',
+      version: '10.0'
     },
     /*
      no longer supported in SauceLabs
@@ -83,6 +99,12 @@ module.exports = function (config) {
       platform: 'Windows 10',
       version: '14.14393'
     },
+    'SL_MSEDGE15': {
+      base: 'SauceLabs',
+      browserName: 'MicrosoftEdge',
+      platform: 'Windows 10',
+      version: '15.15063'
+    },
     /*
      fix issue #584, Android 4.1~4.3 are not supported
     'SL_ANDROID4.1': {
@@ -114,6 +136,20 @@ module.exports = function (config) {
       browserName: 'android',
       platform: 'Linux',
       version: '5.1'
+    },
+    'SL_ANDROID6.0': {
+      base: 'SauceLabs',
+      browserName: 'android',
+      platform: 'Linux',
+      version: '6.0'
+    },
+    'SL_ANDROID7.1': {
+      base: 'SauceLabs',
+      browserName: 'Chrome',
+      appiumVersion: '1.6.4',
+      platformName: 'Android',
+      deviceName: 'Android GoogleAPI Emulator',
+      platformVersion: '7.1'
     }
   };
 

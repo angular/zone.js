@@ -8,7 +8,7 @@
 import * as Rx from 'rxjs/Rx';
 import {asyncTest} from '../test-util';
 
-describe('Observable.audit', () => {
+xdescribe('Observable.audit', () => {
   let log: string[];
   let observable1: any;
 
