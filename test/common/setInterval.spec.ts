@@ -16,7 +16,6 @@ describe('setInterval', function() {
     let cancelId: any;
     const testZone = Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({name: 'TestZone'});
     testZone.run(() => {
-      let id: number;
       let intervalCount = 0;
       let timeoutRunning = false;
       const intervalFn = function() {
@@ -35,12 +34,14 @@ describe('setInterval', function() {
           for (let i = 0; i < intervalCount; i++) {
             intervalLog = intervalLog.concat(intervalUnitLog);
           }
-          expect(wtfMock.log).toEqual([
-            '# Zone:fork("<root>::ProxyZone::WTF", "TestZone")',
-            '> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")',
-            '# Zone:schedule:macroTask:setInterval("<root>::ProxyZone::WTF::TestZone", ' + id + ')',
-            '< Zone:invoke:unit-test'
-          ].concat(intervalLog));
+          expect(wtfMock.log[0]).toEqual('# Zone:fork("<root>::ProxyZone::WTF", "TestZone")');
+          expect(wtfMock.log[1])
+              .toEqual('> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")');
+          expect(wtfMock.log[2])
+              .toContain(
+                  '# Zone:schedule:macroTask:setInterval("<root>::ProxyZone::WTF::TestZone"');
+          expect(wtfMock.log[3]).toEqual('< Zone:invoke:unit-test');
+          expect(wtfMock.log.splice(4)).toEqual(intervalLog);
           clearInterval(cancelId);
           done();
         });
@@ -52,18 +53,10 @@ describe('setInterval', function() {
         expect(typeof cancelId.unref).toEqual(('function'));
       }
 
-      // This icky replacer is to deal with Timers in node.js. The data.handleId contains timers in
-      // node.js. They do not stringify properly since they contain circular references.
-      id = JSON.stringify((<MacroTask>cancelId).data, function replaceTimer(key, value) {
-        if (key == 'handleId' && typeof value == 'object') return value.constructor.name;
-        if (typeof value === 'function') return value.name;
-        return value;
-      }) as any as number;
-      expect(wtfMock.log).toEqual([
-        '# Zone:fork("<root>::ProxyZone::WTF", "TestZone")',
-        '> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")',
-        '# Zone:schedule:macroTask:setInterval("<root>::ProxyZone::WTF::TestZone", ' + id + ')'
-      ]);
+      expect(wtfMock.log[0]).toEqual('# Zone:fork("<root>::ProxyZone::WTF", "TestZone")');
+      expect(wtfMock.log[1]).toEqual('> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")');
+      expect(wtfMock.log[2])
+          .toContain('# Zone:schedule:macroTask:setInterval("<root>::ProxyZone::WTF::TestZone"');
     }, null, null, 'unit-test');
   });
 

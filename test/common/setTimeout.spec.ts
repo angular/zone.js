@@ -14,18 +14,18 @@ describe('setTimeout', function() {
     let cancelId: any;
     const testZone = Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({name: 'TestZone'});
     testZone.run(() => {
-      let id: number;
       const timeoutFn = function() {
         expect(Zone.current.name).toEqual(('TestZone'));
         global[zoneSymbol('setTimeout')](function() {
-          expect(wtfMock.log).toEqual([
-            '# Zone:fork("<root>::ProxyZone::WTF", "TestZone")',
-            '> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")',
-            '# Zone:schedule:macroTask:setTimeout("<root>::ProxyZone::WTF::TestZone", ' + id + ')',
-            '< Zone:invoke:unit-test',
-            '> Zone:invokeTask:setTimeout("<root>::ProxyZone::WTF::TestZone")',
-            '< Zone:invokeTask:setTimeout'
-          ]);
+          expect(wtfMock.log[0]).toEqual('# Zone:fork("<root>::ProxyZone::WTF", "TestZone")');
+          expect(wtfMock.log[1])
+              .toEqual('> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")');
+          expect(wtfMock.log[2])
+              .toContain('# Zone:schedule:macroTask:setTimeout("<root>::ProxyZone::WTF::TestZone"');
+          expect(wtfMock.log[3]).toEqual('< Zone:invoke:unit-test');
+          expect(wtfMock.log[4])
+              .toEqual('> Zone:invokeTask:setTimeout("<root>::ProxyZone::WTF::TestZone")');
+          expect(wtfMock.log[5]).toEqual('< Zone:invokeTask:setTimeout');
           done();
         });
       };
@@ -35,18 +35,10 @@ describe('setTimeout', function() {
         expect(typeof cancelId.ref).toEqual(('function'));
         expect(typeof cancelId.unref).toEqual(('function'));
       }
-      // This icky replacer is to deal with Timers in node.js. The data.handleId contains timers in
-      // node.js. They do not stringify properly since they contain circular references.
-      id = JSON.stringify((<MacroTask>cancelId).data, function replaceTimer(key, value) {
-        if (key == 'handleId' && typeof value == 'object') return value.constructor.name;
-        if (typeof value === 'function') return value.name;
-        return value;
-      }) as any as number;
-      expect(wtfMock.log).toEqual([
-        '# Zone:fork("<root>::ProxyZone::WTF", "TestZone")',
-        '> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")',
-        '# Zone:schedule:macroTask:setTimeout("<root>::ProxyZone::WTF::TestZone", ' + id + ')'
-      ]);
+      expect(wtfMock.log[0]).toEqual('# Zone:fork("<root>::ProxyZone::WTF", "TestZone")');
+      expect(wtfMock.log[1]).toEqual('> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")');
+      expect(wtfMock.log[2])
+          .toContain('# Zone:schedule:macroTask:setTimeout("<root>::ProxyZone::WTF::TestZone"');
     }, null, null, 'unit-test');
   });
 
@@ -97,11 +89,11 @@ describe('setTimeout', function() {
        });
      });
 
-  it('should return the timeout Id through toString', function() {
+  it('should return the original timeout Id', function() {
     // Node returns complex object from setTimeout, ignore this test.
     if (isNode) return;
     const cancelId = setTimeout(() => {}, 0);
-    expect(typeof(cancelId.toString())).toBe('number');
+    expect(typeof cancelId).toEqual('number');
   });
 
   it('should allow cancelation by numeric timeout Id', function(done) {
@@ -114,12 +106,10 @@ describe('setTimeout', function() {
     const testZone = Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({name: 'TestZone'});
     testZone.run(() => {
       const spy = jasmine.createSpy('spy');
-      const task: Task = <any>setTimeout(spy, 0);
-      const cancelId: number = <any>task;
+      const cancelId = setTimeout(spy, 0);
       clearTimeout(cancelId);
       setTimeout(function() {
         expect(spy).not.toHaveBeenCalled();
-        expect(task.runCount).toEqual(0);
         done();
       }, 1);
     });
