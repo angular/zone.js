@@ -1,24 +1,22 @@
 # Zone.js's support for standard apis
 
-Zone.js patched most standard APIs so they can be in zone. such as DOM events listener, XMLHttpRequest in Browser
- and EventEmitter, fs API in nodejs. 
+Zone.js patched most standard APIs such as DOM event listeners, XMLHttpRequest in Browser, EventEmitter and fs API in Node.js so they can be in zone.
   
-In this document, all patched API will be listed here. 
+In this document, all patched API are listed. 
 
-for non standard API, please reference to [NON-STANDARD-APIS.md](NON-STANDARD-APIS.md)
+For non-standard APIs, please see [NON-STANDARD-APIS.md](NON-STANDARD-APIS.md)
  
-## Patch Mechanism 
+## Patch Mechanisms
 
-There are several patch mechanism
+There are several patch mechanisms
 
-- wrap, wrap will make callback in zone, and application can receive onInvoke, onIntercept callback 
-- Task, just like javascript vm, application can receive onScheduleTask, onInvokeTask, onCancelTask, onHasTask callback 
+- wrap: makes callbacks run in zones, and makes applications able to receive onInvoke and onIntercept callbacks
+- Task: just like in the JavaScript VM, applications can receive onScheduleTask, onInvokeTask, onCancelTask and onHasTask callbacks
   1. MacroTask
-  2. MicroTask     
+  2. MicroTask
   3. EventTask
   
-Now there are some APIs should be treated as Tasks, but still be patched in wrap way, they will be 
-patched as Task soon.
+Some APIs which should be treated as Tasks, but are currently still patched in the wrap way. These will be patched as Tasks soon.
  
 ## Browser 
 
@@ -54,9 +52,9 @@ Web APIs
 
 EventTarget
 
-- For browser support eventTarget, zone.js just patch EventTarget, so everything 
-inherit from EventTarget will also be patched.
-- For browser does not support eventTarget, zone.js will patch the following APIs in the IDL
+- For browsers supporting EventTarget, Zone.js just patches EventTarget, so everything that inherits
+from EventTarget will also be patched.
+- For browsers that do not support EventTarget, Zone.js will patch the following APIs in the IDL
  that inherit from EventTarget
  
  |||||
@@ -69,8 +67,7 @@ inherit from EventTarget will also be patched.
  |IDBRequest|IDBOpenDBRequest|IDBDatabase|IDBTransaction|
  |IDBCursor|DBIndex|WebSocket|
 
-on properties, such as onclick, onreadystatechange, the following on properties will 
-be patched as EventTask, the following is the on properties zone.js patched  
+The following 'on' properties, such as onclick, onreadystatechange, are patched in Zone.js as EventTasks
 
  |||||
  |---|---|---|---|
@@ -104,28 +101,28 @@ be patched as EventTask, the following is the on properties zone.js patched
 | crypto | MacroTask |  |
 | fs | MacroTask | all async methods are patched |
 
-EventEmitter, addEventListener, prependEventListener, on, once will be patched as EventTask, and removeEventListener,
-removeAllListeners will remove those eventTasks
+EventEmitter, addEventListener, prependEventListener and 'on' will be patched once as EventTasks, and removeEventListener and
+removeAllListeners will remove those EventTasks
 
 ## Electron 
 
-zone.js did not patch electron API, but in electron, both browser APIs and node APIs are patched, so 
-when you want to include zone.js in Electron, please use dist/zone-mix.js
+Zone.js does not patch the Electron API, although in Electron both browser APIs and node APIs are patched, so 
+if you want to include Zone.js in Electron, please use dist/zone-mix.js
 
 ## ZoneAwareError
 
-ZoneAwareError replace global Error, and it will add zone information to stack trace.
-ZoneAwareError will also handle 'this' issue.
-such as create an error without new, then this will be undefined in strict mode, and global in
-non-strict mode. it will cause some issues and very difficult to detect.
+ZoneAwareError replaces global Error, and adds zone information to stack trace.
+ZoneAwareError also handles 'this' issue.
+This type of issue would happen when creating an error without `new`: `this` would be `undefined` in strict mode, and `global` in
+non-strict mode. It could cause some very difficult to detect issues.
 
 ```javascript
   const error = Error(); 
 ```
 
-ZoneAwareError will make sure that `this` is ZoneAwareError even without new.
+ZoneAwareError makes sure that `this` is ZoneAwareError even without new.
 
 ## ZoneAwarePromise
 
-ZoneAwarePromise wrap the global Promise and make it in zone and run as microTask, 
-it also passes promise A+ tests.
+ZoneAwarePromise wraps the global Promise and makes it run in zones as a MicroTask.
+It also passes promise A+ tests.

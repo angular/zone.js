@@ -7,7 +7,7 @@ Implements _Zones_ for JavaScript, inspired by [Dart](https://www.dartlang.org/a
 
 > If you're using zone.js via unpkg please provide a query param `?main=browser`  
 `https://unpkg.com/zone.js?main=browser`  
-> If you're using the following library, make sure you import them first 
+> If you're using any of the following libraries, make sure you import them first 
 
 > * 'newrelic' as it patches global.Promise before zone.js does
 > * 'async-listener' as it patches global.setTimeout, global.setInterval before zone.js does
@@ -37,19 +37,19 @@ See this video from ng-conf 2014 for a detailed explanation:
 ## Standard API support
 
 zone.js patched most standard web APIs(such as DOM events, XMLHttpRequest...) and nodejs APIs 
-(EventEmitter,fs ...), for more details, please see [STANDARD-APIS.md](STANDARD-APIS.md) for 
-more details.
+(EventEmitter,fs ...), for more details, please see [STANDARD-APIS.md](STANDARD-APIS.md).
 
 ## Non standard API support
 
-And now we are adding support to some non standard APIs, such as MediaQuery,
+We are adding support to some non standard APIs, such as MediaQuery and
 Notification. Please see [NON-STANDARD-APIS.md](NON-STANDARD-APIS.md) for more details.
 
 ## Modules
 
-zone.js patches the async APIs which described above, but those patch will have some overhead,
-from zone.js v0.8.9, you can choose which web API module you want to patch, for detail, please 
-see [MODULE.md](MODULE.md) for more details.
+zone.js patches the async APIs described above, but those patches will have some overhead.
+Starting from zone.js v0.8.9, you can choose which web API module you want to patch. 
+For more details, please 
+see [MODULE.md](MODULE.md).
 
 ## Promise A+ test passed
 [![Promises/A+ 1.1 compliant](https://promisesaplus.com/assets/logo-small.png)](https://promisesaplus.com/)

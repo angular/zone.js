@@ -1,9 +1,8 @@
 # Modules
 
-zone.js patches the async APIs which described above, but those patch will have some overhead,
-from zone.js v0.8.9, you can choose which web API module you want to patch, for example, 
-the below samples show how to disable some modules, you just need to define some global variables 
-before load zone.js.
+Starting from zone.js v0.8.9, you can choose which web API modules you want to patch as to reduce overhead introduced by the patching of these modules. For example, 
+the below samples show how to disable some modules. You just need to define a few global variables 
+before loading zone.js.
 
 ```
   <script>
@@ -17,7 +16,7 @@ before load zone.js.
   <script src="../dist/zone.js"></script>
 ```
 
-Below is the full list of current support modules.
+Below is the full list of currently supported modules.
 
 - Common 
 
@@ -58,7 +57,7 @@ Below is the full list of current support modules.
 
 - on_property
 
-you can also disable specified on_property by setting `__Zone_ignore_on_properties`, for example,
+You can also disable specific on_properties by setting `__Zone_ignore_on_properties` as follows: for example,
 if you want to disable `window.onmessage` and `HTMLElement.prototype.onclick` from zone.js patching,
 you can do like this.
 
@@ -79,7 +78,7 @@ you can do like this.
 
 - Angular(2+)
 
-Angular use zone.js to manage async operations and decide when to perform change detection, so in Angular, 
+Angular uses zone.js to manage async operations and decide when to perform change detection. Thus, in Angular, 
 the following APIs should be patched, otherwise Angular may not work as expected.
 
 1. ZoneAwarePromise
