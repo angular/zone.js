@@ -9,7 +9,7 @@
 import {patchFilteredProperties} from '../../lib/browser/property-descriptor';
 import {patchEventTarget} from '../../lib/common/events';
 import {isBrowser, isIEOrEdge, isMix, zoneSymbol} from '../../lib/common/utils';
-import {ifEnvSupports, ifEnvSupportsWithDone} from '../test-util';
+import {getIEVersion, ifEnvSupports, ifEnvSupportsWithDone} from '../test-util';
 
 import Spy = jasmine.Spy;
 declare const global: any;
@@ -246,6 +246,11 @@ describe('Zone', function() {
 
           it('event handler with null context should use event.target',
              ifEnvSupports(canPatchOnProperty(Document.prototype, 'onmousedown'), function() {
+               const ieVer = getIEVersion();
+               if (ieVer && ieVer === 9) {
+                 // in ie9, this is window object even we call func.apply(undefined)
+                 return;
+               }
                const logs: string[] = [];
                const EventTarget = (window as any)['EventTarget'];
                let oriAddEventListener = EventTarget && EventTarget.prototype ?
