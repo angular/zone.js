@@ -96,3 +96,11 @@ export function asyncTest(testFn: Function, zone: Zone = Zone.current) {
     asyncTestZone.run(testFn, this, [done]);
   };
 }
+
+export function getIEVersion() {
+  const userAgent = navigator.userAgent.toLowerCase();
+  if (userAgent.indexOf('msie') != -1) {
+    return parseInt(userAgent.split('msie')[1]);
+  }
+  return null;
+}
