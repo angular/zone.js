@@ -7,6 +7,7 @@
  */
 
 import {patchFilteredProperties} from '../../lib/browser/property-descriptor';
+import {patchEventTarget} from '../../lib/common/events';
 import {isBrowser, isIEOrEdge, isMix, zoneSymbol} from '../../lib/common/utils';
 import {ifEnvSupports, ifEnvSupportsWithDone} from '../test-util';
 
@@ -229,6 +230,69 @@ describe('Zone', function() {
                expect(hookSpy).toHaveBeenCalled();
                expect(eventListenerSpy).toHaveBeenCalled();
                document.removeEventListener('mousedown', eventListenerSpy);
+             }));
+
+          it('event handler with null context should use event.target',
+             ifEnvSupports(canPatchOnProperty(Document.prototype, 'onmousedown'), function() {
+               const logs: string[] = [];
+               const EventTarget = (window as any)['EventTarget'];
+               let oriAddEventListener = EventTarget && EventTarget.prototype ?
+                   (EventTarget.prototype as any)['__zone_symbol__addEventListener'] :
+                   (HTMLSpanElement.prototype as any)['__zone_symbol__addEventListener'];
+
+               if (!oriAddEventListener) {
+                 // no patched addEventListener found
+                 return;
+               }
+               let handler1: Function;
+               let handler2: Function;
+
+               const listener = function() {
+                 logs.push('listener1');
+               };
+
+               const listener1 = function() {
+                 logs.push('listener2');
+               };
+
+               HTMLSpanElement.prototype.addEventListener = function(
+                   eventName: string, callback: any) {
+                 if (eventName === 'click') {
+                   handler1 = callback;
+                 } else if (eventName === 'mousedown') {
+                   handler2 = callback;
+                 }
+                 return oriAddEventListener.apply(this, arguments);
+               };
+
+               (HTMLSpanElement.prototype as any)['__zone_symbol__addEventListener'] = null;
+
+               patchEventTarget(window, [HTMLSpanElement.prototype]);
+
+               const span = document.createElement('span');
+               document.body.appendChild(span);
+
+               zone.run(function() {
+                 span.addEventListener('click', listener);
+                 span.onmousedown = listener1;
+               });
+
+               expect(handler1).toBe(handler2);
+
+               handler1.apply(undefined, [{type: 'click', target: span}]);
+
+               handler2.apply(undefined, [{type: 'mousedown', target: span}]);
+
+               expect(hookSpy).toHaveBeenCalled();
+               expect(logs).toEqual(['listener1', 'listener2']);
+               document.body.removeChild(span);
+               if (EventTarget) {
+                 (EventTarget.prototype as any)['__zone_symbol__addEventListener'] =
+                     oriAddEventListener;
+               } else {
+                 (HTMLSpanElement.prototype as any)['__zone_symbol__addEventListener'] =
+                     oriAddEventListener;
+               }
              }));
 
           it('SVGElement onclick should be in zone',

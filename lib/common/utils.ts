@@ -89,12 +89,14 @@ export const isMix: boolean = typeof _global.process !== 'undefined' &&
 
 const ON_PROPERTY_HANDLER_SYMBOL = zoneSymbol('onPropertyHandler');
 const zoneSymbolEventNames: {[eventName: string]: string} = {};
+
 const wrapFn = function(event: Event) {
   let eventNameSymbol = zoneSymbolEventNames[event.type];
   if (!eventNameSymbol) {
     eventNameSymbol = zoneSymbolEventNames[event.type] = zoneSymbol('ON_PROPERTY' + event.type);
   }
-  const listener = this[eventNameSymbol];
+  const target = this || event && event.target || _global;
+  const listener = target[eventNameSymbol];
   let result = listener && listener.apply(this, arguments);
 
   if (result != undefined && !result) {
