@@ -51,13 +51,11 @@ describe('Observable.combine', () => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         const source = Rx.Observable.interval(10);
-         const highOrder = source
-                               .map((src: any) => {
-                                 expect(Zone.current.name).toEqual(constructorZone1.name);
-                                 return Rx.Observable.interval(50).take(3);
-                               })
-                               .take(2);
+         const source = Rx.Observable.of(1, 2, 3);
+         const highOrder = source.map((src: any) => {
+           expect(Zone.current.name).toEqual(constructorZone1.name);
+           return Rx.Observable.of(src);
+         });
          return highOrder.combineAll((x: any, y: any) => {
            expect(Zone.current.name).toEqual(constructorZone1.name);
            return {x: x, y: y};
@@ -76,14 +74,10 @@ describe('Observable.combine', () => {
              () => {
                log.push('completed');
                expect(Zone.current.name).toEqual(subscriptionZone.name);
-               expect(log).toEqual([
-                 {x: 0, y: 0}, {x: 1, y: 0}, {x: 1, y: 1}, {x: 2, y: 1}, {x: 2, y: 2}, 'completed'
-               ]);
+               expect(log).toEqual([{x: 1, y: 2}, 'completed']);
                done();
              });
        });
-
-       expect(log).toEqual([]);
      }, Zone.root));
 
   it('combineLatest func callback should run in the correct zone', () => {

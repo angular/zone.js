@@ -16,7 +16,10 @@ __karma__.loaded = function() {};
 (window as any).global = window;
 System.config({
   defaultJSExtensions: true,
-  map: {'rxjs': 'base/node_modules/rxjs'},
+  map: {
+    'rxjs': 'base/node_modules/rxjs',
+    'es6-promise': 'base/node_modules/es6-promise/dist/es6-promise'
+  },
 });
 
 let browserPatchedPromise: any = null;

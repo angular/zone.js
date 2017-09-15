@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {isNode} from '../../lib/common/utils';
+import {isNode, zoneSymbol} from '../../lib/common/utils';
 import {ifEnvSupports} from '../test-util';
 
 declare const global: any;
@@ -56,6 +56,31 @@ describe(
         queueZone = Zone.current.fork(new MicroTaskQueueZoneSpec());
 
         log = [];
+      });
+
+      xit('should allow set es6 Promise after load ZoneAwarePromise', (done) => {
+        const ES6Promise = require('es6-promise').Promise;
+        const NativePromise = global[zoneSymbol('Promise')];
+
+        try {
+          global['Promise'] = ES6Promise;
+          Zone.assertZonePatched();
+          expect(global[zoneSymbol('Promise')]).toBe(ES6Promise);
+          const promise = Promise.resolve(0);
+          console.log('promise', promise);
+          promise
+              .then(value => {
+                expect(value).toBe(0);
+                done();
+              })
+              .catch(error => {
+                fail(error);
+              });
+        } finally {
+          global['Promise'] = NativePromise;
+          Zone.assertZonePatched();
+          expect(global[zoneSymbol('Promise')]).toBe(NativePromise);
+        }
       });
 
       it('should pretend to be a native code', () => {

@@ -1,10 +1,10 @@
 // Sauce configuration
 
-module.exports = function (config) {
+module.exports = function (config, ignoredLaunchers) {
   // The WS server is not available with Sauce
   config.files.unshift('test/saucelabs.js');
 
-  var customLaunchers = {
+  var basicLaunchers = {
     'SL_CHROME': {
       base: 'SauceLabs',
       browserName: 'chrome',
@@ -152,6 +152,17 @@ module.exports = function (config) {
       platformVersion: '7.1'
     }
   };
+
+  var customLaunchers = {};
+  if (!ignoredLaunchers) {
+    customLaunchers = basicLaunchers;
+  } else {
+    Object.keys(basicLaunchers).forEach(function(key) {
+      if (ignoredLaunchers.filter(function(ignore) {return ignore === key;}).length === 0) {
+        customLaunchers[key] = basicLaunchers[key];
+      }
+    });
+  }
 
   config.set({
     captureTimeout: 120000,

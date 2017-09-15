@@ -8,5 +8,5 @@
 
 module.exports = function (config) {
   require('./karma-dist-jasmine.conf.js')(config);
-  require('./sauce.conf')(config);
+  require('./sauce.conf')(config, ['SL_IOS9']);
 };

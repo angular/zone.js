@@ -322,6 +322,7 @@ interface _ZonePrivate {
   showUncaughtError: () => boolean;
   patchEventTarget: (global: any, apis: any[], options?: any) => boolean[];
   patchOnProperties: (obj: any, properties: string[]) => void;
+  setNativePromise: (nativePromise: any) => void;
   patchMethod:
       (target: any, name: string,
        patchFn: (delegate: Function, delegateName: string, name: string) =>
@@ -1318,6 +1319,9 @@ const Zone: ZoneType = (function(global: any) {
     patchEventTarget: () => [],
     patchOnProperties: noop,
     patchMethod: () => noop,
+    setNativePromise: (NativePromise: any) => {
+      nativeMicroTaskQueuePromise = NativePromise.resolve(0);
+    },
   };
   let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
   let _currentTask: Task = null;
