@@ -870,6 +870,42 @@ describe('Zone', function() {
            button.removeEventListener('click', listener);
          }));
 
+      it('should support Event.stopImmediatePropagation',
+         ifEnvSupports(supportEventListenerOptions, function() {
+           const hookSpy = jasmine.createSpy('hook');
+           const logs: string[] = [];
+           const zone = rootZone.fork({
+             name: 'spy',
+             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                              task: Task): any => {
+               hookSpy();
+               return parentZoneDelegate.scheduleTask(targetZone, task);
+             }
+           });
+
+           const listener1 = (e: Event) => {
+             logs.push('listener1');
+             e.stopImmediatePropagation();
+           };
+
+           const listener2 = (e: Event) => {
+             logs.push('listener2');
+           };
+
+           zone.run(function() {
+             (button as any).addEventListener('click', listener1);
+             (button as any).addEventListener('click', listener2);
+           });
+
+           button.dispatchEvent(clickEvent);
+
+           expect(hookSpy).toHaveBeenCalled();
+           expect(logs).toEqual(['listener1']);
+
+           button.removeEventListener('click', listener1);
+           button.removeEventListener('click', listener2);
+         }));
+
       it('should support remove event listener by call zone.cancelTask directly', function() {
         let logs: string[] = [];
         let eventTask: Task;
