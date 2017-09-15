@@ -33,6 +33,8 @@ export const ZONE_SYMBOL_PREFIX = '__zone_symbol__';
 
 const EVENT_NAME_SYMBOL_REGX = /^__zone_symbol__(\w+)(true|false)$/;
 
+const IMMEDIATE_PROPAGATION_SYMBOL = ('__zone_symbol__propagationStopped');
+
 export interface PatchEventTargetOptions {
   validateHandler?: (nativeDelegate: any, delegate: any, target: any, args: any) => boolean;
   addEventListenerFnName?: string;
@@ -105,6 +107,9 @@ export function patchEventTarget(
         // the callback will remove itself or other listener
         const copyTasks = tasks.slice();
         for (let i = 0; i < copyTasks.length; i++) {
+          if (event && (event as any)[IMMEDIATE_PROPAGATION_SYMBOL] === true) {
+            break;
+          }
           invokeTask(copyTasks[i], target, event);
         }
       }
@@ -127,6 +132,9 @@ export function patchEventTarget(
         // the callback will remove itself or other listener
         const copyTasks = tasks.slice();
         for (let i = 0; i < copyTasks.length; i++) {
+          if (event && (event as any)[IMMEDIATE_PROPAGATION_SYMBOL] === true) {
+            break;
+          }
           invokeTask(copyTasks[i], target, event);
         }
       }
@@ -563,4 +571,15 @@ export function findEventTasks(target: any, eventName: string): Task[] {
     }
   }
   return foundTasks;
+}
+
+export function patchEventPrototype(global: any, api: _ZonePrivate) {
+  const Event = global['Event'];
+  if (Event && Event.prototype) {
+    api.patchMethod(
+        Event.prototype, 'stopImmediatePropagation',
+        (delegate: Function) => function(self: any, args: any[]) {
+          self[IMMEDIATE_PROPAGATION_SYMBOL] = true;
+        });
+  }
 }

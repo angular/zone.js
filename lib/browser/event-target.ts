@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {FALSE_STR, globalSources, patchEventTarget, TRUE_STR, ZONE_SYMBOL_PREFIX, zoneSymbolEventNames} from '../common/events';
+import {FALSE_STR, globalSources, patchEventPrototype, patchEventTarget, TRUE_STR, ZONE_SYMBOL_PREFIX, zoneSymbolEventNames} from '../common/events';
 import {attachOriginToPatched, isIEOrEdge, zoneSymbol} from '../common/utils';
 
 import {eventNames} from './property-descriptor';
@@ -105,4 +105,8 @@ export function eventTargetPatch(_global: any, api: _ZonePrivate) {
   api.patchEventTarget = patchEventTarget;
 
   return true;
+}
+
+export function patchEvent(global: any, api: _ZonePrivate) {
+  patchEventPrototype(global, api);
 }

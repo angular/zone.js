@@ -15,9 +15,14 @@ import {patchTimer} from '../common/timers';
 import {patchClass, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, zoneSymbol} from '../common/utils';
 
 import {propertyPatch} from './define-property';
-import {eventTargetPatch} from './event-target';
+import {eventTargetPatch, patchEvent} from './event-target';
 import {propertyDescriptorPatch} from './property-descriptor';
 import {registerElementPatch} from './register-element';
+
+Zone.__load_patch('util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+  api.patchOnProperties = patchOnProperties;
+  api.patchMethod = patchMethod;
+});
 
 Zone.__load_patch('timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   const set = 'set';
@@ -46,6 +51,7 @@ Zone.__load_patch('blocking', (global: any, Zone: ZoneType, api: _ZonePrivate) =
 });
 
 Zone.__load_patch('EventTarget', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+  patchEvent(global, api);
   eventTargetPatch(global, api);
   // patch XMLHttpRequestEventTarget's addEventListener/removeEventListener
   const XMLHttpRequestEventTarget = (global as any)['XMLHttpRequestEventTarget'];
@@ -239,9 +245,4 @@ Zone.__load_patch('PromiseRejectionEvent', (global: any, Zone: ZoneType, api: _Z
     (Zone as any)[zoneSymbol('rejectionHandledHandler')] =
         findPromiseRejectionHandler('rejectionhandled');
   }
-});
-
-Zone.__load_patch('util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  api.patchOnProperties = patchOnProperties;
-  api.patchMethod = patchMethod;
 });
