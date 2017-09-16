@@ -137,6 +137,14 @@ gulp.task('build/webapis-notification.min.js', ['compile-esm'], function(cb) {
     return generateScript('./lib/browser/webapis-notification.ts', 'webapis-notification.min.js', true, cb);
 });
 
+gulp.task('build/webapis-rtc-peer-connection.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/browser/webapis-rtc-peer-connection.ts', 'webapis-rtc-peer-connection.js', false, cb);
+});
+
+gulp.task('build/webapis-rtc-peer-connection.min.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/browser/webapis-rtc-peer-connection.ts', 'webapis-rtc-peer-connection.min.js', true, cb);
+});
+
 gulp.task('build/webapis-shadydom.js', ['compile-esm'], function(cb) {
     return generateScript('./lib/browser/shadydom.ts', 'webapis-shadydom.js', false, cb);
 });
@@ -245,6 +253,8 @@ gulp.task('build', [
   'build/webapis-media-query.min.js',
   'build/webapis-notification.js',
   'build/webapis-notification.min.js',
+  'build/webapis-rtc-peer-connection.js',
+  'build/webapis-rtc-peer-connection.min.js',
   'build/webapis-shadydom.js',
   'build/webapis-shadydom.min.js',
   'build/zone-patch-cordova.js',
