@@ -93,8 +93,12 @@ export function patchEventTarget(
 
   // global shared zoneAwareCallback to handle all event callback with capture = false
   const globalZoneAwareCallback = function(event: Event) {
-    const target = this || _global;
-
+    if (!event) {
+      return;
+    }
+    // event.target is needed for Samusung TV and SourceBuffer
+    // || global is needed https://github.com/angular/zone.js/issues/190
+    const target: any = this || event.target || _global;
     const tasks = target[zoneSymbolEventNames[event.type][FALSE_STR]];
     if (tasks) {
       // invoke all tasks which attached to current target with given event.type and capture = false
@@ -118,8 +122,12 @@ export function patchEventTarget(
 
   // global shared zoneAwareCallback to handle all event callback with capture = true
   const globalZoneAwareCaptureCallback = function(event: Event) {
-    const target = this || _global;
-
+    if (!event) {
+      return;
+    }
+    // event.target is needed for Samusung TV and SourceBuffer
+    // || global is needed https://github.com/angular/zone.js/issues/190
+    const target: any = this || event.target || _global;
     const tasks = target[zoneSymbolEventNames[event.type][TRUE_STR]];
     if (tasks) {
       // invoke all tasks which attached to current target with given event.type and capture = false
