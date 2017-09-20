@@ -9,6 +9,7 @@
  * @fileoverview
  * @suppress {missingRequire}
  */
+
 import {attachOriginToPatched, zoneSymbol} from './utils';
 
 export const TRUE_STR = 'true';
