@@ -87,15 +87,20 @@ export const isMix: boolean = typeof _global.process !== 'undefined' &&
     {}.toString.call(_global.process) === '[object process]' && !isWebWorker &&
     !!(typeof window !== 'undefined' && (window as any)['HTMLElement']);
 
-const ON_PROPERTY_HANDLER_SYMBOL = zoneSymbol('onPropertyHandler');
 const zoneSymbolEventNames: {[eventName: string]: string} = {};
 
 const wrapFn = function(event: Event) {
+  // https://github.com/angular/zone.js/issues/911, in IE, sometimes
+  // event will be undefined, so we need to use window.event
+  event = event || _global.event;
+  if (!event) {
+    return;
+  }
   let eventNameSymbol = zoneSymbolEventNames[event.type];
   if (!eventNameSymbol) {
     eventNameSymbol = zoneSymbolEventNames[event.type] = zoneSymbol('ON_PROPERTY' + event.type);
   }
-  const target = this || event && event.target || _global;
+  const target = this || event.target || _global;
   const listener = target[eventNameSymbol];
   let result = listener && listener.apply(this, arguments);
 
