@@ -63,9 +63,14 @@
                 }
             }
         };
-        Scheduler.prototype.tick = function (millis) {
+        Scheduler.prototype.tick = function (millis, doTick) {
             if (millis === void 0) { millis = 0; }
             var finalTime = this._currentTime + millis;
+            var lastCurrentTime = 0;
+            if (this._schedulerQueue.length === 0 && doTick) {
+                doTick(millis);
+                return;
+            }
             while (this._schedulerQueue.length > 0) {
                 var current = this._schedulerQueue[0];
                 if (finalTime < current.endTime) {
@@ -75,7 +80,11 @@
                 else {
                     // Time to run scheduled function. Remove it from the head of queue.
                     var current_1 = this._schedulerQueue.shift();
+                    lastCurrentTime = this._currentTime;
                     this._currentTime = current_1.endTime;
+                    if (doTick) {
+                        doTick(this._currentTime - lastCurrentTime);
+                    }
                     var retval = current_1.func.apply(global, current_1.args);
                     if (!retval) {
                         // Uncaught exception in the current scheduled function. Stop processing the queue.
@@ -85,43 +94,50 @@
             }
             this._currentTime = finalTime;
         };
-        Scheduler.prototype.flush = function (limit, flushPeriodic) {
-            var _this = this;
+        Scheduler.prototype.flush = function (limit, flushPeriodic, doTick) {
             if (limit === void 0) { limit = 20; }
             if (flushPeriodic === void 0) { flushPeriodic = false; }
+            if (flushPeriodic) {
+                return this.flushPeriodic(doTick);
+            }
+            else {
+                return this.flushNonPeriodic(limit, doTick);
+            }
+        };
+        Scheduler.prototype.flushPeriodic = function (doTick) {
+            if (this._schedulerQueue.length === 0) {
+                return 0;
+            }
+            // Find the last task currently queued in the scheduler queue and tick
+            // till that time.
             var startTime = this._currentTime;
+            var lastTask = this._schedulerQueue[this._schedulerQueue.length - 1];
+            this.tick(lastTask.endTime - startTime, doTick);
+            return this._currentTime - startTime;
+        };
+        Scheduler.prototype.flushNonPeriodic = function (limit, doTick) {
+            var startTime = this._currentTime;
+            var lastCurrentTime = 0;
             var count = 0;
-            var seenTimers = [];
             while (this._schedulerQueue.length > 0) {
                 count++;
                 if (count > limit) {
                     throw new Error('flush failed after reaching the limit of ' + limit +
                         ' tasks. Does your code use a polling timeout?');
                 }
-                if (!flushPeriodic) {
-                    // flush only non-periodic timers.
-                    // If the only remaining tasks are periodic(or requestAnimationFrame), finish flushing.
-                    if (this._schedulerQueue.filter(function (task) { return !task.isPeriodic && !task.isRequestAnimationFrame; })
-                        .length === 0) {
-                        break;
-                    }
-                }
-                else {
-                    // flushPeriodic has been requested.
-                    // Stop when all timer id-s have been seen at least once.
-                    if (this._schedulerQueue
-                        .filter(function (task) {
-                        return seenTimers.indexOf(task.id) === -1 || _this._currentTime === task.endTime;
-                    })
-                        .length === 0) {
-                        break;
-                    }
+                // flush only non-periodic timers.
+                // If the only remaining tasks are periodic(or requestAnimationFrame), finish flushing.
+                if (this._schedulerQueue.filter(function (task) { return !task.isPeriodic && !task.isRequestAnimationFrame; })
+                    .length === 0) {
+                    break;
                 }
                 var current = this._schedulerQueue.shift();
-                if (seenTimers.indexOf(current.id) === -1) {
-                    seenTimers.push(current.id);
-                }
+                lastCurrentTime = this._currentTime;
                 this._currentTime = current.endTime;
+                if (doTick) {
+                    // Update any secondary schedulers like Jasmine mock Date.
+                    doTick(this._currentTime - lastCurrentTime);
+                }
                 var retval = current.func.apply(global, current.args);
                 if (!retval) {
                     // Uncaught exception in the current scheduled function. Stop processing the queue.
@@ -241,11 +257,11 @@
             this._lastError = null;
             throw error;
         };
-        FakeAsyncTestZoneSpec.prototype.tick = function (millis) {
+        FakeAsyncTestZoneSpec.prototype.tick = function (millis, doTick) {
             if (millis === void 0) { millis = 0; }
             FakeAsyncTestZoneSpec.assertInZone();
             this.flushMicrotasks();
-            this._scheduler.tick(millis);
+            this._scheduler.tick(millis, doTick);
             if (this._lastError !== null) {
                 this._resetLastErrorAndThrow();
             }
@@ -265,10 +281,10 @@
             }
             flushErrors();
         };
-        FakeAsyncTestZoneSpec.prototype.flush = function (limit, flushPeriodic) {
+        FakeAsyncTestZoneSpec.prototype.flush = function (limit, flushPeriodic, doTick) {
             FakeAsyncTestZoneSpec.assertInZone();
             this.flushMicrotasks();
-            var elapsed = this._scheduler.flush(limit, flushPeriodic);
+            var elapsed = this._scheduler.flush(limit, flushPeriodic, doTick);
             if (this._lastError !== null) {
                 this._resetLastErrorAndThrow();
             }
@@ -305,7 +321,8 @@
                                 this._setInterval(task.invoke, task.data['delay'], task.data['args']);
                             break;
                         case 'XMLHttpRequest.send':
-                            throw new Error('Cannot make XHRs from within a fake async test.');
+                            throw new Error('Cannot make XHRs from within a fake async test. Request URL: ' +
+                                task.data['url']);
                         case 'requestAnimationFrame':
                         case 'webkitRequestAnimationFrame':
                         case 'mozRequestAnimationFrame':

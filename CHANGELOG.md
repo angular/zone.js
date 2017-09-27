@@ -1,3 +1,26 @@
+<a name="0.8.18"></a>
+## [0.8.18](https://github.com/angular/zone.js/compare/v0.8.17...0.8.18) (2017-09-27)
+
+
+### Bug Fixes
+
+* **event:** EventTarget of SourceBuffer in samsung tv will have null context ([#904](https://github.com/angular/zone.js/issues/904)) ([8718e07](https://github.com/angular/zone.js/commit/8718e07))
+* **event:** fix [#883](https://github.com/angular/zone.js/issues/883), fix RTCPeerConnection Safari event not triggered issue ([#905](https://github.com/angular/zone.js/issues/905)) ([6f74efb](https://github.com/angular/zone.js/commit/6f74efb))
+* **event:** fix [#911](https://github.com/angular/zone.js/issues/911), in IE, event handler event maybe undefined ([#913](https://github.com/angular/zone.js/issues/913)) ([4ba5d97](https://github.com/angular/zone.js/commit/4ba5d97))
+* **event:** should handle event.stopImmediatePropagration ([#903](https://github.com/angular/zone.js/issues/903)) ([dcc285a](https://github.com/angular/zone.js/commit/dcc285a))
+* **patch:** patchOnProperty getter should return original listener ([#887](https://github.com/angular/zone.js/issues/887)) ([d4e5ae8](https://github.com/angular/zone.js/commit/d4e5ae8))
+* **patch:** Worker should patch onProperties ([#915](https://github.com/angular/zone.js/issues/915)) ([418a583](https://github.com/angular/zone.js/commit/418a583))
+* **promise:** can set native promise after loading zone.js ([#899](https://github.com/angular/zone.js/issues/899)) ([956c729](https://github.com/angular/zone.js/commit/956c729))
+* **timer:** fix [#314](https://github.com/angular/zone.js/issues/314), setTimeout/interval should return original timerId ([#894](https://github.com/angular/zone.js/issues/894)) ([aec4bd4](https://github.com/angular/zone.js/commit/aec4bd4))
+
+
+### Features
+
+* **compile:** fix [#892](https://github.com/angular/zone.js/issues/892), upgrade to typescript 2.3.4, support for...of when build zone-node ([#897](https://github.com/angular/zone.js/issues/897)) ([e999593](https://github.com/angular/zone.js/commit/e999593))
+* **spec:** log URL in error when attempting XHR from FakeAsyncTestZone ([#893](https://github.com/angular/zone.js/issues/893)) ([874bfdc](https://github.com/angular/zone.js/commit/874bfdc))
+
+
+
 <a name="0.8.17"></a>
 ## [0.8.17](https://github.com/angular/zone.js/compare/v0.8.16...0.8.17) (2017-08-23)
 

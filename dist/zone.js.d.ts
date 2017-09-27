@@ -68,7 +68,7 @@
  * achieving the request. (Useful for unit testing, or tracking of requests). In some instances
  * such as `setTimeout` the wrapping of the wrapCallback and scheduling is done in the same
  * wrapCallback, but there are other examples such as `Promises` where the `then` wrapCallback is
- * wrapped, but the execution of `then` in triggered by `Promise` scheduling `resolve` work.
+ * wrapped, but the execution of `then` is triggered by `Promise` scheduling `resolve` work.
  *
  * Fundamentally there are three kinds of tasks which can be scheduled:
  *
@@ -92,14 +92,14 @@
  *
  * [TimerTask]s represent work which will be done after some delay. (Sometimes the delay is
  * approximate such as on next available animation frame). Typically these methods include:
- * `setTimeout`, `setImmediate`, `setInterval`, `requestAnimationFrame`, and all browser specif
+ * `setTimeout`, `setImmediate`, `setInterval`, `requestAnimationFrame`, and all browser specific
  * variants.
  *
  *
  * ### [EventTask]
  *
  * [EventTask]s represent a request to create a listener on an event. Unlike the other task
- * events may never be executed, but typically execute more than once. There is no queue of
+ * events they may never be executed, but typically execute more than once. There is no queue of
  * events, rather their callbacks are unpredictable both in order and time.
  *
  *
@@ -112,17 +112,17 @@
  * rules. A child zone is expected to either:
  *
  * 1. Delegate the interception to a parent zone, and optionally add before and after wrapCallback
- *    hook.s
- * 2) Or process the request itself without delegation.
+ *    hooks.
+ * 2. Process the request itself without delegation.
  *
- * Composability allows zones to keep their concerns clean. For example a top most zone may chose
- * to handle error handling, while child zones may chose to do user action tracking.
+ * Composability allows zones to keep their concerns clean. For example a top most zone may choose
+ * to handle error handling, while child zones may choose to do user action tracking.
  *
  *
  * ## Root Zone
  *
- * At the start the browser will run in a special root zone, which is configure to behave exactly
- * like the platform, making any existing code which is not-zone aware behave as expected. All
+ * At the start the browser will run in a special root zone, which is configured to behave exactly
+ * like the platform, making any existing code which is not zone-aware behave as expected. All
  * zones are children of the root zone.
  *
  */
@@ -194,7 +194,7 @@ interface Zone {
      * Any exceptions thrown will be forwarded to [Zone.HandleError].
      *
      * The invocation of `callback` can be intercepted by declaring [ZoneSpec.onInvoke]. The
-     * handling of exceptions can intercepted by declaring [ZoneSpec.handleError].
+     * handling of exceptions can be intercepted by declaring [ZoneSpec.handleError].
      *
      * @param callback The function to invoke.
      * @param applyThis
@@ -262,7 +262,7 @@ interface Zone {
 }
 interface ZoneType {
     /**
-     * @returns {Zone} Returns the current [Zone]. Returns the current zone. The only way to change
+     * @returns {Zone} Returns the current [Zone]. The only way to change
      * the current zone is by invoking a run() method, which will update the current zone for the
      * duration of the run method callback.
      */
@@ -313,8 +313,8 @@ interface ZoneSpec {
      * @param parentZoneDelegate Delegate which performs the parent [ZoneSpec] operation.
      * @param currentZone The current [Zone] where the current interceptor has been declared.
      * @param targetZone The [Zone] which originally received the request.
-     * @param delegate The argument passed into the `warp` method.
-     * @param source The argument passed into the `warp` method.
+     * @param delegate The argument passed into the `wrap` method.
+     * @param source The argument passed into the `wrap` method.
      */
     onIntercept?: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function, source: string) => Function;
     /**
@@ -372,9 +372,9 @@ interface ZoneSpec {
  *
  *  A ZoneDelegate is needed because a child zone can't simply invoke a method on a parent zone. For
  *  example a child zone wrap can't just call parent zone wrap. Doing so would create a callback
- *  which is bound to the parent zone. What we are interested is intercepting the callback before it
- *  is bound to any zone. Furthermore, we also need to pass the targetZone (zone which received the
- *  original request) to the delegate.
+ *  which is bound to the parent zone. What we are interested in is intercepting the callback before
+ *  it is bound to any zone. Furthermore, we also need to pass the targetZone (zone which received
+ *  the original request) to the delegate.
  *
  *  The ZoneDelegate methods mirror those of Zone with an addition of extra targetZone argument in
  *  the method signature. (The original Zone which received the request.) Some methods are renamed
@@ -382,7 +382,7 @@ interface ZoneSpec {
  *
  *  - `wrap` => `intercept`: The `wrap` method delegates to `intercept`. The `wrap` method returns
  *     a callback which will run in a given zone, where as intercept allows wrapping the callback
- *     so that additional code can be run before and after, but does not associated the callback
+ *     so that additional code can be run before and after, but does not associate the callback
  *     with the zone.
  *  - `run` => `invoke`: The `run` method delegates to `invoke` to perform the actual execution of
  *     the callback. The `run` method switches to new zone; saves and restores the `Zone.current`;
@@ -451,7 +451,7 @@ interface TaskData {
  *   frame becomes clean and before a VM yield. All [MicroTask]s execute in order of insertion
  *   before VM yield and the next [MacroTask] is executed.
  * - [MacroTask] queue represents a set of tasks which are executed one at a time after each VM
- *   yield. The queue is order by time, and insertions can happen in any location.
+ *   yield. The queue is ordered by time, and insertions can happen in any location.
  * - [EventTask] is a set of tasks which can at any time be inserted to the end of the [MacroTask]
  *   queue. This happens when the event fires.
  *
@@ -470,7 +470,7 @@ interface Task {
      */
     source: string;
     /**
-     * The Function to be used by the VM on entering the [Task]. This function will delegate to
+     * The Function to be used by the VM upon entering the [Task]. This function will delegate to
      * [Zone.runTask] and delegate to `callback`.
      */
     invoke: Function;
@@ -486,14 +486,14 @@ interface Task {
     /**
      * Represents the default work which needs to be done to schedule the Task by the VM.
      *
-     * A zone may chose to intercept this function and perform its own scheduling.
+     * A zone may choose to intercept this function and perform its own scheduling.
      */
     scheduleFn: (task: Task) => void;
     /**
      * Represents the default work which needs to be done to un-schedule the Task from the VM. Not all
      * Tasks are cancelable, and therefore this method is optional.
      *
-     * A zone may chose to intercept this function and perform its own scheduling.
+     * A zone may chose to intercept this function and perform its own un-scheduling.
      */
     cancelFn: (task: Task) => void;
     /**
