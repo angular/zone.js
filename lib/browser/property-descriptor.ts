@@ -228,6 +228,7 @@ const XMLHttpRequestEventNames = [
 const IDBIndexEventNames =
     ['upgradeneeded', 'complete', 'abort', 'success', 'error', 'blocked', 'versionchange', 'close'];
 const websocketEventNames = ['close', 'error', 'open', 'message'];
+const workerEventNames = ['error', 'message'];
 
 export const eventNames = globalEventHandlersEventNames.concat(
     webglEventNames, formEventNames, detailEventNames, documentEventNames, windowEventNames,
@@ -294,6 +295,10 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
       const HTMLMarqueeElement = (window as any)['HTMLMarqueeElement'];
       if (HTMLMarqueeElement) {
         patchFilteredProperties(HTMLMarqueeElement.prototype, marqueeEventNames, ignoreProperties);
+      }
+      const Worker = (window as any)['Worker'];
+      if (Worker) {
+        patchFilteredProperties(Worker.prototype, workerEventNames, ignoreProperties);
       }
     }
     patchFilteredProperties(XMLHttpRequest.prototype, XMLHttpRequestEventNames, ignoreProperties);
