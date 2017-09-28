@@ -243,7 +243,8 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       let resolve: (v: any) => void;
       let reject: (v: any) => void;
       let promise: any = new this((res, rej) => {
-        [resolve, reject] = [res, rej];
+        resolve = res;
+        reject = rej;
       });
       function onResolve(value: any) {
         promise && (promise = null || resolve(value));

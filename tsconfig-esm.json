@@ -9,6 +9,7 @@
     "inlineSourceMap": false,
     "inlineSources": false,
     "declaration": true,
+    "downlevelIteration": false,
     "noEmitOnError": false,
     "stripInternal": true,
     "sourceMap": true,
