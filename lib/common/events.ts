@@ -531,7 +531,7 @@ export function patchEventTarget(
           const captureTasks = target[symbolCaptureEventName];
 
           if (tasks) {
-            const removeTasks = [...tasks];
+            const removeTasks = tasks.slice();
             for (let i = 0; i < removeTasks.length; i++) {
               const task = removeTasks[i];
               let delegate = task.originalDelegate ? task.originalDelegate : task.callback;
@@ -540,7 +540,7 @@ export function patchEventTarget(
           }
 
           if (captureTasks) {
-            const removeTasks = [...captureTasks];
+            const removeTasks = captureTasks.slice();
             for (let i = 0; i < removeTasks.length; i++) {
               const task = removeTasks[i];
               let delegate = task.originalDelegate ? task.originalDelegate : task.callback;
