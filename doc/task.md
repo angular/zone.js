@@ -6,7 +6,7 @@ We handle several kinds of tasks in zone.js,
 - MicroTask
 - EventTask
 
-For details, please refer to [here](./dist/zone.js.d.ts)
+For details, please refer to [here](../dist/zone.js.d.ts)
 
 And in this documentation, it will explain the task lifecycle about which callback
 of zoneSpec will be triggered when.
