@@ -11,6 +11,8 @@
     "declaration": false,
     "noEmitOnError": false,
     "stripInternal": false,
+    // TODO: turn this on.
+    "strict": false,
     "lib": ["es5", "dom", "es2015.promise"]
   },
   "exclude": [

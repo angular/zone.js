@@ -207,9 +207,9 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
     }
   }
 
-  function scheduleResolveOrReject<R, U>(
+  function scheduleResolveOrReject<R, U1, U2>(
       promise: ZoneAwarePromise<any>, zone: AmbientZone, chainPromise: ZoneAwarePromise<any>,
-      onFulfilled?: (value: R) => U, onRejected?: (error: any) => U): void {
+      onFulfilled?: (value: R) => U1, onRejected?: (error: any) => U2): void {
     clearRejectedNoCatch(promise);
     const delegate = (promise as any)[symbolState] ?
         (typeof onFulfilled === FUNCTION) ? onFulfilled : forwardResolution :
@@ -265,7 +265,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
     static all<R>(values: any): Promise<R> {
       let resolve: (v: any) => void;
       let reject: (v: any) => void;
-      let promise = new this((res, rej) => {
+      let promise = new this<R>((res, rej) => {
         resolve = res;
         reject = rej;
       });
@@ -306,10 +306,12 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       }
     }
 
-    then<R, U>(
-        onFulfilled?: (value: R) => U | PromiseLike<U>,
-        onRejected?: (error: any) => U | PromiseLike<U>): Promise<R> {
-      const chainPromise: Promise<R> = new (this.constructor as typeof ZoneAwarePromise)(null);
+    then<TResult1 = R, TResult2 = never>(
+        onFulfilled?: ((value: R) => TResult1 | PromiseLike<TResult1>)|undefined|null,
+        onRejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>)|undefined|
+        null): Promise<TResult1|TResult2> {
+      const chainPromise: Promise<TResult1|TResult2> =
+          new (this.constructor as typeof ZoneAwarePromise)(null);
       const zone = Zone.current;
       if ((this as any)[symbolState] == UNRESOLVED) {
         (<any[]>(this as any)[symbolValue]).push(zone, chainPromise, onFulfilled, onRejected);
@@ -319,7 +321,8 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       return chainPromise;
     }
 
-    catch<U>(onRejected?: (error: any) => U | PromiseLike<U>): Promise<R> {
+    catch<TResult = never>(onRejected?: ((reason: any) => TResult | PromiseLike<TResult>)|undefined|
+                           null): Promise<R|TResult> {
       return this.then(null, onRejected);
     }
   }
