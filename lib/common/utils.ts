@@ -31,6 +31,14 @@ export function bindArguments(args: any[], source: string): any[] {
   return args;
 }
 
+export function wrapFunctionArgs(func: Function, source?: string): Function {
+  return function() {
+    const args = Array.prototype.slice.call(arguments);
+    const wrappedArgs = bindArguments(args, source ? source : (func as any).name);
+    return func.apply(this, wrappedArgs);
+  };
+}
+
 export function patchPrototype(prototype: any, fnNames: string[]) {
   const source = prototype.constructor['name'];
   for (let i = 0; i < fnNames.length; i++) {

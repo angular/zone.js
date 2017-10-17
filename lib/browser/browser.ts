@@ -12,7 +12,7 @@
 
 import {findEventTasks} from '../common/events';
 import {patchTimer} from '../common/timers';
-import {patchClass, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, zoneSymbol} from '../common/utils';
+import {patchClass, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, wrapFunctionArgs, zoneSymbol} from '../common/utils';
 
 import {propertyPatch} from './define-property';
 import {eventTargetPatch, patchEvent} from './event-target';
@@ -218,6 +218,13 @@ Zone.__load_patch('geolocation', (global: any, Zone: ZoneType, api: _ZonePrivate
   /// GEO_LOCATION
   if (global['navigator'] && global['navigator'].geolocation) {
     patchPrototype(global['navigator'].geolocation, ['getCurrentPosition', 'watchPosition']);
+  }
+});
+
+Zone.__load_patch('getUserMedia', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+  let navigator = global['navigator'];
+  if (navigator && navigator.getUserMedia) {
+    navigator.getUserMedia = wrapFunctionArgs(navigator.getUserMedia);
   }
 });
 

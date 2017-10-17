@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {patchMethod, patchProperty, patchPrototype, zoneSymbol} from '../../lib/common/utils';
+import {patchMethod, patchProperty, patchPrototype, wrapFunctionArgs, zoneSymbol} from '../../lib/common/utils';
 
 describe('utils', function() {
 
@@ -327,6 +327,32 @@ describe('utils', function() {
         });
       });
       expect(log).toEqual(['property2<root>']);
+    });
+  });
+
+  describe('wrapFunctionArgs', () => {
+    it('wrapFunctionArgs should make function arguments in zone', () => {
+      const func = function(arg1: string, arg2: Function, arg3: Function) {
+        arg2(arg1);
+        arg3(arg1);
+      };
+
+      const zone = Zone.current.fork({name: 'wrap'});
+
+      wrapFunctionArgs(func);
+
+      zone.run(() => {
+        func(
+            'test',
+            function(arg: string) {
+              expect(arg).toEqual('test');
+              expect(Zone.current.name).toEqual(zone.name);
+            },
+            function(arg: string) {
+              expect(arg).toEqual('test');
+              expect(Zone.current.name).toEqual(zone.name);
+            });
+      });
     });
   });
 });
