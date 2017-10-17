@@ -14,4 +14,16 @@ describe('defineProperty', function() {
         .not.toThrow();
   });
 
+  it('should not throw error when try to defineProperty with a frozen desc', function() {
+    const obj = {};
+    const desc = Object.freeze({value: null, writable: true});
+    Object.defineProperty(obj, 'prop', desc);
+  });
+
+  it('should not throw error when try to defineProperty with a frozen obj', function() {
+    const obj = {};
+    Object.freeze(obj);
+    Object.defineProperty(obj, 'prop', {configurable: true, writable: true, value: 'value'});
+  });
+
 });
