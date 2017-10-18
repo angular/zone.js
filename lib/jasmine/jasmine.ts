@@ -56,6 +56,7 @@
   });
   ['it', 'xit', 'fit'].forEach((methodName) => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
+    jasmineEnv[Zone.__symbol__(methodName)] = originalJasmineFn;
     jasmineEnv[methodName] = function(
         description: string, specDefinitions: Function, timeout: number) {
       arguments[1] = wrapTestInZone(specDefinitions);
@@ -64,6 +65,7 @@
   });
   ['beforeEach', 'afterEach'].forEach((methodName) => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
+    jasmineEnv[Zone.__symbol__(methodName)] = originalJasmineFn;
     jasmineEnv[methodName] = function(specDefinitions: Function, timeout: number) {
       arguments[0] = wrapTestInZone(specDefinitions);
       return originalJasmineFn.apply(this, arguments);
