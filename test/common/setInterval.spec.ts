@@ -61,30 +61,26 @@ describe('setInterval', function() {
   });
 
   it('should not cancel the task after invoke the setInterval callback', (done) => {
-    const logs: string[] = [];
-    const hasTaskSpy = jasmine.createSpy('hasTask');
+    const logs: HasTaskState[] = [];
     const zone = Zone.current.fork({
       name: 'interval',
       onHasTask:
           (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, hasTask: HasTaskState) => {
-            hasTaskSpy(hasTask);
+            logs.push(hasTask);
             return delegate.hasTask(targetZone, hasTask);
           }
     });
 
     zone.run(() => {
-      const timerId = setInterval(() => {
-        logs.push('interval invoked');
-      }, 100);
+      const timerId = setInterval(() => {}, 100);
       (global as any)[Zone.__symbol__('setTimeout')](() => {
         expect(logs.length > 0).toBeTruthy();
-        expect(hasTaskSpy)
-            .toHaveBeenCalledWith(
-                {microTask: false, macroTask: true, eventTask: false, change: 'macroTask'});
+        expect(logs).toEqual(
+            [{microTask: false, macroTask: true, eventTask: false, change: 'macroTask'}]);
         clearInterval(timerId);
-        expect(hasTaskSpy.calls.allArgs()).toEqual([
-          [{microTask: false, macroTask: true, eventTask: false, change: 'macroTask'}],
-          [{microTask: false, macroTask: false, eventTask: false, change: 'macroTask'}]
+        expect(logs).toEqual([
+          {microTask: false, macroTask: true, eventTask: false, change: 'macroTask'},
+          {microTask: false, macroTask: false, eventTask: false, change: 'macroTask'}
         ]);
         done();
       }, 300);
