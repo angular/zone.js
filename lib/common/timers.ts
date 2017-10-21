@@ -39,6 +39,12 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
       try {
         task.invoke.apply(this, arguments);
       } finally {
+        if (task.data && task.data.isPeriodic) {
+          // issue-934, task will be cancelled
+          // even it is a periodic task such as
+          // setInterval
+          return;
+        }
         if (typeof data.handleId === NUMBER) {
           // in non-nodejs env, we remove timerId
           // from local cache
