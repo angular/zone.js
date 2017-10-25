@@ -181,6 +181,11 @@
         namePrefix: string, private trackPendingRequestAnimationFrame = false,
         private macroTaskOptions?: MacroTaskOptions[]) {
       this.name = 'fakeAsyncTestZone for ' + namePrefix;
+      // in case user can't access the construction of FakyAsyncTestSpec
+      // user can also define macroTaskOptions by define a global variable.
+      if (!this.macroTaskOptions) {
+        this.macroTaskOptions = global[Zone.__symbol__('FakeAsyncTestMacroTask')];
+      }
     }
 
     private _fnAndFlush(fn: Function, completers: {onSuccess?: Function, onError?: Function}):

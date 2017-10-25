@@ -745,6 +745,32 @@ describe('FakeAsyncTestZoneSpec', () => {
       });
     });
 
+    it('should support custom non perodic macroTask by global flag', () => {
+      testZoneSpec = new FakeAsyncTestZoneSpec('name');
+      class TestClass {
+        myTimeout(callback: Function) {}
+      }
+      fakeAsyncTestZone = Zone.current.fork(testZoneSpec);
+      fakeAsyncTestZone.run(() => {
+        let ran = false;
+        patchMacroTask(
+            TestClass.prototype, 'myTimeout',
+            (self: any, args: any[]) =>
+                ({name: 'TestClass.myTimeout', target: self, callbackIndex: 0, args: args}));
+
+        const testClass = new TestClass();
+        testClass.myTimeout(() => {
+          ran = true;
+        });
+
+        expect(ran).toEqual(false);
+
+        testZoneSpec.tick();
+        expect(ran).toEqual(true);
+      });
+    });
+
+
     it('should support custom perodic macroTask', () => {
       testZoneSpec = new FakeAsyncTestZoneSpec(
           'name', false, [{source: 'TestClass.myInterval', isPeriodic: true}]);
