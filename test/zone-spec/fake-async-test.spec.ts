@@ -721,7 +721,8 @@ describe('FakeAsyncTestZoneSpec', () => {
     let testZoneSpec: any;
     let fakeAsyncTestZone: Zone;
     it('should support custom non perodic macroTask', () => {
-      testZoneSpec = new FakeAsyncTestZoneSpec('name', false, [{source: 'TestClass.myTimeout'}]);
+      testZoneSpec = new FakeAsyncTestZoneSpec(
+          'name', false, [{source: 'TestClass.myTimeout', callbackArgs: ['test']}]);
       class TestClass {
         myTimeout(callback: Function) {}
       }
@@ -734,8 +735,9 @@ describe('FakeAsyncTestZoneSpec', () => {
                 ({name: 'TestClass.myTimeout', target: self, callbackIndex: 0, args: args}));
 
         const testClass = new TestClass();
-        testClass.myTimeout(() => {
+        testClass.myTimeout(function(callbackArgs: any) {
           ran = true;
+          expect(callbackArgs).toEqual('test');
         });
 
         expect(ran).toEqual(false);

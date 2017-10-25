@@ -26,6 +26,7 @@
   interface MacroTaskOptions {
     source: string;
     isPeriodic?: boolean;
+    callbackArgs?: any;
   }
 
   class Scheduler {
@@ -370,15 +371,15 @@
               if (macroTaskOption) {
                 const args = task.data && (task.data as any)['args'];
                 const delay = args && args.length > 1 ? args[1] : 0;
+                let callbackArgs =
+                    macroTaskOption.callbackArgs ? macroTaskOption.callbackArgs : args;
                 if (!!macroTaskOption.isPeriodic) {
                   // periodic macroTask, use setInterval to simulate
-                  task.data['handleId'] =
-                      this._setInterval(task.invoke, delay, (task.data as any)['args']);
+                  task.data['handleId'] = this._setInterval(task.invoke, delay, callbackArgs);
                   task.data.isPeriodic = true;
                 } else {
                   // not periodic, use setTimout to simulate
-                  task.data['handleId'] =
-                      this._setTimeout(task.invoke, delay, (task.data as any)['args']);
+                  task.data['handleId'] = this._setTimeout(task.invoke, delay, callbackArgs);
                 }
                 break;
               }
