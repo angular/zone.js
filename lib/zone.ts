@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-/*
+/**
  * Suppress closure compiler errors about unknown 'global' variable
  * @fileoverview
  * @suppress {undefinedVars}
