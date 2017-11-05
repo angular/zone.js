@@ -664,10 +664,11 @@ const Zone: ZoneType = (function(global: any) {
 
     static get current(): AmbientZone {
       return _currentZoneFrame.zone;
-    };
+    }
+
     static get currentTask(): Task {
       return _currentTask;
-    };
+    }
 
     static __load_patch(name: string, fn: _PatchFn): void {
       if (patches.hasOwnProperty(name)) {
@@ -682,10 +683,11 @@ const Zone: ZoneType = (function(global: any) {
 
     public get parent(): AmbientZone {
       return this._parent;
-    };
+    }
+
     public get name(): string {
       return this._name;
-    };
+    }
 
 
     private _parent: Zone;

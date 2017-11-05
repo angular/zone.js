@@ -378,7 +378,7 @@ function canPatchViaPropertyDescriptor() {
     req.onreadystatechange = null;
     return result;
   }
-};
+}
 
 const unboundKey = zoneSymbol('unbound');
 
