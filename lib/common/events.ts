@@ -595,6 +595,10 @@ export function patchEventPrototype(global: any, api: _ZonePrivate) {
         Event.prototype, 'stopImmediatePropagation',
         (delegate: Function) => function(self: any, args: any[]) {
           self[IMMEDIATE_PROPAGATION_SYMBOL] = true;
+          // we need to call the native stopImmediatePropagation
+          // in case in some hybrid application, some part of
+          // application will be controlled by zone, some are not
+          delegate && delegate.apply(self, args);
         });
   }
 }
