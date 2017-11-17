@@ -4,6 +4,7 @@
   "description": "Zones for JavaScript",
   "main": "dist/zone-node.js",
   "browser": "dist/zone.js",
+  "unpkg": "dist/zone.js",
   "typings": "dist/zone.js.d.ts",
   "files": [
     "lib",
