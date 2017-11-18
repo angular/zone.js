@@ -33,6 +33,11 @@ function flushMicrotasks() {
   Zone.current.get('flush')();
 }
 
+class TestRejection {
+  prop1: string;
+  prop2: string;
+}
+
 describe(
     'Promise', ifEnvSupports('Promise', function() {
       if (!global.Promise) return;
@@ -341,6 +346,38 @@ describe(
               expect((promiseError as any)['rejection']).toBe(error);
               expect((promiseError as any)['zone']).toBe(zone);
               expect((promiseError as any)['task']).toBe(task);
+              done();
+            });
+          });
+
+          it('should print readable information when throw a not error object', (done) => {
+            let promiseError: Error = null;
+            let zone: Zone = null;
+            let task: Task = null;
+            let rejectObj: TestRejection;
+            queueZone
+                .fork({
+                  name: 'promise-error',
+                  onHandleError: (delegate: ZoneDelegate, current: Zone, target: Zone, error: any):
+                                     boolean => {
+                                       promiseError = error;
+                                       delegate.handleError(target, error);
+                                       return false;
+                                     }
+                })
+                .run(() => {
+                  zone = Zone.current;
+                  task = Zone.currentTask;
+                  rejectObj = new TestRejection();
+                  rejectObj.prop1 = 'value1';
+                  rejectObj.prop2 = 'value2';
+                  Promise.reject(rejectObj);
+                  expect(promiseError).toBe(null);
+                });
+            setTimeout((): void => null);
+            setTimeout(() => {
+              expect(promiseError.message)
+                  .toEqual('Uncaught (in promise): TestRejection: ' + JSON.stringify(rejectObj));
               done();
             });
           });
