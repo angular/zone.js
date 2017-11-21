@@ -2112,7 +2112,7 @@ describe('Zone', function() {
         button.addEventListener('click', listener4);
 
         (button as any).removeAllListeners();
-        const listeners = (button as any).eventListeners('mouseove');
+        const listeners = (button as any).eventListeners('mouseover');
         expect(listeners.length).toBe(0);
 
         const mouseEvent = document.createEvent('Event');
@@ -2123,6 +2123,81 @@ describe('Zone', function() {
 
         button.dispatchEvent(clickEvent);
         expect(logs).toEqual([]);
+      });
+
+      it('should be able to remove listener which was added outside of zone ', function() {
+        let logs: string[] = [];
+        const listener1 = function() {
+          logs.push('listener1');
+        };
+        const listener2 = function() {
+          logs.push('listener2');
+        };
+        const listener3 = {
+          handleEvent: function(event: Event) {
+            logs.push('listener3');
+          }
+        };
+        const listener4 = function() {
+          logs.push('listener4');
+        };
+
+        button.addEventListener('mouseover', listener1);
+        (button as any)[Zone.__symbol__('addEventListener')]('mouseover', listener2);
+        button.addEventListener('click', listener3);
+        (button as any)[Zone.__symbol__('addEventListener')]('click', listener4);
+
+        button.removeEventListener('mouseover', listener1);
+        button.removeEventListener('mouseover', listener2);
+        button.removeEventListener('click', listener3);
+        button.removeEventListener('click', listener4);
+        const listeners = (button as any).eventListeners('mouseover');
+        expect(listeners.length).toBe(0);
+
+        const mouseEvent = document.createEvent('Event');
+        mouseEvent.initEvent('mouseover', true, true);
+
+        button.dispatchEvent(mouseEvent);
+        expect(logs).toEqual([]);
+
+        button.dispatchEvent(clickEvent);
+        expect(logs).toEqual([]);
+      });
+
+      it('should be able to remove all listeners which were added inside of zone ', function() {
+        let logs: string[] = [];
+        const listener1 = function() {
+          logs.push('listener1');
+        };
+        const listener2 = function() {
+          logs.push('listener2');
+        };
+        const listener3 = {
+          handleEvent: function(event: Event) {
+            logs.push('listener3');
+          }
+        };
+        const listener4 = function() {
+          logs.push('listener4');
+        };
+
+        button.addEventListener('mouseover', listener1);
+        (button as any)[Zone.__symbol__('addEventListener')]('mouseover', listener2);
+        button.addEventListener('click', listener3);
+        (button as any)[Zone.__symbol__('addEventListener')]('click', listener4);
+
+        (button as any).removeAllListeners();
+        const listeners = (button as any).eventListeners('mouseover');
+        expect(listeners.length).toBe(0);
+
+        const mouseEvent = document.createEvent('Event');
+        mouseEvent.initEvent('mouseover', true, true);
+
+        button.dispatchEvent(mouseEvent);
+        expect(logs).toEqual(['listener2']);
+
+        button.dispatchEvent(clickEvent);
+        expect(logs).toEqual(['listener2', 'listener4']);
       });
 
       it('should bypass addEventListener of FunctionWrapper and __BROWSERTOOLS_CONSOLE_SAFEFUNC of IE/Edge',

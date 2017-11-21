@@ -484,6 +484,11 @@ export function patchEventTarget(
           }
         }
       }
+      // issue 930, didn't find the event name or callback
+      // from zone kept existingTasks, the callback maybe
+      // added outside of zone, we need to call native removeEventListener
+      // to try to remove it.
+      return nativeRemoveEventListener.apply(this, arguments);
     };
 
     proto[LISTENERS_EVENT_LISTENER] = function() {
