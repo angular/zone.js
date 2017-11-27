@@ -298,6 +298,8 @@ export function patchEventTarget(
         patchOptions.compareTaskCallbackVsDelegate :
         compareTaskCallbackVsDelegate;
 
+    const blackListedEvents: string[] = (Zone as any)[Zone.__symbol__('BLACK_LISTED_EVENTS')];
+
     const makeAddListener = function(
         nativeListener: any, addSource: string, customScheduleFn: any, customCancelFn: any,
         returnTarget = false, prepend = false) {
@@ -326,6 +328,15 @@ export function patchEventTarget(
 
         const eventName = arguments[0];
         const options = arguments[2];
+
+        if (blackListedEvents) {
+          // check black list
+          for (let i = 0; i < blackListedEvents.length; i++) {
+            if (eventName === blackListedEvents[i]) {
+              return nativeListener.apply(this, arguments);
+            }
+          }
+        }
 
         let capture;
         let once = false;

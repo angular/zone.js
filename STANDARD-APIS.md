@@ -126,3 +126,23 @@ ZoneAwareError makes sure that `this` is ZoneAwareError even without new.
 
 ZoneAwarePromise wraps the global Promise and makes it run in zones as a MicroTask.
 It also passes promise A+ tests.
+
+## BlackListEvents
+
+Sometimes we don't want some `event` to be patched by `zone.js`, we can blacklist events
+by following settings.
+
+```javascript
+    // disable on properties
+    var targets = [window, Document, HTMLBodyElement, HTMLElement];
+    __Zone_ignore_on_properties = [];
+    targets.forEach(function (target) {
+      __Zone_ignore_on_properties.push({
+        target: target,
+        ignoreProperties: ['scroll']
+      });
+    });
+
+    // disable addEventListener
+    global['__zone_symbol__BLACK_LISTED_EVENTS'] = ['scroll'];
+```
