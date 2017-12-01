@@ -396,12 +396,23 @@ export function patchEventTarget(
         taskData.isExisting = isExisting;
 
         const data = useGlobalCallback ? OPTIMIZED_ZONE_EVENT_TASK_DATA : null;
+
+        // keep taskData into data to allow onScheduleEventTask to acess the task information
+        if (data) {
+          (data as any).taskData = taskData;
+        }
+
         const task: any =
             zone.scheduleEventTask(source, delegate, data, customScheduleFn, customCancelFn);
 
         // should clear taskData.target to avoid memory leak
         // issue, https://github.com/angular/angular/issues/20442
         taskData.target = null;
+
+        // need to clear up taskData because it is a global object
+        if (data) {
+          (data as any).taskData = null;
+        }
 
         // have to save those information to task in case
         // application may call task.zone.cancelTask() directly

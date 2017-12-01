@@ -378,6 +378,40 @@ describe('Zone', function() {
         expect(eventListenerSpy).toHaveBeenCalled();
       });
 
+      it('should be able to access addEventListener information in onScheduleTask', function() {
+        const hookSpy = jasmine.createSpy('hook');
+        const eventListenerSpy = jasmine.createSpy('eventListener');
+        let scheduleButton;
+        let scheduleEventName;
+        let scheduleCapture;
+        let scheduleTask;
+        const zone = rootZone.fork({
+          name: 'spy',
+          onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                           task: Task): any => {
+            hookSpy();
+            scheduleButton = (task.data as any).taskData.target;
+            scheduleEventName = (task.data as any).taskData.eventName;
+            scheduleCapture = (task.data as any).taskData.capture;
+            scheduleTask = task;
+            return parentZoneDelegate.scheduleTask(targetZone, task);
+          }
+        });
+
+        zone.run(function() {
+          button.addEventListener('click', eventListenerSpy);
+        });
+
+        button.dispatchEvent(clickEvent);
+
+        expect(hookSpy).toHaveBeenCalled();
+        expect(eventListenerSpy).toHaveBeenCalled();
+        expect(scheduleButton).toBe(button);
+        expect(scheduleEventName).toBe('click');
+        expect(scheduleCapture).toBe(false);
+        expect(scheduleTask && (scheduleTask as any).data.taskData).toBe(null);
+      });
+
       it('should support addEventListener on window', ifEnvSupports(windowPrototype, function() {
            const hookSpy = jasmine.createSpy('hook');
            const eventListenerSpy = jasmine.createSpy('eventListener');
