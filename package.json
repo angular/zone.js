@@ -87,7 +87,7 @@
     "phantomjs": "^2.1.7",
     "promises-aplus-tests": "^2.1.2",
     "pump": "^1.0.1",
-    "rxjs": "5.4.2",
+    "rxjs": "^5.5.3",
     "selenium-webdriver": "^3.4.0",
     "systemjs": "^0.19.37",
     "ts-loader": "^0.6.0",
