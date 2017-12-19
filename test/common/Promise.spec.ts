@@ -377,7 +377,7 @@ describe(
             setTimeout((): void => null);
             setTimeout(() => {
               expect(promiseError.message)
-                  .toEqual('Uncaught (in promise): TestRejection: ' + JSON.stringify(rejectObj));
+                  .toMatch(/Uncaught \(in promise\):.*: {"prop1":"value1","prop2":"value2"}/);
               done();
             });
           });
