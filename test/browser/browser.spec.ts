@@ -225,6 +225,29 @@ describe('Zone', function() {
             });
           });
 
+          it('should be able to clear on handler added before load zone.js', function() {
+            const TestTarget: any = (window as any)['TestTarget'];
+            patchFilteredProperties(
+                TestTarget.prototype, ['prop3'], global['__Zone_ignore_on_properties']);
+            const testTarget = new TestTarget();
+            Zone.current.fork({name: 'test'}).run(() => {
+              expect(testTarget.onprop3).toBeTruthy();
+              const newProp3Handler = function() {};
+              testTarget.onprop3 = newProp3Handler;
+              expect(testTarget.onprop3).toBe(newProp3Handler);
+              testTarget.onprop3 = null;
+              expect(!testTarget.onprop3).toBeTruthy();
+              testTarget.onprop3 = function() {
+                // onprop1 should not be patched
+                expect(Zone.current.name).toEqual('test');
+              };
+            });
+
+            Zone.current.fork({name: 'test1'}).run(() => {
+              testTarget.dispatchEvent('prop3');
+            });
+          });
+
           it('window onclick should be in zone',
              ifEnvSupports(canPatchOnProperty(window, 'onmousedown'), function() {
                zone.run(function() {
