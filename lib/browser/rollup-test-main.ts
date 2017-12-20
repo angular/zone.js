@@ -12,9 +12,4 @@ import '../common/to-string';
 import './browser';
 
 // load test related files into bundle
-import '../zone-spec/long-stack-trace';
-import '../zone-spec/proxy';
-import '../zone-spec/sync-test';
-import '../jasmine/jasmine';
-import '../zone-spec/async-test';
-import '../zone-spec/fake-async-test';
+import '../testing/zone-testing';
