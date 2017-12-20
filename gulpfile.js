@@ -104,13 +104,22 @@ gulp.task('build/zone.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/browser/rollup-main.ts', 'zone.js', false, cb);
 });
 
+gulp.task('build/zone.min.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/browser/rollup-main.ts', 'zone.min.js', true, cb);
+});
+
+// Zone test bundle for the browser.
+gulp.task('build/zone-testing.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/browser/rollup-test-main.ts', 'zone-testing.js', false, cb);
+});
+
+gulp.task('build/zone-testing.min.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/browser/rollup-test-main.ts', 'zone-testing.min.js', true, cb);
+});
+
 // Zone for electron/nw environment.
 gulp.task('build/zone-mix.js', ['compile-esm-node'], function(cb) {
     return generateScript('./lib/mix/rollup-mix.ts', 'zone-mix.js', false, cb);
-});
-
-gulp.task('build/zone.min.js', ['compile-esm'], function(cb) {
-  return generateScript('./lib/browser/rollup-main.ts', 'zone.min.js', true, cb);
 });
 
 gulp.task('build/zone-error.js', ['compile-esm'], function(cb) {
@@ -246,6 +255,8 @@ gulp.task('build', [
   'build/zone.js',
   'build/zone.js.d.ts',
   'build/zone.min.js',
+  'build/zone-testing.js',
+  'build/zone-testing.min.js',
   'build/zone-error.js',
   'build/zone-error.min.js',
   'build/zone-node.js',
