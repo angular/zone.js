@@ -12,7 +12,7 @@
 
 import {findEventTasks} from '../common/events';
 import {patchTimer} from '../common/timers';
-import {patchClass, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, wrapFunctionArgs, zoneSymbol} from '../common/utils';
+import {patchArguments, patchClass, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, wrapFunctionArgs, zoneSymbol} from '../common/utils';
 
 import {propertyPatch} from './define-property';
 import {eventTargetPatch, patchEvent} from './event-target';
@@ -22,6 +22,7 @@ import {registerElementPatch} from './register-element';
 Zone.__load_patch('util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   api.patchOnProperties = patchOnProperties;
   api.patchMethod = patchMethod;
+  api.patchArguments = patchArguments;
 });
 
 Zone.__load_patch('timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => {

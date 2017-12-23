@@ -327,6 +327,7 @@ interface _ZonePrivate {
       (target: any, name: string,
        patchFn: (delegate: Function, delegateName: string, name: string) =>
            (self: any, args: any[]) => any) => Function;
+  patchArguments: (target: any, name: string, source: string) => Function;
 }
 
 /** @internal */
@@ -1317,6 +1318,7 @@ const Zone: ZoneType = (function(global: any) {
     patchEventTarget: () => [],
     patchOnProperties: noop,
     patchMethod: () => noop,
+    patchArguments: () => noop,
     setNativePromise: (NativePromise: any) => {
       // sometimes NativePromise.resolve static function
       // is not ready yet, (such as core-js/es6.promise)
