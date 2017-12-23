@@ -160,3 +160,15 @@ For example, in an Angular application, you can load this patch in your `app.mod
 import 'zone.js/dist/zone-patch-rxjs';
 ```
 
+* electron
+
+## Usage.
+
+add following line into `polyfill.ts` after load zone-mix.
+
+```
+import 'zone.js/dist/zone-patch-electron';
+```
+
+there is a sampel repo [zone-electron](https://github.com/JiaLiPassion/zone-electron) here
+

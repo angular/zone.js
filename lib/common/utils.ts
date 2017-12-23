@@ -40,6 +40,14 @@ export function wrapFunctionArgs(func: Function, source?: string): Function {
   };
 }
 
+export function patchArguments(target: any, name: string, source: string): Function {
+  return patchMethod(
+      target, name,
+      (delegate: Function, delegateName: string, name: string) => (self: any, args: any[]) => {
+        return delegate && delegate.apply(self, bindArguments(args, source));
+      });
+}
+
 export function patchPrototype(prototype: any, fnNames: string[]) {
   const source = prototype.constructor['name'];
   for (let i = 0; i < fnNames.length; i++) {

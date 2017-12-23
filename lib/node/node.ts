@@ -11,10 +11,16 @@ import './fs';
 
 import {findEventTasks} from '../common/events';
 import {patchTimer} from '../common/timers';
-import {isMix, patchMacroTask, patchMicroTask} from '../common/utils';
+import {isMix, patchArguments, patchMacroTask, patchMethod, patchMicroTask, patchOnProperties} from '../common/utils';
 
 const set = 'set';
 const clear = 'clear';
+
+Zone.__load_patch('node_util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+  api.patchOnProperties = patchOnProperties;
+  api.patchMethod = patchMethod;
+  api.patchArguments = patchArguments;
+});
 
 Zone.__load_patch('node_timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   // Timers

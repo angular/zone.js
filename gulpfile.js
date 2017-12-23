@@ -176,6 +176,14 @@ gulp.task('build/zone-patch-cordova.min.js', ['compile-esm'], function(cb) {
     return generateScript('./lib/extra/cordova.ts', 'zone-patch-cordova.min.js', true, cb);
 });
 
+gulp.task('build/zone-patch-electron.js', ['compile-esm'], function(cb) {
+    return generateScript('./lib/extra/electron.ts', 'zone-patch-electron.js', false, cb);
+});
+
+gulp.task('build/zone-patch-electron.min.js', ['compile-esm'], function(cb) {
+    return generateScript('./lib/extra/electron.ts', 'zone-patch-electron.min.js', true, cb);
+});
+
 gulp.task('build/bluebird.js', ['compile-esm'], function(cb) {
     return generateScript('./lib/extra/bluebird.ts', 'zone-bluebird.js', false, cb);
 });
@@ -277,6 +285,8 @@ gulp.task('build', [
   'build/webapis-shadydom.min.js',
   'build/zone-patch-cordova.js',
   'build/zone-patch-cordova.min.js',
+  'build/zone-patch-electron.js',
+  'build/zone-patch-electron.min.js',
   'build/zone-mix.js',
   'build/bluebird.js',
   'build/bluebird.min.js',
