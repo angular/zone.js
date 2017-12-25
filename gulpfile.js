@@ -82,6 +82,10 @@ gulp.task('compile-node', function(cb) {
   tsc('tsconfig-node.json', cb);
 });
 
+gulp.task('compile-node-es2017', function(cb) {
+  tsc('tsconfig-node.es2017.json', cb);
+});
+
 gulp.task('compile-esm', function(cb) {
   tsc('tsconfig-esm.json', cb);
 });
@@ -299,6 +303,11 @@ gulp.task('build', [
   'build/rxjs.min.js',
   'build/closure.js'
 ]);
+
+gulp.task('test/node2017', ['compile-node-es2017'], function(cb) {
+  var testAsyncPromise = require('./build/test/node_async').testAsyncPromise;
+  testAsyncPromise();
+});
 
 gulp.task('test/node', ['compile-node'], function(cb) {
   var JasmineRunner = require('jasmine');

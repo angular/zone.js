@@ -327,6 +327,7 @@ interface _ZonePrivate {
       (target: any, name: string,
        patchFn: (delegate: Function, delegateName: string, name: string) =>
            (self: any, args: any[]) => any) => Function;
+  setAsyncContext: (asyncContext: any) => void;
 }
 
 /** @internal */
@@ -741,6 +742,9 @@ const Zone: ZoneType = (function(global: any) {
       try {
         return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
       } finally {
+        if (currentAsyncContext) {
+          return;
+        }
         _currentZoneFrame = _currentZoneFrame.parent;
       }
     }
@@ -1309,6 +1313,8 @@ const Zone: ZoneType = (function(global: any) {
                    eventTask: 'eventTask' = 'eventTask';
 
   const patches: {[key: string]: any} = {};
+
+  let currentAsyncContext: any;
   const _api: _ZonePrivate = {
     symbol: __symbol__,
     currentZoneFrame: () => _currentZoneFrame,
@@ -1325,6 +1331,14 @@ const Zone: ZoneType = (function(global: any) {
       // so we need to check here.
       if (NativePromise && typeof NativePromise.resolve === FUNCTION) {
         nativeMicroTaskQueuePromise = NativePromise.resolve(0);
+      }
+    },
+    setAsyncContext: (asyncContext: any) => {
+      currentAsyncContext = asyncContext;
+      if (asyncContext) {
+        _currentZoneFrame = {parent: _currentZoneFrame, zone: asyncContext.zone};
+      } else {
+        _currentZoneFrame = _currentZoneFrame.parent;
       }
     },
   };

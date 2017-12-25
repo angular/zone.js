@@ -22,7 +22,7 @@ const OBJECT = 'object';
 const UNDEFINED = 'undefined';
 
 export function propertyPatch() {
-  Object.defineProperty = function(obj, prop, desc) {
+  Object.defineProperty = function(obj: any, prop: string, desc: any) {
     if (isUnconfigurable(obj, prop)) {
       throw new TypeError('Cannot assign to read only property \'' + prop + '\' of ' + obj);
     }
@@ -49,7 +49,7 @@ export function propertyPatch() {
     return _create(obj, proto);
   };
 
-  Object.getOwnPropertyDescriptor = function(obj, prop) {
+  Object.getOwnPropertyDescriptor = function(obj: any, prop: string) {
     const desc = _getOwnPropertyDescriptor(obj, prop);
     if (isUnconfigurable(obj, prop)) {
       desc.configurable = false;
