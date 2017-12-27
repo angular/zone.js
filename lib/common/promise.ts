@@ -207,9 +207,9 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
     }
   }
 
-  function scheduleResolveOrReject<R, U1, U2>(
+  function scheduleResolveOrReject<R, U, V>(
       promise: ZoneAwarePromise<any>, zone: AmbientZone, chainPromise: ZoneAwarePromise<any>,
-      onFulfilled?: (value: R) => U1, onRejected?: (error: any) => U2): void {
+      onFulfilled?: (value: R) => U, onRejected?: (error: any) => V): void {
     clearRejectedNoCatch(promise);
     const delegate = (promise as any)[symbolState] ?
         (typeof onFulfilled === FUNCTION) ? onFulfilled : forwardResolution :
@@ -310,7 +310,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
         onFulfilled?: ((value: R) => TResult1 | PromiseLike<TResult1>)|undefined|null,
         onRejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>)|undefined|
         null): Promise<TResult1|TResult2> {
-      const chainPromise: Promise<TResult1|TResult2> =
+      const chainPromise: Promise<TResult1> =
           new (this.constructor as typeof ZoneAwarePromise)(null);
       const zone = Zone.current;
       if ((this as any)[symbolState] == UNRESOLVED) {
