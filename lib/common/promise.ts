@@ -6,6 +6,15 @@
  * found in the LICENSE file at https://angular.io/license
  */
 Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+  function readableObjectToString(obj: any) {
+    if (obj && obj.toString === Object.prototype.toString) {
+      const className = obj.constructor && obj.constructor.name;
+      return (className ? className : '') + ': ' + JSON.stringify(obj);
+    }
+
+    return obj ? obj.toString() : Object.prototype.toString.call(obj);
+  }
+
   interface UncaughtPromiseError extends Error {
     zone: AmbientZone;
     task: Task;
@@ -164,8 +173,9 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
         if (queue.length == 0 && state == REJECTED) {
           (promise as any)[symbolState] = REJECTED_NO_CATCH;
           try {
+            // try to print more readable error log
             throw new Error(
-                'Uncaught (in promise): ' + value +
+                'Uncaught (in promise): ' + readableObjectToString(value) +
                 (value && value.stack ? '\n' + value.stack : ''));
           } catch (err) {
             const error: UncaughtPromiseError = err;
