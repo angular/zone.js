@@ -399,6 +399,10 @@ export function patchEventTarget(
         const task: any =
             zone.scheduleEventTask(source, delegate, data, customScheduleFn, customCancelFn);
 
+        // should clear taskData.target to avoid memory leak
+        // issue, https://github.com/angular/angular/issues/20442
+        taskData.target = null;
+
         // have to save those information to task in case
         // application may call task.zone.cancelTask() directly
         if (once) {
