@@ -34,6 +34,7 @@
     "ws-server": "node ./test/ws-server.js",
     "tsc": "tsc -p .",
     "tsc:w": "tsc -w -p .",
+    "tslint": "tslint -c tslint.json 'lib/**/*.ts'",
     "test": "npm run tsc && concurrently \"npm run tsc:w\" \"npm run ws-server\" \"npm run karma-jasmine\"",
     "test:phantomjs": "npm run tsc && concurrently \"npm run tsc:w\" \"npm run ws-server\" \"npm run karma-jasmine:phantomjs\"",
     "test:phantomjs-single": "npm run tsc && concurrently \"npm run ws-server\" \"npm run karma-jasmine-phantomjs:autoclose\"",
