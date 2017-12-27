@@ -170,4 +170,4 @@
 
   })(Mocha.Runner.prototype.runTest, Mocha.Runner.prototype.run);
 
-})(window);
+})(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);
