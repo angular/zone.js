@@ -208,6 +208,23 @@ describe('Zone', function() {
             });
           });
 
+          it('should not patch ignored eventListener', function() {
+            let scrollEvent = document.createEvent('Event');
+            scrollEvent.initEvent('scroll', true, true);
+
+            const zone = Zone.current.fork({name: 'run'});
+
+            Zone.current.fork({name: 'scroll'}).run(() => {
+              document.addEventListener('scroll', () => {
+                expect(Zone.current.name).toEqual(zone.name);
+              });
+            });
+
+            zone.run(() => {
+              document.dispatchEvent(scrollEvent);
+            });
+          });
+
           it('window onclick should be in zone',
              ifEnvSupports(canPatchOnProperty(window, 'onmousedown'), function() {
                zone.run(function() {
