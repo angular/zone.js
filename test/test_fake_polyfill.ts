@@ -32,6 +32,16 @@
   Object.defineProperties(TestTarget.prototype, {
     'onprop1': {configurable: true, writable: true},
     'onprop2': {configurable: true, writable: true},
+    'onprop3': {
+      configurable: true,
+      get: function() {
+        return this._onprop3;
+      },
+      set: function(_value) {
+        this._onprop3 = _value;
+      }
+    },
+    '_onprop3': {configurable: true, writable: true, value: function() {}},
     'addEventListener': {
       configurable: true,
       writable: true,
