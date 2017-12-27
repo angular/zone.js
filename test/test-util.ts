@@ -104,3 +104,8 @@ export function getIEVersion() {
   }
   return null;
 }
+
+export function isEdge() {
+  const userAgent = navigator.userAgent.toLowerCase();
+  return userAgent.indexOf('edge') !== -1;
+}

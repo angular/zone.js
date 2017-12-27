@@ -9,7 +9,7 @@
 import {patchFilteredProperties} from '../../lib/browser/property-descriptor';
 import {patchEventTarget} from '../../lib/common/events';
 import {isBrowser, isIEOrEdge, isMix, zoneSymbol} from '../../lib/common/utils';
-import {getIEVersion, ifEnvSupports, ifEnvSupportsWithDone} from '../test-util';
+import {getIEVersion, ifEnvSupports, ifEnvSupportsWithDone, isEdge} from '../test-util';
 
 import Spy = jasmine.Spy;
 declare const global: any;
@@ -2320,5 +2320,54 @@ describe('Zone', function() {
            });
          });
        }));
+
+    describe('getUserMedia', () => {
+      it('navigator.mediaDevices.getUserMedia should in zone',
+         ifEnvSupportsWithDone(
+             () => {
+               return !isEdge() && navigator && navigator.mediaDevices &&
+                   typeof navigator.mediaDevices.getUserMedia === 'function';
+             },
+             (done: Function) => {
+               const zone = Zone.current.fork({name: 'media'});
+               zone.run(() => {
+                 const constraints = {audio: true, video: {width: 1280, height: 720}};
+
+                 navigator.mediaDevices.getUserMedia(constraints)
+                     .then(function(mediaStream) {
+                       expect(Zone.current.name).toEqual(zone.name);
+                       done();
+                     })
+                     .catch(function(err) {
+                       console.log(err.name + ': ' + err.message);
+                       expect(Zone.current.name).toEqual(zone.name);
+                       done();
+                     });
+               });
+             }));
+
+      it('navigator.getUserMedia should in zone',
+         ifEnvSupportsWithDone(
+             () => {
+               return !isEdge() && navigator && typeof navigator.getUserMedia === 'function';
+             },
+             (done: Function) => {
+               const zone = Zone.current.fork({name: 'media'});
+               zone.run(() => {
+                 const constraints = {audio: true, video: {width: 1280, height: 720}};
+
+                 navigator.getUserMedia(
+                     constraints,
+                     () => {
+                       expect(Zone.current.name).toEqual(zone.name);
+                       done();
+                     },
+                     () => {
+                       expect(Zone.current.name).toEqual(zone.name);
+                       done();
+                     });
+               });
+             }));
+    });
   });
 });
