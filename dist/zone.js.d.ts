@@ -6,6 +6,11 @@
  * found in the LICENSE file at https://angular.io/license
  */
 /**
+ * Suppress closure compiler errors about unknown 'global' variable
+ * @fileoverview
+ * @suppress {undefinedVars}
+ */
+/**
  * Zone is a mechanism for intercepting and keeping track of asynchronous work.
  *
  * A Zone is a global object which is configured with rules about how to intercept and keep track

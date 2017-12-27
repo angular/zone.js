@@ -88,7 +88,6 @@
             instance(zonePathName(targetZone), shallowObj(task.data, 2));
             return retValue;
         };
-        
         return WtfZoneSpec;
     }());
     WtfZoneSpec.forkInstance = wtfEnabled && wtfEvents.createInstance('Zone:fork(ascii zone, ascii newZone)');
