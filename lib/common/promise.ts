@@ -26,6 +26,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
   const _uncaughtPromiseErrors: UncaughtPromiseError[] = [];
   const symbolPromise = __symbol__('Promise');
   const symbolThen = __symbol__('then');
+  const creationTrace = '__creationTrace__';
 
   api.onUnhandledError = (e: any) => {
     if (api.showUncaughtError()) {
@@ -118,7 +119,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
   const TYPE_ERROR = 'Promise resolved with itself';
   const OBJECT = 'object';
   const FUNCTION = 'function';
-  const CURRENT_TASK_SYMBOL = __symbol__('currentTask');
+  const CURRENT_TASK_TRACE_SYMBOL = __symbol__('currentTaskTrace');
 
   // Promise Resolution
   function resolvePromise(
@@ -164,7 +165,15 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
         // record task information in value when error occurs, so we can
         // do some additional work such as render longStackTrace
         if (state === REJECTED && value instanceof Error) {
-          (value as any)[CURRENT_TASK_SYMBOL] = Zone.currentTask;
+          // check if longStackTraceZone is here
+          const trace = Zone.currentTask && Zone.currentTask.data &&
+              (Zone.currentTask.data as any)[creationTrace];
+          if (trace) {
+            // only keep the long stack trace into error when in longStackTraceZone
+            Object.defineProperty(
+                value, CURRENT_TASK_TRACE_SYMBOL,
+                {configurable: true, enumerable: false, writable: true, value: trace});
+          }
         }
 
         for (let i = 0; i < queue.length;) {

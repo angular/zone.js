@@ -87,8 +87,7 @@ function renderLongStackTrace(frames: LongStackTrace[], stack: string): string {
     if (!error) {
       return undefined;
     }
-    const task = (error as any)[(Zone as any).__symbol__('currentTask')];
-    const trace = task && task.data && task.data[creationTrace];
+    const trace = (error as any)[(Zone as any).__symbol__('currentTaskTrace')];
     if (!trace) {
       return error.stack;
     }

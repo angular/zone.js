@@ -1235,11 +1235,7 @@ const Zone: ZoneType = (function(global: any) {
         state: this.state,
         source: this.source,
         zone: this.zone.name,
-        invoke: this.invoke,
-        scheduleFn: this.scheduleFn,
-        cancelFn: this.cancelFn,
-        runCount: this.runCount,
-        callback: this.callback
+        runCount: this.runCount
       };
     }
   }
