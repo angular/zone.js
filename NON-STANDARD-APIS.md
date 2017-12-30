@@ -162,13 +162,22 @@ import 'zone.js/dist/zone-patch-rxjs';
 
 * electron
 
+In electron, we patched the following APIs with `zone.js`
+
+1. Browser API
+2. NodeJS
+3. Electorn Native API
+
 ## Usage.
 
-add following line into `polyfill.ts` after load zone-mix.
+add/update following line into `polyfill.ts`.
 
 ```
-import 'zone.js/dist/zone-patch-electron';
+//import 'zone.js/dist/zone'; // originally added by angular-cli, comment it out
+import 'zone.js/dist/zone-mix'; // add zone-mix to patch both Browser and Nodejs
+import 'zone.js/dist/zone-patch-electron'; // add zone-patch-electron to patch Electron native API
 ```
 
-there is a sampel repo [zone-electron](https://github.com/JiaLiPassion/zone-electron) here
+there is a sampel repo [zone-electron](https://github.com/JiaLiPassion/zone-electron).
+
 
