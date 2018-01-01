@@ -21,6 +21,6 @@
     "build-esm",
     "dist",
     "lib/closure",
-    "test/node_async.ts"
+    "test/asynchooks"
   ]
 }

@@ -7,15 +7,9 @@
  */
 
 import {isNode, zoneSymbol} from '../../lib/common/utils';
-import {ifEnvSupports, isSupportAsyncHooks} from '../test-util';
-declare const global: any;
+import {ifEnvSupports} from '../test-util';
 
-let useZoneAwarePromise: boolean = true; 
-try {
-  Zone.assertZonePatched();
-} catch (error) {
-  useZoneAwarePromise = false;
-}
+declare const global: any;
 
 class MicroTaskQueueZoneSpec implements ZoneSpec {
   name: string = 'MicroTaskQueue';
@@ -23,9 +17,6 @@ class MicroTaskQueueZoneSpec implements ZoneSpec {
   properties = {queue: this.queue, flush: this.flush.bind(this)};
 
   flush() {
-    if (!useZoneAwarePromise) {
-      return;
-    }
     while (this.queue.length) {
       const task = this.queue.shift();
       task.invoke();
@@ -122,9 +113,7 @@ describe(
             super(fn);
           }
         }
-        if (!isSupportAsyncHooks) {
-          expect(new MyPromise(null).then(() => null) instanceof MyPromise).toBe(true);
-        }
+        expect(new MyPromise(null).then(() => null) instanceof MyPromise).toBe(true);
       });
 
       it('should intercept scheduling of resolution and then', (done) => {
@@ -134,7 +123,6 @@ describe(
           });
           expect(log).toEqual([]);
           expect(p instanceof Promise).toBe(true);
-          // schedule a microTask because p is already resolved
           p = p.then((v) => {
             log.push(v);
             expect(v).toBe('RValue');
@@ -143,10 +131,9 @@ describe(
           });
           expect(p instanceof Promise).toBe(true);
           expect(log).toEqual(['scheduleTask']);
-          // schedule again because p is already resolved
           p = p.then((v) => {
             log.push(v);
-            expect(log).toEqual(['scheduleTask', 'scheduleTask', 'RValue', 'second value']);
+            expect(log).toEqual(['scheduleTask', 'RValue', 'scheduleTask', 'second value']);
             done();
           });
           expect(p instanceof Promise).toBe(true);
@@ -154,7 +141,7 @@ describe(
         });
       });
 
-      it('should allow sync resolution of promises', (done) => {
+      it('should allow sync resolution of promises', () => {
         queueZone.run(() => {
           const flush = Zone.current.get('flush');
           const queue = Zone.current.get('queue');
@@ -168,21 +155,14 @@ describe(
                         .then((v: string) => {
                           log.push(v);
                         });
-          if (isSupportAsyncHooks()) {
-            expect(queue.length).toEqual(2);
-          } else {
-            expect(queue.length).toEqual(1);
-          }             
+          expect(queue.length).toEqual(1);
           expect(log).toEqual([]);
           flush();
-          setTimeout(() => {
-            expect(log).toEqual(['RValue', 'second value']);
-            done();
-          }, 0);
+          expect(log).toEqual(['RValue', 'second value']);
         });
       });
 
-      it('should allow sync resolution of promises returning promises', (done) => {
+      it('should allow sync resolution of promises returning promises', () => {
         queueZone.run(() => {
           const flush = Zone.current.get('flush');
           const queue = Zone.current.get('queue');
@@ -196,17 +176,10 @@ describe(
                         .then((v: string) => {
                           log.push(v);
                         });
-          if (isSupportAsyncHooks()) {
-            expect(queue.length).toEqual(2);
-          } else {
-            expect(queue.length).toEqual(1);
-          }
+          expect(queue.length).toEqual(1);
           expect(log).toEqual([]);
           flush();
-          setTimeout(() => {
-            expect(log).toEqual(['RValue', 'second value']);
-            done();
-          }, 0);
+          expect(log).toEqual(['RValue', 'second value']);
         });
       });
 
@@ -242,82 +215,64 @@ describe(
           expect(reject()).toBe(undefined);
         });
 
-        it('should work with Promise.resolve', (done) => {
+        it('should work with Promise.resolve', () => {
           queueZone.run(() => {
-            let value: any = null;
+            let value = null;
             Promise.resolve('resolveValue').then((v) => value = v);
             expect(Zone.current.get('queue').length).toEqual(1);
             flushMicrotasks();
-            setTimeout(() => {
-              expect(value).toEqual('resolveValue');
-              done();
-            }, 0);
+            expect(value).toEqual('resolveValue');
           });
         });
 
-        it('should work with Promise.reject', (done) => {
+        it('should work with Promise.reject', () => {
           queueZone.run(() => {
-            let value: any = null;
+            let value = null;
             Promise.reject('rejectReason')['catch']((v) => value = v);
             expect(Zone.current.get('queue').length).toEqual(1);
             flushMicrotasks();
-            setTimeout(() => {
-              expect(value).toEqual('rejectReason');
-              done();
-            }, 0);
+            expect(value).toEqual('rejectReason');
           });
         });
 
         describe('reject', () => {
-          it('should reject promise', (done) => {
+          it('should reject promise', () => {
             queueZone.run(() => {
-              let value: any = null;
+              let value = null;
               Promise.reject('rejectReason')['catch']((v) => value = v);
               flushMicrotasks();
-              setTimeout(() => {
-                expect(value).toEqual('rejectReason');
-                done();
-              }, 0);
+              expect(value).toEqual('rejectReason');
             });
           });
 
-          it('should re-reject promise', (done) => {
+          it('should re-reject promise', () => {
             queueZone.run(() => {
-              let value: any = null;
+              let value = null;
               Promise.reject('rejectReason')['catch']((v) => {
                 throw v;
               })['catch']((v) => value = v);
               flushMicrotasks();
-              setTimeout(() => {
-                expect(value).toEqual('rejectReason');
-                done();
-              }, 0);
+              expect(value).toEqual('rejectReason');
             });
           });
 
-          it('should reject and recover promise', (done) => {
+          it('should reject and recover promise', () => {
             queueZone.run(() => {
-              let value: any = null;
+              let value = null;
               Promise.reject('rejectReason')['catch']((v) => v).then((v) => value = v);
               flushMicrotasks();
-              setTimeout(() => {
-                expect(value).toEqual('rejectReason');
-                done();
-              }, 0);
+              expect(value).toEqual('rejectReason');
             });
           });
 
-          it('should reject if chained promise does not catch promise', (done) => {
+          it('should reject if chained promise does not catch promise', () => {
             queueZone.run(() => {
-              let value: any = null;
+              let value = null;
               Promise.reject('rejectReason')
                   .then((v) => fail('should not get here'))
                   .then(null, (v) => value = v);
               flushMicrotasks();
-              setTimeout(() => {
-                expect(value).toEqual('rejectReason');
-                done();
-              }, 0);
+              expect(value).toEqual('rejectReason');
             });
           });
 
@@ -356,8 +311,7 @@ describe(
                });
              });
 
-             //TODO: @JiaLiPassion, add promise unhandledError in async_hooks later
-          xit('should notify Zone.onHandleError if no one catches promise', (done) => {
+          it('should notify Zone.onHandleError if no one catches promise', (done) => {
             let promiseError: Error = null;
             let zone: Zone = null;
             let task: Task = null;
@@ -430,61 +384,49 @@ describe(
         });
 
         describe('Promise.race', () => {
-          it('should reject the value', (done) => {
+          it('should reject the value', () => {
             queueZone.run(() => {
-              let value: any = null;
+              let value = null;
               (Promise as any).race([
                 Promise.reject('rejection1'), 'v1'
               ])['catch']((v: any) => value = v);
               // expect(Zone.current.get('queue').length).toEqual(2);
               flushMicrotasks();
-              setTimeout(() => {
-                expect(value).toEqual('rejection1');
-                done();
-              }, 0);
+              expect(value).toEqual('rejection1');
             });
           });
 
-          it('should resolve the value', (done) => {
+          it('should resolve the value', () => {
             queueZone.run(() => {
-              let value: any = null;
+              let value = null;
               (Promise as any)
                   .race([Promise.resolve('resolution'), 'v1'])
                   .then((v: any) => value = v);
               // expect(Zone.current.get('queue').length).toEqual(2);
               flushMicrotasks();
-              setTimeout(() => {
-                expect(value).toEqual('resolution');
-                done();
-              }, 0);
+              expect(value).toEqual('resolution');
             });
           });
         });
 
         describe('Promise.all', () => {
-          it('should reject the value', (done) => {
+          it('should reject the value', () => {
             queueZone.run(() => {
-              let value: any = null;
+              let value = null;
               Promise.all([Promise.reject('rejection'), 'v1'])['catch']((v: any) => value = v);
               // expect(Zone.current.get('queue').length).toEqual(2);
               flushMicrotasks();
-              setTimeout(() => {
-                expect(value).toEqual('rejection');
-                done();
-              }, 0);
+              expect(value).toEqual('rejection');
             });
           });
 
-          it('should resolve the value', (done) => {
+          it('should resolve the value', () => {
             queueZone.run(() => {
-              let value: any = null;
+              let value = null;
               Promise.all([Promise.resolve('resolution'), 'v1']).then((v: any) => value = v);
               // expect(Zone.current.get('queue').length).toEqual(2);
               flushMicrotasks();
-              setTimeout(() => {
-                expect(value).toEqual(['resolution', 'v1']);
-                done();
-              }, 0);
+              expect(value).toEqual(['resolution', 'v1']);
             });
           });
 

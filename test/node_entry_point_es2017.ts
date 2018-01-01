@@ -12,10 +12,16 @@ import './test_fake_polyfill';
 
 // Setup tests for Zone without microtask support
 import '../lib/zone';
-import '../lib/common/promise';
-import '../lib/common/to-string';
+const _global = global as any;
+_global.__Zone_disable_node_timers = true;
+_global.__Zone_disable_nextTick = true;
+_global.__Zone_disable_handleUnhandledPromiseRejection = true;
+_global.__Zone_disable_crypto = true;
+_global.__Zone_disable_console = true;
 import '../lib/node/node';
-import '../lib/zone-spec/async-test';
+import '../lib/node/async_promise';
+import './asynchooks/await.spec';
+/*import '../lib/zone-spec/async-test';
 import '../lib/zone-spec/fake-async-test';
 import '../lib/zone-spec/long-stack-trace';
 import '../lib/zone-spec/proxy';
@@ -29,4 +35,5 @@ import './test-env-setup-jasmine';
 
 // List all tests here:
 import './common_tests';
+*/
 //import './node_tests';

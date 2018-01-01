@@ -314,16 +314,9 @@ gulp.task('build', [
   'build/closure.js'
 ]);
 
-gulp.task('test/node2017', ['compile-node-es2017'], function(cb) {
-  var testAsyncPromise = require('./build/test/node_async').testAsyncPromise;
-  testAsyncPromise();
-});
-
-gulp.task('test/node', ['compile-node'], function(cb) {
+function runJasmineTest(specFiles, cb) {
   var JasmineRunner = require('jasmine');
   var jrunner = new JasmineRunner();
-
-  var specFiles = ['build/test/node_entry_point.js'];
 
   jrunner.configureDefaultReporter({showColors: true});
 
@@ -345,6 +338,14 @@ gulp.task('test/node', ['compile-node'], function(cb) {
   jrunner.specDir = '';
   jrunner.addSpecFiles(specFiles);
   jrunner.execute();
+}
+
+gulp.task('test/node2017', ['compile-node-es2017'], function(cb) {
+  runJasmineTest(['build/test/node_entry_point_es2017.js'], cb);
+});
+
+gulp.task('test/node', ['compile-node'], function(cb) {
+  runJasmineTest(['build/test/node_entry_point.js'], cb);
 });
 
 // Check the coding standards and programming errors

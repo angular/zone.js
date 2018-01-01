@@ -41,11 +41,7 @@ Zone.__load_patch('node_async_hooks_promise', (global: any, Zone: ZoneType, api:
       const originalThen = promise.then;
 
       const zone = Zone.current;
-      if (zone.name === 'promise') {
-        print('init promise', id.toString());
-      }
       if (!zone.parent) {
-        print('root zone');
         return;
       }
       const currentAsyncContext: any = {};
@@ -53,14 +49,10 @@ Zone.__load_patch('node_async_hooks_promise', (global: any, Zone: ZoneType, api:
       currentAsyncContext.zone = zone;
       idPromise[id] = currentAsyncContext;
       promise.then = function(onResolve: any, onReject: any) {
-        const wrapped = new Promise((resolve, reject) => {
-          originalThen.call(this, resolve, reject);
-        });
-        if (zone) {
-          (wrapped as any).zone = zone;
-        }
-        return zone.run(() => {
-          return wrapped.then(onResolve, onReject);
+        const task = zone.scheduleMicroTask(PROMISE_PROVIDER, noop, null, noop);
+        process.nextTick(() => {
+          task.zone.runTask(task, null, null);
+          originalThen.call(this, onResolve, onReject);
         });
       };
     }
@@ -69,7 +61,6 @@ Zone.__load_patch('node_async_hooks_promise', (global: any, Zone: ZoneType, api:
   function before(id: number) {
     const currentAsyncContext = idPromise[id];
     if (currentAsyncContext) {
-      print('before ' + id, currentAsyncContext.zone.name);
       api.setAsyncContext(currentAsyncContext);
     }
   }
@@ -77,14 +68,12 @@ Zone.__load_patch('node_async_hooks_promise', (global: any, Zone: ZoneType, api:
   function after(id: number) {
     const currentAsyncContext = idPromise[id];
     if (currentAsyncContext) {
-      print('after ' + id, currentAsyncContext.zone.name);
       idPromise[id] = null;
       api.setAsyncContext(null);
     }
   }
 
   function destroy(id: number) {
-    print('destroy ' + id);
   }
 
   async_hooks.createHook({init, before, after, destroy}).enable();
