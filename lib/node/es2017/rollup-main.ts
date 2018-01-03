@@ -9,5 +9,5 @@
 import '../../zone';
 import '../../common/es2017/promise';
 import '../../common/to-string';
-import '../async_hooks_promise';
+import '../async_hooks';
 import '../node';

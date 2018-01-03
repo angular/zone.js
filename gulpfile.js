@@ -132,6 +132,15 @@ gulp.task('build/zone-mix.js', ['compile-esm-node'], function(cb) {
     return generateScript('./lib/mix/rollup-mix.ts', 'zone-mix.js', false, cb);
 });
 
+// Zone for node asynchooks environment.
+gulp.task('build/zone-node-asynchooks.js', ['compile-esm-node'], function(cb) {
+    return generateScript('./lib/node/rollup-main-asynchooks.ts', 'zone-node-asynchooks.js', false, cb);
+});
+
+gulp.task('build/zone-node-asynchooks.min.js', ['compile-esm-node'], function(cb) {
+    return generateScript('./lib/node/rollup-main-asynchooks.ts', 'zone-node-asynchooks.js', true, cb);
+});
+
 gulp.task('build/zone-error.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/common/error-rewrite.ts', 'zone-error.js', false, cb);
 });
@@ -291,6 +300,8 @@ gulp.task('build', [
   'build/zone-patch-cordova.min.js',
   'build/zone-patch-electron.js',
   'build/zone-patch-electron.min.js',
+  'build/zone-node-asynchooks.js',
+  'build/zone-node-asynchooks.min.js',
   'build/zone-mix.js',
   'build/bluebird.js',
   'build/bluebird.min.js',
