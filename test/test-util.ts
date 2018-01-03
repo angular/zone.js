@@ -110,9 +110,12 @@ export function isEdge() {
   return userAgent.indexOf('edge') !== -1;
 }
 
-export function isSupportAsyncHooks() {
-   if (global && (global as any)['__Zone_disable_ZoneAwarePromise']) {
-     return true;
-   }
-   return false;
+export function isAsyncHookMode() {
+  return Zone.__mode__ === 'asynchooks';
 }
+
+export function isDelegateMode() {
+  return !isAsyncHookMode;
+}
+
+(isDelegateMode as any).message = 'AsyncHooks';

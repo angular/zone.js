@@ -234,7 +234,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
         (typeof onFulfilled === FUNCTION) ? onFulfilled : forwardResolution :
         (typeof onRejected === FUNCTION) ? onRejected : forwardRejection;
 
-      zone.scheduleMicroTask(source, () => {
+    zone.scheduleMicroTask(source, () => {
       try {
         resolvePromise(
             chainPromise, true, zone.run(delegate, undefined, [(promise as any)[symbolValue]]));

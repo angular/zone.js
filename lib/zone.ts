@@ -307,6 +307,9 @@ interface ZoneType {
 
   /** @internal */
   __symbol__(name: string): string;
+
+  /** @internal */
+  __mode__: _ZoneMode;
 }
 
 /** @internal */
@@ -333,10 +336,11 @@ interface _ZonePrivate {
       (target: any, name: string,
        patchFn: (delegate: Function, delegateName: string, name: string) =>
            (self: any, args: any[]) => any) => Function;
-  patchArguments: (target: any, name: string, source: string) => Function;         
+  patchArguments: (target: any, name: string, source: string) => Function;
   beforeRunTask: (zone: Zone, task: Task) => void;
   afterRunTask: (zone: Zone, task: Task) => void;
   setAsyncContext: (asyncContext: any) => void;
+  setPromiseTick: (isPromiseTick: boolean) => void;
 }
 
 /** @internal */
@@ -344,6 +348,9 @@ interface _ZoneFrame {
   parent: _ZoneFrame;
   zone: Zone;
 }
+
+/** @internal */
+type _ZoneMode = 'delegate'|'asynchooks';
 
 /**
  * Provides a way to configure the interception of zone events.
@@ -652,6 +659,7 @@ const Zone: ZoneType = (function(global: any) {
 
   class Zone implements AmbientZone {
     static __symbol__: (name: string) => string = __symbol__;
+    static __zoneMode__: _ZoneMode = 'delegate';
 
     static assertZonePatched() {
       if (global['Promise'] !== patches['ZoneAwarePromise']) {
@@ -678,6 +686,14 @@ const Zone: ZoneType = (function(global: any) {
 
     static get currentTask(): Task {
       return _currentTask;
+    }
+
+    static get __mode__(): _ZoneMode {
+      return Zone.__zoneMode__;
+    }
+
+    static set __mode__(mode: _ZoneMode) {
+      Zone.__zoneMode__ = mode;
     }
 
     static __load_patch(name: string, fn: _PatchFn): void {
@@ -753,10 +769,9 @@ const Zone: ZoneType = (function(global: any) {
       try {
         return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
       } finally {
-        if (currentAsyncContext) {
-          return;
+        if (!currentAsyncContext) {
+          _currentZoneFrame = _currentZoneFrame.parent;
         }
-        _currentZoneFrame = _currentZoneFrame.parent;
       }
     }
 
@@ -774,7 +789,9 @@ const Zone: ZoneType = (function(global: any) {
           }
         }
       } finally {
-        _currentZoneFrame = _currentZoneFrame.parent;
+        if (!currentAsyncContext) {
+          _currentZoneFrame = _currentZoneFrame.parent;
+        }
       }
     }
 
@@ -801,7 +818,8 @@ const Zone: ZoneType = (function(global: any) {
       const previousTask = _currentTask;
       _currentTask = task;
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
-      //(process as any)._rawDebug('currentFrame increase ', _currentZoneFrame && _currentZoneFrame.zone.name, task.source);
+      //(process as any)._rawDebug('currentFrame increase ', _currentZoneFrame &&
+      //_currentZoneFrame.zone.name, task.source);
       if (!task.data) {
         task.data = {};
       }
@@ -821,16 +839,18 @@ const Zone: ZoneType = (function(global: any) {
       // we should not reset the state to scheduled
       if (task.state !== notScheduled && task.state !== unknown) {
         if (task.type == eventTask || (task.data && task.data.isPeriodic)) {
-          beforeRunTaskStatus.reEntryGuard && (task as ZoneTask<any>)._transitionTo(scheduled, running);
+          beforeRunTaskStatus.reEntryGuard &&
+              (task as ZoneTask<any>)._transitionTo(scheduled, running);
         } else {
           task.runCount = 0;
           this._updateTaskCount(task as ZoneTask<any>, -1);
           beforeRunTaskStatus.reEntryGuard &&
-            (task as ZoneTask<any>)._transitionTo(notScheduled, running, notScheduled);
+              (task as ZoneTask<any>)._transitionTo(notScheduled, running, notScheduled);
         }
       }
       _currentZoneFrame = _currentZoneFrame.parent;
-      //(process as any)._rawDebug('currentFrame decrease ', _currentZoneFrame && _currentZoneFrame.zone.name, task.source);
+      //(process as any)._rawDebug('currentFrame decrease ', _currentZoneFrame &&
+      //_currentZoneFrame.zone.name, task.source);
       _currentTask = beforeRunTaskStatus.previousTask;
     }
 
@@ -1305,8 +1325,14 @@ const Zone: ZoneType = (function(global: any) {
         }
       }
       if (nativeMicroTaskQueuePromise) {
+        _api.setPromiseTick(true);
         nativeMicroTaskQueuePromise[symbolThen](drainMicroTaskQueue);
-      } else {
+      } else if (global['Promise']) {
+        _api.setPromiseTick(true);
+        const p = Promise.resolve(0);
+        _api.setPromiseTick(true);
+        p.then(drainMicroTaskQueue);
+      } else if (global[symbolSetTimeout]) {
         global[symbolSetTimeout](drainMicroTaskQueue, 0);
       }
     }
@@ -1384,6 +1410,7 @@ const Zone: ZoneType = (function(global: any) {
         _currentZoneFrame = _currentZoneFrame.parent;
       }
     },
+    setPromiseTick: (isPromiseTick: boolean) => noop,
   };
   let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
   let _currentTask: Task = null;

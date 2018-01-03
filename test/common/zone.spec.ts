@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import {zoneSymbol} from '../../lib/common/utils';
-import { isSupportAsyncHooks } from '../test-util';
+import {isAsyncHookMode} from '../test-util';
 
 describe('Zone', function() {
   const rootZone = Zone.current;
@@ -22,7 +22,6 @@ describe('Zone', function() {
         Zone.current.run(throwError);
       }).toThrow();
     });
-
 
     it('should fire onError if a function run by a zone throws', function() {
       const errorSpy = jasmine.createSpy('error');
@@ -67,11 +66,11 @@ describe('Zone', function() {
 
     zoneA.run(function() {
       zoneB.run(function() {
-        expect(Zone.current).toBe(zoneB);
+        expect(Zone.current.name).toBe(zoneB.name);
       });
-      expect(Zone.current).toBe(zoneA);
+      expect(Zone.current.name).toBe(zoneA.name);
     });
-    expect(Zone.current).toBe(zone);
+    expect(Zone.current.name).toBe(zone.name);
   });
 
 
@@ -325,7 +324,7 @@ describe('Zone', function() {
 
     describe('assert ZoneAwarePromise', () => {
       xit('should not throw when all is OK', () => {
-        if (isSupportAsyncHooks()) {
+        if (isAsyncHookMode()) {
           expect(() => Zone.assertZonePatched()).toThrow();
           return;
         }
@@ -346,8 +345,8 @@ describe('Zone', function() {
           expect(ZoneAwarePromise).toBeTruthy();
           Zone.assertZonePatched();
           expect(global.Promise).toBe(ZoneAwarePromise);
-          if (isSupportAsyncHooks()) {
-            //expect(() => Zone.assertZonePatched()).toThrow();
+          if (isAsyncHookMode()) {
+            // expect(() => Zone.assertZonePatched()).toThrow();
             return;
           } else {
             expect(ZoneAwarePromise).toBeTruthy();

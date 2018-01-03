@@ -25,12 +25,12 @@ describe('native async/await', function() {
     async function asyncOutside() {
       return 'asyncOutside';
     }
-    
+
     const neverResolved = new Promise(() => {});
     const waitForNever = new Promise((res, _) => {
       res(neverResolved);
     });
-    
+
     async function getNever() {
       return waitForNever;
     };

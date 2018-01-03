@@ -112,7 +112,7 @@ describe(
               setTimeout(function() {
                 expectElapsed(log[0].stack, 5);
                 done();
-              }, 0);
+              }, 50);
             }, 0);
           }, 0);
         });
