@@ -252,6 +252,10 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       return ZONE_AWARE_PROMISE_TO_STRING;
     }
 
+    get[Symbol.toStringTag]() {
+      return 'Promise' as PROMISE;
+    }
+
     static resolve<R>(value: R): Promise<R> {
       return resolvePromise(<ZoneAwarePromise<R>>new this(null), RESOLVED, value);
     }

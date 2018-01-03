@@ -6,7 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import '../lib/zone';
-import '../lib/common/es2017/promise';
-import '../lib/node/async_hooks';
-import './asynchooks/await.spec';
+import '../../zone';
+import '../../common/es2017/promise';
+import '../../common/to-string';
+import '../async_hooks_promise';
+import '../node';

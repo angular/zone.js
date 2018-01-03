@@ -340,13 +340,12 @@ function runJasmineTest(specFiles, cb) {
   jrunner.execute();
 }
 
-gulp.task('test/node2017', ['compile-node-es2017'], function(cb) {
+gulp.task('test/node/es2017', ['compile-node-es2017'], function(cb) {
   runJasmineTest(['build/test/node_entry_point_es2017.js'], cb);
 });
 
-gulp.task('test/debug2017', ['compile-node-es2017'], function(cb) {
-  var test = require('./build/test/node_async_test').test;
-  test();
+gulp.task('test/node/asynchooks', ['compile-node'], function(cb) {
+  runJasmineTest(['build/test/node_entry_point_asynchooks.js'], cb);
 });
 
 gulp.task('test/node', ['compile-node'], function(cb) {

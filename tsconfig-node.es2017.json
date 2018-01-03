@@ -14,11 +14,27 @@
     "stripInternal": false,
     "lib": ["es5", "dom", "es2017", "es2015.symbol"]
   },
+  "include": [
+    "lib/common",
+    "lib/jasmine",
+    "lib/node",
+    "lib/zone-spec",
+    "lib/zone.ts",
+    "test/asynchooks",
+    "test/node_entry_point_es2017.ts"
+  ],
   "exclude": [
     "node_modules",
     "build",
     "build-esm",
     "dist",
+    "lib/common/promise.ts",
+    "test/node_entry_point.ts",
+    "test/node_entry_point_asynchooks.ts",
+    "lib/browser/rollup-main.ts",
+    "lib/node/rollup-main.ts",
+    "lib/node/rollup-test-main.ts",
+    "lib/mix/rollup-mix.ts",
     "lib/closure"
   ]
 }
