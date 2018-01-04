@@ -8,7 +8,7 @@
 require('../../dist/zone-node-asynchooks');
 
 const start = Date.now();
-for (let i = 0; i < 10000; i ++) {
+for (let i = 0; i < 100000; i ++) {
   setTimeout(() => {}, 0);
 }
 

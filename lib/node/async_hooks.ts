@@ -15,6 +15,11 @@ Zone.__load_patch('node_async_hooks', (global: any, Zone: ZoneType, api: _ZonePr
   try {
     async_hooks = require('async_hooks');
     Zone.__mode__ = 'asynchooks';
+    global.__Zone_disable_node_timers = true;
+    global.__Zone_disable_nextTick = true;
+    global.__Zone_disable_handleUnhandledPromiseRejection = true;
+    global.__Zone_disable_crypto = true;
+    global.__Zone_disable_fs = true;
   } catch (err) {
     print(err.message);
     return;
@@ -29,6 +34,8 @@ Zone.__load_patch('node_async_hooks', (global: any, Zone: ZoneType, api: _ZonePr
   const SET_TIMEOUT = 'setTimeout';
   const NEXT_TICK = 'process.nextTick';
 
+  const periodicProviders = ['STATWATCHER', 'HTTPPARSER', 'TCPWRAP'];
+
   const NUMBER = 'number';
 
   const noop = function() {};
@@ -39,6 +46,7 @@ Zone.__load_patch('node_async_hooks', (global: any, Zone: ZoneType, api: _ZonePr
     zone?: Zone;
     id: number;
     task?: Task;
+    isDeleted?: boolean;
   }
 
   const idPromise: AsyncHooksContext[] = [];
@@ -57,18 +65,12 @@ Zone.__load_patch('node_async_hooks', (global: any, Zone: ZoneType, api: _ZonePr
     (zone as any)._zoneDelegate.handleError(zone, error);
   });
 
-  function binarySearch(
-      array: AsyncHooksContext[], id: number, isDeleteNonPeriodic = false,
-      isForceDelete = false): AsyncHooksContext {
+  function binarySearch(array: AsyncHooksContext[], id: number): AsyncHooksContext {
     let low = 0, high = array.length - 1, mid;
     while (low <= high) {
       mid = Math.floor((low + high) / 2);
       const midCtx = array[mid];
       if (midCtx.id === id) {
-        if (isForceDelete || (isDeleteNonPeriodic && midCtx.task && midCtx.task.data &&
-                              !midCtx.task.data.isPeriodic)) {
-          array.splice(mid, 1);
-        }
         return midCtx;
       } else if (midCtx.id < id)
         low = mid + 1;
@@ -76,6 +78,12 @@ Zone.__load_patch('node_async_hooks', (global: any, Zone: ZoneType, api: _ZonePr
         high = mid - 1;
     }
     return null;
+  }
+
+  function clearAsyncHooksContext(ctx: AsyncHooksContext) {
+    ctx.task = null;
+    ctx.zone = null;
+    ctx.isDeleted = true;
   }
 
   function cancelTask(task: Task, id: number) {
@@ -100,11 +108,12 @@ Zone.__load_patch('node_async_hooks', (global: any, Zone: ZoneType, api: _ZonePr
     if (!DEBUG) {
       return;
     }
-    print(Object.keys(obj)
-              .map((key: string) => {
+    /*print(Object.keys(obj)
+              .map((key: any) => {
                 return key + ':' + obj[key];
               })
               .join(','));
+              */
   }
 
   api.setPromiseTick = (flag: boolean) => {
@@ -148,16 +157,13 @@ Zone.__load_patch('node_async_hooks', (global: any, Zone: ZoneType, api: _ZonePr
     data.args = parentHandle;
     let source: string = provider;
     if (isPeriodic) {
-      source = SET_INTERVAL;
+      source = provider === TIMER_PROVIDER ? SET_INTERVAL : provider;
     } else if (provider === TIMER_PROVIDER) {
       source = SET_TIMEOUT;
     }
     const task = zone.scheduleMacroTask(source, noop, data, noop, () => {
       cancelTask(task, id);
     });
-    if (id === 51) {
-      print('task state', task.state);
-    }
     idMacroTasks.push({id, zone, task});
   }
 
@@ -174,9 +180,12 @@ Zone.__load_patch('node_async_hooks', (global: any, Zone: ZoneType, api: _ZonePr
       promiseInit(id, triggerId, parentHandle);
     } else if (provider === TICKOBJ_PROVIDER) {
       scheduleMicroTask(id, provider, triggerId, parentHandle);
+      return;
     } else {
       if (provider === TIMER_PROVIDER && parentHandle && typeof parentHandle._repeat === NUMBER) {
         scheduleMacroTask(id, provider, triggerId, parentHandle, parentHandle._idleTimeout, true);
+      } else if (periodicProviders.indexOf(provider) >= 0) {
+        scheduleMacroTask(id, provider, triggerId, parentHandle, undefined, true);
       } else {
         printObj(parentHandle);
         scheduleMacroTask(
@@ -198,36 +207,48 @@ Zone.__load_patch('node_async_hooks', (global: any, Zone: ZoneType, api: _ZonePr
       currentAsyncContext = binarySearch(idMacroTasks, id);
     }
     if (currentAsyncContext) {
-      print('before ', currentAsyncContext && currentAsyncContext.task.source, id.toString());
+      print(
+          'before ',
+          currentAsyncContext && currentAsyncContext.task && currentAsyncContext.task.source,
+          id.toString());
       api.beforeRunTask(currentAsyncContext.zone, currentAsyncContext.task);
       (currentAsyncContext.zone as any).invokeTask(currentAsyncContext.task, null, null);
     }
   }
 
   function after(id: number) {
-    let currentAsyncContext = binarySearch(idPromise, id, true);
+    let currentAsyncContext = binarySearch(idPromise, id);
     if (currentAsyncContext) {
       api.setAsyncContext(null);
+      clearAsyncHooksContext(currentAsyncContext);
       return;
     }
-    currentAsyncContext = binarySearch(idMicroTasks, id, true);
+    currentAsyncContext = binarySearch(idMicroTasks, id);
     if (!currentAsyncContext) {
-      currentAsyncContext = binarySearch(idMacroTasks, id, true);
+      currentAsyncContext = binarySearch(idMacroTasks, id);
     }
+    print(
+        'after ',
+        currentAsyncContext && currentAsyncContext.task && currentAsyncContext.task.source,
+        id.toString());
     if (currentAsyncContext) {
       api.afterRunTask(currentAsyncContext.zone, currentAsyncContext.task);
+      if (!(currentAsyncContext.task && currentAsyncContext.task.data &&
+            currentAsyncContext.task.data.isPeriodic)) {
+        clearAsyncHooksContext(currentAsyncContext);
+      }
     }
-    print('after ', currentAsyncContext && currentAsyncContext.task.source, id.toString());
   }
 
   function destroy(id: number) {
-    const currentAsyncContext = binarySearch(idMacroTasks, id, true, true);
-    if (currentAsyncContext) {
+    const currentAsyncContext = binarySearch(idMacroTasks, id);
+    if (currentAsyncContext && currentAsyncContext.task) {
       print('cancel async context', currentAsyncContext.task.source, id.toString());
       printObj((currentAsyncContext.task.data as any).args);
       if (currentAsyncContext.task.state !== 'notScheduled') {
         currentAsyncContext.zone.cancelTask(currentAsyncContext.task);
       }
+      clearAsyncHooksContext(currentAsyncContext);
     }
   }
 
