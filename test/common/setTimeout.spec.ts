@@ -16,15 +16,17 @@ describe('setTimeout', function() {
     testZone.run(() => {
       const timeoutFn = function() {
         expect(Zone.current.name).toEqual(('TestZone'));
-        global[zoneSymbol('setTimeout')](function() {
-          expect(wtfMock.log[0]).toEqual('# Zone:fork("<root>::ProxyZone::WTF", "TestZone")');
+        const nativeSetTimeout =
+            global[zoneSymbol('setTimeout')] ? global[zoneSymbol('setTimeout')] : global.setTimeout;
+        nativeSetTimeout(function() {
+          expect(wtfMock.log[0]).toContain('# Zone:fork("<root>::ProxyZone::WTF", "TestZone")');
           expect(wtfMock.log[1])
-              .toEqual('> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")');
+              .toContain('> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")');
           expect(wtfMock.log[2])
               .toContain('# Zone:schedule:macroTask:setTimeout("<root>::ProxyZone::WTF::TestZone"');
           expect(wtfMock.log[3]).toEqual('< Zone:invoke:unit-test');
           expect(wtfMock.log[4])
-              .toEqual('> Zone:invokeTask:setTimeout("<root>::ProxyZone::WTF::TestZone")');
+              .toContain('> Zone:invokeTask:setTimeout("<root>::ProxyZone::WTF::TestZone"');
           expect(wtfMock.log[5]).toEqual('< Zone:invokeTask:setTimeout');
           done();
         });
@@ -35,8 +37,9 @@ describe('setTimeout', function() {
         expect(typeof cancelId.ref).toEqual(('function'));
         expect(typeof cancelId.unref).toEqual(('function'));
       }
-      expect(wtfMock.log[0]).toEqual('# Zone:fork("<root>::ProxyZone::WTF", "TestZone")');
-      expect(wtfMock.log[1]).toEqual('> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")');
+      expect(wtfMock.log[0]).toContain('# Zone:fork("<root>::ProxyZone::WTF", "TestZone"');
+      expect(wtfMock.log[1])
+          .toContain('> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone"');
       expect(wtfMock.log[2])
           .toContain('# Zone:schedule:macroTask:setTimeout("<root>::ProxyZone::WTF::TestZone"');
     }, null, null, 'unit-test');

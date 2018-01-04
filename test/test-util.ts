@@ -109,3 +109,13 @@ export function isEdge() {
   const userAgent = navigator.userAgent.toLowerCase();
   return userAgent.indexOf('edge') !== -1;
 }
+
+export function isAsyncHookMode() {
+  return Zone.__mode__ === 'asynchooks';
+}
+
+export function isDelegateMode() {
+  return !isAsyncHookMode;
+}
+
+(isDelegateMode as any).message = 'AsyncHooks';

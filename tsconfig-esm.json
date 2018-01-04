@@ -21,6 +21,11 @@
     "build",
     "build-esm",
     "dist",
-    "lib/closure"
+    "lib/closure",
+    "test/node_entry_point_es2017.ts",
+    "lib/common/es2017",
+    "test/node_entry_point_es2017.ts",
+    "lib/node/es2017",
+    "test/asynchooks"
   ]
 }

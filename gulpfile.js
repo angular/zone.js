@@ -82,6 +82,10 @@ gulp.task('compile-node', function(cb) {
   tsc('tsconfig-node.json', cb);
 });
 
+gulp.task('compile-node-es2017', function(cb) {
+  tsc('tsconfig-node.es2017.json', cb);
+});
+
 gulp.task('compile-esm', function(cb) {
   tsc('tsconfig-esm.json', cb);
 });
@@ -126,6 +130,15 @@ gulp.task('build/zone-testing.js', ['compile-esm'], function(cb) {
 // Zone for electron/nw environment.
 gulp.task('build/zone-mix.js', ['compile-esm-node'], function(cb) {
     return generateScript('./lib/mix/rollup-mix.ts', 'zone-mix.js', false, cb);
+});
+
+// Zone for node asynchooks environment.
+gulp.task('build/zone-node-asynchooks.js', ['compile-esm-node'], function(cb) {
+    return generateScript('./lib/node/rollup-main-asynchooks.ts', 'zone-node-asynchooks.js', false, cb);
+});
+
+gulp.task('build/zone-node-asynchooks.min.js', ['compile-esm-node'], function(cb) {
+    return generateScript('./lib/node/rollup-main-asynchooks.ts', 'zone-node-asynchooks.js', true, cb);
 });
 
 gulp.task('build/zone-error.js', ['compile-esm'], function(cb) {
@@ -287,6 +300,8 @@ gulp.task('build', [
   'build/zone-patch-cordova.min.js',
   'build/zone-patch-electron.js',
   'build/zone-patch-electron.min.js',
+  'build/zone-node-asynchooks.js',
+  'build/zone-node-asynchooks.min.js',
   'build/zone-mix.js',
   'build/bluebird.js',
   'build/bluebird.min.js',
@@ -310,11 +325,9 @@ gulp.task('build', [
   'build/closure.js'
 ]);
 
-gulp.task('test/node', ['compile-node'], function(cb) {
+function runJasmineTest(specFiles, cb) {
   var JasmineRunner = require('jasmine');
   var jrunner = new JasmineRunner();
-
-  var specFiles = ['build/test/node_entry_point.js'];
 
   jrunner.configureDefaultReporter({showColors: true});
 
@@ -336,6 +349,18 @@ gulp.task('test/node', ['compile-node'], function(cb) {
   jrunner.specDir = '';
   jrunner.addSpecFiles(specFiles);
   jrunner.execute();
+}
+
+gulp.task('test/node/es2017', ['compile-node-es2017'], function(cb) {
+  runJasmineTest(['build/test/node_entry_point_es2017.js'], cb);
+});
+
+gulp.task('test/node/asynchooks', ['compile-node'], function(cb) {
+  runJasmineTest(['build/test/node_entry_point_asynchooks.js'], cb);
+});
+
+gulp.task('test/node', ['compile-node'], function(cb) {
+  runJasmineTest(['build/test/node_entry_point.js'], cb);
 });
 
 // Check the coding standards and programming errors

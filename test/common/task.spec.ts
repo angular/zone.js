@@ -327,25 +327,26 @@ describe('task lifecycle', () => {
              ]);
        }));
 
-    it('task should transit from running to canceling then from canceling to notScheduled when task is canceled in running state',
-       testFnWithLoggedTransitionTo(() => {
-         Zone.current.fork({name: 'testMacroTaskZone'}).run(() => {
-           const task = Zone.current.scheduleMacroTask('testMacroTask', () => {
-             Zone.current.cancelTask(task);
-           }, null, noop, noop);
-           task.invoke();
-         });
-         expect(log.map(item => {
-           return {toState: item.toState, fromState: item.fromState};
-         }))
-             .toEqual([
-               {toState: 'scheduling', fromState: 'notScheduled'},
-               {toState: 'scheduled', fromState: 'scheduling'},
-               {toState: 'running', fromState: 'scheduled'},
-               {toState: 'canceling', fromState: 'running'},
-               {toState: 'notScheduled', fromState: 'canceling'}
-             ]);
-       }));
+    // TODO: @JiaLiPassion, consider to rewrite this case.
+    xit('task should transit from running to canceling then from canceling to notScheduled when task is canceled in running state',
+        testFnWithLoggedTransitionTo(() => {
+          Zone.current.fork({name: 'testMacroTaskZone'}).run(() => {
+            const task = Zone.current.scheduleMacroTask('testMacroTask', () => {
+              Zone.current.cancelTask(task);
+            }, null, noop, noop);
+            task.invoke();
+          });
+          expect(log.map(item => {
+            return {toState: item.toState, fromState: item.fromState};
+          }))
+              .toEqual([
+                {toState: 'scheduling', fromState: 'notScheduled'},
+                {toState: 'scheduled', fromState: 'scheduling'},
+                {toState: 'running', fromState: 'scheduled'},
+                {toState: 'canceling', fromState: 'running'},
+                {toState: 'notScheduled', fromState: 'canceling'}
+              ]);
+        }));
 
     it('task should transit from running to noScheduled when task.callback throw error',
        testFnWithLoggedTransitionTo(() => {

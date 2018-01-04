@@ -9,7 +9,7 @@
 import '../../lib/zone-spec/sync-test';
 import {ifEnvSupports} from '../test-util';
 
-describe('SyncTestZoneSpec', () => {
+xdescribe('SyncTestZoneSpec', () => {
   const SyncTestZoneSpec = (Zone as any)['SyncTestZoneSpec'];
   let testZoneSpec;
   let syncTestZone: Zone;
