@@ -10,56 +10,56 @@
  * @suppress {missingRequire}
  */
 
-import {attachOriginToPatched, zoneSymbol} from './utils';
+import {attachOriginToPatched, d, g, h, k, l, m, n, p, zoneSymbol} from './utils';
 
-export const TRUE_STR = 'true';
-export const FALSE_STR = 'false';
-
-export interface EventTaskData extends TaskData { readonly isUsingGlobalCallback?: boolean; }
+/** @internal **/
+interface EventTaskData extends TaskData {
+  // use global callback or not
+  readonly useG?: boolean;
+}
 
 // an identifier to tell ZoneTask do not create a new invoke closure
-export const OPTIMIZED_ZONE_EVENT_TASK_DATA: EventTaskData = {
-  isUsingGlobalCallback: true
+const OPTIMIZED_ZONE_EVENT_TASK_DATA: EventTaskData = {
+  useG: true
 };
 
-export const zoneSymbolEventNames: any = {};
-export const globalSources: any = {};
-
-export const CONSTRUCTOR_NAME = 'name';
-
-export const FUNCTION_TYPE = 'function';
-export const OBJECT_TYPE = 'object';
-
-export const ZONE_SYMBOL_PREFIX = '__zone_symbol__';
+export const ens: any = {};
+export const gs: any = {};
 
 const EVENT_NAME_SYMBOL_REGX = /^__zone_symbol__(\w+)(true|false)$/;
-
 const IMMEDIATE_PROPAGATION_SYMBOL = ('__zone_symbol__propagationStopped');
 
 export interface PatchEventTargetOptions {
-  validateHandler?: (nativeDelegate: any, delegate: any, target: any, args: any) => boolean;
-  addEventListenerFnName?: string;
-  removeEventListenerFnName?: string;
-  prependEventListenerFnName?: string;
-  listenersFnName?: string;
-  removeAllFnName?: string;
-  useGlobalCallback?: boolean;
-  checkDuplicate?: boolean;
-  returnTarget?: boolean;
-  compareTaskCallbackVsDelegate?: (task: any, delegate: any) => boolean;
+  // validateHandler
+  vh?: (nativeDelegate: any, delegate: any, target: any, args: any) => boolean;
+  // addEventListener function name
+  add?: string;
+  // removeEventListener function name
+  rm?: string;
+  // prependEventListener function name
+  prepend?: string;
+  // listeners function name
+  listeners?: string;
+  // removeAllListeners function name
+  rmAll?: string;
+  // useGlobalCallback flag
+  useG?: boolean;
+  // check duplicate flag when addEventListener
+  chkDup?: boolean;
+  // return target flag when addEventListener
+  rt?: boolean;
+  // event compare handler
+  diff?: (task: any, delegate: any) => boolean;
 }
 
 export function patchEventTarget(
     _global: any, apis: any[], patchOptions?: PatchEventTargetOptions) {
-  const ADD_EVENT_LISTENER =
-      (patchOptions && patchOptions.addEventListenerFnName) || 'addEventListener';
-  const REMOVE_EVENT_LISTENER =
-      (patchOptions && patchOptions.removeEventListenerFnName) || 'removeEventListener';
+  const ADD_EVENT_LISTENER = (patchOptions && patchOptions.add) || g;
+  const REMOVE_EVENT_LISTENER = (patchOptions && patchOptions.rm) || h;
 
-  const LISTENERS_EVENT_LISTENER =
-      (patchOptions && patchOptions.listenersFnName) || 'eventListeners';
+  const LISTENERS_EVENT_LISTENER = (patchOptions && patchOptions.listeners) || 'eventListeners';
   const REMOVE_ALL_LISTENERS_EVENT_LISTENER =
-      (patchOptions && patchOptions.removeAllFnName) || 'removeAllListeners';
+      (patchOptions && patchOptions.rmAll) || 'removeAllListeners';
 
   const zoneSymbolAddEventListener = zoneSymbol(ADD_EVENT_LISTENER);
 
@@ -75,7 +75,7 @@ export function patchEventTarget(
       return;
     }
     const delegate = task.callback;
-    if (typeof delegate === OBJECT_TYPE && delegate.handleEvent) {
+    if (typeof delegate === p && delegate.handleEvent) {
       // create the bind version of handleEvent when invoke
       task.callback = (event: Event) => delegate.handleEvent(event);
       task.originalDelegate = delegate;
@@ -83,7 +83,7 @@ export function patchEventTarget(
     // invoke static task.invoke
     task.invoke(task, target, [event]);
     const options = task.options;
-    if (options && typeof options === 'object' && options.once) {
+    if (options && typeof options === p && options.once) {
       // if options.once is true, after invoke once remove listener here
       // only browser need to do this, nodejs eventEmitter will cal removeListener
       // inside EventEmitter.once
@@ -103,7 +103,7 @@ export function patchEventTarget(
     // event.target is needed for Samusung TV and SourceBuffer
     // || global is needed https://github.com/angular/zone.js/issues/190
     const target: any = this || event.target || _global;
-    const tasks = target[zoneSymbolEventNames[event.type][FALSE_STR]];
+    const tasks = target[ens[event.type][l]];
     if (tasks) {
       // invoke all tasks which attached to current target with given event.type and capture = false
       // for performance concern, if task.length === 1, just invoke
@@ -135,7 +135,7 @@ export function patchEventTarget(
     // event.target is needed for Samusung TV and SourceBuffer
     // || global is needed https://github.com/angular/zone.js/issues/190
     const target: any = this || event.target || _global;
-    const tasks = target[zoneSymbolEventNames[event.type][TRUE_STR]];
+    const tasks = target[ens[event.type][k]];
     if (tasks) {
       // invoke all tasks which attached to current target with given event.type and capture = false
       // for performance concern, if task.length === 1, just invoke
@@ -162,24 +162,24 @@ export function patchEventTarget(
     }
 
     let useGlobalCallback = true;
-    if (patchOptions && patchOptions.useGlobalCallback !== undefined) {
-      useGlobalCallback = patchOptions.useGlobalCallback;
+    if (patchOptions && patchOptions.useG !== undefined) {
+      useGlobalCallback = patchOptions.useG;
     }
-    const validateHandler = patchOptions && patchOptions.validateHandler;
+    const validateHandler = patchOptions && patchOptions.vh;
 
     let checkDuplicate = true;
-    if (patchOptions && patchOptions.checkDuplicate !== undefined) {
-      checkDuplicate = patchOptions.checkDuplicate;
+    if (patchOptions && patchOptions.chkDup !== undefined) {
+      checkDuplicate = patchOptions.chkDup;
     }
 
     let returnTarget = false;
-    if (patchOptions && patchOptions.returnTarget !== undefined) {
-      returnTarget = patchOptions.returnTarget;
+    if (patchOptions && patchOptions.rt !== undefined) {
+      returnTarget = patchOptions.rt;
     }
 
     let proto = obj;
     while (proto && !proto.hasOwnProperty(ADD_EVENT_LISTENER)) {
-      proto = Object.getPrototypeOf(proto);
+      proto = d(proto);
     }
     if (!proto && obj[ADD_EVENT_LISTENER]) {
       // somehow we did not find it, but we can see it. This happens on IE for Window properties.
@@ -207,9 +207,9 @@ export function patchEventTarget(
         proto[REMOVE_ALL_LISTENERS_EVENT_LISTENER];
 
     let nativePrependEventListener: any;
-    if (patchOptions && patchOptions.prependEventListenerFnName) {
-      nativePrependEventListener = proto[zoneSymbol(patchOptions.prependEventListenerFnName)] =
-          proto[patchOptions.prependEventListenerFnName];
+    if (patchOptions && patchOptions.prepend) {
+      nativePrependEventListener = proto[zoneSymbol(patchOptions.prepend)] =
+          proto[patchOptions.prepend];
     }
 
     const customScheduleGlobal = function(task: Task) {
@@ -230,10 +230,10 @@ export function patchEventTarget(
       // from Zone.prototype.cancelTask, we should remove the task
       // from tasksList of target first
       if (!task.isRemoved) {
-        const symbolEventNames = zoneSymbolEventNames[task.eventName];
+        const symbolEventNames = ens[task.eventName];
         let symbolEventName;
         if (symbolEventNames) {
-          symbolEventName = symbolEventNames[task.capture ? TRUE_STR : FALSE_STR];
+          symbolEventName = symbolEventNames[task.capture ? k : l];
         }
         const existingTasks = symbolEventName && task.target[symbolEventName];
         if (existingTasks) {
@@ -286,26 +286,24 @@ export function patchEventTarget(
 
     const compareTaskCallbackVsDelegate = function(task: any, delegate: any) {
       const typeOfDelegate = typeof delegate;
-      if ((typeOfDelegate === FUNCTION_TYPE && task.callback === delegate) ||
-          (typeOfDelegate === OBJECT_TYPE && task.originalDelegate === delegate)) {
+      if ((typeOfDelegate === n && task.callback === delegate) ||
+          (typeOfDelegate === p && task.originalDelegate === delegate)) {
         // same callback, same capture, same event name, just return
         return true;
       }
       return false;
     };
 
-    const compare = (patchOptions && patchOptions.compareTaskCallbackVsDelegate) ?
-        patchOptions.compareTaskCallbackVsDelegate :
-        compareTaskCallbackVsDelegate;
+    const compare =
+        (patchOptions && patchOptions.diff) ? patchOptions.diff : compareTaskCallbackVsDelegate;
 
-    const blackListedEvents: string[] = (Zone as any)[Zone.__symbol__('BLACK_LISTED_EVENTS')];
+    const blackListedEvents: string[] = (Zone as any)[(Zone as any).s('BLACK_LISTED_EVENTS')];
 
     const makeAddListener = function(
         nativeListener: any, addSource: string, customScheduleFn: any, customCancelFn: any,
         returnTarget = false, prepend = false) {
       return function() {
         const target = this || _global;
-        const targetZone = Zone.current;
         let delegate = arguments[1];
         if (!delegate) {
           return nativeListener.apply(this, arguments);
@@ -315,7 +313,7 @@ export function patchEventTarget(
         // case here to improve addEventListener performance
         // we will create the bind delegate when invoke
         let isHandleEvent = false;
-        if (typeof delegate !== FUNCTION_TYPE) {
+        if (typeof delegate !== n) {
           if (!delegate.handleEvent) {
             return nativeListener.apply(this, arguments);
           }
@@ -351,21 +349,21 @@ export function patchEventTarget(
           once = options ? !!options.once : false;
         }
 
-        const zone = Zone.current;
-        const symbolEventNames = zoneSymbolEventNames[eventName];
+        const zone = (Zone as any).c;
+        const symbolEventNames = ens[eventName];
         let symbolEventName;
         if (!symbolEventNames) {
           // the code is duplicate, but I just want to get some better performance
-          const falseEventName = eventName + FALSE_STR;
-          const trueEventName = eventName + TRUE_STR;
-          const symbol = ZONE_SYMBOL_PREFIX + falseEventName;
-          const symbolCapture = ZONE_SYMBOL_PREFIX + trueEventName;
-          zoneSymbolEventNames[eventName] = {};
-          zoneSymbolEventNames[eventName][FALSE_STR] = symbol;
-          zoneSymbolEventNames[eventName][TRUE_STR] = symbolCapture;
+          const falseEventName = eventName + l;
+          const trueEventName = eventName + k;
+          const symbol = m + falseEventName;
+          const symbolCapture = m + trueEventName;
+          ens[eventName] = {};
+          ens[eventName][l] = symbol;
+          ens[eventName][k] = symbolCapture;
           symbolEventName = capture ? symbolCapture : symbol;
         } else {
-          symbolEventName = symbolEventNames[capture ? TRUE_STR : FALSE_STR];
+          symbolEventName = symbolEventNames[capture ? k : l];
         }
         let existingTasks = target[symbolEventName];
         let isExisting = false;
@@ -384,8 +382,8 @@ export function patchEventTarget(
           existingTasks = target[symbolEventName] = [];
         }
         let source;
-        const constructorName = target.constructor[CONSTRUCTOR_NAME];
-        const targetSource = globalSources[constructorName];
+        const constructorName = target.constructor['name'];
+        const targetSource = gs[constructorName];
         if (targetSource) {
           source = targetSource[eventName];
         }
@@ -414,7 +412,7 @@ export function patchEventTarget(
         }
 
         const task: any =
-            zone.scheduleEventTask(source, delegate, data, customScheduleFn, customCancelFn);
+            (zone as any).se(source, delegate, data, customScheduleFn, customCancelFn);
 
         // should clear taskData.target to avoid memory leak
         // issue, https://github.com/angular/angular/issues/20442
@@ -485,10 +483,10 @@ export function patchEventTarget(
         return;
       }
 
-      const symbolEventNames = zoneSymbolEventNames[eventName];
+      const symbolEventNames = ens[eventName];
       let symbolEventName;
       if (symbolEventNames) {
-        symbolEventName = symbolEventNames[capture ? TRUE_STR : FALSE_STR];
+        symbolEventName = symbolEventNames[capture ? k : l];
       }
       const existingTasks = symbolEventName && target[symbolEventName];
       if (existingTasks) {
@@ -505,7 +503,7 @@ export function patchEventTarget(
               (existingTask as any).allRemoved = true;
               target[symbolEventName] = null;
             }
-            existingTask.zone.cancelTask(existingTask);
+            (existingTask.zone as any).ct(existingTask);
             return;
           }
         }
@@ -553,10 +551,10 @@ export function patchEventTarget(
         // remove removeListener listener finally
         this[REMOVE_ALL_LISTENERS_EVENT_LISTENER].apply(this, ['removeListener']);
       } else {
-        const symbolEventNames = zoneSymbolEventNames[eventName];
+        const symbolEventNames = ens[eventName];
         if (symbolEventNames) {
-          const symbolEventName = symbolEventNames[FALSE_STR];
-          const symbolCaptureEventName = symbolEventNames[TRUE_STR];
+          const symbolEventName = symbolEventNames[l];
+          const symbolCaptureEventName = symbolEventNames[k];
 
           const tasks = target[symbolEventName];
           const captureTasks = target[symbolCaptureEventName];

@@ -11,41 +11,42 @@
  * @suppress {undefinedVars,globalThis,missingRequire}
  */
 
+// issue #989, to reduce bundle size, use short name
+export const a = Object.getOwnPropertyDescriptor;
+export const b = Object.defineProperty;
+export const c = Object.defineProperties;
+export const d = Object.getPrototypeOf;
+export const e = Object.create;
+export const f = Array.prototype.slice;
+export const g = 'addEventListener';
+export const h = 'removeEventListener';
+export const i = (Zone as any).s(g);
+export const j = (Zone as any).s(h);
+export const k = 'true';
+export const l = 'false';
+export const m = '__zone_symbol__';
+export const n = 'function';
+export const o = 'undefined';
+export const p = 'object';
+export const q = 'number';
+export const r = 'string';
+
 // Hack since TypeScript isn't compiling this for a worker.
 declare const WorkerGlobalScope: any;
 
 export const zoneSymbol = Zone.__symbol__;
-const _global: any =
-    typeof window === 'object' && window || typeof self === 'object' && self || global;
+const _global: any = typeof window === p && window || typeof self === p && self || global;
 
-const FUNCTION = 'function';
-const UNDEFINED = 'undefined';
 const REMOVE_ATTRIBUTE = 'removeAttribute';
 const NULL_ON_PROP_VALUE: any[] = [null];
 
 export function bindArguments(args: any[], source: string): any[] {
   for (let i = args.length - 1; i >= 0; i--) {
-    if (typeof args[i] === FUNCTION) {
-      args[i] = Zone.current.wrap(args[i], source + '_' + i);
+    if (typeof args[i] === n) {
+      args[i] = (Zone as any).c.w(args[i], source + '_' + i);
     }
   }
   return args;
-}
-
-export function wrapFunctionArgs(func: Function, source?: string): Function {
-  return function() {
-    const args = Array.prototype.slice.call(arguments);
-    const wrappedArgs = bindArguments(args, source ? source : (func as any).name);
-    return func.apply(this, wrappedArgs);
-  };
-}
-
-export function patchArguments(target: any, name: string, source: string): Function {
-  return patchMethod(
-      target, name,
-      (delegate: Function, delegateName: string, name: string) => (self: any, args: any[]) => {
-        return delegate && delegate.apply(self, bindArguments(args, source));
-      });
 }
 
 export function patchPrototype(prototype: any, fnNames: string[]) {
@@ -54,7 +55,7 @@ export function patchPrototype(prototype: any, fnNames: string[]) {
     const name = fnNames[i];
     const delegate = prototype[name];
     if (delegate) {
-      const prototypeDesc = Object.getOwnPropertyDescriptor(prototype, name);
+      const prototypeDesc = a(prototype, name);
       if (!isPropertyWritable(prototypeDesc)) {
         continue;
       }
@@ -78,7 +79,7 @@ export function isPropertyWritable(propertyDesc: any) {
     return false;
   }
 
-  if (typeof propertyDesc.get === FUNCTION && typeof propertyDesc.set === UNDEFINED) {
+  if (typeof propertyDesc.get === n && typeof propertyDesc.set === o) {
     return false;
   }
 
@@ -86,23 +87,23 @@ export function isPropertyWritable(propertyDesc: any) {
 }
 
 export const isWebWorker: boolean =
-    (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope);
+    (typeof WorkerGlobalScope !== o && self instanceof WorkerGlobalScope);
 
 // Make sure to access `process` through `_global` so that WebPack does not accidently browserify
 // this code.
 export const isNode: boolean =
-    (!('nw' in _global) && typeof _global.process !== 'undefined' &&
+    (!('nw' in _global) && typeof _global.process !== o &&
      {}.toString.call(_global.process) === '[object process]');
 
 export const isBrowser: boolean =
-    !isNode && !isWebWorker && !!(typeof window !== 'undefined' && (window as any)['HTMLElement']);
+    !isNode && !isWebWorker && !!(typeof window !== o && (window as any)['HTMLElement']);
 
 // we are in electron of nw, so we are both browser and nodejs
 // Make sure to access `process` through `_global` so that WebPack does not accidently browserify
 // this code.
-export const isMix: boolean = typeof _global.process !== 'undefined' &&
+export const isMix: boolean = typeof _global.process !== o &&
     {}.toString.call(_global.process) === '[object process]' && !isWebWorker &&
-    !!(typeof window !== 'undefined' && (window as any)['HTMLElement']);
+    !!(typeof window !== o && (window as any)['HTMLElement']);
 
 const zoneSymbolEventNames: {[eventName: string]: string} = {};
 
@@ -128,10 +129,10 @@ const wrapFn = function(event: Event) {
 };
 
 export function patchProperty(obj: any, prop: string, prototype?: any) {
-  let desc = Object.getOwnPropertyDescriptor(obj, prop);
+  let desc = a(obj, prop);
   if (!desc && prototype) {
     // when patch window object, use prototype to check prop exist or not
-    const prototypeDesc = Object.getOwnPropertyDescriptor(prototype, prop);
+    const prototypeDesc = a(prototype, prop);
     if (prototypeDesc) {
       desc = {enumerable: true, configurable: true};
     }
@@ -181,7 +182,7 @@ export function patchProperty(obj: any, prop: string, prototype?: any) {
       originalDescSet.apply(target, NULL_ON_PROP_VALUE);
     }
 
-    if (typeof newValue === 'function') {
+    if (typeof newValue === n) {
       target[eventNameSymbol] = newValue;
       target.addEventListener(eventName, wrapFn, false);
     } else {
@@ -214,7 +215,7 @@ export function patchProperty(obj: any, prop: string, prototype?: any) {
       let value = originalDescGet && originalDescGet.apply(this);
       if (value) {
         desc.set.apply(this, [value]);
-        if (typeof target[REMOVE_ATTRIBUTE] === FUNCTION) {
+        if (typeof target[REMOVE_ATTRIBUTE] === n) {
           target.removeAttribute(prop);
         }
         return value;
@@ -223,7 +224,7 @@ export function patchProperty(obj: any, prop: string, prototype?: any) {
     return null;
   };
 
-  Object.defineProperty(obj, prop, desc);
+  b(obj, prop, desc);
 }
 
 export function patchOnProperties(obj: any, properties: string[], prototype?: any) {
@@ -286,15 +287,15 @@ export function patchClass(className: string) {
     // https://bugs.webkit.org/show_bug.cgi?id=44721
     if (className === 'XMLHttpRequest' && prop === 'responseBlob') continue;
     (function(prop) {
-      if (typeof instance[prop] === 'function') {
+      if (typeof instance[prop] === n) {
         _global[className].prototype[prop] = function() {
           return this[originalInstanceKey][prop].apply(this[originalInstanceKey], arguments);
         };
       } else {
-        Object.defineProperty(_global[className].prototype, prop, {
+        b(_global[className].prototype, prop, {
           set: function(fn) {
-            if (typeof fn === 'function') {
-              this[originalInstanceKey][prop] = Zone.current.wrap(fn, className + '.' + prop);
+            if (typeof fn === n) {
+              this[originalInstanceKey][prop] = (Zone as any).c.w(fn, className + '.' + prop);
               // keep callback in wrapped function so we can
               // use it in Function.prototype.toString to return
               // the native one.
@@ -324,7 +325,7 @@ export function patchMethod(
         any): Function {
   let proto = target;
   while (proto && !proto.hasOwnProperty(name)) {
-    proto = Object.getPrototypeOf(proto);
+    proto = d(proto);
   }
   if (!proto && target[name]) {
     // somehow we did not find it, but we can see it. This happens on IE for Window properties.
@@ -337,7 +338,7 @@ export function patchMethod(
     delegate = proto[delegateName] = proto[name];
     // check whether proto[name] is writable
     // some property is readonly in safari, such as HtmlCanvasElement.prototype.toBlob
-    const desc = proto && Object.getOwnPropertyDescriptor(proto, name);
+    const desc = proto && a(proto, name);
     if (isPropertyWritable(desc)) {
       const patchDelegate = patchFn(delegate, delegateName, name);
       proto[name] = function() {
@@ -352,7 +353,7 @@ export function patchMethod(
 export interface MacroTaskMeta extends TaskData {
   name: string;
   target: any;
-  callbackIndex: number;
+  cbIdx: number;
   args: any[];
 }
 
@@ -363,7 +364,7 @@ export function patchMacroTask(
 
   function scheduleTask(task: Task) {
     const data = <MacroTaskMeta>task.data;
-    data.args[data.callbackIndex] = function() {
+    data.args[data.cbIdx] = function() {
       task.invoke.apply(this, arguments);
     };
     setNative.apply(data.target, data.args);
@@ -372,9 +373,8 @@ export function patchMacroTask(
 
   setNative = patchMethod(obj, funcName, (delegate: Function) => function(self: any, args: any[]) {
     const meta = metaCreator(self, args);
-    if (meta.callbackIndex >= 0 && typeof args[meta.callbackIndex] === 'function') {
-      const task = Zone.current.scheduleMacroTask(
-          meta.name, args[meta.callbackIndex], meta, scheduleTask, null);
+    if (meta.cbIdx >= 0 && typeof args[meta.cbIdx] === n) {
+      const task = (Zone as any).c.sc(meta.name, args[meta.cbIdx], meta, scheduleTask, null);
       return task;
     } else {
       // cause an error by calling it directly.
@@ -386,7 +386,7 @@ export function patchMacroTask(
 export interface MicroTaskMeta extends TaskData {
   name: string;
   target: any;
-  callbackIndex: number;
+  cbIdx: number;
   args: any[];
 }
 
@@ -396,7 +396,7 @@ export function patchMicroTask(
 
   function scheduleTask(task: Task) {
     const data = <MacroTaskMeta>task.data;
-    data.args[data.callbackIndex] = function() {
+    data.args[data.cbIdx] = function() {
       task.invoke.apply(this, arguments);
     };
     setNative.apply(data.target, data.args);
@@ -405,9 +405,8 @@ export function patchMicroTask(
 
   setNative = patchMethod(obj, funcName, (delegate: Function) => function(self: any, args: any[]) {
     const meta = metaCreator(self, args);
-    if (meta.callbackIndex >= 0 && typeof args[meta.callbackIndex] === 'function') {
-      const task =
-          Zone.current.scheduleMicroTask(meta.name, args[meta.callbackIndex], meta, scheduleTask);
+    if (meta.cbIdx >= 0 && typeof args[meta.cbIdx] === n) {
+      const task = (Zone as any).c.si(meta.name, args[meta.cbIdx], meta, scheduleTask);
       return task;
     } else {
       // cause an error by calling it directly.
@@ -432,7 +431,6 @@ export function isIEOrEdge() {
 
   try {
     const ua = window.navigator.userAgent;
-    const msie = ua.indexOf('MSIE ');
     if (ua.indexOf('MSIE ') !== -1 || ua.indexOf('Trident/') !== -1 || ua.indexOf('Edge/') !== -1) {
       ieOrEdge = true;
     }

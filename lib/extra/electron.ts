@@ -5,17 +5,21 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-Zone.__load_patch('electron', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  const FUNCTION = 'function';
+(Zone as any).l('electron', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+  function patchArguments(target: any, name: string, source: string): Function {
+    return api.patchMethod(target, name, (delegate: Function) => (self: any, args: any[]) => {
+      return delegate && delegate.apply(self, api.bindArguments(args, source));
+    });
+  }
   const {desktopCapturer, shell, CallbackRegistry} = require('electron');
   // patch api in renderer process directly
   // desktopCapturer
   if (desktopCapturer) {
-    api.patchArguments(desktopCapturer, 'getSources', 'electron.desktopCapturer.getSources');
+    patchArguments(desktopCapturer, 'getSources', 'electron.desktopCapturer.getSources');
   }
   // shell
   if (shell) {
-    api.patchArguments(shell, 'openExternal', 'electron.shell.openExternal');
+    patchArguments(shell, 'openExternal', 'electron.shell.openExternal');
   }
 
   // patch api in main process through CallbackRegistry
@@ -23,5 +27,5 @@ Zone.__load_patch('electron', (global: any, Zone: ZoneType, api: _ZonePrivate) =
     return;
   }
 
-  api.patchArguments(CallbackRegistry.prototype, 'add', 'CallbackRegistry.add');
+  patchArguments(CallbackRegistry.prototype, 'add', 'CallbackRegistry.add');
 });

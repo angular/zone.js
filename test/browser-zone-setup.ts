@@ -10,6 +10,7 @@ if (typeof window !== 'undefined') {
 }
 import '../lib/common/to-string';
 import '../lib/browser/browser';
+import '../lib/browser/webapis-user-media';
 import '../lib/zone-spec/async-test';
 import '../lib/zone-spec/fake-async-test';
 import '../lib/zone-spec/long-stack-trace';
