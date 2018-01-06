@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {zoneSymbol} from '../common/utils';
+import {o, p, zoneSymbol} from '../common/utils';
 /*
  * This is necessary for Chrome and Chrome mobile, to enable
  * things like redefining `createdCallback` on an element.
@@ -17,9 +17,6 @@ const _getOwnPropertyDescriptor = (Object as any)[zoneSymbol('getOwnPropertyDesc
     Object.getOwnPropertyDescriptor;
 const _create = Object.create;
 const unconfigurablesKey = zoneSymbol('unconfigurables');
-const PROTOTYPE = 'prototype';
-const OBJECT = 'object';
-const UNDEFINED = 'undefined';
 
 export function propertyPatch() {
   Object.defineProperty = function(obj, prop, desc) {
@@ -27,7 +24,7 @@ export function propertyPatch() {
       throw new TypeError('Cannot assign to read only property \'' + prop + '\' of ' + obj);
     }
     const originalConfigurableFlag = desc.configurable;
-    if (prop !== PROTOTYPE) {
+    if (prop !== 'prototype') {
       desc = rewriteDescriptor(obj, prop, desc);
     }
     return _tryDefineProperty(obj, prop, desc, originalConfigurableFlag);
@@ -41,7 +38,7 @@ export function propertyPatch() {
   };
 
   Object.create = <any>function(obj: any, proto: any) {
-    if (typeof proto === OBJECT && !Object.isFrozen(proto)) {
+    if (typeof proto === p && !Object.isFrozen(proto)) {
       Object.keys(proto).forEach(function(prop) {
         proto[prop] = rewriteDescriptor(obj, prop, proto[prop]);
       });
@@ -92,7 +89,7 @@ function _tryDefineProperty(obj: any, prop: string, desc: any, originalConfigura
     if (desc.configurable) {
       // In case of errors, when the configurable flag was likely set by rewriteDescriptor(), let's
       // retry with the original flag value
-      if (typeof originalConfigurableFlag == UNDEFINED) {
+      if (typeof originalConfigurableFlag == o) {
         delete desc.configurable;
       } else {
         desc.configurable = originalConfigurableFlag;

@@ -6,8 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {FALSE_STR, globalSources, patchEventPrototype, patchEventTarget, TRUE_STR, ZONE_SYMBOL_PREFIX, zoneSymbolEventNames} from '../common/events';
-import {attachOriginToPatched, isIEOrEdge, zoneSymbol} from '../common/utils';
+import {ens, gs, patchEventPrototype, patchEventTarget} from '../common/events';
+import {isIEOrEdge, k, l, m} from '../common/utils';
 
 import {eventNames} from './property-descriptor';
 
@@ -45,19 +45,19 @@ export function eventTargetPatch(_global: any, api: _ZonePrivate) {
   //  predefine all __zone_symbol__ + eventName + true/false string
   for (let i = 0; i < eventNames.length; i++) {
     const eventName = eventNames[i];
-    const falseEventName = eventName + FALSE_STR;
-    const trueEventName = eventName + TRUE_STR;
-    const symbol = ZONE_SYMBOL_PREFIX + falseEventName;
-    const symbolCapture = ZONE_SYMBOL_PREFIX + trueEventName;
-    zoneSymbolEventNames[eventName] = {};
-    zoneSymbolEventNames[eventName][FALSE_STR] = symbol;
-    zoneSymbolEventNames[eventName][TRUE_STR] = symbolCapture;
+    const falseEventName = eventName + l;
+    const trueEventName = eventName + k;
+    const symbol = m + falseEventName;
+    const symbolCapture = m + trueEventName;
+    ens[eventName] = {};
+    ens[eventName][l] = symbol;
+    ens[eventName][k] = symbolCapture;
   }
 
   //  predefine all task.source string
   for (let i = 0; i < WTF_ISSUE_555.length; i++) {
     const target: any = WTF_ISSUE_555_ARRAY[i];
-    const targets: any = globalSources[target] = {};
+    const targets: any = gs[target] = {};
     for (let j = 0; j < eventNames.length; j++) {
       const eventName = eventNames[j];
       targets[eventName] = target + ADD_EVENT_LISTENER_SOURCE + eventName;
@@ -101,7 +101,7 @@ export function eventTargetPatch(_global: any, api: _ZonePrivate) {
     const type = _global[apis[i]];
     apiTypes.push(type && type.prototype);
   }
-  patchEventTarget(_global, apiTypes, {validateHandler: checkIEAndCrossContext});
+  patchEventTarget(_global, apiTypes, {vh: checkIEAndCrossContext});
   api.patchEventTarget = patchEventTarget;
 
   return true;

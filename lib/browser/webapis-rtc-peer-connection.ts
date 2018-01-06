@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-Zone.__load_patch('RTCPeerConnection', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+(Zone as any).l('RTCPeerConnection', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   const RTCPeerConnection = global['RTCPeerConnection'];
   if (!RTCPeerConnection) {
     return;
@@ -22,5 +22,5 @@ Zone.__load_patch('RTCPeerConnection', (global: any, Zone: ZoneType, api: _ZoneP
   RTCPeerConnection.prototype[addSymbol] = null;
   RTCPeerConnection.prototype[removeSymbol] = null;
 
-  api.patchEventTarget(global, [RTCPeerConnection.prototype], {useGlobalCallback: false});
+  api.patchEventTarget(global, [RTCPeerConnection.prototype], {useG: false});
 });

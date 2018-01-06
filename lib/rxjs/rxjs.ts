@@ -19,14 +19,11 @@ import {Subscriber} from 'rxjs/Subscriber';
 import {Subscription} from 'rxjs/Subscription';
 import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
 
-(Zone as any).__load_patch('rxjs', (global: any, Zone: ZoneType, api: any) => {
+(Zone as any).__load_patch('rxjs', (global: any, Zone: ZoneType) => {
   const symbol: (symbolString: string) => string = (Zone as any).__symbol__;
-  const subscribeSource = 'rxjs.subscribe';
   const nextSource = 'rxjs.Subscriber.next';
   const errorSource = 'rxjs.Subscriber.error';
   const completeSource = 'rxjs.Subscriber.complete';
-  const unsubscribeSource = 'rxjs.Subscriber.unsubscribe';
-  const teardownSource = 'rxjs.Subscriber.teardownLogic';
 
   const empty = {
     closed: true,
@@ -321,7 +318,6 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
     }
 
     const scheduleSymbol = symbol('scheduleSymbol');
-    const flushSymbol = symbol('flushSymbol');
     const zoneSymbol = symbol('zone');
     if (asap[scheduleSymbol]) {
       return;

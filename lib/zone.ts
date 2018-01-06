@@ -327,7 +327,7 @@ interface _ZonePrivate {
       (target: any, name: string,
        patchFn: (delegate: Function, delegateName: string, name: string) =>
            (self: any, args: any[]) => any) => Function;
-  patchArguments: (target: any, name: string, source: string) => Function;
+  bindArguments: (args: any[], source: string) => any[];
 }
 
 /** @internal */
@@ -656,7 +656,7 @@ const Zone: ZoneType = (function(global: any) {
     }
 
     static get root(): AmbientZone {
-      let zone = Zone.current;
+      let zone = Zone.c;
       while (zone.parent) {
         zone = zone.parent;
       }
@@ -664,6 +664,10 @@ const Zone: ZoneType = (function(global: any) {
     }
 
     static get current(): AmbientZone {
+      return _currentZoneFrame.zone;
+    }
+
+    static get c(): AmbientZone {
       return _currentZoneFrame.zone;
     }
 
@@ -1167,7 +1171,8 @@ const Zone: ZoneType = (function(global: any) {
       this.cancelFn = cancelFn;
       this.callback = callback;
       const self = this;
-      if (type === eventTask && options && (options as any).isUsingGlobalCallback) {
+      // TODO: @JiaLiPassion options should have interface
+      if (type === eventTask && options && (options as any).useG) {
         this.invoke = ZoneTask.invokeTask;
       } else {
         this.invoke = function() {
@@ -1318,7 +1323,7 @@ const Zone: ZoneType = (function(global: any) {
     patchEventTarget: () => [],
     patchOnProperties: noop,
     patchMethod: () => noop,
-    patchArguments: () => noop,
+    bindArguments: () => null,
     setNativePromise: (NativePromise: any) => {
       // sometimes NativePromise.resolve static function
       // is not ready yet, (such as core-js/es6.promise)
@@ -1338,7 +1343,19 @@ const Zone: ZoneType = (function(global: any) {
     return '__zone_symbol__' + name;
   }
 
-
   performanceMeasure('Zone', 'Zone');
+  const z: any = Zone.prototype;
+  z.w = z.wrap;
+  z.f = z.fork;
+  z.r = z.run;
+  z.rg = z.runGuarded;
+  z.rt = z.runTask;
+  z.st = z.scheduleTask;
+  z.sc = z.scheduleMacroTask;
+  z.si = z.scheduleMicroTask;
+  z.se = z.scheduleEventTask;
+  z.ct = z.cancelTask;
+  (Zone as any).l = Zone.__load_patch;
+  (Zone as any).s = Zone.__symbol__;
   return global['Zone'] = Zone;
 })(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);

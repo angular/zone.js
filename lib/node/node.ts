@@ -11,18 +11,18 @@ import './fs';
 
 import {findEventTasks} from '../common/events';
 import {patchTimer} from '../common/timers';
-import {isMix, patchArguments, patchMacroTask, patchMethod, patchMicroTask, patchOnProperties} from '../common/utils';
+import {bindArguments, f, isMix, patchMacroTask, patchMethod, patchMicroTask, patchOnProperties} from '../common/utils';
 
 const set = 'set';
 const clear = 'clear';
 
-Zone.__load_patch('node_util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+(Zone as any).l('node_util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   api.patchOnProperties = patchOnProperties;
   api.patchMethod = patchMethod;
-  api.patchArguments = patchArguments;
+  api.bindArguments = bindArguments;
 });
 
-Zone.__load_patch('node_timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+(Zone as any).l('node_timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   // Timers
   let globalUseTimeoutFromTimer = false;
   try {
@@ -76,20 +76,20 @@ Zone.__load_patch('node_timers', (global: any, Zone: ZoneType, api: _ZonePrivate
 });
 
 // patch process related methods
-Zone.__load_patch('nextTick', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+(Zone as any).l('nextTick', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   // patch nextTick as microTask
   patchMicroTask(process, 'nextTick', (self: any, args: any[]) => {
     return {
       name: 'process.nextTick',
       args: args,
-      callbackIndex: (args.length > 0 && typeof args[0] === 'function') ? 0 : -1,
+      cbIdx: (args.length > 0 && typeof args[0] === 'function') ? 0 : -1,
       target: process
     };
   });
 });
 
-Zone.__load_patch(
-    'handleUnhandledPromiseRejection', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+(Zone as any)
+    .l('handleUnhandledPromiseRejection', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
       (Zone as any)[api.symbol('unhandledPromiseRejectionHandler')] =
           findProcessPromiseRejectionHandler('unhandledRejection');
 
@@ -116,7 +116,7 @@ Zone.__load_patch(
 
 
 // Crypto
-Zone.__load_patch('crypto', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+(Zone as any).l('crypto', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   let crypto: any;
   try {
     crypto = require('crypto');
@@ -131,7 +131,7 @@ Zone.__load_patch('crypto', (global: any, Zone: ZoneType, api: _ZonePrivate) => 
         return {
           name: 'crypto.' + name,
           args: args,
-          callbackIndex: (args.length > 0 && typeof args[args.length - 1] === 'function') ?
+          cbIdx: (args.length > 0 && typeof args[args.length - 1] === 'function') ?
               args.length - 1 :
               -1,
           target: crypto
@@ -141,15 +141,15 @@ Zone.__load_patch('crypto', (global: any, Zone: ZoneType, api: _ZonePrivate) => 
   }
 });
 
-Zone.__load_patch('console', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+(Zone as any).l('console', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   const consoleMethods =
       ['dir', 'log', 'info', 'error', 'warn', 'assert', 'debug', 'timeEnd', 'trace'];
   consoleMethods.forEach((m: string) => {
     const originalMethod = (console as any)[Zone.__symbol__(m)] = (console as any)[m];
     if (originalMethod) {
       (console as any)[m] = function() {
-        const args = Array.prototype.slice.call(arguments);
-        if (Zone.current === Zone.root) {
+        const args = f.call(arguments);
+        if ((Zone as any).c === Zone.root) {
           return originalMethod.apply(this, args);
         } else {
           return Zone.root.run(originalMethod, this, args);

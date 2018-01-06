@@ -330,7 +330,7 @@
           // arguments
           let addtionalArgs: any[];
           if (args) {
-            let callbackIndex = (task.data as any).callbackIndex;
+            let callbackIndex = (task.data as any).cbIdx;
             if (typeof args.length === 'number' && args.length > callbackIndex + 1) {
               addtionalArgs = Array.prototype.slice.call(args, callbackIndex + 1);
             }
