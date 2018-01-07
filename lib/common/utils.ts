@@ -31,11 +31,14 @@ export const p = 'object';
 export const q = 'number';
 export const r = 'string';
 
+
 // Hack since TypeScript isn't compiling this for a worker.
 declare const WorkerGlobalScope: any;
 
 export const zoneSymbol = Zone.__symbol__;
-const _global: any = typeof window === p && window || typeof self === p && self || global;
+const iw = typeof window !== o;
+const w: any = iw ? window : undefined;
+const _global: any = iw && w || typeof self === p && self || global;
 
 const REMOVE_ATTRIBUTE = 'removeAttribute';
 const NULL_ON_PROP_VALUE: any[] = [null];
@@ -95,15 +98,14 @@ export const isNode: boolean =
     (!('nw' in _global) && typeof _global.process !== o &&
      {}.toString.call(_global.process) === '[object process]');
 
-export const isBrowser: boolean =
-    !isNode && !isWebWorker && !!(typeof window !== o && (window as any)['HTMLElement']);
+export const isBrowser: boolean = !isNode && !isWebWorker && !!(iw && w['HTMLElement']);
 
 // we are in electron of nw, so we are both browser and nodejs
 // Make sure to access `process` through `_global` so that WebPack does not accidently browserify
 // this code.
 export const isMix: boolean = typeof _global.process !== o &&
     {}.toString.call(_global.process) === '[object process]' && !isWebWorker &&
-    !!(typeof window !== o && (window as any)['HTMLElement']);
+    !!(iw && w['HTMLElement']);
 
 const zoneSymbolEventNames: {[eventName: string]: string} = {};
 
@@ -430,7 +432,7 @@ export function isIEOrEdge() {
   isDetectedIEOrEdge = true;
 
   try {
-    const ua = window.navigator.userAgent;
+    const ua = w.navigator.userAgent;
     if (ua.indexOf('MSIE ') !== -1 || ua.indexOf('Trident/') !== -1 || ua.indexOf('Edge/') !== -1) {
       ieOrEdge = true;
     }
