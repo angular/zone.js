@@ -53,6 +53,7 @@
       while (_uncaughtPromiseErrors.length) {
         const uncaughtPromiseError: UncaughtPromiseError = _uncaughtPromiseErrors.shift();
         try {
+          // zone.runGuarded
           (uncaughtPromiseError.zone as any).rg(() => {
             throw uncaughtPromiseError;
           });
@@ -69,6 +70,7 @@
     api.onUnhandledError(e);
     try {
       const handler = (Zone as any)[UNHANDLED_PROMISE_REJECTION_HANDLER_SYMBOL];
+      // n is 'function'
       if (handler && typeof handler === n) {
         handler.apply(this, [e]);
       }
@@ -135,6 +137,7 @@
       // should only get value.then once based on promise spec.
       let then: any = null;
       try {
+        // p is 'object', n is 'function' string
         if (typeof value === p || typeof value === n) {
           then = value && value.then;
         }
@@ -150,6 +153,7 @@
           (value as any)[symbolState] !== UNRESOLVED) {
         clearRejectedNoCatch(<Promise<any>>value);
         resolvePromise(promise, (value as any)[symbolState], (value as any)[symbolValue]);
+        // n is 'function' string
       } else if (state !== REJECTED && typeof then === n) {
         try {
           then.apply(value, [
@@ -173,6 +177,7 @@
               (Zone.currentTask.data as any)[creationTrace];
           if (trace) {
             // only keep the long stack trace into error when in longStackTraceZone
+            // b is Object.defineProperty
             b(value, CURRENT_TASK_TRACE_SYMBOL,
               {configurable: true, enumerable: false, writable: true, value: trace});
           }
@@ -192,6 +197,7 @@
             const error: UncaughtPromiseError = err;
             error.rejection = value;
             error.promise = promise;
+            // Zone.current
             error.zone = (Zone as any).c;
             error.task = Zone.currentTask;
             _uncaughtPromiseErrors.push(error);
@@ -214,6 +220,7 @@
       // eventHandler
       try {
         const handler = (Zone as any)[REJECTION_HANDLED_HANDLER];
+        // n is 'function' string
         if (handler && typeof handler === n) {
           handler.apply(this, [{rejection: (promise as any)[symbolValue], promise: promise}]);
         }
@@ -233,10 +240,12 @@
       onFulfilled?: (value: R) => U1, onRejected?: (error: any) => U2): void {
     clearRejectedNoCatch(promise);
     const delegate = (promise as any)[symbolState] ?
+        // n is 'function' string
         (typeof onFulfilled === n) ? onFulfilled : forwardResolution :
         (typeof onRejected === n) ? onRejected : forwardRejection;
     (zone as any).si(source, () => {
       try {
+        // zone.run
         resolvePromise(
             chainPromise, true,
             (zone as any).r(delegate, undefined, [(promise as any)[symbolValue]]));
@@ -334,6 +343,7 @@
         null): Promise<TResult1|TResult2> {
       const chainPromise: Promise<TResult1|TResult2> =
           new (this.constructor as typeof ZoneAwarePromise)(null);
+      // Zone.current
       const zone = (Zone as any).c;
       if ((this as any)[symbolState] == UNRESOLVED) {
         (<any[]>(this as any)[symbolValue]).push(zone, chainPromise, onFulfilled, onRejected);
@@ -356,8 +366,10 @@
   ZoneAwarePromise['all'] = ZoneAwarePromise.all;
 
   const NativePromise = global[symbolPromise] = global['Promise'];
+  // Zone.__symbol__
   const ZONE_AWARE_PROMISE = (Zone as any).s('ZoneAwarePromise');
 
+  // a is Object.getOwnPropertyDescriptor
   let desc = a(global, 'Promise');
   if (!desc || desc.configurable) {
     desc && delete desc.writable;
@@ -391,6 +403,7 @@
       }
     };
 
+    // b is Object.defineProperty
     b(global, 'Promise', desc);
   }
 
@@ -406,8 +419,10 @@
 
     // check Ctor.prototype.then propertyDescritor is writable or not
     // in meteor env, writable is false, we have to make it to be true.
+    // a is Object.getOwnPropertyDescritor
     const prop = a(Ctor.prototype, 'then');
     if (prop && prop.writable === false && prop.configurable) {
+      // b is Object.defineProperty
       b(Ctor.prototype, 'then', {writable: true});
     }
 
@@ -438,12 +453,14 @@
     patchThen(NativePromise);
 
     let fetch = global['fetch'];
+    // n is 'function'
     if (typeof fetch == n) {
       global['fetch'] = zoneify(fetch);
     }
   }
 
   // This is not part of public API, but it is useful for tests, so we expose it.
+  // s is '__symbol__'
   (Promise as any)[(Zone as any).s('uncaughtPromiseErrors')] = _uncaughtPromiseErrors;
   return ZoneAwarePromise;
 });

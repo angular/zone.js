@@ -38,6 +38,7 @@ export function propertyPatch() {
   };
 
   Object.create = <any>function(obj: any, proto: any) {
+    // o is 'object' string
     if (typeof proto === p && !Object.isFrozen(proto)) {
       Object.keys(proto).forEach(function(prop) {
         proto[prop] = rewriteDescriptor(obj, prop, proto[prop]);
@@ -89,6 +90,7 @@ function _tryDefineProperty(obj: any, prop: string, desc: any, originalConfigura
     if (desc.configurable) {
       // In case of errors, when the configurable flag was likely set by rewriteDescriptor(), let's
       // retry with the original flag value
+      // o is 'undefined' string
       if (typeof originalConfigurableFlag == o) {
         delete desc.configurable;
       } else {

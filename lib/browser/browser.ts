@@ -45,6 +45,7 @@ import {registerElementPatch} from './register-element';
     const name = blockingMethods[i];
     patchMethod(global, name, (delegate, symbol, name) => {
       return function(s: any, args: any[]) {
+        // Zone.current.run
         return (Zone as any).c.r(delegate, global, args, name);
       };
     });
@@ -53,6 +54,7 @@ import {registerElementPatch} from './register-element';
 
 (Zone as any).l('EventTarget', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   // load blackListEvents from global
+  // Zone.__symbol__
   const SYMBOL_BLACK_LISTED_EVENTS = (Zone as any).s('BLACK_LISTED_EVENTS');
   if (global[SYMBOL_BLACK_LISTED_EVENTS]) {
     (Zone as any)[SYMBOL_BLACK_LISTED_EVENTS] = global[SYMBOL_BLACK_LISTED_EVENTS];
@@ -79,6 +81,7 @@ import {registerElementPatch} from './register-element';
 
 (Zone as any).l('canvas', (global: any) => {
   const HTMLCanvasElement = global['HTMLCanvasElement'];
+  // o is 'undefined'
   if (typeof HTMLCanvasElement !== o && HTMLCanvasElement.prototype &&
       HTMLCanvasElement.prototype.toBlob) {
     patchMacroTask(HTMLCanvasElement.prototype, 'toBlob', (self: any, args: any[]) => {
@@ -133,6 +136,8 @@ import {registerElementPatch} from './register-element';
       // remove existing event listener
       const listener = target[XHR_LISTENER];
       if (!oriAddListener) {
+        // i is addEventListener zoneSymbol
+        // j is removeEventListener zoneSymbol
         oriAddListener = target[i];
         oriRemoveListener = target[j];
       }
@@ -180,6 +185,7 @@ import {registerElementPatch} from './register-element';
     const XMLHTTPREQUEST_SOURCE = 'XMLHttpRequest.send';
     const sendNative: Function =
         patchMethod(XMLHttpRequestPrototype, 'send', () => function(self: any, args: any[]) {
+          // Zone.current
           const zone = (Zone as any).c;
           if (self[XHR_SYNC]) {
             // if the XHR is sync there is no task to schedule, just execute the code.
@@ -193,6 +199,7 @@ import {registerElementPatch} from './register-element';
               args: args,
               aborted: false
             };
+            // Zone.scheduleMacroTask
             return zone.sc(
                 XMLHTTPREQUEST_SOURCE, placeholderCallback, options, scheduleTask, clearTask);
           }
@@ -200,6 +207,7 @@ import {registerElementPatch} from './register-element';
 
     const abortNative = patchMethod(XMLHttpRequestPrototype, 'abort', () => function(self: any) {
       const task: Task = findPendingTask(self);
+      // r is 'string'
       if (task && typeof task.type == r) {
         // If the XHR has already completed, do nothing.
         // If the XHR has already been aborted, do nothing.
@@ -208,6 +216,7 @@ import {registerElementPatch} from './register-element';
         if (task.cancelFn == null || (task.data && (<XHROptions>task.data).aborted)) {
           return;
         }
+        // Zone.cancelTask
         (task.zone as any).ct(task);
       }
       // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no

@@ -25,6 +25,7 @@ export function registerElementPatch(_global: any) {
         const source = 'Document.registerElement::' + callback;
         const p = opts.prototype;
         if (p.hasOwnProperty(callback)) {
+          // a is Object.getOwnPropertyDescriptor
           const descriptor = a(p, callback);
           if (descriptor && descriptor.value) {
             descriptor.value = (Zone as any).c.w(descriptor.value, source);

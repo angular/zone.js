@@ -45,18 +45,26 @@ export function eventTargetPatch(_global: any, api: _ZonePrivate) {
   //  predefine all __zone_symbol__ + eventName + true/false string
   for (let i = 0; i < eventNames.length; i++) {
     const eventName = eventNames[i];
+    // l is 'false' string
     const falseEventName = eventName + l;
+    // k is 'true' string
     const trueEventName = eventName + k;
+    // m is '__zone_symbol__' string
     const symbol = m + falseEventName;
+    // m is '__zone_symbol__' string
     const symbolCapture = m + trueEventName;
+    // ens is globalEventNames cache
     ens[eventName] = {};
+    // l is 'false' string
     ens[eventName][l] = symbol;
+    // k is 'true' string
     ens[eventName][k] = symbolCapture;
   }
 
   //  predefine all task.source string
   for (let i = 0; i < WTF_ISSUE_555.length; i++) {
     const target: any = WTF_ISSUE_555_ARRAY[i];
+    // gs is global source cache
     const targets: any = gs[target] = {};
     for (let j = 0; j < eventNames.length; j++) {
       const eventName = eventNames[j];
@@ -101,6 +109,8 @@ export function eventTargetPatch(_global: any, api: _ZonePrivate) {
     const type = _global[apis[i]];
     apiTypes.push(type && type.prototype);
   }
+  // vh is validateHandler to check event handler
+  // is valid or not(for security check)
   patchEventTarget(_global, apiTypes, {vh: checkIEAndCrossContext});
   api.patchEventTarget = patchEventTarget;
 

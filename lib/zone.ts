@@ -1345,17 +1345,29 @@ const Zone: ZoneType = (function(global: any) {
 
   performanceMeasure('Zone', 'Zone');
   const z: any = Zone.prototype;
+  /** shorter for Zone.prototype.wrap */
   z.w = z.wrap;
+  /** shorter for Zone.prototype.fork */
   z.f = z.fork;
+  /** shorter for Zone.prototype.run */
   z.r = z.run;
+  /** shorter for Zone.prototype.runGuarded */
   z.rg = z.runGuarded;
+  /** shorter for Zone.prototype.runTask */
   z.rt = z.runTask;
+  /** shorter for Zone.prototype.scheduleTask */
   z.st = z.scheduleTask;
+  /** shorter for Zone.prototype.scheduleMacroTask */
   z.sc = z.scheduleMacroTask;
+  /** shorter for Zone.prototype.scheduleMicroTask */
   z.si = z.scheduleMicroTask;
+  /** shorter for Zone.prototype.scheduleEventTask */
   z.se = z.scheduleEventTask;
+  /** shorter for Zone.prototype.cancelTask */
   z.ct = z.cancelTask;
+  /** shorter for Zone.__load_patch */
   (Zone as any).l = Zone.__load_patch;
+  /** shorter for Zone.__symbol__ */
   (Zone as any).s = Zone.__symbol__;
   return global['Zone'] = Zone;
 })(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);

@@ -75,6 +75,7 @@ export function patchEventTarget(
       return;
     }
     const delegate = task.callback;
+    // p is 'object' string
     if (typeof delegate === p && delegate.handleEvent) {
       // create the bind version of handleEvent when invoke
       task.callback = (event: Event) => delegate.handleEvent(event);
@@ -83,6 +84,7 @@ export function patchEventTarget(
     // invoke static task.invoke
     task.invoke(task, target, [event]);
     const options = task.options;
+    // p is 'object' string
     if (options && typeof options === p && options.once) {
       // if options.once is true, after invoke once remove listener here
       // only browser need to do this, nodejs eventEmitter will cal removeListener
@@ -103,6 +105,7 @@ export function patchEventTarget(
     // event.target is needed for Samusung TV and SourceBuffer
     // || global is needed https://github.com/angular/zone.js/issues/190
     const target: any = this || event.target || _global;
+    // l is 'false' string
     const tasks = target[ens[event.type][l]];
     if (tasks) {
       // invoke all tasks which attached to current target with given event.type and capture = false
@@ -135,6 +138,7 @@ export function patchEventTarget(
     // event.target is needed for Samusung TV and SourceBuffer
     // || global is needed https://github.com/angular/zone.js/issues/190
     const target: any = this || event.target || _global;
+    // k is 'true' string
     const tasks = target[ens[event.type][k]];
     if (tasks) {
       // invoke all tasks which attached to current target with given event.type and capture = false
@@ -179,6 +183,7 @@ export function patchEventTarget(
 
     let proto = obj;
     while (proto && !proto.hasOwnProperty(ADD_EVENT_LISTENER)) {
+      // d is Object.getPrototypeOf
       proto = d(proto);
     }
     if (!proto && obj[ADD_EVENT_LISTENER]) {
@@ -230,9 +235,11 @@ export function patchEventTarget(
       // from Zone.prototype.cancelTask, we should remove the task
       // from tasksList of target first
       if (!task.isRemoved) {
+        // ens is event names cache
         const symbolEventNames = ens[task.eventName];
         let symbolEventName;
         if (symbolEventNames) {
+          // k is 'true' string, l is 'false' string
           symbolEventName = symbolEventNames[task.capture ? k : l];
         }
         const existingTasks = symbolEventName && task.target[symbolEventName];
@@ -286,6 +293,7 @@ export function patchEventTarget(
 
     const compareTaskCallbackVsDelegate = function(task: any, delegate: any) {
       const typeOfDelegate = typeof delegate;
+      // n is 'function' string, p is 'object' string
       if ((typeOfDelegate === n && task.callback === delegate) ||
           (typeOfDelegate === p && task.originalDelegate === delegate)) {
         // same callback, same capture, same event name, just return
@@ -313,6 +321,7 @@ export function patchEventTarget(
         // case here to improve addEventListener performance
         // we will create the bind delegate when invoke
         let isHandleEvent = false;
+        // n is 'function' string
         if (typeof delegate !== n) {
           if (!delegate.handleEvent) {
             return nativeListener.apply(this, arguments);
@@ -349,16 +358,20 @@ export function patchEventTarget(
           once = options ? !!options.once : false;
         }
 
+        // Zone.current
         const zone = (Zone as any).c;
         const symbolEventNames = ens[eventName];
         let symbolEventName;
         if (!symbolEventNames) {
           // the code is duplicate, but I just want to get some better performance
+          // l is 'false' string, k is 'true' string
           const falseEventName = eventName + l;
           const trueEventName = eventName + k;
+          // m is '__zone_symbol__' string
           const symbol = m + falseEventName;
           const symbolCapture = m + trueEventName;
           ens[eventName] = {};
+          // l is 'false' string, k is 'true' string
           ens[eventName][l] = symbol;
           ens[eventName][k] = symbolCapture;
           symbolEventName = capture ? symbolCapture : symbol;
@@ -411,6 +424,7 @@ export function patchEventTarget(
           (data as any).taskData = taskData;
         }
 
+        // Zone.scehduleEventTask
         const task: any =
             (zone as any).se(source, delegate, data, customScheduleFn, customCancelFn);
 
@@ -553,6 +567,7 @@ export function patchEventTarget(
       } else {
         const symbolEventNames = ens[eventName];
         if (symbolEventNames) {
+          // l is 'false' string, k is 'true' string
           const symbolEventName = symbolEventNames[l];
           const symbolCaptureEventName = symbolEventNames[k];
 

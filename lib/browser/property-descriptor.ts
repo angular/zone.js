@@ -265,6 +265,7 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
     return;
   }
 
+  // o is 'undefined' string
   const supportsWebSocket = typeof WebSocket !== o;
   if (canPatchViaPropertyDescriptor()) {
     const ignoreProperties: IgnoreProperty[] = _global.__Zone_ignore_on_properties;
@@ -306,6 +307,7 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
           XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype,
           XMLHttpRequestEventNames, ignoreProperties);
     }
+    // o is 'undefined' string
     if (typeof IDBIndex !== o) {
       patchFilteredProperties(IDBIndex.prototype, IDBIndexEventNames, ignoreProperties);
       patchFilteredProperties(IDBRequest.prototype, IDBIndexEventNames, ignoreProperties);
@@ -338,6 +340,7 @@ function canPatchViaPropertyDescriptor() {
   const ON_READY_STATE_CHANGE = 'onreadystatechange';
   const XMLHttpRequestPrototype = XMLHttpRequest.prototype;
 
+  // a is Object.getOwnPropertyDescriptor
   const xhrDesc = a(XMLHttpRequestPrototype, ON_READY_STATE_CHANGE);
 
   // add enumerable and configurable here because in opera
@@ -347,6 +350,7 @@ function canPatchViaPropertyDescriptor() {
   // and if XMLHttpRequest.prototype.onreadystatechange is undefined,
   // we should set a real desc instead a fake one
   if (xhrDesc) {
+    // b is Object.defineProperty
     b(XMLHttpRequestPrototype, ON_READY_STATE_CHANGE, {
       enumerable: true,
       configurable: true,
@@ -398,6 +402,7 @@ function patchViaCapturingAllTheEvents() {
       }
       while (elt) {
         if (elt[onproperty] && !elt[onproperty][unboundKey]) {
+          // Zone.current.wrap
           bound = (Zone as any).c.w(elt[onproperty], source);
           bound[unboundKey] = elt[onproperty];
           elt[onproperty] = bound;

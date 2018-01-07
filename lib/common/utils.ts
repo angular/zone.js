@@ -12,25 +12,43 @@
  */
 
 // issue #989, to reduce bundle size, use short name
-export const a = Object.getOwnPropertyDescriptor;
-export const b = Object.defineProperty;
-export const c = Object.defineProperties;
-export const d = Object.getPrototypeOf;
-export const e = Object.create;
-export const f = Array.prototype.slice;
-export const g = 'addEventListener';
-export const h = 'removeEventListener';
-export const i = (Zone as any).s(g);
-export const j = (Zone as any).s(h);
-export const k = 'true';
-export const l = 'false';
-export const m = '__zone_symbol__';
-export const n = 'function';
-export const o = 'undefined';
-export const p = 'object';
-export const q = 'number';
-export const r = 'string';
 
+/** Object.getOwnPropertyDescriptor */
+export const a = Object.getOwnPropertyDescriptor;
+/** Object.defineProperty */
+export const b = Object.defineProperty;
+/** Object.defineProperties */
+export const c = Object.defineProperties;
+/** Object.getPrototypeOf */
+export const d = Object.getPrototypeOf;
+/** Object.create */
+export const e = Object.create;
+/** Array.prototype.slice */
+export const f = Array.prototype.slice;
+/** addEventListener string const */
+export const g = 'addEventListener';
+/** removeEventListener string const */
+export const h = 'removeEventListener';
+/** zoneSymbol addEventListener */
+export const i = (Zone as any).s(g);
+/** zoneSymbol removeEventListener */
+export const j = (Zone as any).s(h);
+/** true string const */
+export const k = 'true';
+/** false string const */
+export const l = 'false';
+/** __zone_symbol__ string const */
+export const m = '__zone_symbol__';
+/** function type string const */
+export const n = 'function';
+/** undefined type string const */
+export const o = 'undefined';
+/** object type string const */
+export const p = 'object';
+/** number type string const */
+export const q = 'number';
+/** string type string const */
+export const r = 'string';
 
 // Hack since TypeScript isn't compiling this for a worker.
 declare const WorkerGlobalScope: any;
