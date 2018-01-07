@@ -2504,7 +2504,6 @@ describe('Zone', function() {
                const zone = Zone.current.fork({name: 'media'});
                zone.run(() => {
                  const constraints = {audio: true, video: {width: 1280, height: 720}};
-
                  navigator.getUserMedia(
                      constraints,
                      () => {

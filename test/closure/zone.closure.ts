@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import '../../dist/zone-node';
-
+const shortKeys = ['w', 'f', 'r', 'rg', 'rt', 'st', 'sc', 'si', 'se', 'ct'];
 const testClosureFunction = () => {
   const logs: string[] = [];
   // call all Zone exposed functions
@@ -69,7 +69,9 @@ const testClosureFunction = () => {
       logs.push('get' + keyZone.get('key'));
       logs.push('root' + Zone.root.name);
       Object.keys((Zone as any).prototype).forEach(key => {
-        logs.push(key);
+        if (shortKeys.indexOf(key) === -1) {
+          logs.push(key);
+        }
       });
       Object.keys(testZoneSpec).forEach(key => {
         logs.push(key);
