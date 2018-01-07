@@ -24,13 +24,16 @@ export function apply(api: _ZonePrivate, _global: any) {
     let proxySocketProto: any;
 
     // Safari 7.0 has non-configurable own 'onmessage' and friends properties on the socket instance
+    // a is Object.getOwnPropertyDescriptor
     const onmessageDesc = a(socket, 'onmessage');
     if (onmessageDesc && onmessageDesc.configurable === false) {
+      // e is Object.create
       proxySocket = e(socket);
       // socket have own property descriptor 'onopen', 'onmessage', 'onclose', 'onerror'
       // but proxySocket not, so we will keep socket as prototype and pass it to
       // patchOnProperties method
       proxySocketProto = socket;
+      // g is `addEventListener`, h is `removeEventListener` string
       [g, h, 'send', 'close'].forEach(function(propName) {
         proxySocket[propName] = function() {
           const args = f.call(arguments);

@@ -18,6 +18,7 @@ import {n, zoneSymbol} from './utils';
   const PROMISE_SYMBOL = zoneSymbol('Promise');
   const ERROR_SYMBOL = zoneSymbol('Error');
   Function.prototype.toString = function() {
+    // n is 'function' string
     if (typeof this === n) {
       const originalDelegate = this[ORIGINAL_DELEGATE_SYMBOL];
       if (originalDelegate) {

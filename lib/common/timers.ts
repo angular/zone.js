@@ -39,6 +39,7 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
           // setInterval
           return;
         }
+        // q is 'number' string
         if (typeof data.handleId === q) {
           // in non-nodejs env, we remove timerId
           // from local cache
@@ -61,7 +62,9 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
 
   setNative =
       patchMethod(window, setName, (delegate: Function) => function(self: any, args: any[]) {
+        // n is 'function' string
         if (typeof args[0] === n) {
+          // Zone.current
           const zone = (Zone as any).c;
           const options: TimerOptions = {
             handleId: null,
@@ -69,12 +72,14 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
             delay: (nameSuffix === 'Timeout' || nameSuffix === 'Interval') ? args[1] || 0 : null,
             args: args
           };
+          // Zone.scheduleMacroTask
           const task = (zone as any).sc(setName, args[0], options, scheduleTask, clearTask);
           if (!task) {
             return task;
           }
           // Node.js must additionally support the ref and unref functions.
           const handle: any = (<TimerOptions>task.data).handleId;
+          // q is 'number' string
           if (typeof handle === q) {
             // for non nodejs env, we save handleId: task
             // mapping in local cache for clearTimeout
@@ -87,11 +92,13 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
 
           // check whether handle is null, because some polyfill or browser
           // may return undefined from setTimeout/setInterval/setImmediate/requestAnimationFrame
+          // n is 'function' string
           if (handle && handle.ref && handle.unref && typeof handle.ref === n &&
               typeof handle.unref === n) {
             (<any>task).ref = (<any>handle).ref.bind(handle);
             (<any>task).unref = (<any>handle).unref.bind(handle);
           }
+          // q is 'number' string
           if (typeof handle === q || handle) {
             return handle;
           }
@@ -106,6 +113,7 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
       patchMethod(window, cancelName, (delegate: Function) => function(self: any, args: any[]) {
         const id = args[0];
         let task: Task;
+        // q is 'number' string
         if (typeof id === q) {
           // non nodejs env.
           task = tasksByHandleId[id];
@@ -117,15 +125,18 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
             task = id;
           }
         }
+        // r is 'string'
         if (task && typeof task.type === r) {
           if (task.state !== 'notScheduled' &&
               (task.cancelFn && task.data.isPeriodic || task.runCount === 0)) {
+            // q is 'number' string
             if (typeof id === q) {
               delete tasksByHandleId[id];
             } else if (id) {
               id[taskSymbol] = null;
             }
             // Do not cancel already canceled functions
+            // zone.cancelTask
             (task.zone as any).ct(task);
           }
         } else {
