@@ -1,0 +1,9 @@
+{
+  "targets": [
+    {
+      "path": "dist/zone.min.js",
+      "checkTarget": true,
+      "limit": 40000
+    }
+  ]
+}
