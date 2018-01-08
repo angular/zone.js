@@ -21,6 +21,6 @@ import './zone-spec/sync-test.spec';
 import './zone-spec/fake-async-test.spec';
 import './zone-spec/proxy.spec';
 import './zone-spec/task-tracking.spec';
-// import './rxjs/rxjs.spec';
+import './rxjs/rxjs.spec';
 
 Error.stackTraceLimit = Number.POSITIVE_INFINITY;
