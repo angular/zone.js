@@ -410,3 +410,14 @@ gulp.task('promisetest', ['build/zone-node.js'], (cb) => {
       }
     });
 });
+
+// check dist file size limitation
+gulp.task('filesize', ['build'], (cb) => {
+    const checker = require('./check-file-size');
+    const result = checker(require('./file-size-limit.json'));
+    if (result) {
+      cb();
+    } else {
+      cb('check file size failed');
+    }
+});
