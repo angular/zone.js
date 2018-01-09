@@ -10,7 +10,7 @@
  * @suppress {globalThis}
  */
 
-import {isBrowser, isMix, isNode, ObjectDefineProperty, ObjectGetOwnPropertyDescriptor, ObjectGetPrototypeOf, patchClass, patchOnProperties, zoneSymbol} from '../common/utils';
+import {isBrowser, isMix, isNode, ObjectDefineProperty, ObjectGetOwnPropertyDescriptor, ObjectGetPrototypeOf, patchClass, patchOnProperties, wrapWithCurrentZone, zoneSymbol} from '../common/utils';
 
 import * as webSocketPatch from './websocket';
 
@@ -402,7 +402,7 @@ function patchViaCapturingAllTheEvents() {
       }
       while (elt) {
         if (elt[onproperty] && !elt[onproperty][unboundKey]) {
-          bound = Zone.current.wrap(elt[onproperty], source);
+          bound = wrapWithCurrentZone(elt[onproperty], source);
           bound[unboundKey] = elt[onproperty];
           elt[onproperty] = bound;
         }
