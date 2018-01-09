@@ -12,20 +12,20 @@
 
 import {findEventTasks} from '../common/events';
 import {patchTimer} from '../common/timers';
-import {bindArguments, i, j, o, patchClass, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, r, zoneSymbol} from '../common/utils';
+import {bindArguments, patchClass, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, ZONE_SYMBOL_ADD_EVENT_LISTENER, ZONE_SYMBOL_REMOVE_EVENT_LISTENER, zoneSymbol} from '../common/utils';
 
 import {propertyPatch} from './define-property';
 import {eventTargetPatch, patchEvent} from './event-target';
 import {propertyDescriptorPatch} from './property-descriptor';
 import {registerElementPatch} from './register-element';
 
-(Zone as any).l('util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   api.patchOnProperties = patchOnProperties;
   api.patchMethod = patchMethod;
   api.bindArguments = bindArguments;
 });
 
-(Zone as any).l('timers', (global: any) => {
+Zone.__load_patch('timers', (global: any) => {
   const set = 'set';
   const clear = 'clear';
   patchTimer(global, set, clear, 'Timeout');
@@ -33,29 +33,27 @@ import {registerElementPatch} from './register-element';
   patchTimer(global, set, clear, 'Immediate');
 });
 
-(Zone as any).l('requestAnimationFrame', (global: any) => {
+Zone.__load_patch('requestAnimationFrame', (global: any) => {
   patchTimer(global, 'request', 'cancel', 'AnimationFrame');
   patchTimer(global, 'mozRequest', 'mozCancel', 'AnimationFrame');
   patchTimer(global, 'webkitRequest', 'webkitCancel', 'AnimationFrame');
 });
 
-(Zone as any).l('blocking', (global: any, Zone: ZoneType) => {
+Zone.__load_patch('blocking', (global: any, Zone: ZoneType) => {
   const blockingMethods = ['alert', 'prompt', 'confirm'];
   for (let i = 0; i < blockingMethods.length; i++) {
     const name = blockingMethods[i];
     patchMethod(global, name, (delegate, symbol, name) => {
       return function(s: any, args: any[]) {
-        // Zone.current.run
-        return (Zone as any).c.r(delegate, global, args, name);
+        return Zone.current.run(delegate, global, args, name);
       };
     });
   }
 });
 
-(Zone as any).l('EventTarget', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('EventTarget', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   // load blackListEvents from global
-  // Zone.__symbol__
-  const SYMBOL_BLACK_LISTED_EVENTS = (Zone as any).s('BLACK_LISTED_EVENTS');
+  const SYMBOL_BLACK_LISTED_EVENTS = Zone.__symbol__('BLACK_LISTED_EVENTS');
   if (global[SYMBOL_BLACK_LISTED_EVENTS]) {
     (Zone as any)[SYMBOL_BLACK_LISTED_EVENTS] = global[SYMBOL_BLACK_LISTED_EVENTS];
   }
@@ -73,16 +71,15 @@ import {registerElementPatch} from './register-element';
   patchClass('FileReader');
 });
 
-(Zone as any).l('on_property', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('on_property', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   propertyDescriptorPatch(api, global);
   propertyPatch();
   registerElementPatch(global);
 });
 
-(Zone as any).l('canvas', (global: any) => {
+Zone.__load_patch('canvas', (global: any) => {
   const HTMLCanvasElement = global['HTMLCanvasElement'];
-  // o is 'undefined'
-  if (typeof HTMLCanvasElement !== o && HTMLCanvasElement.prototype &&
+  if (typeof HTMLCanvasElement !== 'undefined' && HTMLCanvasElement.prototype &&
       HTMLCanvasElement.prototype.toBlob) {
     patchMacroTask(HTMLCanvasElement.prototype, 'toBlob', (self: any, args: any[]) => {
       return {name: 'HTMLCanvasElement.toBlob', target: self, cbIdx: 0, args: args};
@@ -90,8 +87,8 @@ import {registerElementPatch} from './register-element';
   }
 });
 
-(Zone as any).l('XHR', (global: any, Zone: ZoneType) => {
-  // Treat XMLHTTPRequest as a macrotask.
+Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
+  // Treat XMLHttpRequest as a macrotask.
   patchXHR(global);
 
   const XHR_TASK = zoneSymbol('xhrTask');
@@ -111,18 +108,17 @@ import {registerElementPatch} from './register-element';
     const XMLHttpRequestPrototype: any = XMLHttpRequest.prototype;
 
     function findPendingTask(target: any) {
-      const pendingTask: Task = target[XHR_TASK];
-      return pendingTask;
+      return target[XHR_TASK];
     }
 
-    let oriAddListener = XMLHttpRequestPrototype[i];
-    let oriRemoveListener = XMLHttpRequestPrototype[j];
+    let oriAddListener = XMLHttpRequestPrototype[ZONE_SYMBOL_ADD_EVENT_LISTENER];
+    let oriRemoveListener = XMLHttpRequestPrototype[ZONE_SYMBOL_REMOVE_EVENT_LISTENER];
     if (!oriAddListener) {
       const XMLHttpRequestEventTarget = window['XMLHttpRequestEventTarget'];
       if (XMLHttpRequestEventTarget) {
         const XMLHttpRequestEventTargetPrototype = XMLHttpRequestEventTarget.prototype;
-        oriAddListener = XMLHttpRequestEventTargetPrototype[i];
-        oriRemoveListener = XMLHttpRequestEventTargetPrototype[j];
+        oriAddListener = XMLHttpRequestEventTargetPrototype[ZONE_SYMBOL_ADD_EVENT_LISTENER];
+        oriRemoveListener = XMLHttpRequestEventTargetPrototype[ZONE_SYMBOL_REMOVE_EVENT_LISTENER];
       }
     }
 
@@ -136,14 +132,12 @@ import {registerElementPatch} from './register-element';
       // remove existing event listener
       const listener = target[XHR_LISTENER];
       if (!oriAddListener) {
-        // i is addEventListener zoneSymbol
-        // j is removeEventListener zoneSymbol
-        oriAddListener = target[i];
-        oriRemoveListener = target[j];
+        oriAddListener = target[ZONE_SYMBOL_ADD_EVENT_LISTENER];
+        oriRemoveListener = target[ZONE_SYMBOL_REMOVE_EVENT_LISTENER];
       }
 
       if (listener) {
-        oriRemoveListener.apply(target, [READY_STATE_CHANGE, listener]);
+        oriRemoveListener.call(target, READY_STATE_CHANGE, listener);
       }
       const newListener = target[XHR_LISTENER] = () => {
         if (target.readyState === target.DONE) {
@@ -154,7 +148,7 @@ import {registerElementPatch} from './register-element';
           }
         }
       };
-      oriAddListener.apply(target, [READY_STATE_CHANGE, newListener]);
+      oriAddListener.call(target, READY_STATE_CHANGE, newListener);
 
       const storedTask: Task = target[XHR_TASK];
       if (!storedTask) {
@@ -185,8 +179,7 @@ import {registerElementPatch} from './register-element';
     const XMLHTTPREQUEST_SOURCE = 'XMLHttpRequest.send';
     const sendNative: Function =
         patchMethod(XMLHttpRequestPrototype, 'send', () => function(self: any, args: any[]) {
-          // Zone.current
-          const zone = (Zone as any).c;
+          const zone = Zone.current;
           if (self[XHR_SYNC]) {
             // if the XHR is sync there is no task to schedule, just execute the code.
             return sendNative.apply(self, args);
@@ -199,16 +192,14 @@ import {registerElementPatch} from './register-element';
               args: args,
               aborted: false
             };
-            // Zone.scheduleMacroTask
-            return zone.sc(
+            return zone.scheduleMacroTask(
                 XMLHTTPREQUEST_SOURCE, placeholderCallback, options, scheduleTask, clearTask);
           }
         });
 
     const abortNative = patchMethod(XMLHttpRequestPrototype, 'abort', () => function(self: any) {
       const task: Task = findPendingTask(self);
-      // r is 'string'
-      if (task && typeof task.type == r) {
+      if (task && typeof task.type == 'string') {
         // If the XHR has already completed, do nothing.
         // If the XHR has already been aborted, do nothing.
         // Fix #569, call abort multiple times before done will cause
@@ -216,8 +207,7 @@ import {registerElementPatch} from './register-element';
         if (task.cancelFn == null || (task.data && (<XHROptions>task.data).aborted)) {
           return;
         }
-        // Zone.cancelTask
-        (task.zone as any).ct(task);
+        task.zone.cancelTask(task);
       }
       // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no
       // task
@@ -226,14 +216,14 @@ import {registerElementPatch} from './register-element';
   }
 });
 
-(Zone as any).l('geolocation', (global: any) => {
+Zone.__load_patch('geolocation', (global: any) => {
   /// GEO_LOCATION
   if (global['navigator'] && global['navigator'].geolocation) {
     patchPrototype(global['navigator'].geolocation, ['getCurrentPosition', 'watchPosition']);
   }
 });
 
-(Zone as any).l('PromiseRejectionEvent', (global: any, Zone: ZoneType) => {
+Zone.__load_patch('PromiseRejectionEvent', (global: any, Zone: ZoneType) => {
   // handle unhandled promise rejection
   function findPromiseRejectionHandler(evtName: string) {
     return function(e: any) {

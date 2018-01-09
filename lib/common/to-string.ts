@@ -5,11 +5,11 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import {n, zoneSymbol} from './utils';
+import {zoneSymbol} from './utils';
 
 // override Function.prototype.toString to make zone.js patched function
 // look like native function
-(Zone as any).l('toString', (global: any, Zone: ZoneType) => {
+Zone.__load_patch('toString', (global: any, Zone: ZoneType) => {
   // patch Func.prototype.toString to let them look like native
   const originalFunctionToString = (Zone as any)['__zone_symbol__originalToString'] =
       Function.prototype.toString;
@@ -18,11 +18,10 @@ import {n, zoneSymbol} from './utils';
   const PROMISE_SYMBOL = zoneSymbol('Promise');
   const ERROR_SYMBOL = zoneSymbol('Error');
   Function.prototype.toString = function() {
-    // n is 'function' string
-    if (typeof this === n) {
+    if (typeof this === 'function') {
       const originalDelegate = this[ORIGINAL_DELEGATE_SYMBOL];
       if (originalDelegate) {
-        if (typeof originalDelegate === n) {
+        if (typeof originalDelegate === 'function') {
           return originalFunctionToString.apply(this[ORIGINAL_DELEGATE_SYMBOL], arguments);
         } else {
           return Object.prototype.toString.call(originalDelegate);

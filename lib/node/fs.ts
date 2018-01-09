@@ -8,7 +8,7 @@
 
 import {patchMacroTask} from '../common/utils';
 
-(Zone as any).l('fs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('fs', () => {
   let fs: any;
   try {
     fs = require('fs');

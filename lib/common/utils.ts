@@ -14,57 +14,45 @@
 // issue #989, to reduce bundle size, use short name
 
 /** Object.getOwnPropertyDescriptor */
-export const a = Object.getOwnPropertyDescriptor;
+export const ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 /** Object.defineProperty */
-export const b = Object.defineProperty;
-/** Object.defineProperties */
-export const c = Object.defineProperties;
+export const ObjectDefineProperty = Object.defineProperty;
 /** Object.getPrototypeOf */
-export const d = Object.getPrototypeOf;
+export const ObjectGetPrototypeOf = Object.getPrototypeOf;
 /** Object.create */
-export const e = Object.create;
+export const ObjectCreate = Object.create;
 /** Array.prototype.slice */
-export const f = Array.prototype.slice;
+export const ArraySlice = Array.prototype.slice;
 /** addEventListener string const */
-export const g = 'addEventListener';
+export const ADD_EVENT_LISTENER_STR = 'addEventListener';
 /** removeEventListener string const */
-export const h = 'removeEventListener';
+export const REMOVE_EVENT_LISTENER_STR = 'removeEventListener';
 /** zoneSymbol addEventListener */
-export const i = (Zone as any).s(g);
+export const ZONE_SYMBOL_ADD_EVENT_LISTENER = Zone.__symbol__(ADD_EVENT_LISTENER_STR);
 /** zoneSymbol removeEventListener */
-export const j = (Zone as any).s(h);
+export const ZONE_SYMBOL_REMOVE_EVENT_LISTENER = Zone.__symbol__(REMOVE_EVENT_LISTENER_STR);
 /** true string const */
-export const k = 'true';
+export const TRUE_STR = 'true';
 /** false string const */
-export const l = 'false';
+export const FALSE_STR = 'false';
 /** __zone_symbol__ string const */
-export const m = '__zone_symbol__';
-/** function type string const */
-export const n = 'function';
-/** undefined type string const */
-export const o = 'undefined';
-/** object type string const */
-export const p = 'object';
-/** number type string const */
-export const q = 'number';
-/** string type string const */
-export const r = 'string';
+export const ZONE_SYMBOL_PREFIX = '__zone_symbol__';
 
 // Hack since TypeScript isn't compiling this for a worker.
 declare const WorkerGlobalScope: any;
 
 export const zoneSymbol = Zone.__symbol__;
-const iw = typeof window !== o;
-const w: any = iw ? window : undefined;
-const _global: any = iw && w || typeof self === p && self || global;
+const isWindowExists = typeof window !== 'undefined';
+const internalWindow: any = isWindowExists ? window : undefined;
+const _global: any = isWindowExists && internalWindow || typeof self === 'object' && self || global;
 
 const REMOVE_ATTRIBUTE = 'removeAttribute';
 const NULL_ON_PROP_VALUE: any[] = [null];
 
 export function bindArguments(args: any[], source: string): any[] {
   for (let i = args.length - 1; i >= 0; i--) {
-    if (typeof args[i] === n) {
-      args[i] = (Zone as any).c.w(args[i], source + '_' + i);
+    if (typeof args[i] === 'function') {
+      args[i] = Zone.current.wrap(args[i], source + '_' + i);
     }
   }
   return args;
@@ -76,7 +64,7 @@ export function patchPrototype(prototype: any, fnNames: string[]) {
     const name = fnNames[i];
     const delegate = prototype[name];
     if (delegate) {
-      const prototypeDesc = a(prototype, name);
+      const prototypeDesc = ObjectGetOwnPropertyDescriptor(prototype, name);
       if (!isPropertyWritable(prototypeDesc)) {
         continue;
       }
@@ -100,30 +88,27 @@ export function isPropertyWritable(propertyDesc: any) {
     return false;
   }
 
-  if (typeof propertyDesc.get === n && typeof propertyDesc.set === o) {
-    return false;
-  }
-
-  return true;
+  return !(typeof propertyDesc.get === 'function' && typeof propertyDesc.set === 'undefined');
 }
 
 export const isWebWorker: boolean =
-    (typeof WorkerGlobalScope !== o && self instanceof WorkerGlobalScope);
+    (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope);
 
-// Make sure to access `process` through `_global` so that WebPack does not accidently browserify
+// Make sure to access `process` through `_global` so that WebPack does not accidentally browserify
 // this code.
 export const isNode: boolean =
-    (!('nw' in _global) && typeof _global.process !== o &&
+    (!('nw' in _global) && typeof _global.process !== 'undefined' &&
      {}.toString.call(_global.process) === '[object process]');
 
-export const isBrowser: boolean = !isNode && !isWebWorker && !!(iw && w['HTMLElement']);
+export const isBrowser: boolean =
+    !isNode && !isWebWorker && !!(isWindowExists && internalWindow['HTMLElement']);
 
 // we are in electron of nw, so we are both browser and nodejs
-// Make sure to access `process` through `_global` so that WebPack does not accidently browserify
+// Make sure to access `process` through `_global` so that WebPack does not accidentally browserify
 // this code.
-export const isMix: boolean = typeof _global.process !== o &&
+export const isMix: boolean = typeof _global.process !== 'undefined' &&
     {}.toString.call(_global.process) === '[object process]' && !isWebWorker &&
-    !!(iw && w['HTMLElement']);
+    !!(isWindowExists && internalWindow['HTMLElement']);
 
 const zoneSymbolEventNames: {[eventName: string]: string} = {};
 
@@ -149,10 +134,10 @@ const wrapFn = function(event: Event) {
 };
 
 export function patchProperty(obj: any, prop: string, prototype?: any) {
-  let desc = a(obj, prop);
+  let desc = ObjectGetOwnPropertyDescriptor(obj, prop);
   if (!desc && prototype) {
     // when patch window object, use prototype to check prop exist or not
-    const prototypeDesc = a(prototype, prop);
+    const prototypeDesc = ObjectGetOwnPropertyDescriptor(prototype, prop);
     if (prototypeDesc) {
       desc = {enumerable: true, configurable: true};
     }
@@ -202,7 +187,7 @@ export function patchProperty(obj: any, prop: string, prototype?: any) {
       originalDescSet.apply(target, NULL_ON_PROP_VALUE);
     }
 
-    if (typeof newValue === n) {
+    if (typeof newValue === 'function') {
       target[eventNameSymbol] = newValue;
       target.addEventListener(eventName, wrapFn, false);
     } else {
@@ -232,10 +217,10 @@ export function patchProperty(obj: any, prop: string, prototype?: any) {
       // the onclick will be evaluated when first time event was triggered or
       // the property is accessed, https://github.com/angular/zone.js/issues/525
       // so we should use original native get to retrieve the handler
-      let value = originalDescGet && originalDescGet.apply(this);
+      let value = originalDescGet && originalDescGet.call(this);
       if (value) {
-        desc.set.apply(this, [value]);
-        if (typeof target[REMOVE_ATTRIBUTE] === n) {
+        desc.set.call(this, value);
+        if (typeof target[REMOVE_ATTRIBUTE] === 'function') {
           target.removeAttribute(prop);
         }
         return value;
@@ -244,7 +229,7 @@ export function patchProperty(obj: any, prop: string, prototype?: any) {
     return null;
   };
 
-  b(obj, prop, desc);
+  ObjectDefineProperty(obj, prop, desc);
 }
 
 export function patchOnProperties(obj: any, properties: string[], prototype?: any) {
@@ -307,15 +292,15 @@ export function patchClass(className: string) {
     // https://bugs.webkit.org/show_bug.cgi?id=44721
     if (className === 'XMLHttpRequest' && prop === 'responseBlob') continue;
     (function(prop) {
-      if (typeof instance[prop] === n) {
+      if (typeof instance[prop] === 'function') {
         _global[className].prototype[prop] = function() {
           return this[originalInstanceKey][prop].apply(this[originalInstanceKey], arguments);
         };
       } else {
-        b(_global[className].prototype, prop, {
+        ObjectDefineProperty(_global[className].prototype, prop, {
           set: function(fn) {
-            if (typeof fn === n) {
-              this[originalInstanceKey][prop] = (Zone as any).c.w(fn, className + '.' + prop);
+            if (typeof fn === 'function') {
+              this[originalInstanceKey][prop] = Zone.current.wrap(fn, className + '.' + prop);
               // keep callback in wrapped function so we can
               // use it in Function.prototype.toString to return
               // the native one.
@@ -345,7 +330,7 @@ export function patchMethod(
         any): Function {
   let proto = target;
   while (proto && !proto.hasOwnProperty(name)) {
-    proto = d(proto);
+    proto = ObjectGetPrototypeOf(proto);
   }
   if (!proto && target[name]) {
     // somehow we did not find it, but we can see it. This happens on IE for Window properties.
@@ -358,7 +343,7 @@ export function patchMethod(
     delegate = proto[delegateName] = proto[name];
     // check whether proto[name] is writable
     // some property is readonly in safari, such as HtmlCanvasElement.prototype.toBlob
-    const desc = proto && a(proto, name);
+    const desc = proto && ObjectGetOwnPropertyDescriptor(proto, name);
     if (isPropertyWritable(desc)) {
       const patchDelegate = patchFn(delegate, delegateName, name);
       proto[name] = function() {
@@ -393,9 +378,8 @@ export function patchMacroTask(
 
   setNative = patchMethod(obj, funcName, (delegate: Function) => function(self: any, args: any[]) {
     const meta = metaCreator(self, args);
-    if (meta.cbIdx >= 0 && typeof args[meta.cbIdx] === n) {
-      const task = (Zone as any).c.sc(meta.name, args[meta.cbIdx], meta, scheduleTask, null);
-      return task;
+    if (meta.cbIdx >= 0 && typeof args[meta.cbIdx] === 'function') {
+      return Zone.current.scheduleMacroTask(meta.name, args[meta.cbIdx], meta, scheduleTask, null);
     } else {
       // cause an error by calling it directly.
       return delegate.apply(self, args);
@@ -425,9 +409,8 @@ export function patchMicroTask(
 
   setNative = patchMethod(obj, funcName, (delegate: Function) => function(self: any, args: any[]) {
     const meta = metaCreator(self, args);
-    if (meta.cbIdx >= 0 && typeof args[meta.cbIdx] === n) {
-      const task = (Zone as any).c.si(meta.name, args[meta.cbIdx], meta, scheduleTask);
-      return task;
+    if (meta.cbIdx >= 0 && typeof args[meta.cbIdx] === 'function') {
+      return Zone.current.scheduleMicroTask(meta.name, args[meta.cbIdx], meta, scheduleTask);
     } else {
       // cause an error by calling it directly.
       return delegate.apply(self, args);
@@ -450,7 +433,7 @@ export function isIEOrEdge() {
   isDetectedIEOrEdge = true;
 
   try {
-    const ua = w.navigator.userAgent;
+    const ua = internalWindow.navigator.userAgent;
     if (ua.indexOf('MSIE ') !== -1 || ua.indexOf('Trident/') !== -1 || ua.indexOf('Edge/') !== -1) {
       ieOrEdge = true;
     }

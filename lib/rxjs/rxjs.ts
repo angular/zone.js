@@ -25,6 +25,8 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
   const errorSource = 'rxjs.Subscriber.error';
   const completeSource = 'rxjs.Subscriber.complete';
 
+  const ObjectDefineProperties = Object.defineProperties;
+
   const empty = {
     closed: true,
     next(value: any): void{},
@@ -58,7 +60,7 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
     const _subscribe = ObservablePrototype[_symbolSubscribe] = ObservablePrototype._subscribe;
     const subscribe = ObservablePrototype[symbolSubscribe] = ObservablePrototype.subscribe;
 
-    Object.defineProperties(Observable.prototype, {
+    ObjectDefineProperties(Observable.prototype, {
       _zone: {value: null, writable: true, configurable: true},
       _zoneSource: {value: null, writable: true, configurable: true},
       _zoneSubscribe: {value: null, writable: true, configurable: true},
@@ -109,7 +111,7 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
     const unsubscribeSymbol = symbol('unsubscribe');
     const unsubscribe = (Subscription.prototype as any)[unsubscribeSymbol] =
         Subscription.prototype.unsubscribe;
-    Object.defineProperties(Subscription.prototype, {
+    ObjectDefineProperties(Subscription.prototype, {
       _zone: {value: null, writable: true, configurable: true},
       _zoneUnsubscribe: {value: null, writable: true, configurable: true},
       _unsubscribe: {
@@ -341,7 +343,7 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
           return work.apply(this, arguments);
         }
       };
-      return schedule.apply(this, [patchedWork, delay, state]);
+      return schedule.call(this, patchedWork, delay, state);
     };
   };
 
