@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {o, p, zoneSymbol} from '../common/utils';
+import {zoneSymbol} from '../common/utils';
 /*
  * This is necessary for Chrome and Chrome mobile, to enable
  * things like redefining `createdCallback` on an element.
@@ -38,8 +38,7 @@ export function propertyPatch() {
   };
 
   Object.create = <any>function(obj: any, proto: any) {
-    // o is 'object' string
-    if (typeof proto === p && !Object.isFrozen(proto)) {
+    if (typeof proto === 'object' && !Object.isFrozen(proto)) {
       Object.keys(proto).forEach(function(prop) {
         proto[prop] = rewriteDescriptor(obj, prop, proto[prop]);
       });
@@ -90,8 +89,7 @@ function _tryDefineProperty(obj: any, prop: string, desc: any, originalConfigura
     if (desc.configurable) {
       // In case of errors, when the configurable flag was likely set by rewriteDescriptor(), let's
       // retry with the original flag value
-      // o is 'undefined' string
-      if (typeof originalConfigurableFlag == o) {
+      if (typeof originalConfigurableFlag == 'undefined') {
         delete desc.configurable;
       } else {
         desc.configurable = originalConfigurableFlag;

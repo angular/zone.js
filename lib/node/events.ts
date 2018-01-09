@@ -6,16 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {ens, gs, patchEventTarget} from '../common/events';
+import {patchEventTarget} from '../common/events';
 
-(Zone as any).l('EventEmitter', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  const callAndReturnFirstParam = (fn: (self: any, args: any[]) => any) => {
-    return (self: any, args: any[]) => {
-      fn(self, args);
-      return self;
-    };
-  };
-
+Zone.__load_patch('EventEmitter', (global: any) => {
   // For EventEmitter
   const EE_ADD_LISTENER = 'addListener';
   const EE_PREPEND_LISTENER = 'prependListener';
@@ -25,11 +18,8 @@ import {ens, gs, patchEventTarget} from '../common/events';
   const EE_ON = 'on';
 
   const compareTaskCallbackVsDelegate = function(task: any, delegate: any) {
-    if (task.callback === delegate || task.callback.listener === delegate) {
-      // same callback, same capture, same event name, just return
-      return true;
-    }
-    return false;
+    // same callback, same capture, same event name, just return
+    return task.callback === delegate || task.callback.listener === delegate;
   };
 
   function patchEventEmitterMethods(obj: any) {

@@ -182,7 +182,7 @@
         namePrefix: string, private trackPendingRequestAnimationFrame = false,
         private macroTaskOptions?: MacroTaskOptions[]) {
       this.name = 'fakeAsyncTestZone for ' + namePrefix;
-      // in case user can't access the construction of FakyAsyncTestSpec
+      // in case user can't access the construction of FakeAsyncTestSpec
       // user can also define macroTaskOptions by define a global variable.
       if (!this.macroTaskOptions) {
         this.macroTaskOptions = global[Zone.__symbol__('FakeAsyncTestMacroTask')];
@@ -328,16 +328,16 @@
           // should pass additional arguments to callback if have any
           // currently we know process.nextTick will have such additional
           // arguments
-          let addtionalArgs: any[];
+          let additionalArgs: any[];
           if (args) {
             let callbackIndex = (task.data as any).cbIdx;
             if (typeof args.length === 'number' && args.length > callbackIndex + 1) {
-              addtionalArgs = Array.prototype.slice.call(args, callbackIndex + 1);
+              additionalArgs = Array.prototype.slice.call(args, callbackIndex + 1);
             }
           }
           this._microtasks.push({
             func: task.invoke,
-            args: addtionalArgs,
+            args: additionalArgs,
             target: task.data && (task.data as any).target
           });
           break;
@@ -378,7 +378,7 @@
                   task.data['handleId'] = this._setInterval(task.invoke, delay, callbackArgs);
                   task.data.isPeriodic = true;
                 } else {
-                  // not periodic, use setTimout to simulate
+                  // not periodic, use setTimeout to simulate
                   task.data['handleId'] = this._setTimeout(task.invoke, delay, callbackArgs);
                 }
                 break;

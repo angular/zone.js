@@ -7,7 +7,7 @@
  */
 
 import {patchEventTarget} from '../common/events';
-import {a, e, f, g, h, patchOnProperties} from '../common/utils';
+import {ADD_EVENT_LISTENER_STR, ArraySlice, ObjectCreate, ObjectGetOwnPropertyDescriptor, patchOnProperties, REMOVE_EVENT_LISTENER_STR} from '../common/utils';
 
 // we have to patch the instance since the proto is non-configurable
 export function apply(api: _ZonePrivate, _global: any) {
@@ -24,23 +24,21 @@ export function apply(api: _ZonePrivate, _global: any) {
     let proxySocketProto: any;
 
     // Safari 7.0 has non-configurable own 'onmessage' and friends properties on the socket instance
-    // a is Object.getOwnPropertyDescriptor
-    const onmessageDesc = a(socket, 'onmessage');
+    const onmessageDesc = ObjectGetOwnPropertyDescriptor(socket, 'onmessage');
     if (onmessageDesc && onmessageDesc.configurable === false) {
-      // e is Object.create
-      proxySocket = e(socket);
+      proxySocket = ObjectCreate(socket);
       // socket have own property descriptor 'onopen', 'onmessage', 'onclose', 'onerror'
       // but proxySocket not, so we will keep socket as prototype and pass it to
       // patchOnProperties method
       proxySocketProto = socket;
-      // g is `addEventListener`, h is `removeEventListener` string
-      [g, h, 'send', 'close'].forEach(function(propName) {
+      [ADD_EVENT_LISTENER_STR, REMOVE_EVENT_LISTENER_STR, 'send', 'close'].forEach(function(
+          propName) {
         proxySocket[propName] = function() {
-          const args = f.call(arguments);
-          if (propName === g || propName === h) {
+          const args = ArraySlice.call(arguments);
+          if (propName === ADD_EVENT_LISTENER_STR || propName === REMOVE_EVENT_LISTENER_STR) {
             const eventName = args.length > 0 ? args[0] : undefined;
             if (eventName) {
-              const propertySymbol = (Zone as any).s('ON_PROPERTY' + eventName);
+              const propertySymbol = Zone.__symbol__('ON_PROPERTY' + eventName);
               socket[propertySymbol] = proxySocket[propertySymbol];
             }
           }

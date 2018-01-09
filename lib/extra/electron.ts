@@ -5,13 +5,13 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-(Zone as any).l('electron', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('electron', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   function patchArguments(target: any, name: string, source: string): Function {
     return api.patchMethod(target, name, (delegate: Function) => (self: any, args: any[]) => {
       return delegate && delegate.apply(self, api.bindArguments(args, source));
     });
   }
-  const {desktopCapturer, shell, CallbackRegistry} = require('electron');
+  const {desktopCapturer, shell, CallbacksRegistry} = require('electron');
   // patch api in renderer process directly
   // desktopCapturer
   if (desktopCapturer) {
@@ -23,9 +23,9 @@
   }
 
   // patch api in main process through CallbackRegistry
-  if (!CallbackRegistry) {
+  if (!CallbacksRegistry) {
     return;
   }
 
-  patchArguments(CallbackRegistry.prototype, 'add', 'CallbackRegistry.add');
+  patchArguments(CallbacksRegistry.prototype, 'add', 'CallbackRegistry.add');
 });

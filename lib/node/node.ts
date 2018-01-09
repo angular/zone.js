@@ -11,18 +11,18 @@ import './fs';
 
 import {findEventTasks} from '../common/events';
 import {patchTimer} from '../common/timers';
-import {bindArguments, f, isMix, patchMacroTask, patchMethod, patchMicroTask, patchOnProperties} from '../common/utils';
+import {ArraySlice, bindArguments, isMix, patchMacroTask, patchMethod, patchMicroTask, patchOnProperties} from '../common/utils';
 
 const set = 'set';
 const clear = 'clear';
 
-(Zone as any).l('node_util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('node_util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   api.patchOnProperties = patchOnProperties;
   api.patchMethod = patchMethod;
   api.bindArguments = bindArguments;
 });
 
-(Zone as any).l('node_timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('node_timers', (global: any, Zone: ZoneType) => {
   // Timers
   let globalUseTimeoutFromTimer = false;
   try {
@@ -47,7 +47,7 @@ const clear = 'clear';
     patchTimer(timers, set, clear, 'Interval');
     patchTimer(timers, set, clear, 'Immediate');
   } catch (error) {
-    // timers module not exists, for example, when we using nativescript
+    // timers module not exists, for example, when we using nativeScript
     // timers is not available
   }
   if (isMix) {
@@ -65,7 +65,7 @@ const clear = 'clear';
     patchTimer(global, set, clear, 'Immediate');
   } else {
     // global use timers setTimeout, but not equals
-    // this happenes when use nodejs v0.10.x, global setTimeout will
+    // this happens when use nodejs v0.10.x, global setTimeout will
     // use a lazy load version of timers setTimeout
     // we should not double patch timer's setTimeout
     // so we only store the __symbol__ for consistency
@@ -76,7 +76,7 @@ const clear = 'clear';
 });
 
 // patch process related methods
-(Zone as any).l('nextTick', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('nextTick', () => {
   // patch nextTick as microTask
   patchMicroTask(process, 'nextTick', (self: any, args: any[]) => {
     return {
@@ -88,8 +88,8 @@ const clear = 'clear';
   });
 });
 
-(Zone as any)
-    .l('handleUnhandledPromiseRejection', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch(
+    'handleUnhandledPromiseRejection', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
       (Zone as any)[api.symbol('unhandledPromiseRejectionHandler')] =
           findProcessPromiseRejectionHandler('unhandledRejection');
 
@@ -116,7 +116,7 @@ const clear = 'clear';
 
 
 // Crypto
-(Zone as any).l('crypto', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('crypto', () => {
   let crypto: any;
   try {
     crypto = require('crypto');
@@ -141,15 +141,15 @@ const clear = 'clear';
   }
 });
 
-(Zone as any).l('console', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('console', (global: any, Zone: ZoneType) => {
   const consoleMethods =
       ['dir', 'log', 'info', 'error', 'warn', 'assert', 'debug', 'timeEnd', 'trace'];
   consoleMethods.forEach((m: string) => {
     const originalMethod = (console as any)[Zone.__symbol__(m)] = (console as any)[m];
     if (originalMethod) {
       (console as any)[m] = function() {
-        const args = f.call(arguments);
-        if ((Zone as any).c === Zone.root) {
+        const args = ArraySlice.call(arguments);
+        if (Zone.current === Zone.root) {
           return originalMethod.apply(this, args);
         } else {
           return Zone.root.run(originalMethod, this, args);
