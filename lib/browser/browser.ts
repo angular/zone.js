@@ -12,7 +12,7 @@
 
 import {findEventTasks} from '../common/events';
 import {patchTimer} from '../common/timers';
-import {bindArguments, patchClass, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, ZONE_SYMBOL_ADD_EVENT_LISTENER, ZONE_SYMBOL_REMOVE_EVENT_LISTENER, zoneSymbol} from '../common/utils';
+import {bindArguments, patchClass, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, scheduleMacroTaskWithCurrentZone, ZONE_SYMBOL_ADD_EVENT_LISTENER, ZONE_SYMBOL_REMOVE_EVENT_LISTENER, zoneSymbol} from '../common/utils';
 
 import {propertyPatch} from './define-property';
 import {eventTargetPatch, patchEvent} from './event-target';
@@ -179,7 +179,6 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
     const XMLHTTPREQUEST_SOURCE = 'XMLHttpRequest.send';
     const sendNative: Function =
         patchMethod(XMLHttpRequestPrototype, 'send', () => function(self: any, args: any[]) {
-          const zone = Zone.current;
           if (self[XHR_SYNC]) {
             // if the XHR is sync there is no task to schedule, just execute the code.
             return sendNative.apply(self, args);
@@ -192,7 +191,7 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
               args: args,
               aborted: false
             };
-            return zone.scheduleMacroTask(
+            return scheduleMacroTaskWithCurrentZone(
                 XMLHTTPREQUEST_SOURCE, placeholderCallback, options, scheduleTask, clearTask);
           }
         });

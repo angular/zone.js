@@ -38,6 +38,16 @@ export const FALSE_STR = 'false';
 /** __zone_symbol__ string const */
 export const ZONE_SYMBOL_PREFIX = '__zone_symbol__';
 
+export function wrapWithCurrentZone<T extends Function>(callback: T, source: string): T {
+  return Zone.current.wrap(callback, source);
+}
+
+export function scheduleMacroTaskWithCurrentZone(
+    source: string, callback: Function, data: TaskData, customSchedule: (task: Task) => void,
+    customCancel: (task: Task) => void): MacroTask {
+  return Zone.current.scheduleMacroTask(source, callback, data, customSchedule, customCancel);
+}
+
 // Hack since TypeScript isn't compiling this for a worker.
 declare const WorkerGlobalScope: any;
 
@@ -52,7 +62,7 @@ const NULL_ON_PROP_VALUE: any[] = [null];
 export function bindArguments(args: any[], source: string): any[] {
   for (let i = args.length - 1; i >= 0; i--) {
     if (typeof args[i] === 'function') {
-      args[i] = Zone.current.wrap(args[i], source + '_' + i);
+      args[i] = wrapWithCurrentZone(args[i], source + '_' + i);
     }
   }
   return args;
@@ -300,7 +310,7 @@ export function patchClass(className: string) {
         ObjectDefineProperty(_global[className].prototype, prop, {
           set: function(fn) {
             if (typeof fn === 'function') {
-              this[originalInstanceKey][prop] = Zone.current.wrap(fn, className + '.' + prop);
+              this[originalInstanceKey][prop] = wrapWithCurrentZone(fn, className + '.' + prop);
               // keep callback in wrapped function so we can
               // use it in Function.prototype.toString to return
               // the native one.
@@ -379,7 +389,8 @@ export function patchMacroTask(
   setNative = patchMethod(obj, funcName, (delegate: Function) => function(self: any, args: any[]) {
     const meta = metaCreator(self, args);
     if (meta.cbIdx >= 0 && typeof args[meta.cbIdx] === 'function') {
-      return Zone.current.scheduleMacroTask(meta.name, args[meta.cbIdx], meta, scheduleTask, null);
+      return scheduleMacroTaskWithCurrentZone(
+          meta.name, args[meta.cbIdx], meta, scheduleTask, null);
     } else {
       // cause an error by calling it directly.
       return delegate.apply(self, args);

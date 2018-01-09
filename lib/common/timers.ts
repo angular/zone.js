@@ -10,7 +10,7 @@
  * @suppress {missingRequire}
  */
 
-import {patchMethod, zoneSymbol} from './utils';
+import {patchMethod, scheduleMacroTaskWithCurrentZone, zoneSymbol} from './utils';
 
 const taskSymbol = zoneSymbol('zoneTask');
 
@@ -61,15 +61,14 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
   setNative =
       patchMethod(window, setName, (delegate: Function) => function(self: any, args: any[]) {
         if (typeof args[0] === 'function') {
-          // Zone.current
-          const zone = Zone.current;
           const options: TimerOptions = {
             handleId: null,
             isPeriodic: nameSuffix === 'Interval',
             delay: (nameSuffix === 'Timeout' || nameSuffix === 'Interval') ? args[1] || 0 : null,
             args: args
           };
-          const task = zone.scheduleMacroTask(setName, args[0], options, scheduleTask, clearTask);
+          const task =
+              scheduleMacroTaskWithCurrentZone(setName, args[0], options, scheduleTask, clearTask);
           if (!task) {
             return task;
           }

@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {attachOriginToPatched, isBrowser, isMix, ObjectGetOwnPropertyDescriptor} from '../common/utils';
+import {attachOriginToPatched, isBrowser, isMix, ObjectGetOwnPropertyDescriptor, wrapWithCurrentZone} from '../common/utils';
 
 import {_redefineProperty} from './define-property';
 
@@ -27,13 +27,13 @@ export function registerElementPatch(_global: any) {
         if (prototype.hasOwnProperty(callback)) {
           const descriptor = ObjectGetOwnPropertyDescriptor(prototype, callback);
           if (descriptor && descriptor.value) {
-            descriptor.value = Zone.current.wrap(descriptor.value, source);
+            descriptor.value = wrapWithCurrentZone(descriptor.value, source);
             _redefineProperty(opts.prototype, callback, descriptor);
           } else {
-            prototype[callback] = Zone.current.wrap(prototype[callback], source);
+            prototype[callback] = wrapWithCurrentZone(prototype[callback], source);
           }
         } else if (prototype[callback]) {
-          prototype[callback] = Zone.current.wrap(prototype[callback], source);
+          prototype[callback] = wrapWithCurrentZone(prototype[callback], source);
         }
       });
     }
