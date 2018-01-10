@@ -22,7 +22,7 @@ Zone.__load_patch('mediaQuery', function (global, Zone, api) {
     if (!global['MediaQueryList']) {
         return;
     }
-    api.patchEventTarget(global, [global['MediaQueryList'].prototype], { addEventListenerFnName: 'addListener', removeEventListenerFnName: 'removeListener' });
+    api.patchEventTarget(global, [global['MediaQueryList'].prototype], { add: 'addListener', rm: 'removeListener' });
 });
 
 })));

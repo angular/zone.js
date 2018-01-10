@@ -161,7 +161,7 @@
             this.pendingTimers = [];
             this.properties = { 'FakeAsyncTestZoneSpec': this };
             this.name = 'fakeAsyncTestZone for ' + namePrefix;
-            // in case user can't access the construction of FakyAsyncTestSpec
+            // in case user can't access the construction of FakeAsyncTestSpec
             // user can also define macroTaskOptions by define a global variable.
             if (!this.macroTaskOptions) {
                 this.macroTaskOptions = global[Zone.__symbol__('FakeAsyncTestMacroTask')];
@@ -303,16 +303,16 @@
                     // should pass additional arguments to callback if have any
                     // currently we know process.nextTick will have such additional
                     // arguments
-                    var addtionalArgs = void 0;
+                    var additionalArgs = void 0;
                     if (args) {
-                        var callbackIndex = task.data.callbackIndex;
+                        var callbackIndex = task.data.cbIdx;
                         if (typeof args.length === 'number' && args.length > callbackIndex + 1) {
-                            addtionalArgs = Array.prototype.slice.call(args, callbackIndex + 1);
+                            additionalArgs = Array.prototype.slice.call(args, callbackIndex + 1);
                         }
                     }
                     this._microtasks.push({
                         func: task.invoke,
-                        args: addtionalArgs,
+                        args: additionalArgs,
                         target: task.data && task.data.target
                     });
                     break;
@@ -350,7 +350,7 @@
                                     task.data.isPeriodic = true;
                                 }
                                 else {
-                                    // not periodic, use setTimout to simulate
+                                    // not periodic, use setTimeout to simulate
                                     task.data['handleId'] = this._setTimeout(task.invoke, delay, callbackArgs);
                                 }
                                 break;

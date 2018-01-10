@@ -19,22 +19,26 @@
  * found in the LICENSE file at https://angular.io/license
  */
 Zone.__load_patch('electron', function (global, Zone, api) {
-    var FUNCTION = 'function';
-    var _a = require('electron'), desktopCapturer = _a.desktopCapturer, shell = _a.shell, CallbackRegistry = _a.CallbackRegistry;
+    function patchArguments(target, name, source) {
+        return api.patchMethod(target, name, function (delegate) { return function (self, args) {
+            return delegate && delegate.apply(self, api.bindArguments(args, source));
+        }; });
+    }
+    var _a = require('electron'), desktopCapturer = _a.desktopCapturer, shell = _a.shell, CallbacksRegistry = _a.CallbacksRegistry;
     // patch api in renderer process directly
     // desktopCapturer
     if (desktopCapturer) {
-        api.patchArguments(desktopCapturer, 'getSources', 'electron.desktopCapturer.getSources');
+        patchArguments(desktopCapturer, 'getSources', 'electron.desktopCapturer.getSources');
     }
     // shell
     if (shell) {
-        api.patchArguments(shell, 'openExternal', 'electron.shell.openExternal');
+        patchArguments(shell, 'openExternal', 'electron.shell.openExternal');
     }
     // patch api in main process through CallbackRegistry
-    if (!CallbackRegistry) {
+    if (!CallbacksRegistry) {
         return;
     }
-    api.patchArguments(CallbackRegistry.prototype, 'add', 'CallbackRegistry.add');
+    patchArguments(CallbacksRegistry.prototype, 'add', 'CallbackRegistry.add');
 });
 
 })));

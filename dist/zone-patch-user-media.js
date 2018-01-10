@@ -18,18 +18,18 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-Zone.__load_patch('bluebird', function (global, Zone) {
-    // TODO: @JiaLiPassion, we can automatically patch bluebird
-    // if global.Promise = Bluebird, but sometimes in nodejs,
-    // global.Promise is not Bluebird, and Bluebird is just be
-    // used by other libraries such as sequelize, so I think it is
-    // safe to just expose a method to patch Bluebird explicitly
-    var BLUEBIRD = 'bluebird';
-    Zone[Zone.__symbol__(BLUEBIRD)] = function patchBluebird(Bluebird) {
-        Bluebird.setScheduler(function (fn) {
-            Zone.current.scheduleMicroTask(BLUEBIRD, fn);
-        });
-    };
+Zone.__load_patch('getUserMedia', function (global, Zone, api) {
+    function wrapFunctionArgs(func, source) {
+        return function () {
+            var args = Array.prototype.slice.call(arguments);
+            var wrappedArgs = api.bindArguments(args, source ? source : func.name);
+            return func.apply(this, wrappedArgs);
+        };
+    }
+    var navigator = global['navigator'];
+    if (navigator && navigator.getUserMedia) {
+        navigator.getUserMedia = wrapFunctionArgs(navigator.getUserMedia);
+    }
 });
 
 })));
