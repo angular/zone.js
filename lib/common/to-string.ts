@@ -9,15 +9,14 @@ import {zoneSymbol} from './utils';
 
 // override Function.prototype.toString to make zone.js patched function
 // look like native function
-Zone.__load_patch('toString', (global: any, Zone: ZoneType) => {
+Zone.__load_patch('toString', (global: any) => {
   // patch Func.prototype.toString to let them look like native
-  const originalFunctionToString = (Zone as any)['__zone_symbol__originalToString'] =
-      Function.prototype.toString;
+  const originalFunctionToString = Function.prototype.toString;
 
   const ORIGINAL_DELEGATE_SYMBOL = zoneSymbol('OriginalDelegate');
   const PROMISE_SYMBOL = zoneSymbol('Promise');
   const ERROR_SYMBOL = zoneSymbol('Error');
-  Function.prototype.toString = function() {
+  const newFunctionToString = function toString() {
     if (typeof this === 'function') {
       const originalDelegate = this[ORIGINAL_DELEGATE_SYMBOL];
       if (originalDelegate) {
@@ -42,6 +41,8 @@ Zone.__load_patch('toString', (global: any, Zone: ZoneType) => {
     }
     return originalFunctionToString.apply(this, arguments);
   };
+  (newFunctionToString as any)[ORIGINAL_DELEGATE_SYMBOL] = originalFunctionToString;
+  Function.prototype.toString = newFunctionToString;
 
 
   // patch Object.prototype.toString to let them look like native
