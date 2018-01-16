@@ -2470,7 +2470,7 @@ describe('Zone', function() {
          });
        }));
 
-    describe('getUserMedia', () => {
+    xdescribe('getUserMedia', () => {
       it('navigator.mediaDevices.getUserMedia should in zone',
          ifEnvSupportsWithDone(
              () => {
