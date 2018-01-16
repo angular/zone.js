@@ -192,6 +192,14 @@ gulp.task('build/zone-patch-user-media.min.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/browser/webapis-user-media.ts', 'zone-patch-user-media.min.js', true, cb);
 });
 
+gulp.task('build/zone-patch-socket-io.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/extra/socket-io.ts', 'zone-patch-socket-io.js', false, cb);
+});
+
+gulp.task('build/zone-patch-socket-io.min.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/extra/socket-io.ts', 'zone-patch-socket-io.min.js', true, cb);
+});
+
 gulp.task('build/bluebird.js', ['compile-esm'], function(cb) {
     return generateScript('./lib/extra/bluebird.ts', 'zone-bluebird.js', false, cb);
 });
@@ -297,6 +305,8 @@ gulp.task('build', [
   'build/zone-patch-electron.min.js',
   'build/zone-patch-user-media.js',
   'build/zone-patch-user-media.min.js',
+  'build/zone-patch-socket-io.js',
+  'build/zone-patch-socket-io.min.js',
   'build/zone-mix.js',
   'build/bluebird.js',
   'build/bluebird.min.js',

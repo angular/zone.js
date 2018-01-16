@@ -180,4 +180,21 @@ import 'zone.js/dist/zone-patch-electron'; // add zone-patch-electron to patch E
 
 there is a sampel repo [zone-electron](https://github.com/JiaLiPassion/zone-electron).
 
+* socket.io-client
+
+user need to patch `io` themselves just like following code.
+
+```javascript
+    <script src="socket.io-client/dist/socket.io.js"></script>
+    <script src="zone.js/dist/zone.js"></script>
+    <script src="zone.js/dist/zone-patch-socket-io.js"></script>
+    <script>
+      // patch io here
+      Zone[Zone.__symbol__('socketio')](io);
+    </script>
+```
+
+
+please reference the sample repo [zone-socketio](https://github.com/JiaLiPassion/zone-socketio) about 
+detail usage.
 

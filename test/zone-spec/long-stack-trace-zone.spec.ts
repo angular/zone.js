@@ -16,6 +16,7 @@ describe(
       let log: Error[];
       let lstz: Zone;
       let longStackTraceZoneSpec = (Zone as any)['longStackTraceZoneSpec'];
+      let defaultTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
 
       beforeEach(function() {
         lstz = Zone.current.fork(longStackTraceZoneSpec).fork({
@@ -29,6 +30,11 @@ describe(
         });
 
         log = [];
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
+      });
+
+      afterEach(function() {
+        jasmine.DEFAULT_TIMEOUT_INTERVAL = defaultTimeout;
       });
 
       function expectElapsed(stack: string, expectedCount: number) {
