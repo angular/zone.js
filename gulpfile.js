@@ -208,6 +208,14 @@ gulp.task('build/bluebird.min.js', ['compile-esm'], function(cb) {
     return generateScript('./lib/extra/bluebird.ts', 'zone-bluebird.min.js', true, cb);
 });
 
+gulp.task('build/zone-patch-jsonp.js', ['compile-esm'], function(cb) {
+    return generateScript('./lib/extra/jsonp.ts', 'zone-patch-jsonp.js', false, cb);
+});
+
+gulp.task('build/zone-patch-jsonp.min.js', ['compile-esm'], function(cb) {
+    return generateScript('./lib/extra/jsonp.ts', 'zone-patch-jsonp.min.js', true, cb);
+});
+
 gulp.task('build/jasmine-patch.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/jasmine/jasmine.ts', 'jasmine-patch.js', false, cb);
 });
@@ -310,6 +318,8 @@ gulp.task('build', [
   'build/zone-mix.js',
   'build/bluebird.js',
   'build/bluebird.min.js',
+  'build/zone-patch-jsonp.js',
+  'build/zone-patch-jsonp.min.js',
   'build/jasmine-patch.js',
   'build/jasmine-patch.min.js',
   'build/mocha-patch.js',

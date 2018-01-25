@@ -198,3 +198,22 @@ user need to patch `io` themselves just like following code.
 please reference the sample repo [zone-socketio](https://github.com/JiaLiPassion/zone-socketio) about 
 detail usage.
 
+* jsonp
+
+## Usage.
+
+provide a helper method to patch jsonp. Because jsonp has a lot of implementation, so
+user need to provide the information to let json `send` and `callback` in zone.
+
+there is a sampel repo [zone-jsonp](https://github.com/JiaLiPassion/test-zone-js-with-jsonp) here,
+sample usage is:
+
+```javascript
+import 'zone.js/dist/zone-patch-jsonp';
+Zone['__zone_symbol__jsonp']({
+  jsonp: getJSONP,
+  sendFuncName: 'send',
+  successFuncName: 'jsonpSuccessCallback', 
+  failedFuncName: 'jsonpFailedCallback'
+});
+```
