@@ -846,8 +846,9 @@ const Zone: ZoneType = (function(global: any) {
         this._zoneDelegate.handleError(this, err);
         throw err;
       }
-      if ((task as any as ZoneTask<any>)._zoneDelegates === zoneDelegates) {
+      if ((task as any as ZoneTask<any>)._zoneDelegates === zoneDelegates && !(task.data && task.data.isPeriodic)) {
         // we have to check because internally the delegate can reschedule the task.
+        // and we don't need to updateTaskCount for periodic task such as setInterval
         this._updateTaskCount(task as any as ZoneTask<any>, 1);
       }
       if ((task as any as ZoneTask<any>).state == scheduling) {
@@ -891,7 +892,9 @@ const Zone: ZoneType = (function(global: any) {
         this._zoneDelegate.handleError(this, err);
         throw err;
       }
-      this._updateTaskCount(task as ZoneTask<any>, -1);
+      if (!(task.data && task.data.isPeriodic)) {
+        this._updateTaskCount(task as ZoneTask<any>, -1);
+      }
       (task as ZoneTask<any>)._transitionTo(notScheduled, canceling);
       task.runCount = 0;
       return task;

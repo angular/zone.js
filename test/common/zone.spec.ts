@@ -183,14 +183,7 @@ describe('Zone', function() {
         zone.cancelTask(task);
       });
       expect(log).toEqual([
-        {microTask: false, macroTask: true, eventTask: false, change: 'macroTask', zone: 'parent'},
-        'macroTask', 'macroTask', {
-          microTask: false,
-          macroTask: false,
-          eventTask: false,
-          change: 'macroTask',
-          zone: 'parent'
-        }
+        'macroTask', 'macroTask'
       ]);
     });
 
