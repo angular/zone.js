@@ -215,6 +215,38 @@ describe(
           expect(reject()).toBe(undefined);
         });
 
+        it('should work with .finally with resolved promise', function(done) {
+          let resolve: Function = null;
+
+          testZone.run(function() {
+            new Promise(function(resolveFn) {
+              resolve = resolveFn;
+            }).finally(function() {
+              expect(arguments.length).toBe(0);
+              expect(Zone.current).toBe(testZone);
+              done();
+            });
+          });
+
+          resolve('value');
+        });
+
+        it('should work with .finally with rejected promise', function(done) {
+          let reject: Function = null;
+
+          testZone.run(function() {
+            new Promise(function(_, rejectFn) {
+              reject = rejectFn;
+            }).finally(function() {
+              expect(arguments.length).toBe(0);
+              expect(Zone.current).toBe(testZone);
+              done();
+            });
+          });
+
+          reject('error');
+        });
+
         it('should work with Promise.resolve', () => {
           queueZone.run(() => {
             let value = null;
