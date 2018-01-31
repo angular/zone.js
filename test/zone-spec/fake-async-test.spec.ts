@@ -10,6 +10,9 @@ import '../../lib/zone-spec/fake-async-test';
 
 import {isNode, patchMacroTask} from '../../lib/common/utils';
 import {ifEnvSupports} from '../test-util';
+import {Observable} from 'rxjs/Observable';
+import 'rxjs/add/operator/delay';
+import '../../lib/rxjs/rxjs-fake-async';
 
 function supportNode() {
   return isNode;
@@ -802,6 +805,97 @@ describe('FakeAsyncTestZoneSpec', () => {
         testZoneSpec.tick(10);
         expect(cycle).toEqual(2);
         clearInterval(id);
+      });
+    });
+  });
+
+  describe('fakeAsyncTest should patch Date', () => {
+    let FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
+    let testZoneSpec: any;
+    let fakeAsyncTestZone: Zone;
+
+    beforeEach(() => {
+      testZoneSpec = new FakeAsyncTestZoneSpec(
+          'name', false);
+      fakeAsyncTestZone = Zone.current.fork(testZoneSpec);
+    });
+
+    it('should get date diff correctly', () => {
+      fakeAsyncTestZone.run(() => {
+        const start = Date.now();
+        testZoneSpec.tick(100);
+        const end = Date.now();
+        expect(end - start).toBe(100);
+      });
+    });
+  });
+
+  describe('fakeAsyncTest should patch jasmine.clock', ifEnvSupports(() => {
+    return typeof jasmine.clock === 'function';
+  }, () => {
+    beforeEach(() => {
+      jasmine.clock().install();
+    });
+
+    afterEach(() => {
+      jasmine.clock().uninstall();
+    });
+
+    it('should get date diff correctly', () => {
+      const start = Date.now();
+      jasmine.clock().tick(100);
+      const end = Date.now();
+      expect(end - start).toBe(100);
+    });
+
+    it('should mock date correctly', () => {
+      const baseTime = new Date(2013, 9, 23);
+      jasmine.clock().mockDate(baseTime);
+      const start = Date.now();
+      expect(start).toBe(baseTime.getTime());
+      jasmine.clock().tick(100);
+      const end = Date.now();
+      expect(end - start).toBe(100);
+      expect(end).toBe(baseTime.getTime() + 100);
+    });
+
+    it('should handle new Date correctly', () => {
+      const baseTime = new Date(2013, 9, 23);
+      jasmine.clock().mockDate(baseTime);
+      const start = new Date();
+      expect(start.getTime()).toBe(baseTime.getTime());
+      jasmine.clock().tick(100);
+      const end = new Date();
+      expect(end.getTime() - start.getTime()).toBe(100);
+      expect(end.getTime()).toBe(baseTime.getTime() + 100);
+    });
+  }));
+
+  describe('fakeAsyncTest should patch rxjs scheduler', () => {
+    let FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
+    let testZoneSpec: any;
+    let fakeAsyncTestZone: Zone;
+
+    beforeEach(() => {
+      testZoneSpec = new FakeAsyncTestZoneSpec(
+          'name', false);
+      fakeAsyncTestZone = Zone.current.fork(testZoneSpec);
+    });
+
+    it('should get date diff correctly', (done) => {
+      fakeAsyncTestZone.run(() => {
+        let result = null;
+        const observable = new Observable((subscribe: any) => {
+          subscribe.next('hello');
+          subscribe.complete();
+        });
+        observable.delay(1000).subscribe(v => {
+          result = v;
+        });
+        expect(result).toBe(null);
+        testZoneSpec.tick(1000);
+        expect(result).toBe('hello');
+        done();
       });
     });
   });

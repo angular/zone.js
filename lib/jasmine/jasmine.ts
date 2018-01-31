@@ -35,6 +35,8 @@
   // a `beforeEach` or `it`.
   const syncZone = ambientZone.fork(new SyncTestZoneSpec('jasmine.describe'));
 
+  const symbol = Zone.__symbol__;
+
   // This is the zone which will be used for running individual tests.
   // It will be a proxy zone, so that the tests function can retroactively install
   // different zones.
@@ -45,6 +47,7 @@
   //   - Because ProxyZone is parent fo `childZone` fakeAsync can retroactively add
   //     fakeAsync behavior to the childZone.
   let testProxyZone: Zone = null;
+  let testProxyZoneSpec: ZoneSpec = null;
 
   // Monkey patch all of the jasmine DSL so that each function runs in appropriate zone.
   const jasmineEnv: any = jasmine.getEnv();
@@ -56,7 +59,7 @@
   });
   ['it', 'xit', 'fit'].forEach((methodName) => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
-    jasmineEnv[Zone.__symbol__(methodName)] = originalJasmineFn;
+    jasmineEnv[symbol(methodName)] = originalJasmineFn;
     jasmineEnv[methodName] = function(
         description: string, specDefinitions: Function, timeout: number) {
       arguments[1] = wrapTestInZone(specDefinitions);
@@ -65,12 +68,45 @@
   });
   ['beforeEach', 'afterEach'].forEach((methodName) => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
-    jasmineEnv[Zone.__symbol__(methodName)] = originalJasmineFn;
+    jasmineEnv[symbol(methodName)] = originalJasmineFn;
     jasmineEnv[methodName] = function(specDefinitions: Function, timeout: number) {
       arguments[0] = wrapTestInZone(specDefinitions);
       return originalJasmineFn.apply(this, arguments);
     };
   });
+  const originalClockFn: Function = (jasmine as any)[symbol('clock')] = jasmine['clock'];
+  (jasmine as any)['clock'] = function() {
+    const clock = originalClockFn.apply(this, arguments);
+    const originalTick = clock[symbol('tick')] = clock.tick;
+    clock.tick = function() {
+      const fakeAsyncZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
+      if (fakeAsyncZoneSpec) {
+        return fakeAsyncZoneSpec.tick.apply(fakeAsyncZoneSpec, arguments);
+      }
+      return originalTick.apply(this, arguments);
+    };
+    const originalMockDate = clock[symbol('mockDate')] = clock.mockDate;
+    clock.mockDate = function() {
+      const fakeAsyncZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
+      if (fakeAsyncZoneSpec) {
+        const dateTime = arguments[0];
+        return fakeAsyncZoneSpec.setCurrentRealTime.apply(fakeAsyncZoneSpec, dateTime && typeof dateTime.getTime === 'function' ? [dateTime.getTime()] : arguments); 
+      }
+      return originalMockDate.apply(this, arguments);
+    };
+    ['install', 'uninstall'].forEach(methodName => {
+      const originalClockFn: Function = clock[symbol(methodName)] = clock[methodName];
+      clock[methodName] = function() {
+        const FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
+        if (FakeAsyncTestZoneSpec) {
+          (jasmine as any)[symbol('clockInstalled')] = 'install' === methodName;
+          return;
+        }
+        return originalClockFn.apply(this, arguments);
+      };
+    });
+    return clock;
+  };
 
   /**
    * Gets a function wrapping the body of a Jasmine `describe` block to execute in a
@@ -80,6 +116,30 @@
     return function() {
       return syncZone.run(describeBody, this, arguments as any as any[]);
     };
+  }
+
+  function runInTestZone(testBody: Function, done?: Function) {
+    const isClockInstalled = !!(jasmine as any)[symbol('clockInstalled')];
+    let lastDelegate;
+    if (isClockInstalled) {
+      const FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
+      if (FakeAsyncTestZoneSpec) {
+        const _fakeAsyncTestZoneSpec = new FakeAsyncTestZoneSpec();
+        lastDelegate = (testProxyZoneSpec as any).getDelegate();
+        (testProxyZoneSpec as any).setDelegate(_fakeAsyncTestZoneSpec);
+      }
+    }
+    try {
+      if (done) {
+        return testProxyZone.run(testBody, this, [done]);
+      } else {
+        return testProxyZone.run(testBody, this);
+      }
+    } finally {
+      if (isClockInstalled) {
+        (testProxyZoneSpec as any).setDelegate(lastDelegate);
+      }
+    }
   }
 
   /**
@@ -92,9 +152,9 @@
     // Note we have to make a function with correct number of arguments, otherwise jasmine will
     // think that all functions are sync or async.
     return testBody && (testBody.length ? function(done: Function) {
-             return testProxyZone.run(testBody, this, [done]);
+             runInTestZone(testBody, done);
            } : function() {
-             return testProxyZone.run(testBody, this);
+             runInTestZone(testBody);
            });
   }
   interface QueueRunner {
@@ -118,13 +178,15 @@
       attrs.onComplete = ((fn) => () => {
         // All functions are done, clear the test zone.
         testProxyZone = null;
+        testProxyZoneSpec = null;
         ambientZone.scheduleMicroTask('jasmine.onComplete', fn);
       })(attrs.onComplete);
       _super.call(this, attrs);
     }
     ZoneQueueRunner.prototype.execute = function() {
       if (Zone.current !== ambientZone) throw new Error('Unexpected Zone: ' + Zone.current.name);
-      testProxyZone = ambientZone.fork(new ProxyZoneSpec());
+      testProxyZoneSpec = new ProxyZoneSpec();
+      testProxyZone = ambientZone.fork(testProxyZoneSpec);
       if (!Zone.currentTask) {
         // if we are not running in a task then if someone would register a
         // element.addEventListener and then calling element.click() the
