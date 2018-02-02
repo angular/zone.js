@@ -35,8 +35,8 @@ See this video from ng-conf 2014 for a detailed explanation:
 
 ## Standard API support
 
-zone.js patched most standard web APIs(such as DOM events, XMLHttpRequest...) and nodejs APIs
-(EventEmitter,fs ...), for more details, please see [STANDARD-APIS.md](STANDARD-APIS.md).
+zone.js patched most standard web APIs (such as DOM events, `XMLHttpRequest`, ...) and nodejs APIs
+(`EventEmitter`, `fs`, ...), for more details, please see [STANDARD-APIS.md](STANDARD-APIS.md).
 
 ## Non standard API support
 
