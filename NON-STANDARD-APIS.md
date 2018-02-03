@@ -170,7 +170,7 @@ In electron, we patched the following APIs with `zone.js`
 
 ## Usage.
 
-add/update following line into `polyfill.ts`.
+add following line into `polyfill.ts` after loading zone-mix.
 
 ```
 //import 'zone.js/dist/zone'; // originally added by angular-cli, comment it out
@@ -194,7 +194,6 @@ user need to patch `io` themselves just like following code.
     </script>
 ```
 
-
 please reference the sample repo [zone-socketio](https://github.com/JiaLiPassion/zone-socketio) about 
 detail usage.
 
@@ -217,3 +216,14 @@ Zone['__zone_symbol__jsonp']({
   failedFuncName: 'jsonpFailedCallback'
 });
 ```
+* ResizeObserver
+
+Currently only `Chrome 64` native support this feature.
+you can add the following line into `polyfill.ts` after loading `zone.js`.
+
+```
+import 'zone.js/dist/zone';
+import 'zone.js/dist/zone-patch-resize-observer';
+```
+
+there is a sample repo [zone-resize-observer](https://github.com/JiaLiPassion/zone-resize-observer) here

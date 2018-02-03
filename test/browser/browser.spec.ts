@@ -2470,6 +2470,62 @@ describe('Zone', function() {
          });
        }));
 
+      describe('ResizeObserver', ifEnvSupports('ResizeObserver', () => {
+        it('ResizeObserver callback should be in zone', (done) => {
+          const ResizeObserver = (window as any)['ResizeObserver'];
+          const div = document.createElement('div');
+          const zone = Zone.current.fork({
+            name: 'observer'
+          });
+          const observer = new ResizeObserver((entries: any, ob: any) => {
+            expect(Zone.current.name).toEqual(zone.name);
+
+            expect(entries.length).toBe(1);
+            expect(entries[0].target).toBe(div);
+            done();
+          });
+
+          zone.run(() => {
+            observer.observe(div);
+          });
+
+          document.body.appendChild(div);
+        });
+
+        it('ResizeObserver callback should be able to in different zones which when they were observed', (done) => {
+          const ResizeObserver = (window as any)['ResizeObserver'];
+          const div1 = document.createElement('div');
+          const div2 = document.createElement('div');
+          const zone = Zone.current.fork({
+            name: 'observer'
+          });
+          let count = 0;
+          const observer = new ResizeObserver((entries: any, ob: any) => {
+            entries.forEach((entry: any) => {
+              if (entry.target === div1) {
+                expect(Zone.current.name).toEqual(zone.name);
+              } else {
+                expect(Zone.current.name).toEqual('<root>');
+              }
+            });
+            count ++;
+            if (count === 2) {
+              done();
+            }
+          });
+
+          zone.run(() => {
+            observer.observe(div1);
+          });
+          Zone.root.run(() => {
+            observer.observe(div2);
+          });
+
+          document.body.appendChild(div1);
+          document.body.appendChild(div2);
+        });
+      }));
+
     xdescribe('getUserMedia', () => {
       it('navigator.mediaDevices.getUserMedia should in zone',
          ifEnvSupportsWithDone(
@@ -2516,6 +2572,7 @@ describe('Zone', function() {
                      });
                });
              }));
+
     });
   });
 });
