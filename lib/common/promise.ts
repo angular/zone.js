@@ -241,7 +241,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       } catch (error) {
         resolvePromise(chainPromise, false, error);
       }
-    });
+    }, chainPromise as TaskData);
   }
 
   const ZONE_AWARE_PROMISE_TO_STRING = 'function ZoneAwarePromise() { [native code] }';

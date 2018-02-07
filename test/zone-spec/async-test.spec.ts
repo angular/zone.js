@@ -316,4 +316,31 @@ describe('AsyncTestZoneSpec', function() {
     });
 
   });
+
+  describe('non zone aware async task in promise should be detected', () => {
+    it('should be able to detect non zone aware async task in promise', (done) => {
+      let finished = false;
+
+      const testZoneSpec = new AsyncTestZoneSpec(
+          () => {
+            expect(finished).toBe(true);
+            done();
+          },
+          () => {
+            done.fail('async zone called failCallback unexpectedly');
+          },
+          'name');
+
+      const atz = Zone.current.fork(testZoneSpec);
+
+      atz.run(() => {
+        new Promise((res, rej) => {
+          const g: any = typeof window === 'undefined' ? global : window;
+          g[Zone.__symbol__('setTimeout')](res, 100);
+        }).then(() => {
+          finished = true;
+        });
+      });
+    });
+  });
 });

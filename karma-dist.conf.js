@@ -20,5 +20,6 @@ module.exports = function (config) {
   config.files.push('dist/sync-test.js');
   config.files.push('dist/task-tracking.js');
   config.files.push('dist/wtf.js');
+  config.files.push('dist/zone-patch-promise-test.js');
   config.files.push('build/test/main.js');
 };

@@ -24,6 +24,7 @@ import '../lib/zone-spec/task-tracking';
 import '../lib/zone-spec/wtf';
 import '../lib/rxjs/rxjs';
 
+import '../lib/testing/promise-testing';
 // Setup test environment
 import './test-env-setup-jasmine';
 
