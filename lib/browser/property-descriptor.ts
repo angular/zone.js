@@ -256,6 +256,11 @@ function filterProperties(
 
 export function patchFilteredProperties(
     target: any, onProperties: string[], ignoreProperties: IgnoreProperty[], prototype?: any) {
+  // check whether target is available, sometimes target will be undefined
+  // because different browser or some 3rd party plugin.
+  if (!target) {
+    return;
+  }
   const filteredProperties: string[] = filterProperties(target, onProperties, ignoreProperties);
   patchOnProperties(target, filteredProperties, prototype);
 }
