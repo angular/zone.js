@@ -6,5 +6,5 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-(<any>jasmine).DEFAULT_TIMEOUT_INTERVAL = 2000;
+(<any>jasmine).DEFAULT_TIMEOUT_INTERVAL = 5000;
 import '../lib/jasmine/jasmine';
