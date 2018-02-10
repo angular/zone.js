@@ -29,6 +29,7 @@ script:
   - node_modules/.bin/gulp filesize
   - scripts/closure/closure_compiler.sh
   - node_modules/.bin/gulp promisetest
+  - npm run promisefinallytest
   - npm run test:phantomjs-single
   - node_modules/.bin/karma start karma-dist-sauce-jasmine.conf.js --single-run
   - node_modules/.bin/karma start karma-build-sauce-mocha.conf.js --single-run

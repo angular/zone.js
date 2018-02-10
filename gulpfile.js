@@ -427,6 +427,8 @@ gulp.task('promisetest', ['build/zone-node.js'], (cb) => {
     promisesAplusTests(adapter, { reporter: "dot" }, function (err) {
       if (err) {
         cb(err);
+      } else {
+        cb();
       }
     });
 });
