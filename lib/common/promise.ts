@@ -268,7 +268,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
         // if error occurs, should always return this error
         resolvePromise(chainPromise, false, error);
       }
-    });
+    }, chainPromise as TaskData);
   }
 
   const ZONE_AWARE_PROMISE_TO_STRING = 'function ZoneAwarePromise() { [native code] }';
