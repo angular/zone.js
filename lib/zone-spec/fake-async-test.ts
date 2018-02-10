@@ -29,6 +29,31 @@
     callbackArgs?: any;
   }
 
+  const OriginalDate = global.Date;
+  class FakeDate {
+    constructor() {
+      const d = new OriginalDate();
+      d.setTime(global.Date.now());
+      return d;
+    }
+
+    static UTC() {
+      return OriginalDate.UTC();
+    }
+
+    static now() {
+      const fakeAsyncTestZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
+      if (fakeAsyncTestZoneSpec) {
+        return fakeAsyncTestZoneSpec.getCurrentRealTime() + fakeAsyncTestZoneSpec.getCurrentTime();
+      }
+      return OriginalDate.now.apply(this, arguments);
+    }
+
+    static parse() {
+      return OriginalDate.parse();
+    }
+  }
+
   class Scheduler {
     // Next scheduler id.
     public nextId: number = 0;
@@ -37,8 +62,22 @@
     private _schedulerQueue: ScheduledFunction[] = [];
     // Current simulated time in millis.
     private _currentTime: number = 0;
+    // Current real time in millis.
+    private _currentRealTime: number = Date.now();
 
     constructor() {}
+
+    getCurrentTime() {
+      return this._currentTime;
+    }
+
+    getCurrentRealTime() {
+      return this._currentRealTime;
+    }
+
+    setCurrentRealTime(realTime: number) {
+      this._currentRealTime = realTime;
+    }
 
     scheduleFunction(
         cb: Function, delay: number, args: any[] = [], isPeriodic: boolean = false,
@@ -281,6 +320,32 @@
       throw error;
     }
 
+    getCurrentTime() {
+      return this._scheduler.getCurrentTime();
+    }
+
+    getCurrentRealTime() {
+      return this._scheduler.getCurrentRealTime();
+    }
+
+    setCurrentRealTime(realTime: number) {
+      this._scheduler.setCurrentRealTime(realTime);
+    }
+
+    static patchDate() {
+      if (global['Date'] === FakeDate) {
+        // already patched
+        return;
+      }
+      global['Date'] = FakeDate;
+    }
+
+    static resetDate() {
+      if (global['Date'] === FakeDate) {
+        global['Date'] = OriginalDate;
+      }
+    }
+
     tick(millis: number = 0, doTick?: (elapsed: number) => void): void {
       FakeAsyncTestZoneSpec.assertInZone();
       this.flushMicrotasks();
@@ -412,6 +477,15 @@
                                                 this._clearTimeout(handleId);
           }
           return delegate.cancelTask(target, task);
+      }
+    }
+
+    onInvoke(delegate: ZoneDelegate, current: Zone, target: Zone, callback: Function, applyThis: any, applyArgs: any[], source: string): any {
+      try {
+        FakeAsyncTestZoneSpec.patchDate();
+        return delegate.invoke(target, callback, applyThis, applyArgs, source);
+      } finally {
+        FakeAsyncTestZoneSpec.resetDate();
       }
     }
 
