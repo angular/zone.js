@@ -60,10 +60,15 @@ describe('setInterval', function() {
     }, null, null, 'unit-test');
   });
 
-  it('should not cancel the task after invoke the setInterval callback', (done) => {
+  it('setInterval should not update task count to trigger onHasTask', (done: Function) => {
     const logs: HasTaskState[] = [];
+    let task: Task;
     const zone = Zone.current.fork({
       name: 'interval',
+      onScheduleTask: (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, t: Task) => {
+        task = t;
+        return delegate.scheduleTask(targetZone, task);
+      },
       onHasTask:
           (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, hasTask: HasTaskState) => {
             logs.push(hasTask);
@@ -74,17 +79,11 @@ describe('setInterval', function() {
     zone.run(() => {
       const timerId = setInterval(() => {}, 100);
       (global as any)[Zone.__symbol__('setTimeout')](() => {
-        expect(logs.length > 0).toBeTruthy();
-        expect(logs).toEqual(
-            [{microTask: false, macroTask: true, eventTask: false, change: 'macroTask'}]);
+        expect(logs).toEqual([]);
         clearInterval(timerId);
-        expect(logs).toEqual([
-          {microTask: false, macroTask: true, eventTask: false, change: 'macroTask'},
-          {microTask: false, macroTask: false, eventTask: false, change: 'macroTask'}
-        ]);
+        expect(logs).toEqual([]);
         done();
       }, 300);
-    });
+    }); 
   });
-
 });
