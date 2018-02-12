@@ -9,7 +9,7 @@
 
 var gulp = require('gulp');
 var rollup = require('gulp-rollup');
-var rename = require("gulp-rename");
+var rename = require('gulp-rename');
 var uglify = require('gulp-uglify');
 var pump = require('pump');
 var path = require('path');
@@ -21,28 +21,36 @@ function generateScript(inFile, outFile, minify, callback) {
   var parts = [
     gulp.src('./build-esm/lib/**/*.js')
         .pipe(rollup({
-          entry: inFile,
-          format: 'umd',
-          onwarn: function (warning) {
+          input: inFile,
+          onwarn: function(warning) {
             // https://github.com/rollup/rollup/wiki/Troubleshooting#this-is-undefined
             if (warning.code === 'THIS_IS_UNDEFINED') {
               return;
             }
             console.error(warning.message);
           },
-          banner: '/**\n'
-              + '* @license\n'
-              + '* Copyright Google Inc. All Rights Reserved.\n'
-              + '*\n'
-              + '* Use of this source code is governed by an MIT-style license that can be\n'
-              + '* found in the LICENSE file at https://angular.io/license\n'
-              + '*/',
-          globals: {
-            'rxjs/Observable': 'Rx',
-            'rxjs/Subscriber': 'Rx',
-            'rxjs/Subscription': 'Rx',
-            'rxjs/scheduler/asap': 'Rx.Scheduler',
-            'rxjs/symbol/rxSubscriber': 'Rx.Symbol'
+          output: {
+            format: 'umd',
+            banner: '/**\n' +
+                '* @license\n' +
+                '* Copyright Google Inc. All Rights Reserved.\n' +
+                '*\n' +
+                '* Use of this source code is governed by an MIT-style license that can be\n' +
+                '* found in the LICENSE file at https://angular.io/license\n' +
+                '*/',
+            globals: {
+              'rxjs/Observable': 'Rx',
+              'rxjs/Subscriber': 'Rx',
+              'rxjs/Subscription': 'Rx',
+              'rxjs/scheduler/asap': 'Rx.Scheduler',
+              'rxjs/symbol/rxSubscriber': 'Rx.Symbol'
+            }
+          },
+          external: id => {
+            if (/build-esm/.test(id)) {
+              return false;
+            }
+            return /rxjs/.test(id);
           }
         }))
         .pipe(rename(outFile)),
@@ -56,21 +64,22 @@ function generateScript(inFile, outFile, minify, callback) {
 
 // returns the script path for the current platform
 function platformScriptPath(path) {
-    return /^win/.test(os.platform()) ? `${path}.cmd` : path;
+  return /^win/.test(os.platform()) ? `${path}.cmd` : path;
 }
 
 function tsc(config, cb) {
-  spawn(path.normalize(platformScriptPath('./node_modules/.bin/tsc')), ['-p', config], {stdio: 'inherit'})
-      .on('close', function(exitCode) {
-        if (exitCode) {
-          var err = new Error('TypeScript compiler failed');
-          // The stack is not useful in this context.
-          err.showStack = false;
-          cb(err);
-        } else {
-          cb();
-        }
-      });
+  spawn(path.normalize(platformScriptPath('./node_modules/.bin/tsc')), ['-p', config], {
+    stdio: 'inherit'
+  }).on('close', function(exitCode) {
+    if (exitCode) {
+      var err = new Error('TypeScript compiler failed');
+      // The stack is not useful in this context.
+      err.showStack = false;
+      cb(err);
+    } else {
+      cb();
+    }
+  });
 }
 
 // This is equivalent to `npm run tsc`.
@@ -91,7 +100,9 @@ gulp.task('compile-esm-node', function(cb) {
 });
 
 gulp.task('build/zone.js.d.ts', ['compile-esm'], function() {
-  return gulp.src('./build-esm/lib/zone.d.ts').pipe(rename('zone.js.d.ts')).pipe(gulp.dest('./dist'));
+  return gulp.src('./build-esm/lib/zone.d.ts')
+      .pipe(rename('zone.js.d.ts'))
+      .pipe(gulp.dest('./dist'));
 });
 
 // Zone for Node.js environment.
@@ -125,7 +136,7 @@ gulp.task('build/zone-testing.js', ['compile-esm'], function(cb) {
 
 // Zone for electron/nw environment.
 gulp.task('build/zone-mix.js', ['compile-esm-node'], function(cb) {
-    return generateScript('./lib/mix/rollup-mix.ts', 'zone-mix.js', false, cb);
+  return generateScript('./lib/mix/rollup-mix.ts', 'zone-mix.js', false, cb);
 });
 
 gulp.task('build/zone-error.js', ['compile-esm'], function(cb) {
@@ -137,59 +148,68 @@ gulp.task('build/zone-error.min.js', ['compile-esm'], function(cb) {
 });
 
 gulp.task('build/webapis-media-query.js', ['compile-esm'], function(cb) {
-    return generateScript('./lib/browser/webapis-media-query.ts', 'webapis-media-query.js', false, cb);
+  return generateScript(
+      './lib/browser/webapis-media-query.ts', 'webapis-media-query.js', false, cb);
 });
 
 gulp.task('build/webapis-media-query.min.js', ['compile-esm'], function(cb) {
-    return generateScript('./lib/browser/webapis-media-query.ts', 'webapis-media-query.min.js', true, cb);
+  return generateScript(
+      './lib/browser/webapis-media-query.ts', 'webapis-media-query.min.js', true, cb);
 });
 
 gulp.task('build/webapis-notification.js', ['compile-esm'], function(cb) {
-    return generateScript('./lib/browser/webapis-notification.ts', 'webapis-notification.js', false, cb);
+  return generateScript(
+      './lib/browser/webapis-notification.ts', 'webapis-notification.js', false, cb);
 });
 
 gulp.task('build/webapis-notification.min.js', ['compile-esm'], function(cb) {
-    return generateScript('./lib/browser/webapis-notification.ts', 'webapis-notification.min.js', true, cb);
+  return generateScript(
+      './lib/browser/webapis-notification.ts', 'webapis-notification.min.js', true, cb);
 });
 
 gulp.task('build/webapis-rtc-peer-connection.js', ['compile-esm'], function(cb) {
-  return generateScript('./lib/browser/webapis-rtc-peer-connection.ts', 'webapis-rtc-peer-connection.js', false, cb);
+  return generateScript(
+      './lib/browser/webapis-rtc-peer-connection.ts', 'webapis-rtc-peer-connection.js', false, cb);
 });
 
 gulp.task('build/webapis-rtc-peer-connection.min.js', ['compile-esm'], function(cb) {
-  return generateScript('./lib/browser/webapis-rtc-peer-connection.ts', 'webapis-rtc-peer-connection.min.js', true, cb);
+  return generateScript(
+      './lib/browser/webapis-rtc-peer-connection.ts', 'webapis-rtc-peer-connection.min.js', true,
+      cb);
 });
 
 gulp.task('build/webapis-shadydom.js', ['compile-esm'], function(cb) {
-    return generateScript('./lib/browser/shadydom.ts', 'webapis-shadydom.js', false, cb);
+  return generateScript('./lib/browser/shadydom.ts', 'webapis-shadydom.js', false, cb);
 });
 
 gulp.task('build/webapis-shadydom.min.js', ['compile-esm'], function(cb) {
-    return generateScript('./lib/browser/shadydom.ts', 'webapis-shadydom.min.js', true, cb);
+  return generateScript('./lib/browser/shadydom.ts', 'webapis-shadydom.min.js', true, cb);
 });
 
 gulp.task('build/zone-patch-cordova.js', ['compile-esm'], function(cb) {
-    return generateScript('./lib/extra/cordova.ts', 'zone-patch-cordova.js', false, cb);
+  return generateScript('./lib/extra/cordova.ts', 'zone-patch-cordova.js', false, cb);
 });
 
 gulp.task('build/zone-patch-cordova.min.js', ['compile-esm'], function(cb) {
-    return generateScript('./lib/extra/cordova.ts', 'zone-patch-cordova.min.js', true, cb);
+  return generateScript('./lib/extra/cordova.ts', 'zone-patch-cordova.min.js', true, cb);
 });
 
 gulp.task('build/zone-patch-electron.js', ['compile-esm'], function(cb) {
-    return generateScript('./lib/extra/electron.ts', 'zone-patch-electron.js', false, cb);
+  return generateScript('./lib/extra/electron.ts', 'zone-patch-electron.js', false, cb);
 });
 
 gulp.task('build/zone-patch-electron.min.js', ['compile-esm'], function(cb) {
-    return generateScript('./lib/extra/electron.ts', 'zone-patch-electron.min.js', true, cb);
+  return generateScript('./lib/extra/electron.ts', 'zone-patch-electron.min.js', true, cb);
 });
 
 gulp.task('build/zone-patch-user-media.js', ['compile-esm'], function(cb) {
-  return generateScript('./lib/browser/webapis-user-media.ts', 'zone-patch-user-media.js', false, cb);
+  return generateScript(
+      './lib/browser/webapis-user-media.ts', 'zone-patch-user-media.js', false, cb);
 });
 
 gulp.task('build/zone-patch-user-media.min.js', ['compile-esm'], function(cb) {
-  return generateScript('./lib/browser/webapis-user-media.ts', 'zone-patch-user-media.min.js', true, cb);
+  return generateScript(
+      './lib/browser/webapis-user-media.ts', 'zone-patch-user-media.min.js', true, cb);
 });
 
 gulp.task('build/zone-patch-socket-io.js', ['compile-esm'], function(cb) {
@@ -209,11 +229,11 @@ gulp.task('build/zone-patch-promise-testing.min.js', ['compile-esm'], function(c
 });
 
 gulp.task('build/bluebird.js', ['compile-esm'], function(cb) {
-    return generateScript('./lib/extra/bluebird.ts', 'zone-bluebird.js', false, cb);
+  return generateScript('./lib/extra/bluebird.ts', 'zone-bluebird.js', false, cb);
 });
 
 gulp.task('build/bluebird.min.js', ['compile-esm'], function(cb) {
-    return generateScript('./lib/extra/bluebird.ts', 'zone-bluebird.min.js', true, cb);
+  return generateScript('./lib/extra/bluebird.ts', 'zone-bluebird.min.js', true, cb);
 });
 
 gulp.task('build/zone-patch-jsonp.js', ['compile-esm'], function(cb) {
@@ -241,11 +261,13 @@ gulp.task('build/mocha-patch.min.js', ['compile-esm'], function(cb) {
 });
 
 gulp.task('build/long-stack-trace-zone.js', ['compile-esm'], function(cb) {
-  return generateScript('./lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.js', false, cb);
+  return generateScript(
+      './lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.js', false, cb);
 });
 
 gulp.task('build/long-stack-trace-zone.min.js', ['compile-esm'], function(cb) {
-  return generateScript('./lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.min.js', true, cb);
+  return generateScript(
+      './lib/zone-spec/long-stack-trace.ts', 'long-stack-trace-zone.min.js', true, cb);
 });
 
 gulp.task('build/proxy-zone.js', ['compile-esm'], function(cb) {
@@ -301,8 +323,7 @@ gulp.task('build/rxjs-fake-async.min.js', ['compile-esm'], function(cb) {
 });
 
 gulp.task('build/closure.js', function() {
-  return gulp.src('./lib/closure/zone_externs.js')
-             .pipe(gulp.dest('./dist'));
+  return gulp.src('./lib/closure/zone_externs.js').pipe(gulp.dest('./dist'));
 });
 
 gulp.task('build', [
@@ -396,12 +417,12 @@ gulp.task('lint', () => {
   const tslintConfig = require('./tslint.json');
 
   return gulp.src(['lib/**/*.ts', 'test/**/*.ts'])
-    .pipe(tslint({
-      tslint: require('tslint').default,
-      configuration: tslintConfig,
-      formatter: 'prose',
-    }))
-    .pipe(tslint.report({emitError: true}));
+      .pipe(tslint({
+        tslint: require('tslint').default,
+        configuration: tslintConfig,
+        formatter: 'prose',
+      }))
+      .pipe(tslint.report({emitError: true}));
 });
 
 // clang-format entry points
@@ -415,15 +436,16 @@ gulp.task('format:enforce', () => {
   const format = require('gulp-clang-format');
   const clangFormat = require('clang-format');
   return gulp.src(srcsToFmt).pipe(
-    format.checkFormat('file', clangFormat, {verbose: true, fail: true}));
+      format.checkFormat('file', clangFormat, {verbose: true, fail: true}));
 });
 
 // Format the source code with clang-format (see .clang-format)
 gulp.task('format', () => {
   const format = require('gulp-clang-format');
   const clangFormat = require('clang-format');
-  return gulp.src(srcsToFmt, { base: '.' }).pipe(
-    format.format('file', clangFormat)).pipe(gulp.dest('.'));
+  return gulp.src(srcsToFmt, {base: '.'})
+      .pipe(format.format('file', clangFormat))
+      .pipe(gulp.dest('.'));
 });
 
 // Update the changelog with the latest changes
@@ -431,35 +453,35 @@ gulp.task('changelog', () => {
   const conventionalChangelog = require('gulp-conventional-changelog');
 
   return gulp.src('CHANGELOG.md')
-    .pipe(conventionalChangelog({preset: 'angular', releaseCount: 1}, {
-       // Conventional Changelog Context
-       // We have to manually set version number so it doesn't get prefixed with `v`
-       // See https://github.com/conventional-changelog/conventional-changelog-core/issues/10
-       currentTag: require('./package.json').version
-    }))
-    .pipe(gulp.dest('./'));
+      .pipe(conventionalChangelog({preset: 'angular', releaseCount: 1}, {
+        // Conventional Changelog Context
+        // We have to manually set version number so it doesn't get prefixed with `v`
+        // See https://github.com/conventional-changelog/conventional-changelog-core/issues/10
+        currentTag: require('./package.json').version
+      }))
+      .pipe(gulp.dest('./'));
 });
 
 // run promise aplus test
 gulp.task('promisetest', ['build/zone-node.js'], (cb) => {
-    const promisesAplusTests = require('promises-aplus-tests');
-    const adapter = require('./promise-adapter');
-    promisesAplusTests(adapter, { reporter: "dot" }, function (err) {
-      if (err) {
-        cb(err);
-      } else {
-        cb();
-      }
-    });
+  const promisesAplusTests = require('promises-aplus-tests');
+  const adapter = require('./promise-adapter');
+  promisesAplusTests(adapter, {reporter: 'dot'}, function(err) {
+    if (err) {
+      cb(err);
+    } else {
+      cb();
+    }
+  });
 });
 
 // check dist file size limitation
 gulp.task('filesize', ['build'], (cb) => {
-    const checker = require('./check-file-size');
-    const result = checker(require('./file-size-limit.json'));
-    if (result) {
-      cb();
-    } else {
-      cb('check file size failed');
-    }
+  const checker = require('./check-file-size');
+  const result = checker(require('./file-size-limit.json'));
+  if (result) {
+    cb();
+  } else {
+    cb('check file size failed');
+  }
 });
