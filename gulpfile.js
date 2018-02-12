@@ -228,6 +228,14 @@ gulp.task('build/zone-patch-promise-testing.min.js', ['compile-esm'], function(c
   return generateScript('./lib/testing/promise-testing.ts', 'zone-patch-promise-test.min.js', true, cb);
 });
 
+gulp.task('build/zone-patch-resize-observer.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/browser/webapis-resize-observer.ts', 'zone-patch-resize-observer.js', false, cb);
+});
+
+gulp.task('build/zone-patch-resize-observer.min.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/browser/webapis-resize-observer.ts', 'zone-patch-resize-observer.min.js', true, cb);
+});
+
 gulp.task('build/bluebird.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/extra/bluebird.ts', 'zone-bluebird.js', false, cb);
 });
@@ -354,6 +362,8 @@ gulp.task('build', [
   'build/zone-patch-socket-io.min.js',
   'build/zone-patch-promise-testing.js',
   'build/zone-patch-promise-testing.min.js',
+  'build/zone-patch-resize-observer.js',
+  'build/zone-patch-resize-observer.min.js',
   'build/zone-mix.js',
   'build/bluebird.js',
   'build/bluebird.min.js',
