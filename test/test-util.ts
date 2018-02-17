@@ -51,10 +51,8 @@ function _runTest(test: any, block: Function, done: Function) {
       block();
     }
   } else {
+    console.log('WARNING: skipping ' + message + ' tests (missing this API)');
     done && done();
-    it('should skip the test if the API does not exist', function() {
-      console.log('WARNING: skipping ' + message + ' tests (missing this API)');
-    });
   }
 }
 

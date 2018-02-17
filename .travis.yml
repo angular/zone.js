@@ -38,3 +38,7 @@ script:
   - node_modules/.bin/gulp test/node
   - node simple-server.js 2>&1> server.log&
   - node ./test/webdriver/test.sauce.js
+  - npm install jasmine@3.0.0 jasmine-core@3.0.0
+  - npm run test:phantomjs-single
+  - node_modules/.bin/karma start karma-dist-sauce-jasmine3.conf.js --single-run
+  - node_modules/.bin/gulp test/node

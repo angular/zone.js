@@ -14,6 +14,8 @@ import {getIEVersion, ifEnvSupports, ifEnvSupportsWithDone, isEdge} from '../tes
 import Spy = jasmine.Spy;
 declare const global: any;
 
+const noop = function() {};
+
 function windowPrototype() {
   return !!(global['Window'] && global['Window'].prototype);
 }

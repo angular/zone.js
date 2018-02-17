@@ -527,7 +527,7 @@ describe(
                   });
         });
 
-        it('should resolve if the Promise subclass resolves', function() {
+        function testPromiseSubClass(done?: Function) {
           const myPromise = new MyPromise(function(resolve: any, reject: Function) {
             resolve('foo');
           });
@@ -538,7 +538,14 @@ describe(
               })
               .then(function(result) {
                 expect(result).toBe('foo');
+                done && done();
               });
+        } 
+
+        it('should resolve if the Promise subclass resolves', jasmine ? function(done) {
+          testPromiseSubClass(done);
+        } : function() {
+          testPromiseSubClass();
         });
       });
 
