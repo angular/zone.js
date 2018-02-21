@@ -9,10 +9,12 @@
 import {patchFilteredProperties} from '../../lib/browser/property-descriptor';
 import {patchEventTarget} from '../../lib/common/events';
 import {isBrowser, isIEOrEdge, isMix, zoneSymbol} from '../../lib/common/utils';
-import {getIEVersion, ifEnvSupports, ifEnvSupportsWithDone} from '../test-util';
+import {getIEVersion, ifEnvSupports, ifEnvSupportsWithDone, isEdge} from '../test-util';
 
 import Spy = jasmine.Spy;
 declare const global: any;
+
+const noop = function() {};
 
 function windowPrototype() {
   return !!(global['Window'] && global['Window'].prototype);
@@ -208,6 +210,46 @@ describe('Zone', function() {
             });
           });
 
+          it('should not patch ignored eventListener', function() {
+            let scrollEvent = document.createEvent('Event');
+            scrollEvent.initEvent('scroll', true, true);
+
+            const zone = Zone.current.fork({name: 'run'});
+
+            Zone.current.fork({name: 'scroll'}).run(() => {
+              document.addEventListener('scroll', () => {
+                expect(Zone.current.name).toEqual(zone.name);
+              });
+            });
+
+            zone.run(() => {
+              document.dispatchEvent(scrollEvent);
+            });
+          });
+
+          it('should be able to clear on handler added before load zone.js', function() {
+            const TestTarget: any = (window as any)['TestTarget'];
+            patchFilteredProperties(
+                TestTarget.prototype, ['prop3'], global['__Zone_ignore_on_properties']);
+            const testTarget = new TestTarget();
+            Zone.current.fork({name: 'test'}).run(() => {
+              expect(testTarget.onprop3).toBeTruthy();
+              const newProp3Handler = function() {};
+              testTarget.onprop3 = newProp3Handler;
+              expect(testTarget.onprop3).toBe(newProp3Handler);
+              testTarget.onprop3 = null;
+              expect(!testTarget.onprop3).toBeTruthy();
+              testTarget.onprop3 = function() {
+                // onprop1 should not be patched
+                expect(Zone.current.name).toEqual('test');
+              };
+            });
+
+            Zone.current.fork({name: 'test1'}).run(() => {
+              testTarget.dispatchEvent('prop3');
+            });
+          });
+
           it('window onclick should be in zone',
              ifEnvSupports(canPatchOnProperty(window, 'onmousedown'), function() {
                zone.run(function() {
@@ -376,6 +418,40 @@ describe('Zone', function() {
 
         expect(hookSpy).toHaveBeenCalled();
         expect(eventListenerSpy).toHaveBeenCalled();
+      });
+
+      it('should be able to access addEventListener information in onScheduleTask', function() {
+        const hookSpy = jasmine.createSpy('hook');
+        const eventListenerSpy = jasmine.createSpy('eventListener');
+        let scheduleButton;
+        let scheduleEventName;
+        let scheduleCapture;
+        let scheduleTask;
+        const zone = rootZone.fork({
+          name: 'spy',
+          onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                           task: Task): any => {
+            hookSpy();
+            scheduleButton = (task.data as any).taskData.target;
+            scheduleEventName = (task.data as any).taskData.eventName;
+            scheduleCapture = (task.data as any).taskData.capture;
+            scheduleTask = task;
+            return parentZoneDelegate.scheduleTask(targetZone, task);
+          }
+        });
+
+        zone.run(function() {
+          button.addEventListener('click', eventListenerSpy);
+        });
+
+        button.dispatchEvent(clickEvent);
+
+        expect(hookSpy).toHaveBeenCalled();
+        expect(eventListenerSpy).toHaveBeenCalled();
+        expect(scheduleButton).toBe(button);
+        expect(scheduleEventName).toBe('click');
+        expect(scheduleCapture).toBe(false);
+        expect(scheduleTask && (scheduleTask as any).data.taskData).toBe(null);
       });
 
       it('should support addEventListener on window', ifEnvSupports(windowPrototype, function() {
@@ -2112,7 +2188,7 @@ describe('Zone', function() {
         button.addEventListener('click', listener4);
 
         (button as any).removeAllListeners();
-        const listeners = (button as any).eventListeners('mouseove');
+        const listeners = (button as any).eventListeners('mouseover');
         expect(listeners.length).toBe(0);
 
         const mouseEvent = document.createEvent('Event');
@@ -2123,6 +2199,81 @@ describe('Zone', function() {
 
         button.dispatchEvent(clickEvent);
         expect(logs).toEqual([]);
+      });
+
+      it('should be able to remove listener which was added outside of zone ', function() {
+        let logs: string[] = [];
+        const listener1 = function() {
+          logs.push('listener1');
+        };
+        const listener2 = function() {
+          logs.push('listener2');
+        };
+        const listener3 = {
+          handleEvent: function(event: Event) {
+            logs.push('listener3');
+          }
+        };
+        const listener4 = function() {
+          logs.push('listener4');
+        };
+
+        button.addEventListener('mouseover', listener1);
+        (button as any)[Zone.__symbol__('addEventListener')]('mouseover', listener2);
+        button.addEventListener('click', listener3);
+        (button as any)[Zone.__symbol__('addEventListener')]('click', listener4);
+
+        button.removeEventListener('mouseover', listener1);
+        button.removeEventListener('mouseover', listener2);
+        button.removeEventListener('click', listener3);
+        button.removeEventListener('click', listener4);
+        const listeners = (button as any).eventListeners('mouseover');
+        expect(listeners.length).toBe(0);
+
+        const mouseEvent = document.createEvent('Event');
+        mouseEvent.initEvent('mouseover', true, true);
+
+        button.dispatchEvent(mouseEvent);
+        expect(logs).toEqual([]);
+
+        button.dispatchEvent(clickEvent);
+        expect(logs).toEqual([]);
+      });
+
+      it('should be able to remove all listeners which were added inside of zone ', function() {
+        let logs: string[] = [];
+        const listener1 = function() {
+          logs.push('listener1');
+        };
+        const listener2 = function() {
+          logs.push('listener2');
+        };
+        const listener3 = {
+          handleEvent: function(event: Event) {
+            logs.push('listener3');
+          }
+        };
+        const listener4 = function() {
+          logs.push('listener4');
+        };
+
+        button.addEventListener('mouseover', listener1);
+        (button as any)[Zone.__symbol__('addEventListener')]('mouseover', listener2);
+        button.addEventListener('click', listener3);
+        (button as any)[Zone.__symbol__('addEventListener')]('click', listener4);
+
+        (button as any).removeAllListeners();
+        const listeners = (button as any).eventListeners('mouseover');
+        expect(listeners.length).toBe(0);
+
+        const mouseEvent = document.createEvent('Event');
+        mouseEvent.initEvent('mouseover', true, true);
+
+        button.dispatchEvent(mouseEvent);
+        expect(logs).toEqual(['listener2']);
+
+        button.dispatchEvent(clickEvent);
+        expect(logs).toEqual(['listener2', 'listener4']);
       });
 
       it('should bypass addEventListener of FunctionWrapper and __BROWSERTOOLS_CONSOLE_SAFEFUNC of IE/Edge',
@@ -2320,5 +2471,110 @@ describe('Zone', function() {
            });
          });
        }));
+
+      describe('ResizeObserver', ifEnvSupports('ResizeObserver', () => {
+        it('ResizeObserver callback should be in zone', (done) => {
+          const ResizeObserver = (window as any)['ResizeObserver'];
+          const div = document.createElement('div');
+          const zone = Zone.current.fork({
+            name: 'observer'
+          });
+          const observer = new ResizeObserver((entries: any, ob: any) => {
+            expect(Zone.current.name).toEqual(zone.name);
+
+            expect(entries.length).toBe(1);
+            expect(entries[0].target).toBe(div);
+            done();
+          });
+
+          zone.run(() => {
+            observer.observe(div);
+          });
+
+          document.body.appendChild(div);
+        });
+
+        it('ResizeObserver callback should be able to in different zones which when they were observed', (done) => {
+          const ResizeObserver = (window as any)['ResizeObserver'];
+          const div1 = document.createElement('div');
+          const div2 = document.createElement('div');
+          const zone = Zone.current.fork({
+            name: 'observer'
+          });
+          let count = 0;
+          const observer = new ResizeObserver((entries: any, ob: any) => {
+            entries.forEach((entry: any) => {
+              if (entry.target === div1) {
+                expect(Zone.current.name).toEqual(zone.name);
+              } else {
+                expect(Zone.current.name).toEqual('<root>');
+              }
+            });
+            count ++;
+            if (count === 2) {
+              done();
+            }
+          });
+
+          zone.run(() => {
+            observer.observe(div1);
+          });
+          Zone.root.run(() => {
+            observer.observe(div2);
+          });
+
+          document.body.appendChild(div1);
+          document.body.appendChild(div2);
+        });
+      }));
+
+    xdescribe('getUserMedia', () => {
+      it('navigator.mediaDevices.getUserMedia should in zone',
+         ifEnvSupportsWithDone(
+             () => {
+               return !isEdge() && navigator && navigator.mediaDevices &&
+                   typeof navigator.mediaDevices.getUserMedia === 'function';
+             },
+             (done: Function) => {
+               const zone = Zone.current.fork({name: 'media'});
+               zone.run(() => {
+                 const constraints = {audio: true, video: {width: 1280, height: 720}};
+
+                 navigator.mediaDevices.getUserMedia(constraints)
+                     .then(function(mediaStream) {
+                       expect(Zone.current.name).toEqual(zone.name);
+                       done();
+                     })
+                     .catch(function(err) {
+                       console.log(err.name + ': ' + err.message);
+                       expect(Zone.current.name).toEqual(zone.name);
+                       done();
+                     });
+               });
+             }));
+
+      it('navigator.getUserMedia should in zone',
+         ifEnvSupportsWithDone(
+             () => {
+               return !isEdge() && navigator && typeof navigator.getUserMedia === 'function';
+             },
+             (done: Function) => {
+               const zone = Zone.current.fork({name: 'media'});
+               zone.run(() => {
+                 const constraints = {audio: true, video: {width: 1280, height: 720}};
+                 navigator.getUserMedia(
+                     constraints,
+                     () => {
+                       expect(Zone.current.name).toEqual(zone.name);
+                       done();
+                     },
+                     () => {
+                       expect(Zone.current.name).toEqual(zone.name);
+                       done();
+                     });
+               });
+             }));
+
+    });
   });
 });

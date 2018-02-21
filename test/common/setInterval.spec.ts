@@ -60,4 +60,31 @@ describe('setInterval', function() {
     }, null, null, 'unit-test');
   });
 
+  it('should not cancel the task after invoke the setInterval callback', (done) => {
+    const logs: HasTaskState[] = [];
+    const zone = Zone.current.fork({
+      name: 'interval',
+      onHasTask:
+          (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, hasTask: HasTaskState) => {
+            logs.push(hasTask);
+            return delegate.hasTask(targetZone, hasTask);
+          }
+    });
+
+    zone.run(() => {
+      const timerId = setInterval(() => {}, 100);
+      (global as any)[Zone.__symbol__('setTimeout')](() => {
+        expect(logs.length > 0).toBeTruthy();
+        expect(logs).toEqual(
+            [{microTask: false, macroTask: true, eventTask: false, change: 'macroTask'}]);
+        clearInterval(timerId);
+        expect(logs).toEqual([
+          {microTask: false, macroTask: true, eventTask: false, change: 'macroTask'},
+          {microTask: false, macroTask: false, eventTask: false, change: 'macroTask'}
+        ]);
+        done();
+      }, 300);
+    });
+  });
+
 });

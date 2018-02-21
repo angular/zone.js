@@ -1,3 +1,19 @@
+<a name="0.8.20"></a>
+## [0.8.20](https://github.com/angular/zone.js/compare/v0.8.19...0.8.20) (2018-01-10)
+
+
+### Bug Fixes
+
+* **core:** add comment for shorter var/function name ([67e8178](https://github.com/angular/zone.js/commit/67e8178))
+* **core:** add file check script in travis build ([615a6c1](https://github.com/angular/zone.js/commit/615a6c1))
+* **core:** add helper method in util.ts to shorter zone.wrap/scehduleMacroTask ([8293c37](https://github.com/angular/zone.js/commit/8293c37))
+* **core:** add rxjs test ([31832a7](https://github.com/angular/zone.js/commit/31832a7))
+* **core:** fix [#989](https://github.com/angular/zone.js/issues/989), remove unuse code, use shorter name to reduce bundle size ([73b0061](https://github.com/angular/zone.js/commit/73b0061))
+* **core:** fix shorter name closure conflict ([00a4e31](https://github.com/angular/zone.js/commit/00a4e31))
+* **core:** remove unreadable short names ([957351e](https://github.com/angular/zone.js/commit/957351e))
+
+
+
 <a name="0.8.18"></a>
 ## [0.8.18](https://github.com/angular/zone.js/compare/v0.8.17...0.8.18) (2017-09-27)
 

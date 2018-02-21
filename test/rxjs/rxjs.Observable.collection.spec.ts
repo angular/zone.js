@@ -11,9 +11,15 @@ import {asyncTest} from '../test-util';
 describe('Observable.collection', () => {
   let log: string[];
   let observable1: any;
+  let defaultTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
 
   beforeEach(() => {
     log = [];
+    jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
+  });
+
+  afterEach(function() {
+    jasmine.DEFAULT_TIMEOUT_INTERVAL = defaultTimeout;
   });
 
   it('elementAt func callback should run in the correct zone', () => {

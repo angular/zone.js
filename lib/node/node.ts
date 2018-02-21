@@ -11,12 +11,18 @@ import './fs';
 
 import {findEventTasks} from '../common/events';
 import {patchTimer} from '../common/timers';
-import {isMix, patchMacroTask, patchMicroTask} from '../common/utils';
+import {ArraySlice, bindArguments, isMix, patchMacroTask, patchMethod, patchMicroTask, patchOnProperties} from '../common/utils';
 
 const set = 'set';
 const clear = 'clear';
 
-Zone.__load_patch('node_timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('node_util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+  api.patchOnProperties = patchOnProperties;
+  api.patchMethod = patchMethod;
+  api.bindArguments = bindArguments;
+});
+
+Zone.__load_patch('node_timers', (global: any, Zone: ZoneType) => {
   // Timers
   let globalUseTimeoutFromTimer = false;
   try {
@@ -41,7 +47,7 @@ Zone.__load_patch('node_timers', (global: any, Zone: ZoneType, api: _ZonePrivate
     patchTimer(timers, set, clear, 'Interval');
     patchTimer(timers, set, clear, 'Immediate');
   } catch (error) {
-    // timers module not exists, for example, when we using nativescript
+    // timers module not exists, for example, when we using nativeScript
     // timers is not available
   }
   if (isMix) {
@@ -59,7 +65,7 @@ Zone.__load_patch('node_timers', (global: any, Zone: ZoneType, api: _ZonePrivate
     patchTimer(global, set, clear, 'Immediate');
   } else {
     // global use timers setTimeout, but not equals
-    // this happenes when use nodejs v0.10.x, global setTimeout will
+    // this happens when use nodejs v0.10.x, global setTimeout will
     // use a lazy load version of timers setTimeout
     // we should not double patch timer's setTimeout
     // so we only store the __symbol__ for consistency
@@ -70,13 +76,13 @@ Zone.__load_patch('node_timers', (global: any, Zone: ZoneType, api: _ZonePrivate
 });
 
 // patch process related methods
-Zone.__load_patch('nextTick', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('nextTick', () => {
   // patch nextTick as microTask
   patchMicroTask(process, 'nextTick', (self: any, args: any[]) => {
     return {
       name: 'process.nextTick',
       args: args,
-      callbackIndex: (args.length > 0 && typeof args[0] === 'function') ? 0 : -1,
+      cbIdx: (args.length > 0 && typeof args[0] === 'function') ? 0 : -1,
       target: process
     };
   });
@@ -110,7 +116,7 @@ Zone.__load_patch(
 
 
 // Crypto
-Zone.__load_patch('crypto', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('crypto', () => {
   let crypto: any;
   try {
     crypto = require('crypto');
@@ -125,7 +131,7 @@ Zone.__load_patch('crypto', (global: any, Zone: ZoneType, api: _ZonePrivate) => 
         return {
           name: 'crypto.' + name,
           args: args,
-          callbackIndex: (args.length > 0 && typeof args[args.length - 1] === 'function') ?
+          cbIdx: (args.length > 0 && typeof args[args.length - 1] === 'function') ?
               args.length - 1 :
               -1,
           target: crypto
@@ -135,14 +141,14 @@ Zone.__load_patch('crypto', (global: any, Zone: ZoneType, api: _ZonePrivate) => 
   }
 });
 
-Zone.__load_patch('console', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('console', (global: any, Zone: ZoneType) => {
   const consoleMethods =
       ['dir', 'log', 'info', 'error', 'warn', 'assert', 'debug', 'timeEnd', 'trace'];
   consoleMethods.forEach((m: string) => {
     const originalMethod = (console as any)[Zone.__symbol__(m)] = (console as any)[m];
     if (originalMethod) {
       (console as any)[m] = function() {
-        const args = Array.prototype.slice.call(arguments);
+        const args = ArraySlice.call(arguments);
         if (Zone.current === Zone.root) {
           return originalMethod.apply(this, args);
         } else {

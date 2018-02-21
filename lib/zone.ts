@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-/*
+/**
  * Suppress closure compiler errors about unknown 'global' variable
  * @fileoverview
  * @suppress {undefinedVars}
@@ -327,6 +327,7 @@ interface _ZonePrivate {
       (target: any, name: string,
        patchFn: (delegate: Function, delegateName: string, name: string) =>
            (self: any, args: any[]) => any) => Function;
+  bindArguments: (args: any[], source: string) => any[];
 }
 
 /** @internal */
@@ -664,10 +665,11 @@ const Zone: ZoneType = (function(global: any) {
 
     static get current(): AmbientZone {
       return _currentZoneFrame.zone;
-    };
+    }
+
     static get currentTask(): Task {
       return _currentTask;
-    };
+    }
 
     static __load_patch(name: string, fn: _PatchFn): void {
       if (patches.hasOwnProperty(name)) {
@@ -682,10 +684,11 @@ const Zone: ZoneType = (function(global: any) {
 
     public get parent(): AmbientZone {
       return this._parent;
-    };
+    }
+
     public get name(): string {
       return this._name;
-    };
+    }
 
 
     private _parent: Zone;
@@ -1164,11 +1167,12 @@ const Zone: ZoneType = (function(global: any) {
       this.cancelFn = cancelFn;
       this.callback = callback;
       const self = this;
-      if (type === eventTask && options && (options as any).isUsingGlobalCallback) {
+      // TODO: @JiaLiPassion options should have interface
+      if (type === eventTask && options && (options as any).useG) {
         this.invoke = ZoneTask.invokeTask;
       } else {
         this.invoke = function() {
-          return ZoneTask.invokeTask.apply(global, [self, this, <any>arguments]);
+          return ZoneTask.invokeTask.call(global, self, this, <any>arguments);
         };
       }
     }
@@ -1233,11 +1237,7 @@ const Zone: ZoneType = (function(global: any) {
         state: this.state,
         source: this.source,
         zone: this.zone.name,
-        invoke: this.invoke,
-        scheduleFn: this.scheduleFn,
-        cancelFn: this.cancelFn,
-        runCount: this.runCount,
-        callback: this.callback
+        runCount: this.runCount
       };
     }
   }
@@ -1288,7 +1288,6 @@ const Zone: ZoneType = (function(global: any) {
           }
         }
       }
-      const showError: boolean = !(Zone as any)[__symbol__('ignoreConsoleErrorUncaughtError')];
       _api.microtaskDrainDone();
       _isDrainingMicrotaskQueue = false;
     }
@@ -1319,6 +1318,7 @@ const Zone: ZoneType = (function(global: any) {
     patchEventTarget: () => [],
     patchOnProperties: noop,
     patchMethod: () => noop,
+    bindArguments: () => null,
     setNativePromise: (NativePromise: any) => {
       // sometimes NativePromise.resolve static function
       // is not ready yet, (such as core-js/es6.promise)
@@ -1337,7 +1337,6 @@ const Zone: ZoneType = (function(global: any) {
   function __symbol__(name: string) {
     return '__zone_symbol__' + name;
   }
-
 
   performanceMeasure('Zone', 'Zone');
   return global['Zone'] = Zone;

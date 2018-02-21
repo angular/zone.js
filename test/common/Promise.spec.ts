@@ -33,6 +33,11 @@ function flushMicrotasks() {
   Zone.current.get('flush')();
 }
 
+class TestRejection {
+  prop1: string;
+  prop2: string;
+}
+
 describe(
     'Promise', ifEnvSupports('Promise', function() {
       if (!global.Promise) return;
@@ -210,6 +215,38 @@ describe(
           expect(reject()).toBe(undefined);
         });
 
+        it('should work with .finally with resolved promise', function(done) {
+          let resolve: Function = null;
+
+          testZone.run(function() {
+            new Promise(function(resolveFn) {
+              resolve = resolveFn;
+            }).finally(function() {
+              expect(arguments.length).toBe(0);
+              expect(Zone.current).toBe(testZone);
+              done();
+            });
+          });
+
+          resolve('value');
+        });
+
+        it('should work with .finally with rejected promise', function(done) {
+          let reject: Function = null;
+
+          testZone.run(function() {
+            new Promise(function(_, rejectFn) {
+              reject = rejectFn;
+            }).finally(function() {
+              expect(arguments.length).toBe(0);
+              expect(Zone.current).toBe(testZone);
+              done();
+            });
+          });
+
+          reject('error');
+        });
+
         it('should work with Promise.resolve', () => {
           queueZone.run(() => {
             let value = null;
@@ -344,6 +381,38 @@ describe(
               done();
             });
           });
+
+          it('should print readable information when throw a not error object', (done) => {
+            let promiseError: Error = null;
+            let zone: Zone = null;
+            let task: Task = null;
+            let rejectObj: TestRejection;
+            queueZone
+                .fork({
+                  name: 'promise-error',
+                  onHandleError: (delegate: ZoneDelegate, current: Zone, target: Zone, error: any):
+                                     boolean => {
+                                       promiseError = error;
+                                       delegate.handleError(target, error);
+                                       return false;
+                                     }
+                })
+                .run(() => {
+                  zone = Zone.current;
+                  task = Zone.currentTask;
+                  rejectObj = new TestRejection();
+                  rejectObj.prop1 = 'value1';
+                  rejectObj.prop2 = 'value2';
+                  Promise.reject(rejectObj);
+                  expect(promiseError).toBe(null);
+                });
+            setTimeout((): void => null);
+            setTimeout(() => {
+              expect(promiseError.message)
+                  .toMatch(/Uncaught \(in promise\):.*: {"prop1":"value1","prop2":"value2"}/);
+              done();
+            });
+          });
         });
 
         describe('Promise.race', () => {
@@ -458,7 +527,7 @@ describe(
                   });
         });
 
-        it('should resolve if the Promise subclass resolves', function() {
+        function testPromiseSubClass(done?: Function) {
           const myPromise = new MyPromise(function(resolve: any, reject: Function) {
             resolve('foo');
           });
@@ -469,7 +538,14 @@ describe(
               })
               .then(function(result) {
                 expect(result).toBe('foo');
+                done && done();
               });
+        } 
+
+        it('should resolve if the Promise subclass resolves', jasmine ? function(done) {
+          testPromiseSubClass(done);
+        } : function() {
+          testPromiseSubClass();
         });
       });
 

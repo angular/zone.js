@@ -32,6 +32,16 @@
   Object.defineProperties(TestTarget.prototype, {
     'onprop1': {configurable: true, writable: true},
     'onprop2': {configurable: true, writable: true},
+    'onprop3': {
+      configurable: true,
+      get: function() {
+        return this._onprop3;
+      },
+      set: function(_value) {
+        this._onprop3 = _value;
+      }
+    },
+    '_onprop3': {configurable: true, writable: true, value: function() {}},
     'addEventListener': {
       configurable: true,
       writable: true,
@@ -64,4 +74,6 @@
 
   global['__Zone_ignore_on_properties'] =
       [{target: TestTarget.prototype, ignoreProperties: ['prop1']}];
+  global['__zone_symbol__FakeAsyncTestMacroTask'] = [{source: 'TestClass.myTimeout'}];
+  global['__zone_symbol__BLACK_LISTED_EVENTS'] = ['scroll'];
 })(typeof window === 'object' && window || typeof self === 'object' && self || global);

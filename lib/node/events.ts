@@ -6,16 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {globalSources, patchEventTarget, zoneSymbolEventNames} from '../common/events';
+import {patchEventTarget} from '../common/events';
 
-Zone.__load_patch('EventEmitter', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  const callAndReturnFirstParam = (fn: (self: any, args: any[]) => any) => {
-    return (self: any, args: any[]) => {
-      fn(self, args);
-      return self;
-    };
-  };
-
+Zone.__load_patch('EventEmitter', (global: any) => {
   // For EventEmitter
   const EE_ADD_LISTENER = 'addListener';
   const EE_PREPEND_LISTENER = 'prependListener';
@@ -25,24 +18,21 @@ Zone.__load_patch('EventEmitter', (global: any, Zone: ZoneType, api: _ZonePrivat
   const EE_ON = 'on';
 
   const compareTaskCallbackVsDelegate = function(task: any, delegate: any) {
-    if (task.callback === delegate || task.callback.listener === delegate) {
-      // same callback, same capture, same event name, just return
-      return true;
-    }
-    return false;
+    // same callback, same capture, same event name, just return
+    return task.callback === delegate || task.callback.listener === delegate;
   };
 
   function patchEventEmitterMethods(obj: any) {
     const result = patchEventTarget(global, [obj], {
-      useGlobalCallback: false,
-      addEventListenerFnName: EE_ADD_LISTENER,
-      removeEventListenerFnName: EE_REMOVE_LISTENER,
-      prependEventListenerFnName: EE_PREPEND_LISTENER,
-      removeAllFnName: EE_REMOVE_ALL_LISTENER,
-      listenersFnName: EE_LISTENERS,
-      checkDuplicate: false,
-      returnTarget: true,
-      compareTaskCallbackVsDelegate: compareTaskCallbackVsDelegate
+      useG: false,
+      add: EE_ADD_LISTENER,
+      rm: EE_REMOVE_LISTENER,
+      prepend: EE_PREPEND_LISTENER,
+      rmAll: EE_REMOVE_ALL_LISTENER,
+      listeners: EE_LISTENERS,
+      chkDup: false,
+      rt: true,
+      diff: compareTaskCallbackVsDelegate
     });
     if (result && result[0]) {
       obj[EE_ON] = obj[EE_ADD_LISTENER];

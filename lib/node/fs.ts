@@ -8,7 +8,7 @@
 
 import {patchMacroTask} from '../common/utils';
 
-Zone.__load_patch('fs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('fs', () => {
   let fs: any;
   try {
     fs = require('fs');
@@ -32,7 +32,7 @@ Zone.__load_patch('fs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
             return {
               name: 'fs.' + name,
               args: args,
-              callbackIndex: args.length > 0 ? args.length - 1 : -1,
+              cbIdx: args.length > 0 ? args.length - 1 : -1,
               target: self
             };
           });

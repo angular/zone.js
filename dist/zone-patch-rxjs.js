@@ -18,14 +18,12 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-Zone.__load_patch('rxjs', function (global, Zone, api) {
+Zone.__load_patch('rxjs', function (global, Zone) {
     var symbol = Zone.__symbol__;
-    var subscribeSource = 'rxjs.subscribe';
     var nextSource = 'rxjs.Subscriber.next';
     var errorSource = 'rxjs.Subscriber.error';
     var completeSource = 'rxjs.Subscriber.complete';
-    var unsubscribeSource = 'rxjs.Subscriber.unsubscribe';
-    var teardownSource = 'rxjs.Subscriber.teardownLogic';
+    var ObjectDefineProperties = Object.defineProperties;
     var empty = {
         closed: true,
         next: function (value) { },
@@ -52,7 +50,7 @@ Zone.__load_patch('rxjs', function (global, Zone, api) {
         var _symbolSubscribe = symbol('_subscribe');
         var _subscribe = ObservablePrototype[_symbolSubscribe] = ObservablePrototype._subscribe;
         var subscribe = ObservablePrototype[symbolSubscribe] = ObservablePrototype.subscribe;
-        Object.defineProperties(rxjs_Observable.Observable.prototype, {
+        ObjectDefineProperties(rxjs_Observable.Observable.prototype, {
             _zone: { value: null, writable: true, configurable: true },
             _zoneSource: { value: null, writable: true, configurable: true },
             _zoneSubscribe: { value: null, writable: true, configurable: true },
@@ -103,7 +101,7 @@ Zone.__load_patch('rxjs', function (global, Zone, api) {
         var unsubscribeSymbol = symbol('unsubscribe');
         var unsubscribe = rxjs_Subscription.Subscription.prototype[unsubscribeSymbol] =
             rxjs_Subscription.Subscription.prototype.unsubscribe;
-        Object.defineProperties(rxjs_Subscription.Subscription.prototype, {
+        ObjectDefineProperties(rxjs_Subscription.Subscription.prototype, {
             _zone: { value: null, writable: true, configurable: true },
             _zoneUnsubscribe: { value: null, writable: true, configurable: true },
             _unsubscribe: {
@@ -305,7 +303,6 @@ Zone.__load_patch('rxjs', function (global, Zone, api) {
             return;
         }
         var scheduleSymbol = symbol('scheduleSymbol');
-        var flushSymbol = symbol('flushSymbol');
         var zoneSymbol = symbol('zone');
         if (asap$$1[scheduleSymbol]) {
             return;
@@ -328,7 +325,7 @@ Zone.__load_patch('rxjs', function (global, Zone, api) {
                     return work.apply(this, arguments);
                 }
             };
-            return schedule.apply(this, [patchedWork, delay, state]);
+            return schedule.call(this, patchedWork, delay, state);
         };
     };
     patchObservable();

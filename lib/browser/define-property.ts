@@ -17,9 +17,6 @@ const _getOwnPropertyDescriptor = (Object as any)[zoneSymbol('getOwnPropertyDesc
     Object.getOwnPropertyDescriptor;
 const _create = Object.create;
 const unconfigurablesKey = zoneSymbol('unconfigurables');
-const PROTOTYPE = 'prototype';
-const OBJECT = 'object';
-const UNDEFINED = 'undefined';
 
 export function propertyPatch() {
   Object.defineProperty = function(obj, prop, desc) {
@@ -27,7 +24,7 @@ export function propertyPatch() {
       throw new TypeError('Cannot assign to read only property \'' + prop + '\' of ' + obj);
     }
     const originalConfigurableFlag = desc.configurable;
-    if (prop !== PROTOTYPE) {
+    if (prop !== 'prototype') {
       desc = rewriteDescriptor(obj, prop, desc);
     }
     return _tryDefineProperty(obj, prop, desc, originalConfigurableFlag);
@@ -41,7 +38,7 @@ export function propertyPatch() {
   };
 
   Object.create = <any>function(obj: any, proto: any) {
-    if (typeof proto === OBJECT && !Object.isFrozen(proto)) {
+    if (typeof proto === 'object' && !Object.isFrozen(proto)) {
       Object.keys(proto).forEach(function(prop) {
         proto[prop] = rewriteDescriptor(obj, prop, proto[prop]);
       });
@@ -69,12 +66,18 @@ function isUnconfigurable(obj: any, prop: any) {
 }
 
 function rewriteDescriptor(obj: any, prop: string, desc: any) {
-  desc.configurable = true;
+  // issue-927, if the desc is frozen, don't try to change the desc
+  if (!Object.isFrozen(desc)) {
+    desc.configurable = true;
+  }
   if (!desc.configurable) {
-    if (!obj[unconfigurablesKey]) {
+    // issue-927, if the obj is frozen, don't try to set the desc to obj
+    if (!obj[unconfigurablesKey] && !Object.isFrozen(obj)) {
       _defineProperty(obj, unconfigurablesKey, {writable: true, value: {}});
     }
-    obj[unconfigurablesKey][prop] = true;
+    if (obj[unconfigurablesKey]) {
+      obj[unconfigurablesKey][prop] = true;
+    }
   }
   return desc;
 }
@@ -86,7 +89,7 @@ function _tryDefineProperty(obj: any, prop: string, desc: any, originalConfigura
     if (desc.configurable) {
       // In case of errors, when the configurable flag was likely set by rewriteDescriptor(), let's
       // retry with the original flag value
-      if (typeof originalConfigurableFlag == UNDEFINED) {
+      if (typeof originalConfigurableFlag == 'undefined') {
         delete desc.configurable;
       } else {
         desc.configurable = originalConfigurableFlag;
@@ -98,7 +101,7 @@ function _tryDefineProperty(obj: any, prop: string, desc: any, originalConfigura
         try {
           descJson = JSON.stringify(desc);
         } catch (error) {
-          descJson = descJson.toString();
+          descJson = desc.toString();
         }
         console.log(`Attempting to configure '${prop}' with descriptor '${descJson
                     }' on object '${obj}' and got error, giving up: ${error}`);

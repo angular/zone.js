@@ -7,7 +7,7 @@
  */
 
 import {patchEventTarget} from '../common/events';
-import {patchOnProperties} from '../common/utils';
+import {ADD_EVENT_LISTENER_STR, ArraySlice, ObjectCreate, ObjectGetOwnPropertyDescriptor, patchOnProperties, REMOVE_EVENT_LISTENER_STR} from '../common/utils';
 
 // we have to patch the instance since the proto is non-configurable
 export function apply(api: _ZonePrivate, _global: any) {
@@ -17,24 +17,25 @@ export function apply(api: _ZonePrivate, _global: any) {
   if (!(<any>_global).EventTarget) {
     patchEventTarget(_global, [WS.prototype]);
   }
-  (<any>_global).WebSocket = function(a: any, b: any) {
-    const socket = arguments.length > 1 ? new WS(a, b) : new WS(a);
+  (<any>_global).WebSocket = function(x: any, y: any) {
+    const socket = arguments.length > 1 ? new WS(x, y) : new WS(x);
     let proxySocket: any;
 
     let proxySocketProto: any;
 
     // Safari 7.0 has non-configurable own 'onmessage' and friends properties on the socket instance
-    const onmessageDesc = Object.getOwnPropertyDescriptor(socket, 'onmessage');
+    const onmessageDesc = ObjectGetOwnPropertyDescriptor(socket, 'onmessage');
     if (onmessageDesc && onmessageDesc.configurable === false) {
-      proxySocket = Object.create(socket);
+      proxySocket = ObjectCreate(socket);
       // socket have own property descriptor 'onopen', 'onmessage', 'onclose', 'onerror'
       // but proxySocket not, so we will keep socket as prototype and pass it to
       // patchOnProperties method
       proxySocketProto = socket;
-      ['addEventListener', 'removeEventListener', 'send', 'close'].forEach(function(propName) {
+      [ADD_EVENT_LISTENER_STR, REMOVE_EVENT_LISTENER_STR, 'send', 'close'].forEach(function(
+          propName) {
         proxySocket[propName] = function() {
-          const args = Array.prototype.slice.call(arguments);
-          if (propName === 'addEventListener' || propName === 'removeEventListener') {
+          const args = ArraySlice.call(arguments);
+          if (propName === ADD_EVENT_LISTENER_STR || propName === REMOVE_EVENT_LISTENER_STR) {
             const eventName = args.length > 0 ? args[0] : undefined;
             if (eventName) {
               const propertySymbol = Zone.__symbol__('ON_PROPERTY' + eventName);

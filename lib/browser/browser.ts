@@ -12,7 +12,7 @@
 
 import {findEventTasks} from '../common/events';
 import {patchTimer} from '../common/timers';
-import {patchClass, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, zoneSymbol} from '../common/utils';
+import {bindArguments, patchClass, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, scheduleMacroTaskWithCurrentZone, ZONE_SYMBOL_ADD_EVENT_LISTENER, ZONE_SYMBOL_REMOVE_EVENT_LISTENER, zoneSymbol} from '../common/utils';
 
 import {propertyPatch} from './define-property';
 import {eventTargetPatch, patchEvent} from './event-target';
@@ -22,9 +22,10 @@ import {registerElementPatch} from './register-element';
 Zone.__load_patch('util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   api.patchOnProperties = patchOnProperties;
   api.patchMethod = patchMethod;
+  api.bindArguments = bindArguments;
 });
 
-Zone.__load_patch('timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('timers', (global: any) => {
   const set = 'set';
   const clear = 'clear';
   patchTimer(global, set, clear, 'Timeout');
@@ -32,13 +33,13 @@ Zone.__load_patch('timers', (global: any, Zone: ZoneType, api: _ZonePrivate) => 
   patchTimer(global, set, clear, 'Immediate');
 });
 
-Zone.__load_patch('requestAnimationFrame', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('requestAnimationFrame', (global: any) => {
   patchTimer(global, 'request', 'cancel', 'AnimationFrame');
   patchTimer(global, 'mozRequest', 'mozCancel', 'AnimationFrame');
   patchTimer(global, 'webkitRequest', 'webkitCancel', 'AnimationFrame');
 });
 
-Zone.__load_patch('blocking', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('blocking', (global: any, Zone: ZoneType) => {
   const blockingMethods = ['alert', 'prompt', 'confirm'];
   for (let i = 0; i < blockingMethods.length; i++) {
     const name = blockingMethods[i];
@@ -51,6 +52,12 @@ Zone.__load_patch('blocking', (global: any, Zone: ZoneType, api: _ZonePrivate) =
 });
 
 Zone.__load_patch('EventTarget', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+  // load blackListEvents from global
+  const SYMBOL_BLACK_LISTED_EVENTS = Zone.__symbol__('BLACK_LISTED_EVENTS');
+  if (global[SYMBOL_BLACK_LISTED_EVENTS]) {
+    (Zone as any)[SYMBOL_BLACK_LISTED_EVENTS] = global[SYMBOL_BLACK_LISTED_EVENTS];
+  }
+
   patchEvent(global, api);
   eventTargetPatch(global, api);
   // patch XMLHttpRequestEventTarget's addEventListener/removeEventListener
@@ -70,18 +77,18 @@ Zone.__load_patch('on_property', (global: any, Zone: ZoneType, api: _ZonePrivate
   registerElementPatch(global);
 });
 
-Zone.__load_patch('canvas', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('canvas', (global: any) => {
   const HTMLCanvasElement = global['HTMLCanvasElement'];
   if (typeof HTMLCanvasElement !== 'undefined' && HTMLCanvasElement.prototype &&
       HTMLCanvasElement.prototype.toBlob) {
     patchMacroTask(HTMLCanvasElement.prototype, 'toBlob', (self: any, args: any[]) => {
-      return {name: 'HTMLCanvasElement.toBlob', target: self, callbackIndex: 0, args: args};
+      return {name: 'HTMLCanvasElement.toBlob', target: self, cbIdx: 0, args: args};
     });
   }
 });
 
-Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  // Treat XMLHTTPRequest as a macrotask.
+Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
+  // Treat XMLHttpRequest as a macrotask.
   patchXHR(global);
 
   const XHR_TASK = zoneSymbol('xhrTask');
@@ -98,21 +105,20 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   }
 
   function patchXHR(window: any) {
+    const XMLHttpRequestPrototype: any = XMLHttpRequest.prototype;
+
     function findPendingTask(target: any) {
-      const pendingTask: Task = target[XHR_TASK];
-      return pendingTask;
+      return target[XHR_TASK];
     }
 
-    const SYMBOL_ADDEVENTLISTENER = zoneSymbol('addEventListener');
-    const SYMBOL_REMOVEEVENTLISTENER = zoneSymbol('removeEventListener');
-
-    let oriAddListener = (XMLHttpRequest.prototype as any)[SYMBOL_ADDEVENTLISTENER];
-    let oriRemoveListener = (XMLHttpRequest.prototype as any)[SYMBOL_REMOVEEVENTLISTENER];
+    let oriAddListener = XMLHttpRequestPrototype[ZONE_SYMBOL_ADD_EVENT_LISTENER];
+    let oriRemoveListener = XMLHttpRequestPrototype[ZONE_SYMBOL_REMOVE_EVENT_LISTENER];
     if (!oriAddListener) {
       const XMLHttpRequestEventTarget = window['XMLHttpRequestEventTarget'];
       if (XMLHttpRequestEventTarget) {
-        oriAddListener = XMLHttpRequestEventTarget.prototype[SYMBOL_ADDEVENTLISTENER];
-        oriRemoveListener = XMLHttpRequestEventTarget.prototype[SYMBOL_REMOVEEVENTLISTENER];
+        const XMLHttpRequestEventTargetPrototype = XMLHttpRequestEventTarget.prototype;
+        oriAddListener = XMLHttpRequestEventTargetPrototype[ZONE_SYMBOL_ADD_EVENT_LISTENER];
+        oriRemoveListener = XMLHttpRequestEventTargetPrototype[ZONE_SYMBOL_REMOVE_EVENT_LISTENER];
       }
     }
 
@@ -126,12 +132,12 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
       // remove existing event listener
       const listener = target[XHR_LISTENER];
       if (!oriAddListener) {
-        oriAddListener = target[SYMBOL_ADDEVENTLISTENER];
-        oriRemoveListener = target[SYMBOL_REMOVEEVENTLISTENER];
+        oriAddListener = target[ZONE_SYMBOL_ADD_EVENT_LISTENER];
+        oriRemoveListener = target[ZONE_SYMBOL_REMOVE_EVENT_LISTENER];
       }
 
       if (listener) {
-        oriRemoveListener.apply(target, [READY_STATE_CHANGE, listener]);
+        oriRemoveListener.call(target, READY_STATE_CHANGE, listener);
       }
       const newListener = target[XHR_LISTENER] = () => {
         if (target.readyState === target.DONE) {
@@ -142,7 +148,7 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
           }
         }
       };
-      oriAddListener.apply(target, [READY_STATE_CHANGE, newListener]);
+      oriAddListener.call(target, READY_STATE_CHANGE, newListener);
 
       const storedTask: Task = target[XHR_TASK];
       if (!storedTask) {
@@ -163,17 +169,16 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
       return abortNative.apply(data.target, data.args);
     }
 
-    const openNative: Function = patchMethod(
-        window.XMLHttpRequest.prototype, 'open', () => function(self: any, args: any[]) {
+    const openNative: Function =
+        patchMethod(XMLHttpRequestPrototype, 'open', () => function(self: any, args: any[]) {
           self[XHR_SYNC] = args[2] == false;
           self[XHR_URL] = args[1];
           return openNative.apply(self, args);
         });
 
     const XMLHTTPREQUEST_SOURCE = 'XMLHttpRequest.send';
-    const sendNative: Function = patchMethod(
-        window.XMLHttpRequest.prototype, 'send', () => function(self: any, args: any[]) {
-          const zone = Zone.current;
+    const sendNative: Function =
+        patchMethod(XMLHttpRequestPrototype, 'send', () => function(self: any, args: any[]) {
           if (self[XHR_SYNC]) {
             // if the XHR is sync there is no task to schedule, just execute the code.
             return sendNative.apply(self, args);
@@ -186,42 +191,38 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
               args: args,
               aborted: false
             };
-            return zone.scheduleMacroTask(
+            return scheduleMacroTaskWithCurrentZone(
                 XMLHTTPREQUEST_SOURCE, placeholderCallback, options, scheduleTask, clearTask);
           }
         });
 
-    const STRING_TYPE = 'string';
-
-    const abortNative = patchMethod(
-        window.XMLHttpRequest.prototype, 'abort',
-        (delegate: Function) => function(self: any, args: any[]) {
-          const task: Task = findPendingTask(self);
-          if (task && typeof task.type == STRING_TYPE) {
-            // If the XHR has already completed, do nothing.
-            // If the XHR has already been aborted, do nothing.
-            // Fix #569, call abort multiple times before done will cause
-            // macroTask task count be negative number
-            if (task.cancelFn == null || (task.data && (<XHROptions>task.data).aborted)) {
-              return;
-            }
-            task.zone.cancelTask(task);
-          }
-          // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no
-          // task
-          // to cancel. Do nothing.
-        });
+    const abortNative = patchMethod(XMLHttpRequestPrototype, 'abort', () => function(self: any) {
+      const task: Task = findPendingTask(self);
+      if (task && typeof task.type == 'string') {
+        // If the XHR has already completed, do nothing.
+        // If the XHR has already been aborted, do nothing.
+        // Fix #569, call abort multiple times before done will cause
+        // macroTask task count be negative number
+        if (task.cancelFn == null || (task.data && (<XHROptions>task.data).aborted)) {
+          return;
+        }
+        task.zone.cancelTask(task);
+      }
+      // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no
+      // task
+      // to cancel. Do nothing.
+    });
   }
 });
 
-Zone.__load_patch('geolocation', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('geolocation', (global: any) => {
   /// GEO_LOCATION
   if (global['navigator'] && global['navigator'].geolocation) {
     patchPrototype(global['navigator'].geolocation, ['getCurrentPosition', 'watchPosition']);
   }
 });
 
-Zone.__load_patch('PromiseRejectionEvent', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('PromiseRejectionEvent', (global: any, Zone: ZoneType) => {
   // handle unhandled promise rejection
   function findPromiseRejectionHandler(evtName: string) {
     return function(e: any) {

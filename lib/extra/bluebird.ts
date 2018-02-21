@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-Zone.__load_patch('bluebird', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('bluebird', (global: any, Zone: ZoneType) => {
   // TODO: @JiaLiPassion, we can automatically patch bluebird
   // if global.Promise = Bluebird, but sometimes in nodejs,
   // global.Promise is not Bluebird, and Bluebird is just be

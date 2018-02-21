@@ -28,10 +28,10 @@ Zone.__load_patch('RTCPeerConnection', function (global, Zone, api) {
     RTCPeerConnection.prototype.addEventListener = RTCPeerConnection.prototype[addSymbol];
     RTCPeerConnection.prototype.removeEventListener = RTCPeerConnection.prototype[removeSymbol];
     // RTCPeerConnection extends EventTarget, so we must clear the symbol
-    // to allow pathc RTCPeerConnection.prototype.addEventListener again
+    // to allow patch RTCPeerConnection.prototype.addEventListener again
     RTCPeerConnection.prototype[addSymbol] = null;
     RTCPeerConnection.prototype[removeSymbol] = null;
-    api.patchEventTarget(global, [RTCPeerConnection.prototype], { useGlobalCallback: false });
+    api.patchEventTarget(global, [RTCPeerConnection.prototype], { useG: false });
 });
 
 })));

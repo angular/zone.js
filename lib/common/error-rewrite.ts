@@ -189,7 +189,7 @@ Zone.__load_patch('Error', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
             }
           }
         }
-        return value.apply(this, [error, structuredStackTrace]);
+        return value.call(this, error, structuredStackTrace);
       };
     }
   });
@@ -218,7 +218,7 @@ Zone.__load_patch('Error', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
               let frame = frames.shift();
               // On safari it is possible to have stack frame with no line number.
               // This check makes sure that we don't filter frames on name only (must have
-              // linenumber)
+              // line number)
               if (/:\d+:\d+/.test(frame)) {
                 // Get rid of the path so that we don't accidentally find function name in path.
                 // In chrome the separator is `(` and `@` in FF and safari
@@ -283,8 +283,7 @@ Zone.__load_patch('Error', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   // all kinds of tasks with one error thrown.
   childDetectZone.run(() => {
     childDetectZone.runGuarded(() => {
-      const fakeTransitionTo =
-          (toState: TaskState, fromState1: TaskState, fromState2: TaskState) => {};
+      const fakeTransitionTo = () => {};
       childDetectZone.scheduleEventTask(
           blacklistedStackFramesSymbol,
           () => {

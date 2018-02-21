@@ -10,8 +10,8 @@ Zone.__load_patch('cordova', (global: any, Zone: ZoneType, api: _ZonePrivate) =>
     const SUCCESS_SOURCE = 'cordova.exec.success';
     const ERROR_SOURCE = 'cordova.exec.error';
     const FUNCTION = 'function';
-    const nativeExec: Function = api.patchMethod(
-        global.cordova, 'exec', (delegate: Function) => function(self: any, args: any[]) {
+    const nativeExec: Function =
+        api.patchMethod(global.cordova, 'exec', () => function(self: any, args: any[]) {
           if (args.length > 0 && typeof args[0] === FUNCTION) {
             args[0] = Zone.current.wrap(args[0], SUCCESS_SOURCE);
           }
@@ -23,7 +23,7 @@ Zone.__load_patch('cordova', (global: any, Zone: ZoneType, api: _ZonePrivate) =>
   }
 });
 
-Zone.__load_patch('cordova.FileReader', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+Zone.__load_patch('cordova.FileReader', (global: any, Zone: ZoneType) => {
   if (global.cordova && typeof global['FileReader'] !== 'undefined') {
     document.addEventListener('deviceReady', () => {
       const FileReader = global['FileReader'];

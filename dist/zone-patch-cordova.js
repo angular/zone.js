@@ -23,7 +23,7 @@ Zone.__load_patch('cordova', function (global, Zone, api) {
         var SUCCESS_SOURCE_1 = 'cordova.exec.success';
         var ERROR_SOURCE_1 = 'cordova.exec.error';
         var FUNCTION_1 = 'function';
-        var nativeExec_1 = api.patchMethod(global.cordova, 'exec', function (delegate) { return function (self, args) {
+        var nativeExec_1 = api.patchMethod(global.cordova, 'exec', function () { return function (self, args) {
             if (args.length > 0 && typeof args[0] === FUNCTION_1) {
                 args[0] = Zone.current.wrap(args[0], SUCCESS_SOURCE_1);
             }
@@ -34,7 +34,7 @@ Zone.__load_patch('cordova', function (global, Zone, api) {
         }; });
     }
 });
-Zone.__load_patch('cordova.FileReader', function (global, Zone, api) {
+Zone.__load_patch('cordova.FileReader', function (global, Zone) {
     if (global.cordova && typeof global['FileReader'] !== 'undefined') {
         document.addEventListener('deviceReady', function () {
             var FileReader = global['FileReader'];

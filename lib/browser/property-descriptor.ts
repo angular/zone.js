@@ -10,7 +10,7 @@
  * @suppress {globalThis}
  */
 
-import {isBrowser, isMix, isNode, patchClass, patchOnProperties, zoneSymbol} from '../common/utils';
+import {isBrowser, isMix, isNode, ObjectDefineProperty, ObjectGetOwnPropertyDescriptor, ObjectGetPrototypeOf, patchClass, patchOnProperties, wrapWithCurrentZone, zoneSymbol} from '../common/utils';
 
 import * as webSocketPatch from './websocket';
 
@@ -256,6 +256,11 @@ function filterProperties(
 
 export function patchFilteredProperties(
     target: any, onProperties: string[], ignoreProperties: IgnoreProperty[], prototype?: any) {
+  // check whether target is available, sometimes target will be undefined
+  // because different browser or some 3rd party plugin.
+  if (!target) {
+    return;
+  }
   const filteredProperties: string[] = filterProperties(target, onProperties, ignoreProperties);
   patchOnProperties(target, filteredProperties, prototype);
 }
@@ -270,16 +275,17 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
     const ignoreProperties: IgnoreProperty[] = _global.__Zone_ignore_on_properties;
     // for browsers that we can patch the descriptor:  Chrome & Firefox
     if (isBrowser) {
+      const internalWindow: any = window;
       // in IE/Edge, onProp not exist in window object, but in WindowPrototype
       // so we need to pass WindowPrototype to check onProp exist or not
       patchFilteredProperties(
-          window, eventNames.concat(['messageerror']), ignoreProperties,
-          Object.getPrototypeOf(window));
+          internalWindow, eventNames.concat(['messageerror']), ignoreProperties,
+          ObjectGetPrototypeOf(internalWindow));
       patchFilteredProperties(Document.prototype, eventNames, ignoreProperties);
 
-      if (typeof(<any>window)['SVGElement'] !== 'undefined') {
+      if (typeof internalWindow['SVGElement'] !== 'undefined') {
         patchFilteredProperties(
-            (<any>window)['SVGElement'].prototype, eventNames, ignoreProperties);
+            internalWindow['SVGElement'].prototype, eventNames, ignoreProperties);
       }
       patchFilteredProperties(Element.prototype, eventNames, ignoreProperties);
       patchFilteredProperties(HTMLElement.prototype, eventNames, ignoreProperties);
@@ -292,11 +298,11 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
       patchFilteredProperties(HTMLFrameElement.prototype, frameEventNames, ignoreProperties);
       patchFilteredProperties(HTMLIFrameElement.prototype, frameEventNames, ignoreProperties);
 
-      const HTMLMarqueeElement = (window as any)['HTMLMarqueeElement'];
+      const HTMLMarqueeElement = internalWindow['HTMLMarqueeElement'];
       if (HTMLMarqueeElement) {
         patchFilteredProperties(HTMLMarqueeElement.prototype, marqueeEventNames, ignoreProperties);
       }
-      const Worker = (window as any)['Worker'];
+      const Worker = internalWindow['Worker'];
       if (Worker) {
         patchFilteredProperties(Worker.prototype, workerEventNames, ignoreProperties);
       }
@@ -330,15 +336,18 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
 }
 
 function canPatchViaPropertyDescriptor() {
-  if ((isBrowser || isMix) && !Object.getOwnPropertyDescriptor(HTMLElement.prototype, 'onclick') &&
+  if ((isBrowser || isMix) && !ObjectGetOwnPropertyDescriptor(HTMLElement.prototype, 'onclick') &&
       typeof Element !== 'undefined') {
     // WebKit https://bugs.webkit.org/show_bug.cgi?id=134364
     // IDL interface attributes are not configurable
-    const desc = Object.getOwnPropertyDescriptor(Element.prototype, 'onclick');
+    const desc = ObjectGetOwnPropertyDescriptor(Element.prototype, 'onclick');
     if (desc && !desc.configurable) return false;
   }
 
-  const xhrDesc = Object.getOwnPropertyDescriptor(XMLHttpRequest.prototype, 'onreadystatechange');
+  const ON_READY_STATE_CHANGE = 'onreadystatechange';
+  const XMLHttpRequestPrototype = XMLHttpRequest.prototype;
+
+  const xhrDesc = ObjectGetOwnPropertyDescriptor(XMLHttpRequestPrototype, ON_READY_STATE_CHANGE);
 
   // add enumerable and configurable here because in opera
   // by default XMLHttpRequest.prototype.onreadystatechange is undefined
@@ -347,7 +356,7 @@ function canPatchViaPropertyDescriptor() {
   // and if XMLHttpRequest.prototype.onreadystatechange is undefined,
   // we should set a real desc instead a fake one
   if (xhrDesc) {
-    Object.defineProperty(XMLHttpRequest.prototype, 'onreadystatechange', {
+    ObjectDefineProperty(XMLHttpRequestPrototype, ON_READY_STATE_CHANGE, {
       enumerable: true,
       configurable: true,
       get: function() {
@@ -357,11 +366,11 @@ function canPatchViaPropertyDescriptor() {
     const req = new XMLHttpRequest();
     const result = !!req.onreadystatechange;
     // restore original desc
-    Object.defineProperty(XMLHttpRequest.prototype, 'onreadystatechange', xhrDesc || {});
+    ObjectDefineProperty(XMLHttpRequestPrototype, ON_READY_STATE_CHANGE, xhrDesc || {});
     return result;
   } else {
-    const SYMBOL_FAKE_ONREADYSTATECHANGE = zoneSymbol('fakeonreadystatechange');
-    Object.defineProperty(XMLHttpRequest.prototype, 'onreadystatechange', {
+    const SYMBOL_FAKE_ONREADYSTATECHANGE = zoneSymbol('fake');
+    ObjectDefineProperty(XMLHttpRequestPrototype, ON_READY_STATE_CHANGE, {
       enumerable: true,
       configurable: true,
       get: function() {
@@ -378,7 +387,7 @@ function canPatchViaPropertyDescriptor() {
     req.onreadystatechange = null;
     return result;
   }
-};
+}
 
 const unboundKey = zoneSymbol('unbound');
 
@@ -398,7 +407,7 @@ function patchViaCapturingAllTheEvents() {
       }
       while (elt) {
         if (elt[onproperty] && !elt[onproperty][unboundKey]) {
-          bound = Zone.current.wrap(elt[onproperty], source);
+          bound = wrapWithCurrentZone(elt[onproperty], source);
           bound[unboundKey] = elt[onproperty];
           elt[onproperty] = bound;
         }

@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import '../../dist/zone-node';
-
 const testClosureFunction = () => {
   const logs: string[] = [];
   // call all Zone exposed functions

@@ -160,3 +160,70 @@ For example, in an Angular application, you can load this patch in your `app.mod
 import 'zone.js/dist/zone-patch-rxjs';
 ```
 
+* electron
+
+In electron, we patched the following APIs with `zone.js`
+
+1. Browser API
+2. NodeJS
+3. Electorn Native API
+
+## Usage.
+
+add following line into `polyfill.ts` after loading zone-mix.
+
+```
+//import 'zone.js/dist/zone'; // originally added by angular-cli, comment it out
+import 'zone.js/dist/zone-mix'; // add zone-mix to patch both Browser and Nodejs
+import 'zone.js/dist/zone-patch-electron'; // add zone-patch-electron to patch Electron native API
+```
+
+there is a sampel repo [zone-electron](https://github.com/JiaLiPassion/zone-electron).
+
+* socket.io-client
+
+user need to patch `io` themselves just like following code.
+
+```javascript
+    <script src="socket.io-client/dist/socket.io.js"></script>
+    <script src="zone.js/dist/zone.js"></script>
+    <script src="zone.js/dist/zone-patch-socket-io.js"></script>
+    <script>
+      // patch io here
+      Zone[Zone.__symbol__('socketio')](io);
+    </script>
+```
+
+please reference the sample repo [zone-socketio](https://github.com/JiaLiPassion/zone-socketio) about 
+detail usage.
+
+* jsonp
+
+## Usage.
+
+provide a helper method to patch jsonp. Because jsonp has a lot of implementation, so
+user need to provide the information to let json `send` and `callback` in zone.
+
+there is a sampel repo [zone-jsonp](https://github.com/JiaLiPassion/test-zone-js-with-jsonp) here,
+sample usage is:
+
+```javascript
+import 'zone.js/dist/zone-patch-jsonp';
+Zone['__zone_symbol__jsonp']({
+  jsonp: getJSONP,
+  sendFuncName: 'send',
+  successFuncName: 'jsonpSuccessCallback', 
+  failedFuncName: 'jsonpFailedCallback'
+});
+```
+* ResizeObserver
+
+Currently only `Chrome 64` native support this feature.
+you can add the following line into `polyfill.ts` after loading `zone.js`.
+
+```
+import 'zone.js/dist/zone';
+import 'zone.js/dist/zone-patch-resize-observer';
+```
+
+there is a sample repo [zone-resize-observer](https://github.com/JiaLiPassion/zone-resize-observer) here

@@ -149,9 +149,10 @@
         return Scheduler;
     }());
     var FakeAsyncTestZoneSpec = (function () {
-        function FakeAsyncTestZoneSpec(namePrefix, trackPendingRequestAnimationFrame) {
+        function FakeAsyncTestZoneSpec(namePrefix, trackPendingRequestAnimationFrame, macroTaskOptions) {
             if (trackPendingRequestAnimationFrame === void 0) { trackPendingRequestAnimationFrame = false; }
             this.trackPendingRequestAnimationFrame = trackPendingRequestAnimationFrame;
+            this.macroTaskOptions = macroTaskOptions;
             this._scheduler = new Scheduler();
             this._microtasks = [];
             this._lastError = null;
@@ -160,6 +161,11 @@
             this.pendingTimers = [];
             this.properties = { 'FakeAsyncTestZoneSpec': this };
             this.name = 'fakeAsyncTestZone for ' + namePrefix;
+            // in case user can't access the construction of FakeAsyncTestSpec
+            // user can also define macroTaskOptions by define a global variable.
+            if (!this.macroTaskOptions) {
+                this.macroTaskOptions = global[Zone.__symbol__('FakeAsyncTestMacroTask')];
+            }
         }
         FakeAsyncTestZoneSpec.assertInZone = function () {
             if (Zone.current.get('FakeAsyncTestZoneSpec') == null) {
@@ -297,16 +303,16 @@
                     // should pass additional arguments to callback if have any
                     // currently we know process.nextTick will have such additional
                     // arguments
-                    var addtionalArgs = void 0;
+                    var additionalArgs = void 0;
                     if (args) {
-                        var callbackIndex = task.data.callbackIndex;
+                        var callbackIndex = task.data.cbIdx;
                         if (typeof args.length === 'number' && args.length > callbackIndex + 1) {
-                            addtionalArgs = Array.prototype.slice.call(args, callbackIndex + 1);
+                            additionalArgs = Array.prototype.slice.call(args, callbackIndex + 1);
                         }
                     }
                     this._microtasks.push({
                         func: task.invoke,
-                        args: addtionalArgs,
+                        args: additionalArgs,
                         target: task.data && task.data.target
                     });
                     break;
@@ -331,6 +337,24 @@
                             task.data['handleId'] = this._setTimeout(task.invoke, 16, task.data['args'], this.trackPendingRequestAnimationFrame);
                             break;
                         default:
+                            // user can define which macroTask they want to support by passing
+                            // macroTaskOptions
+                            var macroTaskOption = this.findMacroTaskOption(task);
+                            if (macroTaskOption) {
+                                var args_1 = task.data && task.data['args'];
+                                var delay = args_1 && args_1.length > 1 ? args_1[1] : 0;
+                                var callbackArgs = macroTaskOption.callbackArgs ? macroTaskOption.callbackArgs : args_1;
+                                if (!!macroTaskOption.isPeriodic) {
+                                    // periodic macroTask, use setInterval to simulate
+                                    task.data['handleId'] = this._setInterval(task.invoke, delay, callbackArgs);
+                                    task.data.isPeriodic = true;
+                                }
+                                else {
+                                    // not periodic, use setTimeout to simulate
+                                    task.data['handleId'] = this._setTimeout(task.invoke, delay, callbackArgs);
+                                }
+                                break;
+                            }
                             throw new Error('Unknown macroTask scheduled in fake async test: ' + task.source);
                     }
                     break;
@@ -350,8 +374,28 @@
                 case 'setInterval':
                     return this._clearInterval(task.data['handleId']);
                 default:
+                    // user can define which macroTask they want to support by passing
+                    // macroTaskOptions
+                    var macroTaskOption = this.findMacroTaskOption(task);
+                    if (macroTaskOption) {
+                        var handleId = task.data['handleId'];
+                        return macroTaskOption.isPeriodic ? this._clearInterval(handleId) :
+                            this._clearTimeout(handleId);
+                    }
                     return delegate.cancelTask(target, task);
             }
+        };
+        FakeAsyncTestZoneSpec.prototype.findMacroTaskOption = function (task) {
+            if (!this.macroTaskOptions) {
+                return null;
+            }
+            for (var i = 0; i < this.macroTaskOptions.length; i++) {
+                var macroTaskOption = this.macroTaskOptions[i];
+                if (macroTaskOption.source === task.source) {
+                    return macroTaskOption;
+                }
+            }
+            return null;
         };
         FakeAsyncTestZoneSpec.prototype.onHandleError = function (parentZoneDelegate, currentZone, targetZone, error) {
             this._lastError = error;

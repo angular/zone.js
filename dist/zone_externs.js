@@ -48,7 +48,7 @@ Zone.root;
  * Returns a value associated with the `key`.
  *
  * If the current zone does not have a key, the request is delegated to the parent zone. Use
- * [ZoneSpec.properties] to configure the set of properties asseciated with the current zone.
+ * [ZoneSpec.properties] to configure the set of properties associated with the current zone.
  *
  * @param {!string} key The key to retrieve.
  * @returns {?} The value for the key, or `undefined` if not found.
@@ -206,18 +206,18 @@ ZoneSpec.prototype.onIntercept;
 
 /**
  * Allows interception of the callback invocation.
- * 
+ *
  * @type {
- *   undefined|?function(ZoneDelegate, Zone, Zone, Function, Object, Array, string): * 
+ *   undefined|?function(ZoneDelegate, Zone, Zone, Function, Object, Array, string): *
  * }
  */
-ZoneSpec.prototype.onInvoke; 
+ZoneSpec.prototype.onInvoke;
 
 /**
  * Allows interception of the error handling.
  *
  * @type {
- *   undefined|?function(ZoneDelegate, Zone, Zone, Object): boolean 
+ *   undefined|?function(ZoneDelegate, Zone, Zone, Object): boolean
  * }
  */
 ZoneSpec.prototype.onHandleError;
@@ -226,7 +226,7 @@ ZoneSpec.prototype.onHandleError;
  * Allows interception of task scheduling.
  *
  * @type {
- *   undefined|?function(ZoneDelegate, Zone, Zone, Task): Task 
+ *   undefined|?function(ZoneDelegate, Zone, Zone, Task): Task
  * }
  */
 ZoneSpec.prototype.onScheduleTask;
@@ -238,16 +238,16 @@ ZoneSpec.prototype.onScheduleTask;
  *   undefined|?function(ZoneDelegate, Zone, Zone, Task, Object, Array): *
  * }
  */
-ZoneSpec.prototype.onInvokeTask; 
+ZoneSpec.prototype.onInvokeTask;
 
 /**
  * Allows interception of task cancelation.
  *
  * @type {
- *   undefined|?function(ZoneDelegate, Zone, Zone, Task): * 
+ *   undefined|?function(ZoneDelegate, Zone, Zone, Task): *
  * }
  */
-ZoneSpec.prototype.onCancelTask; 
+ZoneSpec.prototype.onCancelTask;
 /**
  * Notifies of changes to the task queue empty status.
  *
@@ -275,7 +275,7 @@ ZoneDelegate.prototype.fork = function(targetZone, zoneSpec) {};
  * @param {!Zone} targetZone the [Zone] which originally received the request.
  * @param {!Function} callback the callback function passed into `wrap` function
  * @param {string=} source the argument passed into the `wrap` method.
- * @returns {!Function} 
+ * @returns {!Function}
  */
 ZoneDelegate.prototype.intercept = function(targetZone, callback, source) {};
 
@@ -316,7 +316,7 @@ ZoneDelegate.prototype.invokeTask = function(targetZone, task, applyThis, applyA
 ZoneDelegate.prototype.cancelTask = function(targetZone, task) {};
 /**
  * @param {!Zone} targetZone The [Zone] which originally received the request.
- * @param {!HasTaskState} hasTaskState 
+ * @param {!HasTaskState} hasTaskState
  */
 ZoneDelegate.prototype.hasTask = function(targetZone, hasTaskState) {};
 

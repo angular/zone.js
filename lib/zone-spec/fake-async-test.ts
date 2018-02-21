@@ -23,6 +23,37 @@
     target: any;
   }
 
+  interface MacroTaskOptions {
+    source: string;
+    isPeriodic?: boolean;
+    callbackArgs?: any;
+  }
+
+  const OriginalDate = global.Date;
+  class FakeDate {
+    constructor() {
+      const d = new OriginalDate();
+      d.setTime(global.Date.now());
+      return d;
+    }
+
+    static UTC() {
+      return OriginalDate.UTC();
+    }
+
+    static now() {
+      const fakeAsyncTestZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
+      if (fakeAsyncTestZoneSpec) {
+        return fakeAsyncTestZoneSpec.getCurrentRealTime() + fakeAsyncTestZoneSpec.getCurrentTime();
+      }
+      return OriginalDate.now.apply(this, arguments);
+    }
+
+    static parse() {
+      return OriginalDate.parse();
+    }
+  }
+
   class Scheduler {
     // Next scheduler id.
     public nextId: number = 0;
@@ -31,8 +62,22 @@
     private _schedulerQueue: ScheduledFunction[] = [];
     // Current simulated time in millis.
     private _currentTime: number = 0;
+    // Current real time in millis.
+    private _currentRealTime: number = Date.now();
 
     constructor() {}
+
+    getCurrentTime() {
+      return this._currentTime;
+    }
+
+    getCurrentRealTime() {
+      return this._currentRealTime;
+    }
+
+    setCurrentRealTime(realTime: number) {
+      this._currentRealTime = realTime;
+    }
 
     scheduleFunction(
         cb: Function, delay: number, args: any[] = [], isPeriodic: boolean = false,
@@ -172,8 +217,15 @@
     pendingPeriodicTimers: number[] = [];
     pendingTimers: number[] = [];
 
-    constructor(namePrefix: string, private trackPendingRequestAnimationFrame = false) {
+    constructor(
+        namePrefix: string, private trackPendingRequestAnimationFrame = false,
+        private macroTaskOptions?: MacroTaskOptions[]) {
       this.name = 'fakeAsyncTestZone for ' + namePrefix;
+      // in case user can't access the construction of FakeAsyncTestSpec
+      // user can also define macroTaskOptions by define a global variable.
+      if (!this.macroTaskOptions) {
+        this.macroTaskOptions = global[Zone.__symbol__('FakeAsyncTestMacroTask')];
+      }
     }
 
     private _fnAndFlush(fn: Function, completers: {onSuccess?: Function, onError?: Function}):
@@ -268,6 +320,32 @@
       throw error;
     }
 
+    getCurrentTime() {
+      return this._scheduler.getCurrentTime();
+    }
+
+    getCurrentRealTime() {
+      return this._scheduler.getCurrentRealTime();
+    }
+
+    setCurrentRealTime(realTime: number) {
+      this._scheduler.setCurrentRealTime(realTime);
+    }
+
+    static patchDate() {
+      if (global['Date'] === FakeDate) {
+        // already patched
+        return;
+      }
+      global['Date'] = FakeDate;
+    }
+
+    static resetDate() {
+      if (global['Date'] === FakeDate) {
+        global['Date'] = OriginalDate;
+      }
+    }
+
     tick(millis: number = 0, doTick?: (elapsed: number) => void): void {
       FakeAsyncTestZoneSpec.assertInZone();
       this.flushMicrotasks();
@@ -315,16 +393,16 @@
           // should pass additional arguments to callback if have any
           // currently we know process.nextTick will have such additional
           // arguments
-          let addtionalArgs: any[];
+          let additionalArgs: any[];
           if (args) {
-            let callbackIndex = (task.data as any).callbackIndex;
+            let callbackIndex = (task.data as any).cbIdx;
             if (typeof args.length === 'number' && args.length > callbackIndex + 1) {
-              addtionalArgs = Array.prototype.slice.call(args, callbackIndex + 1);
+              additionalArgs = Array.prototype.slice.call(args, callbackIndex + 1);
             }
           }
           this._microtasks.push({
             func: task.invoke,
-            args: addtionalArgs,
+            args: additionalArgs,
             target: task.data && (task.data as any).target
           });
           break;
@@ -352,6 +430,24 @@
                   this.trackPendingRequestAnimationFrame);
               break;
             default:
+              // user can define which macroTask they want to support by passing
+              // macroTaskOptions
+              const macroTaskOption = this.findMacroTaskOption(task);
+              if (macroTaskOption) {
+                const args = task.data && (task.data as any)['args'];
+                const delay = args && args.length > 1 ? args[1] : 0;
+                let callbackArgs =
+                    macroTaskOption.callbackArgs ? macroTaskOption.callbackArgs : args;
+                if (!!macroTaskOption.isPeriodic) {
+                  // periodic macroTask, use setInterval to simulate
+                  task.data['handleId'] = this._setInterval(task.invoke, delay, callbackArgs);
+                  task.data.isPeriodic = true;
+                } else {
+                  // not periodic, use setTimeout to simulate
+                  task.data['handleId'] = this._setTimeout(task.invoke, delay, callbackArgs);
+                }
+                break;
+              }
               throw new Error('Unknown macroTask scheduled in fake async test: ' + task.source);
           }
           break;
@@ -372,8 +468,38 @@
         case 'setInterval':
           return this._clearInterval(task.data['handleId']);
         default:
+          // user can define which macroTask they want to support by passing
+          // macroTaskOptions
+          const macroTaskOption = this.findMacroTaskOption(task);
+          if (macroTaskOption) {
+            const handleId = task.data['handleId'];
+            return macroTaskOption.isPeriodic ? this._clearInterval(handleId) :
+                                                this._clearTimeout(handleId);
+          }
           return delegate.cancelTask(target, task);
       }
+    }
+
+    onInvoke(delegate: ZoneDelegate, current: Zone, target: Zone, callback: Function, applyThis: any, applyArgs: any[], source: string): any {
+      try {
+        FakeAsyncTestZoneSpec.patchDate();
+        return delegate.invoke(target, callback, applyThis, applyArgs, source);
+      } finally {
+        FakeAsyncTestZoneSpec.resetDate();
+      }
+    }
+
+    findMacroTaskOption(task: Task) {
+      if (!this.macroTaskOptions) {
+        return null;
+      }
+      for (let i = 0; i < this.macroTaskOptions.length; i++) {
+        const macroTaskOption = this.macroTaskOptions[i];
+        if (macroTaskOption.source === task.source) {
+          return macroTaskOption;
+        }
+      }
+      return null;
     }
 
     onHandleError(
