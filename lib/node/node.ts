@@ -11,7 +11,15 @@ import './fs';
 
 import {findEventTasks} from '../common/events';
 import {patchTimer} from '../common/timers';
-import {ArraySlice, bindArguments, isMix, patchMacroTask, patchMethod, patchMicroTask, patchOnProperties} from '../common/utils';
+import {
+  ArraySlice,
+  bindArguments,
+  isMix,
+  patchMacroTask,
+  patchMethod,
+  patchMicroTask,
+  patchOnProperties
+} from '../common/utils';
 
 const set = 'set';
 const clear = 'clear';
@@ -82,46 +90,47 @@ Zone.__load_patch('nextTick', () => {
     return {
       name: 'process.nextTick',
       args: args,
-      cbIdx: (args.length > 0 && typeof args[0] === 'function') ? 0 : -1,
+      cbIdx: args.length > 0 && typeof args[0] === 'function' ? 0 : -1,
       target: process
     };
   });
 });
 
 Zone.__load_patch(
-    'handleUnhandledPromiseRejection', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-      (Zone as any)[api.symbol('unhandledPromiseRejectionHandler')] =
-          findProcessPromiseRejectionHandler('unhandledRejection');
+  'handleUnhandledPromiseRejection',
+  (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+    (Zone as any)[
+      api.symbol('unhandledPromiseRejectionHandler')
+    ] = findProcessPromiseRejectionHandler('unhandledRejection');
 
-      (Zone as any)[api.symbol('rejectionHandledHandler')] =
-          findProcessPromiseRejectionHandler('rejectionHandled');
+    (Zone as any)[api.symbol('rejectionHandledHandler')] = findProcessPromiseRejectionHandler(
+      'rejectionHandled'
+    );
 
-      // handle unhandled promise rejection
-      function findProcessPromiseRejectionHandler(evtName: string) {
-        return function(e: any) {
-          const eventTasks = findEventTasks(process, evtName);
-          eventTasks.forEach(eventTask => {
-            // process has added unhandledrejection event listener
-            // trigger the event listener
-            if (evtName === 'unhandledRejection') {
-              eventTask.invoke(e.rejection, e.promise);
-            } else if (evtName === 'rejectionHandled') {
-              eventTask.invoke(e.promise);
-            }
-          });
-        };
-      }
-
-    });
-
+    // handle unhandled promise rejection
+    function findProcessPromiseRejectionHandler(evtName: string) {
+      return function(e: any) {
+        const eventTasks = findEventTasks(process, evtName);
+        eventTasks.forEach(eventTask => {
+          // process has added unhandledrejection event listener
+          // trigger the event listener
+          if (evtName === 'unhandledRejection') {
+            eventTask.invoke(e.rejection, e.promise);
+          } else if (evtName === 'rejectionHandled') {
+            eventTask.invoke(e.promise);
+          }
+        });
+      };
+    }
+  }
+);
 
 // Crypto
 Zone.__load_patch('crypto', () => {
   let crypto: any;
   try {
     crypto = require('crypto');
-  } catch (err) {
-  }
+  } catch (err) {}
 
   // use the generic patchMacroTask to patch crypto
   if (crypto) {
@@ -131,9 +140,8 @@ Zone.__load_patch('crypto', () => {
         return {
           name: 'crypto.' + name,
           args: args,
-          cbIdx: (args.length > 0 && typeof args[args.length - 1] === 'function') ?
-              args.length - 1 :
-              -1,
+          cbIdx:
+            args.length > 0 && typeof args[args.length - 1] === 'function' ? args.length - 1 : -1,
           target: crypto
         };
       });
@@ -142,10 +150,19 @@ Zone.__load_patch('crypto', () => {
 });
 
 Zone.__load_patch('console', (global: any, Zone: ZoneType) => {
-  const consoleMethods =
-      ['dir', 'log', 'info', 'error', 'warn', 'assert', 'debug', 'timeEnd', 'trace'];
+  const consoleMethods = [
+    'dir',
+    'log',
+    'info',
+    'error',
+    'warn',
+    'assert',
+    'debug',
+    'timeEnd',
+    'trace'
+  ];
   consoleMethods.forEach((m: string) => {
-    const originalMethod = (console as any)[Zone.__symbol__(m)] = (console as any)[m];
+    const originalMethod = ((console as any)[Zone.__symbol__(m)] = (console as any)[m]);
     if (originalMethod) {
       (console as any)[m] = function() {
         const args = ArraySlice.call(arguments);

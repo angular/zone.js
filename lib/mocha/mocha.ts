@@ -55,7 +55,7 @@
         // Note we have to make a function with correct number of arguments,
         // otherwise mocha will
         // think that all functions are sync or async.
-        args[i] = (arg.length === 0) ? syncTest(arg) : asyncTest(arg);
+        args[i] = arg.length === 0 ? syncTest(arg) : asyncTest(arg);
         // Mocha uses toString to view the test body in the result list, make sure we return the
         // correct function body
         args[i].toString = function() {
@@ -70,7 +70,7 @@
   function wrapDescribeInZone(args: IArguments): any[] {
     const syncTest: any = function(fn: Function) {
       return function() {
-        return syncZone.run(fn, this, arguments as any as any[]);
+        return syncZone.run(fn, this, (arguments as any) as any[]);
       };
     };
 
@@ -166,8 +166,5 @@
 
       return originalRun.call(this, fn);
     };
-
-
   })(Mocha.Runner.prototype.runTest, Mocha.Runner.prototype.run);
-
-})(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);
+})((typeof window !== 'undefined' && window) || (typeof self !== 'undefined' && self) || global);

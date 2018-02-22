@@ -57,22 +57,37 @@ describe('Observable.multicast', () => {
 
     subscriptionZone.run(() => {
       observable1.subscribe(
-          (result: any) => {
-            expect(Zone.current.name).toEqual(subscriptionZone.name);
-            log.push(result);
-          },
-          () => {
-            fail('should not call error');
-          },
-          () => {
-            log.push('completed');
-            expect(Zone.current.name).toEqual(subscriptionZone.name);
-          });
+        (result: any) => {
+          expect(Zone.current.name).toEqual(subscriptionZone.name);
+          log.push(result);
+        },
+        () => {
+          fail('should not call error');
+        },
+        () => {
+          log.push('completed');
+          expect(Zone.current.name).toEqual(subscriptionZone.name);
+        }
+      );
     });
 
     expect(log).toEqual([
-      'do1', 'onetest', 'twotest', 'do2', 'onetest', 'twotest', 'do3', 'onetest', 'twotest', 'do1',
-      'test', 'do2', 'test', 'do3', 'test', 'completed'
+      'do1',
+      'onetest',
+      'twotest',
+      'do2',
+      'onetest',
+      'twotest',
+      'do3',
+      'onetest',
+      'twotest',
+      'do1',
+      'test',
+      'do2',
+      'test',
+      'do3',
+      'test',
+      'completed'
     ]);
   });
 });

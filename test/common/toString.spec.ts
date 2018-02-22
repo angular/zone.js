@@ -10,25 +10,30 @@ import {zoneSymbol} from '../../lib/common/utils';
 import {ifEnvSupports} from '../test-util';
 
 const g: any =
-    typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global;
+  (typeof window !== 'undefined' && window) || (typeof self !== 'undefined' && self) || global;
 describe('global function patch', () => {
   describe('isOriginal', () => {
     it('setTimeout toString should be the same with non patched setTimeout', () => {
-      expect(Function.prototype.toString.call(setTimeout))
-          .toEqual(Function.prototype.toString.call(g[zoneSymbol('setTimeout')]));
+      expect(Function.prototype.toString.call(setTimeout)).toEqual(
+        Function.prototype.toString.call(g[zoneSymbol('setTimeout')])
+      );
     });
 
-    it('MutationObserver toString should be the same with native version',
-       ifEnvSupports('MutationObserver', () => {
-         const nativeMutationObserver = g[zoneSymbol('MutationObserver')];
-         if (typeof nativeMutationObserver === 'function') {
-           expect(Function.prototype.toString.call(g['MutationObserver']))
-               .toEqual(Function.prototype.toString.call(nativeMutationObserver));
-         } else {
-           expect(Function.prototype.toString.call(g['MutationObserver']))
-               .toEqual(Object.prototype.toString.call(nativeMutationObserver));
-         }
-       }));
+    it(
+      'MutationObserver toString should be the same with native version',
+      ifEnvSupports('MutationObserver', () => {
+        const nativeMutationObserver = g[zoneSymbol('MutationObserver')];
+        if (typeof nativeMutationObserver === 'function') {
+          expect(Function.prototype.toString.call(g['MutationObserver'])).toEqual(
+            Function.prototype.toString.call(nativeMutationObserver)
+          );
+        } else {
+          expect(Function.prototype.toString.call(g['MutationObserver'])).toEqual(
+            Object.prototype.toString.call(nativeMutationObserver)
+          );
+        }
+      })
+    );
   });
 
   describe('isNative', () => {
@@ -37,12 +42,18 @@ describe('global function patch', () => {
     });
 
     it('Function toString should look like native', () => {
-      expect(Function.prototype.toString.call(Function.prototype.toString)).toContain('[native code]');
+      expect(Function.prototype.toString.call(Function.prototype.toString)).toContain(
+        '[native code]'
+      );
     });
 
-    it('EventTarget addEventListener should look like native', ifEnvSupports('HTMLElement', () => {
-         expect(Function.prototype.toString.call(HTMLElement.prototype.addEventListener))
-             .toContain('[native code]');
-       }));
+    it(
+      'EventTarget addEventListener should look like native',
+      ifEnvSupports('HTMLElement', () => {
+        expect(Function.prototype.toString.call(HTMLElement.prototype.addEventListener)).toContain(
+          '[native code]'
+        );
+      })
+    );
   });
 });

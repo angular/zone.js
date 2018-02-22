@@ -80,8 +80,13 @@
     }
 
     scheduleFunction(
-        cb: Function, delay: number, args: any[] = [], isPeriodic: boolean = false,
-        isRequestAnimationFrame: boolean = false, id: number = -1): number {
+      cb: Function,
+      delay: number,
+      args: any[] = [],
+      isPeriodic: boolean = false,
+      isRequestAnimationFrame: boolean = false,
+      id: number = -1
+    ): number {
       let currentId: number = id < 0 ? this.nextId++ : id;
       let endTime = this._currentTime + delay;
 
@@ -173,14 +178,18 @@
         count++;
         if (count > limit) {
           throw new Error(
-              'flush failed after reaching the limit of ' + limit +
-              ' tasks. Does your code use a polling timeout?');
+            'flush failed after reaching the limit of ' +
+              limit +
+              ' tasks. Does your code use a polling timeout?'
+          );
         }
 
         // flush only non-periodic timers.
         // If the only remaining tasks are periodic(or requestAnimationFrame), finish flushing.
-        if (this._schedulerQueue.filter(task => !task.isPeriodic && !task.isRequestAnimationFrame)
-                .length === 0) {
+        if (
+          this._schedulerQueue.filter(task => !task.isPeriodic && !task.isRequestAnimationFrame)
+            .length === 0
+        ) {
           break;
         }
 
@@ -211,15 +220,18 @@
     private _scheduler: Scheduler = new Scheduler();
     private _microtasks: MicroTaskScheduledFunction[] = [];
     private _lastError: Error = null;
-    private _uncaughtPromiseErrors: {rejection: any}[] =
-        (Promise as any)[(Zone as any).__symbol__('uncaughtPromiseErrors')];
+    private _uncaughtPromiseErrors: {rejection: any}[] = (Promise as any)[
+      (Zone as any).__symbol__('uncaughtPromiseErrors')
+    ];
 
     pendingPeriodicTimers: number[] = [];
     pendingTimers: number[] = [];
 
     constructor(
-        namePrefix: string, private trackPendingRequestAnimationFrame = false,
-        private macroTaskOptions?: MacroTaskOptions[]) {
+      namePrefix: string,
+      private trackPendingRequestAnimationFrame = false,
+      private macroTaskOptions?: MacroTaskOptions[]
+    ) {
       this.name = 'fakeAsyncTestZone for ' + namePrefix;
       // in case user can't access the construction of FakeAsyncTestSpec
       // user can also define macroTaskOptions by define a global variable.
@@ -228,18 +240,22 @@
       }
     }
 
-    private _fnAndFlush(fn: Function, completers: {onSuccess?: Function, onError?: Function}):
-        Function {
+    private _fnAndFlush(
+      fn: Function,
+      completers: {onSuccess?: Function; onError?: Function}
+    ): Function {
       return (...args: any[]): boolean => {
         fn.apply(global, args);
 
-        if (this._lastError === null) {  // Success
+        if (this._lastError === null) {
+          // Success
           if (completers.onSuccess != null) {
             completers.onSuccess.apply(global);
           }
           // Flush microtasks only on success.
           this.flushMicrotasks();
-        } else {  // Failure
+        } else {
+          // Failure
           if (completers.onError != null) {
             completers.onError.apply(global);
           }
@@ -262,8 +278,12 @@
       };
     }
 
-    private _requeuePeriodicTimer(fn: Function, interval: number, args: any[], id: number):
-        Function {
+    private _requeuePeriodicTimer(
+      fn: Function,
+      interval: number,
+      args: any[],
+      id: number
+    ): Function {
       return () => {
         // Requeue the timer callback if it's not been canceled.
         if (this.pendingPeriodicTimers.indexOf(id) !== -1) {
@@ -281,7 +301,10 @@
     private _setTimeout(fn: Function, delay: number, args: any[], isTimer = true): number {
       let removeTimerFn = this._dequeueTimer(this._scheduler.nextId);
       // Queue the callback and dequeue the timer on success and error.
-      let cb = this._fnAndFlush(fn, {onSuccess: removeTimerFn, onError: removeTimerFn});
+      let cb = this._fnAndFlush(fn, {
+        onSuccess: removeTimerFn,
+        onError: removeTimerFn
+      });
       let id = this._scheduler.scheduleFunction(cb, delay, args, false, !isTimer);
       if (isTimer) {
         this.pendingTimers.push(id);
@@ -296,7 +319,10 @@
 
     private _setInterval(fn: Function, interval: number, ...args: any[]): number {
       let id = this._scheduler.nextId;
-      let completers = {onSuccess: null as Function, onError: this._dequeuePeriodicTimer(id)};
+      let completers = {
+        onSuccess: null as Function,
+        onError: this._dequeuePeriodicTimer(id)
+      };
       let cb = this._fnAndFlush(fn, completers);
 
       // Use the callback created above to requeue on success.
@@ -384,7 +410,7 @@
 
     name: string;
 
-    properties: {[key: string]: any} = {'FakeAsyncTestZoneSpec': this};
+    properties: {[key: string]: any} = {FakeAsyncTestZoneSpec: this};
 
     onScheduleTask(delegate: ZoneDelegate, current: Zone, target: Zone, task: Task): Task {
       switch (task.type) {
@@ -409,25 +435,35 @@
         case 'macroTask':
           switch (task.source) {
             case 'setTimeout':
-              task.data['handleId'] =
-                  this._setTimeout(task.invoke, task.data['delay'], (task.data as any)['args']);
+              task.data['handleId'] = this._setTimeout(
+                task.invoke,
+                task.data['delay'],
+                (task.data as any)['args']
+              );
               break;
             case 'setInterval':
-              task.data['handleId'] =
-                  this._setInterval(task.invoke, task.data['delay'], (task.data as any)['args']);
+              task.data['handleId'] = this._setInterval(
+                task.invoke,
+                task.data['delay'],
+                (task.data as any)['args']
+              );
               break;
             case 'XMLHttpRequest.send':
               throw new Error(
-                  'Cannot make XHRs from within a fake async test. Request URL: ' +
-                  (task.data as any)['url']);
+                'Cannot make XHRs from within a fake async test. Request URL: ' +
+                  (task.data as any)['url']
+              );
             case 'requestAnimationFrame':
             case 'webkitRequestAnimationFrame':
             case 'mozRequestAnimationFrame':
               // Simulate a requestAnimationFrame by using a setTimeout with 16 ms.
               // (60 frames per second)
               task.data['handleId'] = this._setTimeout(
-                  task.invoke, 16, (task.data as any)['args'],
-                  this.trackPendingRequestAnimationFrame);
+                task.invoke,
+                16,
+                (task.data as any)['args'],
+                this.trackPendingRequestAnimationFrame
+              );
               break;
             default:
               // user can define which macroTask they want to support by passing
@@ -436,8 +472,9 @@
               if (macroTaskOption) {
                 const args = task.data && (task.data as any)['args'];
                 const delay = args && args.length > 1 ? args[1] : 0;
-                let callbackArgs =
-                    macroTaskOption.callbackArgs ? macroTaskOption.callbackArgs : args;
+                let callbackArgs = macroTaskOption.callbackArgs
+                  ? macroTaskOption.callbackArgs
+                  : args;
                 if (!!macroTaskOption.isPeriodic) {
                   // periodic macroTask, use setInterval to simulate
                   task.data['handleId'] = this._setInterval(task.invoke, delay, callbackArgs);
@@ -473,14 +510,23 @@
           const macroTaskOption = this.findMacroTaskOption(task);
           if (macroTaskOption) {
             const handleId = task.data['handleId'];
-            return macroTaskOption.isPeriodic ? this._clearInterval(handleId) :
-                                                this._clearTimeout(handleId);
+            return macroTaskOption.isPeriodic
+              ? this._clearInterval(handleId)
+              : this._clearTimeout(handleId);
           }
           return delegate.cancelTask(target, task);
       }
     }
 
-    onInvoke(delegate: ZoneDelegate, current: Zone, target: Zone, callback: Function, applyThis: any, applyArgs: any[], source: string): any {
+    onInvoke(
+      delegate: ZoneDelegate,
+      current: Zone,
+      target: Zone,
+      callback: Function,
+      applyThis: any,
+      applyArgs: any[],
+      source: string
+    ): any {
       try {
         FakeAsyncTestZoneSpec.patchDate();
         return delegate.invoke(target, callback, applyThis, applyArgs, source);
@@ -503,14 +549,17 @@
     }
 
     onHandleError(
-        parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-        error: any): boolean {
+      parentZoneDelegate: ZoneDelegate,
+      currentZone: Zone,
+      targetZone: Zone,
+      error: any
+    ): boolean {
       this._lastError = error;
-      return false;  // Don't propagate error to parent zone.
+      return false; // Don't propagate error to parent zone.
     }
   }
 
   // Export the class so that new instances can be created with proper
   // constructor params.
   (Zone as any)['FakeAsyncTestZoneSpec'] = FakeAsyncTestZoneSpec;
-})(typeof window === 'object' && window || typeof self === 'object' && self || global);
+})((typeof window === 'object' && window) || (typeof self === 'object' && self) || global);

@@ -6,7 +6,13 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {attachOriginToPatched, isBrowser, isMix, ObjectGetOwnPropertyDescriptor, wrapWithCurrentZone} from '../common/utils';
+import {
+  attachOriginToPatched,
+  isBrowser,
+  isMix,
+  ObjectGetOwnPropertyDescriptor,
+  wrapWithCurrentZone
+} from '../common/utils';
 
 import {_redefineProperty} from './define-property';
 
@@ -16,8 +22,12 @@ export function registerElementPatch(_global: any) {
   }
 
   const _registerElement = (<any>document).registerElement;
-  const callbacks =
-      ['createdCallback', 'attachedCallback', 'detachedCallback', 'attributeChangedCallback'];
+  const callbacks = [
+    'createdCallback',
+    'attachedCallback',
+    'detachedCallback',
+    'attributeChangedCallback'
+  ];
 
   (<any>document).registerElement = function(name: any, opts: any) {
     if (opts && opts.prototype) {

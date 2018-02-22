@@ -31,7 +31,7 @@ ifEnvSupports(supportJasmineSpec, () => {
       throwOnAsync = true;
     }
 
-    beforeEach(() => beforeEachZone = Zone.current);
+    beforeEach(() => (beforeEachZone = Zone.current));
 
     it('should throw on async in describe', () => {
       expect(throwOnAsync).toBe(true);
@@ -47,6 +47,5 @@ ifEnvSupports(supportJasmineSpec, () => {
       expect(beforeEachZone).toBe(zone);
       expect(itZone).toBe(zone);
     });
-
   });
 })();

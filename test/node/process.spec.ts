@@ -14,7 +14,7 @@ describe('process related test', () => {
     zoneA = Zone.current.fork({name: 'zoneA'});
     result = [];
   });
-  it('process.nextTick callback should in zone', (done) => {
+  it('process.nextTick callback should in zone', done => {
     zoneA.run(function() {
       process.nextTick(() => {
         expect(Zone.current.name).toEqual('zoneA');
@@ -22,7 +22,7 @@ describe('process related test', () => {
       });
     });
   });
-  it('process.nextTick should be executed before macroTask and promise', (done) => {
+  it('process.nextTick should be executed before macroTask and promise', done => {
     zoneA.run(function() {
       setTimeout(() => {
         result.push('timeout');
@@ -36,17 +36,35 @@ describe('process related test', () => {
       });
     });
   });
-  it('process.nextTick should be treated as microTask', (done) => {
+  it('process.nextTick should be treated as microTask', done => {
     let zoneTick = Zone.current.fork({
       name: 'zoneTick',
-      onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                       task: Task): Task => {
-        result.push({callback: 'scheduleTask', targetZone: targetZone.name, task: task.source});
+      onScheduleTask: (
+        parentZoneDelegate: ZoneDelegate,
+        currentZone: Zone,
+        targetZone: Zone,
+        task: Task
+      ): Task => {
+        result.push({
+          callback: 'scheduleTask',
+          targetZone: targetZone.name,
+          task: task.source
+        });
         return parentZoneDelegate.scheduleTask(targetZone, task);
       },
-      onInvokeTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                     task: Task, applyThis?: any, applyArgs?: any): any => {
-        result.push({callback: 'invokeTask', targetZone: targetZone.name, task: task.source});
+      onInvokeTask: (
+        parentZoneDelegate: ZoneDelegate,
+        currentZone: Zone,
+        targetZone: Zone,
+        task: Task,
+        applyThis?: any,
+        applyArgs?: any
+      ): any => {
+        result.push({
+          callback: 'invokeTask',
+          targetZone: targetZone.name,
+          task: task.source
+        });
         return parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
       }
     });
@@ -57,10 +75,16 @@ describe('process related test', () => {
     });
     setTimeout(() => {
       expect(result.length).toBe(3);
-      expect(result[0]).toEqual(
-          {callback: 'scheduleTask', targetZone: 'zoneTick', task: 'process.nextTick'});
-      expect(result[1]).toEqual(
-          {callback: 'invokeTask', targetZone: 'zoneTick', task: 'process.nextTick'});
+      expect(result[0]).toEqual({
+        callback: 'scheduleTask',
+        targetZone: 'zoneTick',
+        task: 'process.nextTick'
+      });
+      expect(result[1]).toEqual({
+        callback: 'invokeTask',
+        targetZone: 'zoneTick',
+        task: 'process.nextTick'
+      });
       done();
     });
   });

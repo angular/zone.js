@@ -22,12 +22,18 @@ class AsyncTestZoneSpec implements ZoneSpec {
     this._failCallback = failCallback;
     this.name = 'asyncTestZone for ' + namePrefix;
     this.properties = {
-      'AsyncTestZoneSpec': this 
+      AsyncTestZoneSpec: this
     };
   }
 
   _finishCallbackIfDone() {
-    if (!(this._pendingMicroTasks || this._pendingMacroTasks || this.unresolvedChainedPromiseCount !== 0)) {
+    if (
+      !(
+        this._pendingMicroTasks ||
+        this._pendingMacroTasks ||
+        this.unresolvedChainedPromiseCount !== 0
+      )
+    ) {
       // We do this because we would like to catch unhandled rejected promises.
       this.runZone.run(() => {
         setTimeout(() => {
@@ -61,12 +67,12 @@ class AsyncTestZoneSpec implements ZoneSpec {
 
   onScheduleTask(delegate: ZoneDelegate, current: Zone, target: Zone, task: Task): Task {
     if (task.type === 'microTask' && task.data && task.data instanceof Promise) {
-      // check whether the promise is a chained promise 
+      // check whether the promise is a chained promise
       if ((task.data as any)[AsyncTestZoneSpec.symbolParentUnresolved] === true) {
         // chained promise is being scheduled
-        this.unresolvedChainedPromiseCount --;
+        this.unresolvedChainedPromiseCount--;
       }
-    } 
+    }
     return delegate.scheduleTask(target, task);
   }
 
@@ -74,8 +80,14 @@ class AsyncTestZoneSpec implements ZoneSpec {
   // fully synchronous. TODO(juliemr): remove this when the logic for
   // onHasTask changes and it calls whenever the task queues are dirty.
   onInvoke(
-      parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function,
-      applyThis: any, applyArgs: any[], source: string): any {
+    parentZoneDelegate: ZoneDelegate,
+    currentZone: Zone,
+    targetZone: Zone,
+    delegate: Function,
+    applyThis: any,
+    applyArgs: any[],
+    source: string
+  ): any {
     try {
       this.patchPromiseForTest();
       return parentZoneDelegate.invoke(targetZone, delegate, applyThis, applyArgs, source);
@@ -85,8 +97,12 @@ class AsyncTestZoneSpec implements ZoneSpec {
     }
   }
 
-  onHandleError(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, error: any):
-      boolean {
+  onHandleError(
+    parentZoneDelegate: ZoneDelegate,
+    currentZone: Zone,
+    targetZone: Zone,
+    error: any
+  ): boolean {
     // Let the parent try to handle the error.
     const result = parentZoneDelegate.handleError(targetZone, error);
     if (result) {

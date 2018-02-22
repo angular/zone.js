@@ -11,7 +11,7 @@ class ProxyZoneSpec implements ZoneSpec {
 
   private _delegateSpec: ZoneSpec;
 
-  properties: {[k: string]: any} = {'ProxyZoneSpec': this};
+  properties: {[k: string]: any} = {ProxyZoneSpec: this};
   propertyKeys: string[] = null;
 
   static get(): ProxyZoneSpec {
@@ -33,14 +33,13 @@ class ProxyZoneSpec implements ZoneSpec {
     this.setDelegate(defaultSpecDelegate);
   }
 
-
   setDelegate(delegateSpec: ZoneSpec) {
     this._delegateSpec = delegateSpec;
-    this.propertyKeys && this.propertyKeys.forEach((key) => delete this.properties[key]);
+    this.propertyKeys && this.propertyKeys.forEach(key => delete this.properties[key]);
     this.propertyKeys = null;
     if (delegateSpec && delegateSpec.properties) {
       this.propertyKeys = Object.keys(delegateSpec.properties);
-      this.propertyKeys.forEach((k) => this.properties[k] = delegateSpec.properties[k]);
+      this.propertyKeys.forEach(k => (this.properties[k] = delegateSpec.properties[k]));
     }
   }
 
@@ -48,14 +47,16 @@ class ProxyZoneSpec implements ZoneSpec {
     return this._delegateSpec;
   }
 
-
   resetDelegate() {
     this.setDelegate(this.defaultSpecDelegate);
   }
 
-
-  onFork(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, zoneSpec: ZoneSpec):
-      Zone {
+  onFork(
+    parentZoneDelegate: ZoneDelegate,
+    currentZone: Zone,
+    targetZone: Zone,
+    zoneSpec: ZoneSpec
+  ): Zone {
     if (this._delegateSpec && this._delegateSpec.onFork) {
       return this._delegateSpec.onFork(parentZoneDelegate, currentZone, targetZone, zoneSpec);
     } else {
@@ -63,32 +64,56 @@ class ProxyZoneSpec implements ZoneSpec {
     }
   }
 
-
   onIntercept(
-      parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function,
-      source: string): Function {
+    parentZoneDelegate: ZoneDelegate,
+    currentZone: Zone,
+    targetZone: Zone,
+    delegate: Function,
+    source: string
+  ): Function {
     if (this._delegateSpec && this._delegateSpec.onIntercept) {
       return this._delegateSpec.onIntercept(
-          parentZoneDelegate, currentZone, targetZone, delegate, source);
+        parentZoneDelegate,
+        currentZone,
+        targetZone,
+        delegate,
+        source
+      );
     } else {
       return parentZoneDelegate.intercept(targetZone, delegate, source);
     }
   }
 
-
   onInvoke(
-      parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function,
-      applyThis: any, applyArgs: any[], source: string): any {
+    parentZoneDelegate: ZoneDelegate,
+    currentZone: Zone,
+    targetZone: Zone,
+    delegate: Function,
+    applyThis: any,
+    applyArgs: any[],
+    source: string
+  ): any {
     if (this._delegateSpec && this._delegateSpec.onInvoke) {
       return this._delegateSpec.onInvoke(
-          parentZoneDelegate, currentZone, targetZone, delegate, applyThis, applyArgs, source);
+        parentZoneDelegate,
+        currentZone,
+        targetZone,
+        delegate,
+        applyThis,
+        applyArgs,
+        source
+      );
     } else {
       return parentZoneDelegate.invoke(targetZone, delegate, applyThis, applyArgs, source);
     }
   }
 
-  onHandleError(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, error: any):
-      boolean {
+  onHandleError(
+    parentZoneDelegate: ZoneDelegate,
+    currentZone: Zone,
+    targetZone: Zone,
+    error: any
+  ): boolean {
     if (this._delegateSpec && this._delegateSpec.onHandleError) {
       return this._delegateSpec.onHandleError(parentZoneDelegate, currentZone, targetZone, error);
     } else {
@@ -96,8 +121,12 @@ class ProxyZoneSpec implements ZoneSpec {
     }
   }
 
-  onScheduleTask(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
-      Task {
+  onScheduleTask(
+    parentZoneDelegate: ZoneDelegate,
+    currentZone: Zone,
+    targetZone: Zone,
+    task: Task
+  ): Task {
     if (this._delegateSpec && this._delegateSpec.onScheduleTask) {
       return this._delegateSpec.onScheduleTask(parentZoneDelegate, currentZone, targetZone, task);
     } else {
@@ -106,18 +135,33 @@ class ProxyZoneSpec implements ZoneSpec {
   }
 
   onInvokeTask(
-      parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task,
-      applyThis: any, applyArgs: any): any {
+    parentZoneDelegate: ZoneDelegate,
+    currentZone: Zone,
+    targetZone: Zone,
+    task: Task,
+    applyThis: any,
+    applyArgs: any
+  ): any {
     if (this._delegateSpec && this._delegateSpec.onFork) {
       return this._delegateSpec.onInvokeTask(
-          parentZoneDelegate, currentZone, targetZone, task, applyThis, applyArgs);
+        parentZoneDelegate,
+        currentZone,
+        targetZone,
+        task,
+        applyThis,
+        applyArgs
+      );
     } else {
       return parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
     }
   }
 
-  onCancelTask(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
-      any {
+  onCancelTask(
+    parentZoneDelegate: ZoneDelegate,
+    currentZone: Zone,
+    targetZone: Zone,
+    task: Task
+  ): any {
     if (this._delegateSpec && this._delegateSpec.onCancelTask) {
       return this._delegateSpec.onCancelTask(parentZoneDelegate, currentZone, targetZone, task);
     } else {

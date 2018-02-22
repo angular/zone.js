@@ -25,7 +25,7 @@ describe('Observable.fromEvent', () => {
   const subscriptionZone: Zone = Zone.current.fork({
     name: 'Subscription Zone'
   });
-  const triggerZone: Zone = Zone.current.fork({ name: 'Trigger Zone' });
+  const triggerZone: Zone = Zone.current.fork({name: 'Trigger Zone'});
   let observable1: any;
 
   beforeEach(() => {
@@ -110,12 +110,7 @@ describe('Observable.fromEvent', () => {
         button.dispatchEvent(clickEvent);
         subscriper.complete();
       });
-      expect(log).toEqual([
-        'addListener',
-        clickEvent,
-        'completed',
-        'removeListener'
-      ]);
+      expect(log).toEqual(['addListener', clickEvent, 'completed', 'removeListener']);
     })
   );
 });

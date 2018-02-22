@@ -9,8 +9,12 @@
 import {EventEmitter} from 'events';
 
 describe('nodejs EventEmitter', () => {
-  let zone: Zone, zoneA: Zone, zoneB: Zone, emitter: EventEmitter, expectZoneACount: number,
-      zoneResults: string[];
+  let zone: Zone,
+    zoneA: Zone,
+    zoneB: Zone,
+    emitter: EventEmitter,
+    expectZoneACount: number,
+    zoneResults: string[];
   beforeEach(() => {
     zone = Zone.current;
     zoneA = zone.fork({name: 'A'});

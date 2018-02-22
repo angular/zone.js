@@ -33,17 +33,18 @@ describe('Observable.zip', () => {
 
     subscriptionZone.run(() => {
       observable3.subscribe(
-          (result: any) => {
-            log.push(result);
-            expect(Zone.current.name).toEqual(subscriptionZone.name);
-          },
-          () => {
-            fail('should not call error');
-          },
-          () => {
-            log.push('completed');
-            expect(Zone.current.name).toEqual(subscriptionZone.name);
-          });
+        (result: any) => {
+          log.push(result);
+          expect(Zone.current.name).toEqual(subscriptionZone.name);
+        },
+        () => {
+          fail('should not call error');
+        },
+        () => {
+          log.push('completed');
+          expect(Zone.current.name).toEqual(subscriptionZone.name);
+        }
+      );
     });
 
     expect(log).toEqual([{n: 1, str: 'foo'}, {n: 2, str: 'bar'}, {n: 3, str: 'beer'}, 'completed']);

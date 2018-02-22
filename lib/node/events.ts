@@ -43,8 +43,7 @@ Zone.__load_patch('EventEmitter', (global: any) => {
   let events;
   try {
     events = require('events');
-  } catch (err) {
-  }
+  } catch (err) {}
 
   if (events && events.EventEmitter) {
     patchEventEmitterMethods(events.EventEmitter.prototype);

@@ -12,45 +12,81 @@ const testClosureFunction = () => {
   const testZoneSpec: ZoneSpec = {
     name: 'closure',
     properties: {},
-    onFork: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-             zoneSpec: ZoneSpec) => {
+    onFork: (
+      parentZoneDelegate: ZoneDelegate,
+      currentZone: Zone,
+      targetZone: Zone,
+      zoneSpec: ZoneSpec
+    ) => {
       return parentZoneDelegate.fork(targetZone, zoneSpec);
     },
 
-    onIntercept: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                  delegate: Function, source?: string) => {
+    onIntercept: (
+      parentZoneDelegate: ZoneDelegate,
+      currentZone: Zone,
+      targetZone: Zone,
+      delegate: Function,
+      source?: string
+    ) => {
       return parentZoneDelegate.intercept(targetZone, delegate, source);
     },
 
     onInvoke: function(
-        parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function,
-        applyThis: any, applyArgs: any[], source: string) {
+      parentZoneDelegate: ZoneDelegate,
+      currentZone: Zone,
+      targetZone: Zone,
+      delegate: Function,
+      applyThis: any,
+      applyArgs: any[],
+      source: string
+    ) {
       return parentZoneDelegate.invoke(targetZone, delegate, applyThis, applyArgs, source);
     },
 
     onHandleError: function(
-        parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, error: any) {
+      parentZoneDelegate: ZoneDelegate,
+      currentZone: Zone,
+      targetZone: Zone,
+      error: any
+    ) {
       return parentZoneDelegate.handleError(targetZone, error);
     },
 
     onScheduleTask: function(
-        parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task) {
+      parentZoneDelegate: ZoneDelegate,
+      currentZone: Zone,
+      targetZone: Zone,
+      task: Task
+    ) {
       return parentZoneDelegate.scheduleTask(targetZone, task);
     },
 
     onInvokeTask: function(
-        parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task,
-        applyThis: any, applyArgs: any[]) {
+      parentZoneDelegate: ZoneDelegate,
+      currentZone: Zone,
+      targetZone: Zone,
+      task: Task,
+      applyThis: any,
+      applyArgs: any[]
+    ) {
       return parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
     },
 
     onCancelTask: function(
-        parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task) {
+      parentZoneDelegate: ZoneDelegate,
+      currentZone: Zone,
+      targetZone: Zone,
+      task: Task
+    ) {
       return parentZoneDelegate.cancelTask(targetZone, task);
     },
 
     onHasTask: function(
-        delegate: ZoneDelegate, current: Zone, target: Zone, hasTaskState: HasTaskState) {
+      delegate: ZoneDelegate,
+      current: Zone,
+      target: Zone,
+      hasTaskState: HasTaskState
+    ) {
       return delegate.hasTask(target, hasTaskState);
     }
   };

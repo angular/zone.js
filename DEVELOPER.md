@@ -24,13 +24,13 @@ Run the node.js tests:
 
 `npm run test-node`
 
+Run prettier to format:
+
+`npm run prettier`
+
 Run tslint:
 
 `npm run lint`
-
-Run format with clang-format:
-
-`npm run format`
 
 Run all checks (lint/format/browser test/test-node):
 
@@ -42,7 +42,6 @@ Before Commit
 Please make sure you pass all following checks before commit 
 
 - gulp lint (tslint) 
-- gulp format:enforce (clang-format)
 - gulp promisetest (promise a+ test)
 - npm test (karma browser test)
 - gulp test-node (node test)

@@ -1,4 +1,5 @@
 {
+  "extends": ["tslint-plugin-prettier"],
   "rulesDirectory": [
     "node_modules/tslint-eslint-rules/dist/rules",
     "node_modules/vrsource-tslint-rules/rules"
@@ -11,6 +12,13 @@
     "no-var-keyword": true,
     "semicolon": true,
     "variable-name": [true, "ban-keywords"],
-    "no-inner-declarations": [true, "function"]
+    "no-inner-declarations": [true, "function"],
+    "prettier": [true, {
+      "printWidth": 100,
+      "parser": "typescript",
+      "singleQuote": true,
+      "tabWidth": 2,
+      "bracketSpacing": false
+    }]
   }
 }

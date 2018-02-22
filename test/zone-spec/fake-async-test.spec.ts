@@ -68,7 +68,7 @@ describe('FakeAsyncTestZoneSpec', () => {
     it('should run', () => {
       fakeAsyncTestZone.run(() => {
         let thenRan = false;
-        Promise.resolve(null).then((_) => {
+        Promise.resolve(null).then(_ => {
           thenRan = true;
         });
 
@@ -79,23 +79,24 @@ describe('FakeAsyncTestZoneSpec', () => {
       });
     });
 
-    it('should rethrow the exception on flushMicroTasks for error thrown in Promise callback',
-       () => {
-         fakeAsyncTestZone.run(() => {
-           Promise.resolve(null).then((_) => {
-             throw new Error('async');
-           });
-           expect(() => {
-             testZoneSpec.flushMicrotasks();
-           }).toThrowError(/Uncaught \(in promise\): Error: async/);
-         });
-       });
+    it('should rethrow the exception on flushMicroTasks for error thrown in Promise callback', () => {
+      fakeAsyncTestZone.run(() => {
+        Promise.resolve(null).then(_ => {
+          throw new Error('async');
+        });
+        expect(() => {
+          testZoneSpec.flushMicrotasks();
+        }).toThrowError(/Uncaught \(in promise\): Error: async/);
+      });
+    });
 
     it('should run chained thens', () => {
       fakeAsyncTestZone.run(() => {
         let log: number[] = [];
 
-        Promise.resolve(null).then((_) => log.push(1)).then((_) => log.push(2));
+        Promise.resolve(null)
+          .then(_ => log.push(1))
+          .then(_ => log.push(2));
 
         expect(log).toEqual([]);
 
@@ -108,9 +109,9 @@ describe('FakeAsyncTestZoneSpec', () => {
       fakeAsyncTestZone.run(() => {
         let log: number[] = [];
 
-        Promise.resolve(null).then((_) => {
+        Promise.resolve(null).then(_ => {
           log.push(1);
-          Promise.resolve(null).then((_) => log.push(2));
+          Promise.resolve(null).then(_ => log.push(2));
         });
 
         expect(log).toEqual([]);
@@ -249,10 +250,10 @@ describe('FakeAsyncTestZoneSpec', () => {
         let cycles = 0;
         let id: number;
 
-        id = setInterval(() => {
+        id = (setInterval(() => {
           cycles++;
           clearInterval(id);
-        }, 10) as any as number;
+        }, 10) as any) as number;
 
         testZoneSpec.tick(10);
         expect(cycles).toEqual(1);
@@ -266,7 +267,7 @@ describe('FakeAsyncTestZoneSpec', () => {
       fakeAsyncTestZone.run(() => {
         let log: string[] = [];
 
-        Promise.resolve(null).then((_) => log.push('microtask'));
+        Promise.resolve(null).then(_ => log.push('microtask'));
 
         setTimeout(() => log.push('timer'), 9);
 
@@ -283,25 +284,35 @@ describe('FakeAsyncTestZoneSpec', () => {
       fakeAsyncTestZone.run(() => {
         let log: string[] = [];
 
-        Promise.resolve(null).then((_) => log.push('microtask'));
+        Promise.resolve(null).then(_ => log.push('microtask'));
 
         setTimeout(() => {
           log.push('timer');
-          Promise.resolve(null).then((_) => log.push('t microtask'));
+          Promise.resolve(null).then(_ => log.push('t microtask'));
         }, 9);
 
         let id = setInterval(() => {
           log.push('periodic timer');
-          Promise.resolve(null).then((_) => log.push('pt microtask'));
+          Promise.resolve(null).then(_ => log.push('pt microtask'));
         }, 10);
 
         testZoneSpec.tick(10);
-        expect(log).toEqual(
-            ['microtask', 'timer', 't microtask', 'periodic timer', 'pt microtask']);
+        expect(log).toEqual([
+          'microtask',
+          'timer',
+          't microtask',
+          'periodic timer',
+          'pt microtask'
+        ]);
 
         testZoneSpec.tick(10);
         expect(log).toEqual([
-          'microtask', 'timer', 't microtask', 'periodic timer', 'pt microtask', 'periodic timer',
+          'microtask',
+          'timer',
+          't microtask',
+          'periodic timer',
+          'pt microtask',
+          'periodic timer',
           'pt microtask'
         ]);
       });
@@ -449,26 +460,30 @@ describe('FakeAsyncTestZoneSpec', () => {
       });
     });
 
-
     it('should process micro-tasks created in timers before next timers', () => {
       fakeAsyncTestZone.run(() => {
         let log: string[] = [];
 
-        Promise.resolve(null).then((_) => log.push('microtask'));
+        Promise.resolve(null).then(_ => log.push('microtask'));
 
         setTimeout(() => {
           log.push('timer');
-          Promise.resolve(null).then((_) => log.push('t microtask'));
+          Promise.resolve(null).then(_ => log.push('t microtask'));
         }, 20);
 
         let id = setInterval(() => {
           log.push('periodic timer');
-          Promise.resolve(null).then((_) => log.push('pt microtask'));
+          Promise.resolve(null).then(_ => log.push('pt microtask'));
         }, 10);
 
         testZoneSpec.flush();
-        expect(log).toEqual(
-            ['microtask', 'periodic timer', 'pt microtask', 'timer', 't microtask']);
+        expect(log).toEqual([
+          'microtask',
+          'periodic timer',
+          'pt microtask',
+          'timer',
+          't microtask'
+        ]);
       });
     });
 
@@ -500,9 +515,9 @@ describe('FakeAsyncTestZoneSpec', () => {
           poll();
           testZoneSpec.flush();
         });
-      })
-          .toThrowError(
-              'flush failed after reaching the limit of 20 tasks. Does your code use a polling timeout?');
+      }).toThrowError(
+        'flush failed after reaching the limit of 20 tasks. Does your code use a polling timeout?'
+      );
     });
 
     it('accepts a custom limit', () => {
@@ -520,9 +535,9 @@ describe('FakeAsyncTestZoneSpec', () => {
           poll();
           testZoneSpec.flush(10);
         });
-      })
-          .toThrowError(
-              'flush failed after reaching the limit of 10 tasks. Does your code use a polling timeout?');
+      }).toThrowError(
+        'flush failed after reaching the limit of 10 tasks. Does your code use a polling timeout?'
+      );
     });
 
     it('can flush periodic timers if flushPeriodic is true', () => {
@@ -601,141 +616,155 @@ describe('FakeAsyncTestZoneSpec', () => {
   });
 
   describe('requestAnimationFrame', () => {
-    const functions =
-        ['requestAnimationFrame', 'webkitRequestAnimationFrame', 'mozRequestAnimationFrame'];
-    functions.forEach((fnName) => {
-      describe(fnName, ifEnvSupports(fnName, () => {
-                 it('should schedule a requestAnimationFrame with timeout of 16ms', () => {
-                   fakeAsyncTestZone.run(() => {
-                     let ran = false;
-                     requestAnimationFrame(() => {
-                       ran = true;
-                     });
+    const functions = [
+      'requestAnimationFrame',
+      'webkitRequestAnimationFrame',
+      'mozRequestAnimationFrame'
+    ];
+    functions.forEach(fnName => {
+      describe(
+        fnName,
+        ifEnvSupports(fnName, () => {
+          it('should schedule a requestAnimationFrame with timeout of 16ms', () => {
+            fakeAsyncTestZone.run(() => {
+              let ran = false;
+              requestAnimationFrame(() => {
+                ran = true;
+              });
 
-                     testZoneSpec.tick(6);
-                     expect(ran).toEqual(false);
+              testZoneSpec.tick(6);
+              expect(ran).toEqual(false);
 
-                     testZoneSpec.tick(10);
-                     expect(ran).toEqual(true);
-                   });
-                 });
-                 it('does not count as a pending timer', () => {
-                   fakeAsyncTestZone.run(() => {
-                     requestAnimationFrame(() => {});
-                   });
-                   expect(testZoneSpec.pendingTimers.length).toBe(0);
-                   expect(testZoneSpec.pendingPeriodicTimers.length).toBe(0);
-                 });
-                 it('should cancel a scheduled requestAnimatiomFrame', () => {
-                   fakeAsyncTestZone.run(() => {
-                     let ran = false;
-                     const id = requestAnimationFrame(() => {
-                       ran = true;
-                     });
+              testZoneSpec.tick(10);
+              expect(ran).toEqual(true);
+            });
+          });
+          it('does not count as a pending timer', () => {
+            fakeAsyncTestZone.run(() => {
+              requestAnimationFrame(() => {});
+            });
+            expect(testZoneSpec.pendingTimers.length).toBe(0);
+            expect(testZoneSpec.pendingPeriodicTimers.length).toBe(0);
+          });
+          it('should cancel a scheduled requestAnimatiomFrame', () => {
+            fakeAsyncTestZone.run(() => {
+              let ran = false;
+              const id = requestAnimationFrame(() => {
+                ran = true;
+              });
 
-                     testZoneSpec.tick(6);
-                     expect(ran).toEqual(false);
+              testZoneSpec.tick(6);
+              expect(ran).toEqual(false);
 
-                     cancelAnimationFrame(id);
+              cancelAnimationFrame(id);
 
-                     testZoneSpec.tick(10);
-                     expect(ran).toEqual(false);
-                   });
-                 });
-                 it('is not flushed when flushPeriodic is false', () => {
-                   let ran = false;
-                   fakeAsyncTestZone.run(() => {
-                     requestAnimationFrame(() => {
-                       ran = true;
-                     });
-                     testZoneSpec.flush(20);
-                     expect(ran).toEqual(false);
-                   });
-                 });
-                 it('is flushed when flushPeriodic is true', () => {
-                   let ran = false;
-                   fakeAsyncTestZone.run(() => {
-                     requestAnimationFrame(() => {
-                       ran = true;
-                     });
-                     const elapsed = testZoneSpec.flush(20, true);
-                     expect(elapsed).toEqual(16);
-                     expect(ran).toEqual(true);
-                   });
-                 });
-               }));
+              testZoneSpec.tick(10);
+              expect(ran).toEqual(false);
+            });
+          });
+          it('is not flushed when flushPeriodic is false', () => {
+            let ran = false;
+            fakeAsyncTestZone.run(() => {
+              requestAnimationFrame(() => {
+                ran = true;
+              });
+              testZoneSpec.flush(20);
+              expect(ran).toEqual(false);
+            });
+          });
+          it('is flushed when flushPeriodic is true', () => {
+            let ran = false;
+            fakeAsyncTestZone.run(() => {
+              requestAnimationFrame(() => {
+                ran = true;
+              });
+              const elapsed = testZoneSpec.flush(20, true);
+              expect(elapsed).toEqual(16);
+              expect(ran).toEqual(true);
+            });
+          });
+        })
+      );
     });
   });
 
   describe(
-      'XHRs', ifEnvSupports('XMLHttpRequest', () => {
-        it('should throw an exception if an XHR is initiated in the zone', () => {
-          expect(() => {
-            fakeAsyncTestZone.run(() => {
-              let finished = false;
-              let req = new XMLHttpRequest();
+    'XHRs',
+    ifEnvSupports('XMLHttpRequest', () => {
+      it('should throw an exception if an XHR is initiated in the zone', () => {
+        expect(() => {
+          fakeAsyncTestZone.run(() => {
+            let finished = false;
+            let req = new XMLHttpRequest();
 
-              req.onreadystatechange = () => {
-                if (req.readyState === XMLHttpRequest.DONE) {
-                  finished = true;
-                }
-              };
+            req.onreadystatechange = () => {
+              if (req.readyState === XMLHttpRequest.DONE) {
+                finished = true;
+              }
+            };
 
-              req.open('GET', '/test', true);
-              req.send();
-            });
-          }).toThrowError('Cannot make XHRs from within a fake async test. Request URL: /test');
+            req.open('GET', '/test', true);
+            req.send();
+          });
+        }).toThrowError('Cannot make XHRs from within a fake async test. Request URL: /test');
+      });
+    })
+  );
+
+  describe(
+    'node process',
+    ifEnvSupports(supportNode, () => {
+      it('should be able to schedule microTask with additional arguments', () => {
+        const process = global['process'];
+        const nextTick = process && process['nextTick'];
+        if (!nextTick) {
+          return;
+        }
+        fakeAsyncTestZone.run(() => {
+          let tickRun = false;
+          let cbArgRun = false;
+          nextTick(
+            (strArg: string, cbArg: Function) => {
+              tickRun = true;
+              expect(strArg).toEqual('stringArg');
+              cbArg();
+            },
+            'stringArg',
+            () => {
+              cbArgRun = true;
+            }
+          );
+
+          expect(tickRun).toEqual(false);
+
+          testZoneSpec.flushMicrotasks();
+          expect(tickRun).toEqual(true);
+          expect(cbArgRun).toEqual(true);
         });
-      }));
-
-  describe('node process', ifEnvSupports(supportNode, () => {
-             it('should be able to schedule microTask with additional arguments', () => {
-               const process = global['process'];
-               const nextTick = process && process['nextTick'];
-               if (!nextTick) {
-                 return;
-               }
-               fakeAsyncTestZone.run(() => {
-                 let tickRun = false;
-                 let cbArgRun = false;
-                 nextTick(
-                     (strArg: string, cbArg: Function) => {
-                       tickRun = true;
-                       expect(strArg).toEqual('stringArg');
-                       cbArg();
-                     },
-                     'stringArg',
-                     () => {
-                       cbArgRun = true;
-                     });
-
-                 expect(tickRun).toEqual(false);
-
-                 testZoneSpec.flushMicrotasks();
-                 expect(tickRun).toEqual(true);
-                 expect(cbArgRun).toEqual(true);
-               });
-
-             });
-           }));
+      });
+    })
+  );
 
   describe('should allow user define which macroTask fakeAsyncTest', () => {
     let FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
     let testZoneSpec: any;
     let fakeAsyncTestZone: Zone;
     it('should support custom non perodic macroTask', () => {
-      testZoneSpec = new FakeAsyncTestZoneSpec(
-          'name', false, [{source: 'TestClass.myTimeout', callbackArgs: ['test']}]);
+      testZoneSpec = new FakeAsyncTestZoneSpec('name', false, [
+        {source: 'TestClass.myTimeout', callbackArgs: ['test']}
+      ]);
       class TestClass {
         myTimeout(callback: Function) {}
       }
       fakeAsyncTestZone = Zone.current.fork(testZoneSpec);
       fakeAsyncTestZone.run(() => {
         let ran = false;
-        patchMacroTask(
-            TestClass.prototype, 'myTimeout',
-            (self: any, args: any[]) =>
-                ({name: 'TestClass.myTimeout', target: self, cbIdx: 0, args: args}));
+        patchMacroTask(TestClass.prototype, 'myTimeout', (self: any, args: any[]) => ({
+          name: 'TestClass.myTimeout',
+          target: self,
+          cbIdx: 0,
+          args: args
+        }));
 
         const testClass = new TestClass();
         testClass.myTimeout(function(callbackArgs: any) {
@@ -758,10 +787,12 @@ describe('FakeAsyncTestZoneSpec', () => {
       fakeAsyncTestZone = Zone.current.fork(testZoneSpec);
       fakeAsyncTestZone.run(() => {
         let ran = false;
-        patchMacroTask(
-            TestClass.prototype, 'myTimeout',
-            (self: any, args: any[]) =>
-                ({name: 'TestClass.myTimeout', target: self, cbIdx: 0, args: args}));
+        patchMacroTask(TestClass.prototype, 'myTimeout', (self: any, args: any[]) => ({
+          name: 'TestClass.myTimeout',
+          target: self,
+          cbIdx: 0,
+          args: args
+        }));
 
         const testClass = new TestClass();
         testClass.myTimeout(() => {
@@ -775,10 +806,10 @@ describe('FakeAsyncTestZoneSpec', () => {
       });
     });
 
-
     it('should support custom perodic macroTask', () => {
-      testZoneSpec = new FakeAsyncTestZoneSpec(
-          'name', false, [{source: 'TestClass.myInterval', isPeriodic: true}]);
+      testZoneSpec = new FakeAsyncTestZoneSpec('name', false, [
+        {source: 'TestClass.myInterval', isPeriodic: true}
+      ]);
       fakeAsyncTestZone = Zone.current.fork(testZoneSpec);
       fakeAsyncTestZone.run(() => {
         let cycle = 0;
@@ -787,10 +818,12 @@ describe('FakeAsyncTestZoneSpec', () => {
             return null;
           }
         }
-        patchMacroTask(
-            TestClass.prototype, 'myInterval',
-            (self: any, args: any[]) =>
-                ({name: 'TestClass.myInterval', target: self, cbIdx: 0, args: args}));
+        patchMacroTask(TestClass.prototype, 'myInterval', (self: any, args: any[]) => ({
+          name: 'TestClass.myInterval',
+          target: self,
+          cbIdx: 0,
+          args: args
+        }));
 
         const testClass = new TestClass();
         const id = testClass.myInterval(() => {
@@ -815,8 +848,7 @@ describe('FakeAsyncTestZoneSpec', () => {
     let fakeAsyncTestZone: Zone;
 
     beforeEach(() => {
-      testZoneSpec = new FakeAsyncTestZoneSpec(
-          'name', false);
+      testZoneSpec = new FakeAsyncTestZoneSpec('name', false);
       fakeAsyncTestZone = Zone.current.fork(testZoneSpec);
     });
 
@@ -830,46 +862,52 @@ describe('FakeAsyncTestZoneSpec', () => {
     });
   });
 
-  describe('fakeAsyncTest should patch jasmine.clock', ifEnvSupports(() => {
-    return typeof jasmine.clock === 'function';
-  }, () => {
-    beforeEach(() => {
-      jasmine.clock().install();
-    });
+  describe(
+    'fakeAsyncTest should patch jasmine.clock',
+    ifEnvSupports(
+      () => {
+        return typeof jasmine.clock === 'function';
+      },
+      () => {
+        beforeEach(() => {
+          jasmine.clock().install();
+        });
 
-    afterEach(() => {
-      jasmine.clock().uninstall();
-    });
+        afterEach(() => {
+          jasmine.clock().uninstall();
+        });
 
-    it('should get date diff correctly', () => {
-      const start = Date.now();
-      jasmine.clock().tick(100);
-      const end = Date.now();
-      expect(end - start).toBe(100);
-    });
+        it('should get date diff correctly', () => {
+          const start = Date.now();
+          jasmine.clock().tick(100);
+          const end = Date.now();
+          expect(end - start).toBe(100);
+        });
 
-    it('should mock date correctly', () => {
-      const baseTime = new Date(2013, 9, 23);
-      jasmine.clock().mockDate(baseTime);
-      const start = Date.now();
-      expect(start).toBe(baseTime.getTime());
-      jasmine.clock().tick(100);
-      const end = Date.now();
-      expect(end - start).toBe(100);
-      expect(end).toBe(baseTime.getTime() + 100);
-    });
+        it('should mock date correctly', () => {
+          const baseTime = new Date(2013, 9, 23);
+          jasmine.clock().mockDate(baseTime);
+          const start = Date.now();
+          expect(start).toBe(baseTime.getTime());
+          jasmine.clock().tick(100);
+          const end = Date.now();
+          expect(end - start).toBe(100);
+          expect(end).toBe(baseTime.getTime() + 100);
+        });
 
-    it('should handle new Date correctly', () => {
-      const baseTime = new Date(2013, 9, 23);
-      jasmine.clock().mockDate(baseTime);
-      const start = new Date();
-      expect(start.getTime()).toBe(baseTime.getTime());
-      jasmine.clock().tick(100);
-      const end = new Date();
-      expect(end.getTime() - start.getTime()).toBe(100);
-      expect(end.getTime()).toBe(baseTime.getTime() + 100);
-    });
-  }));
+        it('should handle new Date correctly', () => {
+          const baseTime = new Date(2013, 9, 23);
+          jasmine.clock().mockDate(baseTime);
+          const start = new Date();
+          expect(start.getTime()).toBe(baseTime.getTime());
+          jasmine.clock().tick(100);
+          const end = new Date();
+          expect(end.getTime() - start.getTime()).toBe(100);
+          expect(end.getTime()).toBe(baseTime.getTime() + 100);
+        });
+      }
+    )
+  );
 
   describe('fakeAsyncTest should patch rxjs scheduler', () => {
     let FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
@@ -877,12 +915,11 @@ describe('FakeAsyncTestZoneSpec', () => {
     let fakeAsyncTestZone: Zone;
 
     beforeEach(() => {
-      testZoneSpec = new FakeAsyncTestZoneSpec(
-          'name', false);
+      testZoneSpec = new FakeAsyncTestZoneSpec('name', false);
       fakeAsyncTestZone = Zone.current.fork(testZoneSpec);
     });
 
-    it('should get date diff correctly', (done) => {
+    it('should get date diff correctly', done => {
       fakeAsyncTestZone.run(() => {
         let result = null;
         const observable = new Observable((subscribe: any) => {

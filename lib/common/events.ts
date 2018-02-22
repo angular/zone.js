@@ -10,7 +10,16 @@
  * @suppress {missingRequire}
  */
 
-import {ADD_EVENT_LISTENER_STR, attachOriginToPatched, FALSE_STR, ObjectGetPrototypeOf, REMOVE_EVENT_LISTENER_STR, TRUE_STR, ZONE_SYMBOL_PREFIX, zoneSymbol} from './utils';
+import {
+  ADD_EVENT_LISTENER_STR,
+  attachOriginToPatched,
+  FALSE_STR,
+  ObjectGetPrototypeOf,
+  REMOVE_EVENT_LISTENER_STR,
+  TRUE_STR,
+  ZONE_SYMBOL_PREFIX,
+  zoneSymbol
+} from './utils';
 
 /** @internal **/
 interface EventTaskData extends TaskData {
@@ -27,7 +36,7 @@ export const zoneSymbolEventNames: any = {};
 export const globalSources: any = {};
 
 const EVENT_NAME_SYMBOL_REGX = /^__zone_symbol__(\w+)(true|false)$/;
-const IMMEDIATE_PROPAGATION_SYMBOL = ('__zone_symbol__propagationStopped');
+const IMMEDIATE_PROPAGATION_SYMBOL = '__zone_symbol__propagationStopped';
 
 export interface PatchEventTargetOptions {
   // validateHandler
@@ -53,13 +62,16 @@ export interface PatchEventTargetOptions {
 }
 
 export function patchEventTarget(
-    _global: any, apis: any[], patchOptions?: PatchEventTargetOptions) {
+  _global: any,
+  apis: any[],
+  patchOptions?: PatchEventTargetOptions
+) {
   const ADD_EVENT_LISTENER = (patchOptions && patchOptions.add) || ADD_EVENT_LISTENER_STR;
   const REMOVE_EVENT_LISTENER = (patchOptions && patchOptions.rm) || REMOVE_EVENT_LISTENER_STR;
 
   const LISTENERS_EVENT_LISTENER = (patchOptions && patchOptions.listeners) || 'eventListeners';
   const REMOVE_ALL_LISTENERS_EVENT_LISTENER =
-      (patchOptions && patchOptions.rmAll) || 'removeAllListeners';
+    (patchOptions && patchOptions.rmAll) || 'removeAllListeners';
 
   const zoneSymbolAddEventListener = zoneSymbol(ADD_EVENT_LISTENER);
 
@@ -197,19 +209,19 @@ export function patchEventTarget(
     // so we do not need to create a new object just for pass some data
     const taskData: any = {};
 
-    const nativeAddEventListener = proto[zoneSymbolAddEventListener] = proto[ADD_EVENT_LISTENER];
-    const nativeRemoveEventListener = proto[zoneSymbol(REMOVE_EVENT_LISTENER)] =
-        proto[REMOVE_EVENT_LISTENER];
+    const nativeAddEventListener = (proto[zoneSymbolAddEventListener] = proto[ADD_EVENT_LISTENER]);
+    const nativeRemoveEventListener = (proto[zoneSymbol(REMOVE_EVENT_LISTENER)] =
+      proto[REMOVE_EVENT_LISTENER]);
 
-    const nativeListeners = proto[zoneSymbol(LISTENERS_EVENT_LISTENER)] =
-        proto[LISTENERS_EVENT_LISTENER];
-    const nativeRemoveAllListeners = proto[zoneSymbol(REMOVE_ALL_LISTENERS_EVENT_LISTENER)] =
-        proto[REMOVE_ALL_LISTENERS_EVENT_LISTENER];
+    const nativeListeners = (proto[zoneSymbol(LISTENERS_EVENT_LISTENER)] =
+      proto[LISTENERS_EVENT_LISTENER]);
+    const nativeRemoveAllListeners = (proto[zoneSymbol(REMOVE_ALL_LISTENERS_EVENT_LISTENER)] =
+      proto[REMOVE_ALL_LISTENERS_EVENT_LISTENER]);
 
     let nativePrependEventListener: any;
     if (patchOptions && patchOptions.prepend) {
       nativePrependEventListener = proto[zoneSymbol(patchOptions.prepend)] =
-          proto[patchOptions.prepend];
+        proto[patchOptions.prepend];
     }
 
     const customScheduleGlobal = function() {
@@ -219,9 +231,11 @@ export function patchEventTarget(
         return;
       }
       return nativeAddEventListener.call(
-          taskData.target, taskData.eventName,
-          taskData.capture ? globalZoneAwareCaptureCallback : globalZoneAwareCallback,
-          taskData.options);
+        taskData.target,
+        taskData.eventName,
+        taskData.capture ? globalZoneAwareCaptureCallback : globalZoneAwareCallback,
+        taskData.options
+      );
     };
 
     const customCancelGlobal = function(task: any) {
@@ -260,18 +274,29 @@ export function patchEventTarget(
         return;
       }
       return nativeRemoveEventListener.call(
-          task.target, task.eventName,
-          task.capture ? globalZoneAwareCaptureCallback : globalZoneAwareCallback, task.options);
+        task.target,
+        task.eventName,
+        task.capture ? globalZoneAwareCaptureCallback : globalZoneAwareCallback,
+        task.options
+      );
     };
 
     const customScheduleNonGlobal = function(task: Task) {
       return nativeAddEventListener.call(
-          taskData.target, taskData.eventName, task.invoke, taskData.options);
+        taskData.target,
+        taskData.eventName,
+        task.invoke,
+        taskData.options
+      );
     };
 
     const customSchedulePrepend = function(task: Task) {
       return nativePrependEventListener.call(
-          taskData.target, taskData.eventName, task.invoke, taskData.options);
+        taskData.target,
+        taskData.eventName,
+        task.invoke,
+        taskData.options
+      );
     };
 
     const customCancelNonGlobal = function(task: any) {
@@ -283,19 +308,25 @@ export function patchEventTarget(
 
     const compareTaskCallbackVsDelegate = function(task: any, delegate: any) {
       const typeOfDelegate = typeof delegate;
-      return (typeOfDelegate === 'function' && task.callback === delegate) ||
-          (typeOfDelegate === 'object' && task.originalDelegate === delegate);
-
+      return (
+        (typeOfDelegate === 'function' && task.callback === delegate) ||
+        (typeOfDelegate === 'object' && task.originalDelegate === delegate)
+      );
     };
 
     const compare =
-        (patchOptions && patchOptions.diff) ? patchOptions.diff : compareTaskCallbackVsDelegate;
+      patchOptions && patchOptions.diff ? patchOptions.diff : compareTaskCallbackVsDelegate;
 
     const blackListedEvents: string[] = (Zone as any)[Zone.__symbol__('BLACK_LISTED_EVENTS')];
 
     const makeAddListener = function(
-        nativeListener: any, addSource: string, customScheduleFn: any, customCancelFn: any,
-        returnTarget = false, prepend = false) {
+      nativeListener: any,
+      addSource: string,
+      customScheduleFn: any,
+      customCancelFn: any,
+      returnTarget = false,
+      prepend = false
+    ) {
       return function() {
         const target = this || _global;
         let delegate = arguments[1];
@@ -405,8 +436,13 @@ export function patchEventTarget(
           (data as any).taskData = taskData;
         }
 
-        const task: any =
-            zone.scheduleEventTask(source, delegate, data, customScheduleFn, customCancelFn);
+        const task: any = zone.scheduleEventTask(
+          source,
+          delegate,
+          data,
+          customScheduleFn,
+          customCancelFn
+        );
 
         // should clear taskData.target to avoid memory leak
         // issue, https://github.com/angular/angular/issues/20442
@@ -443,12 +479,21 @@ export function patchEventTarget(
     };
 
     proto[ADD_EVENT_LISTENER] = makeAddListener(
-        nativeAddEventListener, ADD_EVENT_LISTENER_SOURCE, customSchedule, customCancel,
-        returnTarget);
+      nativeAddEventListener,
+      ADD_EVENT_LISTENER_SOURCE,
+      customSchedule,
+      customCancel,
+      returnTarget
+    );
     if (nativePrependEventListener) {
       proto[PREPEND_EVENT_LISTENER] = makeAddListener(
-          nativePrependEventListener, PREPEND_EVENT_LISTENER_SOURCE, customSchedulePrepend,
-          customCancel, returnTarget, true);
+        nativePrependEventListener,
+        PREPEND_EVENT_LISTENER_SOURCE,
+        customSchedulePrepend,
+        customCancel,
+        returnTarget,
+        true
+      );
     }
 
     proto[REMOVE_EVENT_LISTENER] = function() {
@@ -472,8 +517,10 @@ export function patchEventTarget(
         return nativeRemoveEventListener.apply(this, arguments);
       }
 
-      if (validateHandler &&
-          !validateHandler(nativeRemoveEventListener, delegate, target, arguments)) {
+      if (
+        validateHandler &&
+        !validateHandler(nativeRemoveEventListener, delegate, target, arguments)
+      ) {
         return;
       }
 
@@ -614,13 +661,16 @@ export function patchEventPrototype(global: any, api: _ZonePrivate) {
   const Event = global['Event'];
   if (Event && Event.prototype) {
     api.patchMethod(
-        Event.prototype, 'stopImmediatePropagation',
-        (delegate: Function) => function(self: any, args: any[]) {
+      Event.prototype,
+      'stopImmediatePropagation',
+      (delegate: Function) =>
+        function(self: any, args: any[]) {
           self[IMMEDIATE_PROPAGATION_SYMBOL] = true;
           // we need to call the native stopImmediatePropagation
           // in case in some hybrid application, some part of
           // application will be controlled by zone, some are not
           delegate && delegate.apply(self, args);
-        });
+        }
+    );
   }
 }

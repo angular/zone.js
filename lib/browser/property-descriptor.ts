@@ -10,7 +10,18 @@
  * @suppress {globalThis}
  */
 
-import {isBrowser, isMix, isNode, ObjectDefineProperty, ObjectGetOwnPropertyDescriptor, ObjectGetPrototypeOf, patchClass, patchOnProperties, wrapWithCurrentZone, zoneSymbol} from '../common/utils';
+import {
+  isBrowser,
+  isMix,
+  isNode,
+  ObjectDefineProperty,
+  ObjectGetOwnPropertyDescriptor,
+  ObjectGetPrototypeOf,
+  patchClass,
+  patchOnProperties,
+  wrapWithCurrentZone,
+  zoneSymbol
+} from '../common/utils';
 
 import * as webSocketPatch from './websocket';
 
@@ -113,9 +124,18 @@ const globalEventHandlersEventNames = [
   'wheel'
 ];
 const documentEventNames = [
-  'afterscriptexecute', 'beforescriptexecute', 'DOMContentLoaded', 'fullscreenchange',
-  'mozfullscreenchange', 'webkitfullscreenchange', 'msfullscreenchange', 'fullscreenerror',
-  'mozfullscreenerror', 'webkitfullscreenerror', 'msfullscreenerror', 'readystatechange',
+  'afterscriptexecute',
+  'beforescriptexecute',
+  'DOMContentLoaded',
+  'fullscreenchange',
+  'mozfullscreenchange',
+  'webkitfullscreenchange',
+  'msfullscreenchange',
+  'fullscreenerror',
+  'mozfullscreenerror',
+  'webkitfullscreenerror',
+  'msfullscreenerror',
+  'readystatechange',
   'visibilitychange'
 ];
 const windowEventNames = [
@@ -151,12 +171,30 @@ const windowEventNames = [
   'vrdisplaypresentchange'
 ];
 const htmlElementEventNames = [
-  'beforecopy', 'beforecut', 'beforepaste', 'copy', 'cut', 'paste', 'dragstart', 'loadend',
-  'animationstart', 'search', 'transitionrun', 'transitionstart', 'webkitanimationend',
-  'webkitanimationiteration', 'webkitanimationstart', 'webkittransitionend'
+  'beforecopy',
+  'beforecut',
+  'beforepaste',
+  'copy',
+  'cut',
+  'paste',
+  'dragstart',
+  'loadend',
+  'animationstart',
+  'search',
+  'transitionrun',
+  'transitionstart',
+  'webkitanimationend',
+  'webkitanimationiteration',
+  'webkitanimationstart',
+  'webkittransitionend'
 ];
-const mediaElementEventNames =
-    ['encrypted', 'waitingforkey', 'msneedkey', 'mozinterruptbegin', 'mozinterruptend'];
+const mediaElementEventNames = [
+  'encrypted',
+  'waitingforkey',
+  'msneedkey',
+  'mozinterruptbegin',
+  'mozinterruptend'
+];
 const ieElementEventNames = [
   'activate',
   'afterupdate',
@@ -222,17 +260,38 @@ const frameSetEventNames = ['blur', 'error', 'focus', 'load', 'resize', 'scroll'
 const marqueeEventNames = ['bounce', 'finish', 'start'];
 
 const XMLHttpRequestEventNames = [
-  'loadstart', 'progress', 'abort', 'error', 'load', 'progress', 'timeout', 'loadend',
+  'loadstart',
+  'progress',
+  'abort',
+  'error',
+  'load',
+  'progress',
+  'timeout',
+  'loadend',
   'readystatechange'
 ];
-const IDBIndexEventNames =
-    ['upgradeneeded', 'complete', 'abort', 'success', 'error', 'blocked', 'versionchange', 'close'];
+const IDBIndexEventNames = [
+  'upgradeneeded',
+  'complete',
+  'abort',
+  'success',
+  'error',
+  'blocked',
+  'versionchange',
+  'close'
+];
 const websocketEventNames = ['close', 'error', 'open', 'message'];
 const workerEventNames = ['error', 'message'];
 
 export const eventNames = globalEventHandlersEventNames.concat(
-    webglEventNames, formEventNames, detailEventNames, documentEventNames, windowEventNames,
-    htmlElementEventNames, ieElementEventNames);
+  webglEventNames,
+  formEventNames,
+  detailEventNames,
+  documentEventNames,
+  windowEventNames,
+  htmlElementEventNames,
+  ieElementEventNames
+);
 
 export interface IgnoreProperty {
   target: any;
@@ -240,7 +299,10 @@ export interface IgnoreProperty {
 }
 
 function filterProperties(
-    target: any, onProperties: string[], ignoreProperties: IgnoreProperty[]): string[] {
+  target: any,
+  onProperties: string[],
+  ignoreProperties: IgnoreProperty[]
+): string[] {
   if (!ignoreProperties) {
     return onProperties;
   }
@@ -255,7 +317,11 @@ function filterProperties(
 }
 
 export function patchFilteredProperties(
-    target: any, onProperties: string[], ignoreProperties: IgnoreProperty[], prototype?: any) {
+  target: any,
+  onProperties: string[],
+  ignoreProperties: IgnoreProperty[],
+  prototype?: any
+) {
   // check whether target is available, sometimes target will be undefined
   // because different browser or some 3rd party plugin.
   if (!target) {
@@ -279,22 +345,33 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
       // in IE/Edge, onProp not exist in window object, but in WindowPrototype
       // so we need to pass WindowPrototype to check onProp exist or not
       patchFilteredProperties(
-          internalWindow, eventNames.concat(['messageerror']), ignoreProperties,
-          ObjectGetPrototypeOf(internalWindow));
+        internalWindow,
+        eventNames.concat(['messageerror']),
+        ignoreProperties,
+        ObjectGetPrototypeOf(internalWindow)
+      );
       patchFilteredProperties(Document.prototype, eventNames, ignoreProperties);
 
       if (typeof internalWindow['SVGElement'] !== 'undefined') {
         patchFilteredProperties(
-            internalWindow['SVGElement'].prototype, eventNames, ignoreProperties);
+          internalWindow['SVGElement'].prototype,
+          eventNames,
+          ignoreProperties
+        );
       }
       patchFilteredProperties(Element.prototype, eventNames, ignoreProperties);
       patchFilteredProperties(HTMLElement.prototype, eventNames, ignoreProperties);
       patchFilteredProperties(HTMLMediaElement.prototype, mediaElementEventNames, ignoreProperties);
       patchFilteredProperties(
-          HTMLFrameSetElement.prototype, windowEventNames.concat(frameSetEventNames),
-          ignoreProperties);
+        HTMLFrameSetElement.prototype,
+        windowEventNames.concat(frameSetEventNames),
+        ignoreProperties
+      );
       patchFilteredProperties(
-          HTMLBodyElement.prototype, windowEventNames.concat(frameSetEventNames), ignoreProperties);
+        HTMLBodyElement.prototype,
+        windowEventNames.concat(frameSetEventNames),
+        ignoreProperties
+      );
       patchFilteredProperties(HTMLFrameElement.prototype, frameEventNames, ignoreProperties);
       patchFilteredProperties(HTMLIFrameElement.prototype, frameEventNames, ignoreProperties);
 
@@ -311,8 +388,10 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
     const XMLHttpRequestEventTarget = _global['XMLHttpRequestEventTarget'];
     if (XMLHttpRequestEventTarget) {
       patchFilteredProperties(
-          XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype,
-          XMLHttpRequestEventNames, ignoreProperties);
+        XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype,
+        XMLHttpRequestEventNames,
+        ignoreProperties
+      );
     }
     if (typeof IDBIndex !== 'undefined') {
       patchFilteredProperties(IDBIndex.prototype, IDBIndexEventNames, ignoreProperties);
@@ -336,8 +415,11 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
 }
 
 function canPatchViaPropertyDescriptor() {
-  if ((isBrowser || isMix) && !ObjectGetOwnPropertyDescriptor(HTMLElement.prototype, 'onclick') &&
-      typeof Element !== 'undefined') {
+  if (
+    (isBrowser || isMix) &&
+    !ObjectGetOwnPropertyDescriptor(HTMLElement.prototype, 'onclick') &&
+    typeof Element !== 'undefined'
+  ) {
     // WebKit https://bugs.webkit.org/show_bug.cgi?id=134364
     // IDL interface attributes are not configurable
     const desc = ObjectGetOwnPropertyDescriptor(Element.prototype, 'onclick');
@@ -398,21 +480,27 @@ function patchViaCapturingAllTheEvents() {
   for (let i = 0; i < eventNames.length; i++) {
     const property = eventNames[i];
     const onproperty = 'on' + property;
-    self.addEventListener(property, function(event) {
-      let elt: any = <Node>event.target, bound, source;
-      if (elt) {
-        source = elt.constructor['name'] + '.' + onproperty;
-      } else {
-        source = 'unknown.' + onproperty;
-      }
-      while (elt) {
-        if (elt[onproperty] && !elt[onproperty][unboundKey]) {
-          bound = wrapWithCurrentZone(elt[onproperty], source);
-          bound[unboundKey] = elt[onproperty];
-          elt[onproperty] = bound;
+    self.addEventListener(
+      property,
+      function(event) {
+        let elt: any = <Node>event.target,
+          bound,
+          source;
+        if (elt) {
+          source = elt.constructor['name'] + '.' + onproperty;
+        } else {
+          source = 'unknown.' + onproperty;
         }
-        elt = elt.parentElement;
-      }
-    }, true);
+        while (elt) {
+          if (elt[onproperty] && !elt[onproperty][unboundKey]) {
+            bound = wrapWithCurrentZone(elt[onproperty], source);
+            bound[unboundKey] = elt[onproperty];
+            elt[onproperty] = bound;
+          }
+          elt = elt.parentElement;
+        }
+      },
+      true
+    );
   }
 }

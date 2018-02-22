@@ -43,8 +43,12 @@ export function wrapWithCurrentZone<T extends Function>(callback: T, source: str
 }
 
 export function scheduleMacroTaskWithCurrentZone(
-    source: string, callback: Function, data: TaskData, customSchedule: (task: Task) => void,
-    customCancel: (task: Task) => void): MacroTask {
+  source: string,
+  callback: Function,
+  data: TaskData,
+  customSchedule: (task: Task) => void,
+  customCancel: (task: Task) => void
+): MacroTask {
   return Zone.current.scheduleMacroTask(source, callback, data, customSchedule, customCancel);
 }
 
@@ -54,7 +58,8 @@ declare const WorkerGlobalScope: any;
 export const zoneSymbol = Zone.__symbol__;
 const isWindowExists = typeof window !== 'undefined';
 const internalWindow: any = isWindowExists ? window : undefined;
-const _global: any = isWindowExists && internalWindow || typeof self === 'object' && self || global;
+const _global: any =
+  (isWindowExists && internalWindow) || (typeof self === 'object' && self) || global;
 
 const REMOVE_ATTRIBUTE = 'removeAttribute';
 const NULL_ON_PROP_VALUE: any[] = [null];
@@ -102,23 +107,26 @@ export function isPropertyWritable(propertyDesc: any) {
 }
 
 export const isWebWorker: boolean =
-    (typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope);
+  typeof WorkerGlobalScope !== 'undefined' && self instanceof WorkerGlobalScope;
 
 // Make sure to access `process` through `_global` so that WebPack does not accidentally browserify
 // this code.
 export const isNode: boolean =
-    (!('nw' in _global) && typeof _global.process !== 'undefined' &&
-     {}.toString.call(_global.process) === '[object process]');
+  !('nw' in _global) &&
+  typeof _global.process !== 'undefined' &&
+  {}.toString.call(_global.process) === '[object process]';
 
 export const isBrowser: boolean =
-    !isNode && !isWebWorker && !!(isWindowExists && internalWindow['HTMLElement']);
+  !isNode && !isWebWorker && !!(isWindowExists && internalWindow['HTMLElement']);
 
 // we are in electron of nw, so we are both browser and nodejs
 // Make sure to access `process` through `_global` so that WebPack does not accidentally browserify
 // this code.
-export const isMix: boolean = typeof _global.process !== 'undefined' &&
-    {}.toString.call(_global.process) === '[object process]' && !isWebWorker &&
-    !!(isWindowExists && internalWindow['HTMLElement']);
+export const isMix: boolean =
+  typeof _global.process !== 'undefined' &&
+  {}.toString.call(_global.process) === '[object process]' &&
+  !isWebWorker &&
+  !!(isWindowExists && internalWindow['HTMLElement']);
 
 const zoneSymbolEventNames: {[eventName: string]: string} = {};
 
@@ -324,7 +332,7 @@ export function patchClass(className: string) {
           }
         });
       }
-    }(prop));
+    })(prop);
   }
 
   for (prop in OriginalClass) {
@@ -335,9 +343,14 @@ export function patchClass(className: string) {
 }
 
 export function patchMethod(
-    target: any, name: string,
-    patchFn: (delegate: Function, delegateName: string, name: string) => (self: any, args: any[]) =>
-        any): Function {
+  target: any,
+  name: string,
+  patchFn: (
+    delegate: Function,
+    delegateName: string,
+    name: string
+  ) => (self: any, args: any[]) => any
+): Function {
   let proto = target;
   while (proto && !proto.hasOwnProperty(name)) {
     proto = ObjectGetPrototypeOf(proto);
@@ -374,7 +387,10 @@ export interface MacroTaskMeta extends TaskData {
 
 // TODO: @JiaLiPassion, support cancel task later if necessary
 export function patchMacroTask(
-    obj: any, funcName: string, metaCreator: (self: any, args: any[]) => MacroTaskMeta) {
+  obj: any,
+  funcName: string,
+  metaCreator: (self: any, args: any[]) => MacroTaskMeta
+) {
   let setNative: Function = null;
 
   function scheduleTask(task: Task) {
@@ -386,16 +402,26 @@ export function patchMacroTask(
     return task;
   }
 
-  setNative = patchMethod(obj, funcName, (delegate: Function) => function(self: any, args: any[]) {
-    const meta = metaCreator(self, args);
-    if (meta.cbIdx >= 0 && typeof args[meta.cbIdx] === 'function') {
-      return scheduleMacroTaskWithCurrentZone(
-          meta.name, args[meta.cbIdx], meta, scheduleTask, null);
-    } else {
-      // cause an error by calling it directly.
-      return delegate.apply(self, args);
-    }
-  });
+  setNative = patchMethod(
+    obj,
+    funcName,
+    (delegate: Function) =>
+      function(self: any, args: any[]) {
+        const meta = metaCreator(self, args);
+        if (meta.cbIdx >= 0 && typeof args[meta.cbIdx] === 'function') {
+          return scheduleMacroTaskWithCurrentZone(
+            meta.name,
+            args[meta.cbIdx],
+            meta,
+            scheduleTask,
+            null
+          );
+        } else {
+          // cause an error by calling it directly.
+          return delegate.apply(self, args);
+        }
+      }
+  );
 }
 
 export interface MicroTaskMeta extends TaskData {
@@ -406,7 +432,10 @@ export interface MicroTaskMeta extends TaskData {
 }
 
 export function patchMicroTask(
-    obj: any, funcName: string, metaCreator: (self: any, args: any[]) => MicroTaskMeta) {
+  obj: any,
+  funcName: string,
+  metaCreator: (self: any, args: any[]) => MicroTaskMeta
+) {
   let setNative: Function = null;
 
   function scheduleTask(task: Task) {
@@ -418,15 +447,20 @@ export function patchMicroTask(
     return task;
   }
 
-  setNative = patchMethod(obj, funcName, (delegate: Function) => function(self: any, args: any[]) {
-    const meta = metaCreator(self, args);
-    if (meta.cbIdx >= 0 && typeof args[meta.cbIdx] === 'function') {
-      return Zone.current.scheduleMicroTask(meta.name, args[meta.cbIdx], meta, scheduleTask);
-    } else {
-      // cause an error by calling it directly.
-      return delegate.apply(self, args);
-    }
-  });
+  setNative = patchMethod(
+    obj,
+    funcName,
+    (delegate: Function) =>
+      function(self: any, args: any[]) {
+        const meta = metaCreator(self, args);
+        if (meta.cbIdx >= 0 && typeof args[meta.cbIdx] === 'function') {
+          return Zone.current.scheduleMicroTask(meta.name, args[meta.cbIdx], meta, scheduleTask);
+        } else {
+          // cause an error by calling it directly.
+          return delegate.apply(self, args);
+        }
+      }
+  );
 }
 
 export function attachOriginToPatched(patched: Function, original: any) {
@@ -449,6 +483,5 @@ export function isIEOrEdge() {
       ieOrEdge = true;
     }
     return ieOrEdge;
-  } catch (error) {
-  }
+  } catch (error) {}
 }

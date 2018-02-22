@@ -26,26 +26,29 @@ describe('Scheduler.asap', () => {
     log = [];
   });
 
-  it('scheduler asap error should run in correct zone', asyncTest((done: any) => {
-       let observable: any;
-       constructorZone.run(() => {
-         observable = Rx.Observable.of(1, 2, 3).observeOn(Rx.Scheduler.asap);
-       });
+  it(
+    'scheduler asap error should run in correct zone',
+    asyncTest((done: any) => {
+      let observable: any;
+      constructorZone.run(() => {
+        observable = Rx.Observable.of(1, 2, 3).observeOn(Rx.Scheduler.asap);
+      });
 
-       errorCallback = () => {
-         expect(log).toEqual(['erroroops']);
-         setTimeout(done, 0);
-       };
+      errorCallback = () => {
+        expect(log).toEqual(['erroroops']);
+        setTimeout(done, 0);
+      };
 
-       Zone.root.run(() => {
-         observable
-             .map((value: number) => {
-               if (value === 3) {
-                 throw new Error('oops');
-               }
-               return value;
-             })
-             .subscribe((value: number) => {});
-       });
-     }, Zone.root));
+      Zone.root.run(() => {
+        observable
+          .map((value: number) => {
+            if (value === 3) {
+              throw new Error('oops');
+            }
+            return value;
+          })
+          .subscribe((value: number) => {});
+      });
+    }, Zone.root)
+  );
 });

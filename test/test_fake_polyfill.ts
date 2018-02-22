@@ -17,7 +17,12 @@
   const fakeCordova = function() {};
 
   (fakeCordova as any).exec = function(
-      success: Function, error: Function, service: string, action: string, args: any[]) {
+    success: Function,
+    error: Function,
+    service: string,
+    action: string,
+    args: any[]
+  ) {
     if (action === 'successAction') {
       success();
     } else {
@@ -27,12 +32,12 @@
 
   global.cordova = fakeCordova;
 
-  const TestTarget = global.TestTarget = function() {};
+  const TestTarget = (global.TestTarget = function() {});
 
   Object.defineProperties(TestTarget.prototype, {
-    'onprop1': {configurable: true, writable: true},
-    'onprop2': {configurable: true, writable: true},
-    'onprop3': {
+    onprop1: {configurable: true, writable: true},
+    onprop2: {configurable: true, writable: true},
+    onprop3: {
       configurable: true,
       get: function() {
         return this._onprop3;
@@ -41,8 +46,8 @@
         this._onprop3 = _value;
       }
     },
-    '_onprop3': {configurable: true, writable: true, value: function() {}},
-    'addEventListener': {
+    _onprop3: {configurable: true, writable: true, value: function() {}},
+    addEventListener: {
       configurable: true,
       writable: true,
       value: function(eventName: string, callback: Function) {
@@ -52,7 +57,7 @@
         this.events.eventName = {zone: Zone.current, callback: callback};
       }
     },
-    'removeEventListener': {
+    removeEventListener: {
       configurable: true,
       writable: true,
       value: function(eventName: string, callback: Function) {
@@ -62,7 +67,7 @@
         this.events.eventName = null;
       }
     },
-    'dispatchEvent': {
+    dispatchEvent: {
       configurable: true,
       writable: true,
       value: function(eventName: string) {
@@ -72,8 +77,9 @@
     }
   });
 
-  global['__Zone_ignore_on_properties'] =
-      [{target: TestTarget.prototype, ignoreProperties: ['prop1']}];
+  global['__Zone_ignore_on_properties'] = [
+    {target: TestTarget.prototype, ignoreProperties: ['prop1']}
+  ];
   global['__zone_symbol__FakeAsyncTestMacroTask'] = [{source: 'TestClass.myTimeout'}];
   global['__zone_symbol__BLACK_LISTED_EVENTS'] = ['scroll'];
-})(typeof window === 'object' && window || typeof self === 'object' && self || global);
+})((typeof window === 'object' && window) || (typeof self === 'object' && self) || global);
