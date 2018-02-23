@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 describe('cordova test', () => {
-  it('cordova.exec() should be patched as macroTask', (done) => {
+  it('cordova.exec() should be patched as macroTask', done => {
     const cordova = (window as any).cordova;
     if (!cordova) {
       done();
@@ -17,24 +17,30 @@ describe('cordova test', () => {
 
     zone.run(() => {
       cordova.exec(
-          () => {
-            expect(Zone.current.name).toEqual('cordova');
-            done();
-          },
-          () => {
-            fail('should not fail');
-          },
-          'service', 'successAction', ['arg0', 'arg1']);
+        () => {
+          expect(Zone.current.name).toEqual('cordova');
+          done();
+        },
+        () => {
+          fail('should not fail');
+        },
+        'service',
+        'successAction',
+        ['arg0', 'arg1']
+      );
 
       cordova.exec(
-          () => {
-            fail('should not success');
-          },
-          () => {
-            expect(Zone.current.name).toEqual('cordova');
-            done();
-          },
-          'service', 'failAction', ['arg0', 'arg1']);
+        () => {
+          fail('should not success');
+        },
+        () => {
+          expect(Zone.current.name).toEqual('cordova');
+          done();
+        },
+        'service',
+        'failAction',
+        ['arg0', 'arg1']
+      );
     });
   });
 });

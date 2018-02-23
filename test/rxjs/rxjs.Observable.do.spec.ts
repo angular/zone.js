@@ -16,9 +16,13 @@ describe('Observable.do', () => {
   });
 
   it('do func callback should run in the correct zone', () => {
-    const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
+    const constructorZone1: Zone = Zone.current.fork({
+      name: 'Constructor Zone1'
+    });
     const doZone1: Zone = Zone.current.fork({name: 'Do Zone1'});
-    const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
+    const subscriptionZone: Zone = Zone.current.fork({
+      name: 'Subscription Zone'
+    });
     const error = new Error('test');
     observable1 = constructorZone1.run(() => {
       return Rx.Observable.of(1);
@@ -33,18 +37,19 @@ describe('Observable.do', () => {
 
     subscriptionZone.run(() => {
       observable1.subscribe(
-          (result: any) => {
-            log.push('result' + result);
-            expect(Zone.current.name).toEqual(subscriptionZone.name);
-          },
-          (err: any) => {
-            fail('should not call error');
-          },
-          () => {
-            log.push('completed');
-            expect(Zone.current.name).toEqual(subscriptionZone.name);
-            expect(log).toEqual([1, 'result1', 'completed']);
-          });
+        (result: any) => {
+          log.push('result' + result);
+          expect(Zone.current.name).toEqual(subscriptionZone.name);
+        },
+        (err: any) => {
+          fail('should not call error');
+        },
+        () => {
+          log.push('completed');
+          expect(Zone.current.name).toEqual(subscriptionZone.name);
+          expect(log).toEqual([1, 'result1', 'completed']);
+        }
+      );
     });
   });
 });

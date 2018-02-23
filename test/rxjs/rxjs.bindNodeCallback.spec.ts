@@ -64,26 +64,29 @@ describe('Observable.bindNodeCallback', () => {
     expect(log).toEqual(['nextselectortest']);
   });
 
-  it('bindNodeCallback with async scheduler should run in correct zone', asyncTest((done: any) => {
-       constructorZone.run(() => {
-         func = function(arg: any, callback: (error: any, result: any) => any) {
-           expect(Zone.current.name).toEqual(constructorZone.name);
-           callback(null, arg);
-         };
-         boundFunc = Rx.Observable.bindCallback(func, null, Rx.Scheduler.asap);
-         observable = boundFunc('test');
-       });
+  it(
+    'bindNodeCallback with async scheduler should run in correct zone',
+    asyncTest((done: any) => {
+      constructorZone.run(() => {
+        func = function(arg: any, callback: (error: any, result: any) => any) {
+          expect(Zone.current.name).toEqual(constructorZone.name);
+          callback(null, arg);
+        };
+        boundFunc = Rx.Observable.bindCallback(func, null, Rx.Scheduler.asap);
+        observable = boundFunc('test');
+      });
 
-       subscriptionZone.run(() => {
-         observable.subscribe((arg: any) => {
-           expect(Zone.current.name).toEqual(subscriptionZone.name);
-           log.push('next' + arg);
-           done();
-         });
-       });
+      subscriptionZone.run(() => {
+        observable.subscribe((arg: any) => {
+          expect(Zone.current.name).toEqual(subscriptionZone.name);
+          log.push('next' + arg);
+          done();
+        });
+      });
 
-       expect(log).toEqual([]);
-     }));
+      expect(log).toEqual([]);
+    })
+  );
 
   it('bindNodeCallback call with error should run in correct zone', () => {
     constructorZone.run(() => {
@@ -97,13 +100,14 @@ describe('Observable.bindNodeCallback', () => {
 
     subscriptionZone.run(() => {
       observable.subscribe(
-          (arg: any) => {
-            expect(Zone.current.name).toEqual(subscriptionZone.name);
-            log.push('next' + arg);
-          },
-          (error: any) => {
-            log.push('error' + error);
-          });
+        (arg: any) => {
+          expect(Zone.current.name).toEqual(subscriptionZone.name);
+          log.push('next' + arg);
+        },
+        (error: any) => {
+          log.push('error' + error);
+        }
+      );
     });
 
     expect(log).toEqual(['nexttest,']);

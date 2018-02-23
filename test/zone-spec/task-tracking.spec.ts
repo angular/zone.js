@@ -62,14 +62,15 @@ describe('TaskTrackingZone', function() {
         expect(taskTrackingZoneSpec.macroTasks.length).toBe(1);
         expect(taskTrackingZoneSpec.macroTasks[0].source).toBe('XMLHttpRequest.send');
         if (supportPatchXHROnProperty()) {
-          expect(taskTrackingZoneSpec.eventTasks[0].source)
-              .toMatch(/\.addEventListener:readystatechange/);
+          expect(taskTrackingZoneSpec.eventTasks[0].source).toMatch(
+            /\.addEventListener:readystatechange/
+          );
         }
       });
     });
   });
 
-  it('should capture task creation stacktrace', (done) => {
+  it('should capture task creation stacktrace', done => {
     taskTrackingZone.run(() => {
       setTimeout(() => {
         done();

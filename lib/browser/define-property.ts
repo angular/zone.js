@@ -12,16 +12,16 @@ import {zoneSymbol} from '../common/utils';
  * things like redefining `createdCallback` on an element.
  */
 
-const _defineProperty = (Object as any)[zoneSymbol('defineProperty')] = Object.defineProperty;
-const _getOwnPropertyDescriptor = (Object as any)[zoneSymbol('getOwnPropertyDescriptor')] =
-    Object.getOwnPropertyDescriptor;
+const _defineProperty = ((Object as any)[zoneSymbol('defineProperty')] = Object.defineProperty);
+const _getOwnPropertyDescriptor = ((Object as any)[zoneSymbol('getOwnPropertyDescriptor')] =
+  Object.getOwnPropertyDescriptor);
 const _create = Object.create;
 const unconfigurablesKey = zoneSymbol('unconfigurables');
 
 export function propertyPatch() {
   Object.defineProperty = function(obj, prop, desc) {
     if (isUnconfigurable(obj, prop)) {
-      throw new TypeError('Cannot assign to read only property \'' + prop + '\' of ' + obj);
+      throw new TypeError("Cannot assign to read only property '" + prop + "' of " + obj);
     }
     const originalConfigurableFlag = desc.configurable;
     if (prop !== 'prototype') {
@@ -103,8 +103,9 @@ function _tryDefineProperty(obj: any, prop: string, desc: any, originalConfigura
         } catch (error) {
           descJson = desc.toString();
         }
-        console.log(`Attempting to configure '${prop}' with descriptor '${descJson
-                    }' on object '${obj}' and got error, giving up: ${error}`);
+        console.log(
+          `Attempting to configure '${prop}' with descriptor '${descJson}' on object '${obj}' and got error, giving up: ${error}`
+        );
       }
     } else {
       throw error;

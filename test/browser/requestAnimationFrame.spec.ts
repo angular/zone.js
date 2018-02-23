@@ -38,7 +38,7 @@ describe('requestAnimationFrame', function() {
         });
 
         it('should bind to same zone when called recursively', function(done) {
-          Zone.current.fork({ name: 'TestZone' }).run(() => {
+          Zone.current.fork({name: 'TestZone'}).run(() => {
             let frames = 0;
             let previousTimeStamp = 0;
 

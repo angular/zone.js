@@ -116,8 +116,9 @@ declare const global: any;
       },
       toHaveBeenCalledWith: function(...params: any[]) {
         if (!eq(expected.callArgs, params)) {
-          throw new Error(`Expected ${expected} to been called with ${expected.callArgs
-                          }, called with: ${params}`);
+          throw new Error(
+            `Expected ${expected} to been called with ${expected.callArgs}, called with: ${params}`
+          );
         }
       },
       toMatch: function(actual: any) {
@@ -154,7 +155,6 @@ declare const global: any;
           if (expected > actual) {
             throw new Error(`Expected ${expected} not to be greater than ${actual}`);
           }
-
         },
         toHaveBeenCalledWith: function(params: any[]) {
           if (!eq(expected.callArgs, params)) {

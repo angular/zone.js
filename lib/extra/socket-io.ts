@@ -18,7 +18,7 @@ Zone.__load_patch('socketio', (global: any, Zone: ZoneType, api: _ZonePrivate) =
     });
     // also patch io.Socket.prototype.on/off/removeListener/removeAllListeners
     io.Socket.prototype.on = io.Socket.prototype.addEventListener;
-    io.Socket.prototype.off = io.Socket.prototype.removeListener =
-        io.Socket.prototype.removeAllListeners = io.Socket.prototype.removeEventListener;
+    io.Socket.prototype.off = io.Socket.prototype.removeListener = io.Socket.prototype.removeAllListeners =
+      io.Socket.prototype.removeEventListener;
   };
 });

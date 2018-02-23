@@ -6,17 +6,22 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {globalSources, patchEventPrototype, patchEventTarget, zoneSymbolEventNames} from '../common/events';
+import {
+  globalSources,
+  patchEventPrototype,
+  patchEventTarget,
+  zoneSymbolEventNames
+} from '../common/events';
 import {FALSE_STR, isIEOrEdge, TRUE_STR, ZONE_SYMBOL_PREFIX} from '../common/utils';
 
 import {eventNames} from './property-descriptor';
 
 export function eventTargetPatch(_global: any, api: _ZonePrivate) {
   const WTF_ISSUE_555 =
-      'Anchor,Area,Audio,BR,Base,BaseFont,Body,Button,Canvas,Content,DList,Directory,Div,Embed,FieldSet,Font,Form,Frame,FrameSet,HR,Head,Heading,Html,IFrame,Image,Input,Keygen,LI,Label,Legend,Link,Map,Marquee,Media,Menu,Meta,Meter,Mod,OList,Object,OptGroup,Option,Output,Paragraph,Pre,Progress,Quote,Script,Select,Source,Span,Style,TableCaption,TableCell,TableCol,Table,TableRow,TableSection,TextArea,Title,Track,UList,Unknown,Video';
-  const NO_EVENT_TARGET =
-      'ApplicationCache,EventSource,FileReader,InputMethodContext,MediaController,MessagePort,Node,Performance,SVGElementInstance,SharedWorker,TextTrack,TextTrackCue,TextTrackList,WebKitNamedFlow,Window,Worker,WorkerGlobalScope,XMLHttpRequest,XMLHttpRequestEventTarget,XMLHttpRequestUpload,IDBRequest,IDBOpenDBRequest,IDBDatabase,IDBTransaction,IDBCursor,DBIndex,WebSocket'
-          .split(',');
+    'Anchor,Area,Audio,BR,Base,BaseFont,Body,Button,Canvas,Content,DList,Directory,Div,Embed,FieldSet,Font,Form,Frame,FrameSet,HR,Head,Heading,Html,IFrame,Image,Input,Keygen,LI,Label,Legend,Link,Map,Marquee,Media,Menu,Meta,Meter,Mod,OList,Object,OptGroup,Option,Output,Paragraph,Pre,Progress,Quote,Script,Select,Source,Span,Style,TableCaption,TableCell,TableCol,Table,TableRow,TableSection,TextArea,Title,Track,UList,Unknown,Video';
+  const NO_EVENT_TARGET = 'ApplicationCache,EventSource,FileReader,InputMethodContext,MediaController,MessagePort,Node,Performance,SVGElementInstance,SharedWorker,TextTrack,TextTrackCue,TextTrackList,WebKitNamedFlow,Window,Worker,WorkerGlobalScope,XMLHttpRequest,XMLHttpRequestEventTarget,XMLHttpRequestUpload,IDBRequest,IDBOpenDBRequest,IDBDatabase,IDBTransaction,IDBCursor,DBIndex,WebSocket'.split(
+    ','
+  );
   const EVENT_TARGET = 'EventTarget';
 
   let apis = [];
@@ -25,7 +30,7 @@ export function eventTargetPatch(_global: any, api: _ZonePrivate) {
 
   if (isWtf) {
     // Workaround for: https://github.com/google/tracing-framework/issues/555
-    apis = WTF_ISSUE_555_ARRAY.map((v) => 'HTML' + v + 'Element').concat(NO_EVENT_TARGET);
+    apis = WTF_ISSUE_555_ARRAY.map(v => 'HTML' + v + 'Element').concat(NO_EVENT_TARGET);
   } else if (_global[EVENT_TARGET]) {
     apis.push(EVENT_TARGET);
   } else {
@@ -57,7 +62,7 @@ export function eventTargetPatch(_global: any, api: _ZonePrivate) {
   //  predefine all task.source string
   for (let i = 0; i < WTF_ISSUE_555.length; i++) {
     const target: any = WTF_ISSUE_555_ARRAY[i];
-    const targets: any = globalSources[target] = {};
+    const targets: any = (globalSources[target] = {});
     for (let j = 0; j < eventNames.length; j++) {
       const eventName = eventNames[j];
       targets[eventName] = target + ADD_EVENT_LISTENER_SOURCE + eventName;
@@ -65,12 +70,16 @@ export function eventTargetPatch(_global: any, api: _ZonePrivate) {
   }
 
   const checkIEAndCrossContext = function(
-      nativeDelegate: any, delegate: any, target: any, args: any) {
+    nativeDelegate: any,
+    delegate: any,
+    target: any,
+    args: any
+  ) {
     if (!isDisableIECheck && ieOrEdge) {
       if (isEnableCrossContextCheck) {
         try {
           const testString = delegate.toString();
-          if ((testString === FUNCTION_WRAPPER || testString == BROWSER_TOOLS)) {
+          if (testString === FUNCTION_WRAPPER || testString == BROWSER_TOOLS) {
             nativeDelegate.apply(target, args);
             return false;
           }
@@ -80,7 +89,7 @@ export function eventTargetPatch(_global: any, api: _ZonePrivate) {
         }
       } else {
         const testString = delegate.toString();
-        if ((testString === FUNCTION_WRAPPER || testString == BROWSER_TOOLS)) {
+        if (testString === FUNCTION_WRAPPER || testString == BROWSER_TOOLS) {
           nativeDelegate.apply(target, args);
           return false;
         }

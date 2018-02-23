@@ -12,7 +12,18 @@
 
 import {findEventTasks} from '../common/events';
 import {patchTimer} from '../common/timers';
-import {bindArguments, patchClass, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, scheduleMacroTaskWithCurrentZone, ZONE_SYMBOL_ADD_EVENT_LISTENER, ZONE_SYMBOL_REMOVE_EVENT_LISTENER, zoneSymbol} from '../common/utils';
+import {
+  bindArguments,
+  patchClass,
+  patchMacroTask,
+  patchMethod,
+  patchOnProperties,
+  patchPrototype,
+  scheduleMacroTaskWithCurrentZone,
+  ZONE_SYMBOL_ADD_EVENT_LISTENER,
+  ZONE_SYMBOL_REMOVE_EVENT_LISTENER,
+  zoneSymbol
+} from '../common/utils';
 
 import {propertyPatch} from './define-property';
 import {eventTargetPatch, patchEvent} from './event-target';
@@ -79,10 +90,18 @@ Zone.__load_patch('on_property', (global: any, Zone: ZoneType, api: _ZonePrivate
 
 Zone.__load_patch('canvas', (global: any) => {
   const HTMLCanvasElement = global['HTMLCanvasElement'];
-  if (typeof HTMLCanvasElement !== 'undefined' && HTMLCanvasElement.prototype &&
-      HTMLCanvasElement.prototype.toBlob) {
+  if (
+    typeof HTMLCanvasElement !== 'undefined' &&
+    HTMLCanvasElement.prototype &&
+    HTMLCanvasElement.prototype.toBlob
+  ) {
     patchMacroTask(HTMLCanvasElement.prototype, 'toBlob', (self: any, args: any[]) => {
-      return {name: 'HTMLCanvasElement.toBlob', target: self, cbIdx: 0, args: args};
+      return {
+        name: 'HTMLCanvasElement.toBlob',
+        target: self,
+        cbIdx: 0,
+        args: args
+      };
     });
   }
 });
@@ -139,7 +158,7 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
       if (listener) {
         oriRemoveListener.call(target, READY_STATE_CHANGE, listener);
       }
-      const newListener = target[XHR_LISTENER] = () => {
+      const newListener = (target[XHR_LISTENER] = () => {
         if (target.readyState === target.DONE) {
           // sometimes on some browsers XMLHttpRequest will fire onreadystatechange with
           // readyState=4 multiple times, so we need to check task state here
@@ -147,7 +166,7 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
             task.invoke();
           }
         }
-      };
+      });
       oriAddListener.call(target, READY_STATE_CHANGE, newListener);
 
       const storedTask: Task = target[XHR_TASK];
@@ -169,16 +188,23 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
       return abortNative.apply(data.target, data.args);
     }
 
-    const openNative: Function =
-        patchMethod(XMLHttpRequestPrototype, 'open', () => function(self: any, args: any[]) {
+    const openNative: Function = patchMethod(
+      XMLHttpRequestPrototype,
+      'open',
+      () =>
+        function(self: any, args: any[]) {
           self[XHR_SYNC] = args[2] == false;
           self[XHR_URL] = args[1];
           return openNative.apply(self, args);
-        });
+        }
+    );
 
     const XMLHTTPREQUEST_SOURCE = 'XMLHttpRequest.send';
-    const sendNative: Function =
-        patchMethod(XMLHttpRequestPrototype, 'send', () => function(self: any, args: any[]) {
+    const sendNative: Function = patchMethod(
+      XMLHttpRequestPrototype,
+      'send',
+      () =>
+        function(self: any, args: any[]) {
           if (self[XHR_SYNC]) {
             // if the XHR is sync there is no task to schedule, just execute the code.
             return sendNative.apply(self, args);
@@ -192,26 +218,37 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
               aborted: false
             };
             return scheduleMacroTaskWithCurrentZone(
-                XMLHTTPREQUEST_SOURCE, placeholderCallback, options, scheduleTask, clearTask);
+              XMLHTTPREQUEST_SOURCE,
+              placeholderCallback,
+              options,
+              scheduleTask,
+              clearTask
+            );
           }
-        });
-
-    const abortNative = patchMethod(XMLHttpRequestPrototype, 'abort', () => function(self: any) {
-      const task: Task = findPendingTask(self);
-      if (task && typeof task.type == 'string') {
-        // If the XHR has already completed, do nothing.
-        // If the XHR has already been aborted, do nothing.
-        // Fix #569, call abort multiple times before done will cause
-        // macroTask task count be negative number
-        if (task.cancelFn == null || (task.data && (<XHROptions>task.data).aborted)) {
-          return;
         }
-        task.zone.cancelTask(task);
-      }
-      // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no
-      // task
-      // to cancel. Do nothing.
-    });
+    );
+
+    const abortNative = patchMethod(
+      XMLHttpRequestPrototype,
+      'abort',
+      () =>
+        function(self: any) {
+          const task: Task = findPendingTask(self);
+          if (task && typeof task.type == 'string') {
+            // If the XHR has already completed, do nothing.
+            // If the XHR has already been aborted, do nothing.
+            // Fix #569, call abort multiple times before done will cause
+            // macroTask task count be negative number
+            if (task.cancelFn == null || (task.data && (<XHROptions>task.data).aborted)) {
+              return;
+            }
+            task.zone.cancelTask(task);
+          }
+          // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no
+          // task
+          // to cancel. Do nothing.
+        }
+    );
   }
 });
 
@@ -232,7 +269,10 @@ Zone.__load_patch('PromiseRejectionEvent', (global: any, Zone: ZoneType) => {
         // trigger the event listener
         const PromiseRejectionEvent = global['PromiseRejectionEvent'];
         if (PromiseRejectionEvent) {
-          const evt = new PromiseRejectionEvent(evtName, {promise: e.promise, reason: e.rejection});
+          const evt = new PromiseRejectionEvent(evtName, {
+            promise: e.promise,
+            reason: e.rejection
+          });
           eventTask.invoke(evt);
         }
       });
@@ -240,10 +280,12 @@ Zone.__load_patch('PromiseRejectionEvent', (global: any, Zone: ZoneType) => {
   }
 
   if (global['PromiseRejectionEvent']) {
-    (Zone as any)[zoneSymbol('unhandledPromiseRejectionHandler')] =
-        findPromiseRejectionHandler('unhandledrejection');
+    (Zone as any)[zoneSymbol('unhandledPromiseRejectionHandler')] = findPromiseRejectionHandler(
+      'unhandledrejection'
+    );
 
-    (Zone as any)[zoneSymbol('rejectionHandledHandler')] =
-        findPromiseRejectionHandler('rejectionhandled');
+    (Zone as any)[zoneSymbol('rejectionHandledHandler')] = findPromiseRejectionHandler(
+      'rejectionhandled'
+    );
   }
 });

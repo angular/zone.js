@@ -13,33 +13,44 @@ describe('setTimeout', function() {
   it('should intercept setTimeout', function(done) {
     let cancelId: any;
     const testZone = Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({name: 'TestZone'});
-    testZone.run(() => {
-      const timeoutFn = function() {
-        expect(Zone.current.name).toEqual(('TestZone'));
-        global[zoneSymbol('setTimeout')](function() {
-          expect(wtfMock.log[0]).toEqual('# Zone:fork("<root>::ProxyZone::WTF", "TestZone")');
-          expect(wtfMock.log[1])
-              .toEqual('> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")');
-          expect(wtfMock.log[2])
-              .toContain('# Zone:schedule:macroTask:setTimeout("<root>::ProxyZone::WTF::TestZone"');
-          expect(wtfMock.log[3]).toEqual('< Zone:invoke:unit-test');
-          expect(wtfMock.log[4])
-              .toEqual('> Zone:invokeTask:setTimeout("<root>::ProxyZone::WTF::TestZone")');
-          expect(wtfMock.log[5]).toEqual('< Zone:invokeTask:setTimeout');
-          done();
-        });
-      };
-      expect(Zone.current.name).toEqual(('TestZone'));
-      cancelId = setTimeout(timeoutFn, 3);
-      if (isNode) {
-        expect(typeof cancelId.ref).toEqual(('function'));
-        expect(typeof cancelId.unref).toEqual(('function'));
-      }
-      expect(wtfMock.log[0]).toEqual('# Zone:fork("<root>::ProxyZone::WTF", "TestZone")');
-      expect(wtfMock.log[1]).toEqual('> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")');
-      expect(wtfMock.log[2])
-          .toContain('# Zone:schedule:macroTask:setTimeout("<root>::ProxyZone::WTF::TestZone"');
-    }, null, null, 'unit-test');
+    testZone.run(
+      () => {
+        const timeoutFn = function() {
+          expect(Zone.current.name).toEqual('TestZone');
+          global[zoneSymbol('setTimeout')](function() {
+            expect(wtfMock.log[0]).toEqual('# Zone:fork("<root>::ProxyZone::WTF", "TestZone")');
+            expect(wtfMock.log[1]).toEqual(
+              '> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")'
+            );
+            expect(wtfMock.log[2]).toContain(
+              '# Zone:schedule:macroTask:setTimeout("<root>::ProxyZone::WTF::TestZone"'
+            );
+            expect(wtfMock.log[3]).toEqual('< Zone:invoke:unit-test');
+            expect(wtfMock.log[4]).toEqual(
+              '> Zone:invokeTask:setTimeout("<root>::ProxyZone::WTF::TestZone")'
+            );
+            expect(wtfMock.log[5]).toEqual('< Zone:invokeTask:setTimeout');
+            done();
+          });
+        };
+        expect(Zone.current.name).toEqual('TestZone');
+        cancelId = setTimeout(timeoutFn, 3);
+        if (isNode) {
+          expect(typeof cancelId.ref).toEqual('function');
+          expect(typeof cancelId.unref).toEqual('function');
+        }
+        expect(wtfMock.log[0]).toEqual('# Zone:fork("<root>::ProxyZone::WTF", "TestZone")');
+        expect(wtfMock.log[1]).toEqual(
+          '> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")'
+        );
+        expect(wtfMock.log[2]).toContain(
+          '# Zone:schedule:macroTask:setTimeout("<root>::ProxyZone::WTF::TestZone"'
+        );
+      },
+      null,
+      null,
+      'unit-test'
+    );
   });
 
   it('should allow canceling of fns registered with setTimeout', function(done) {
@@ -78,16 +89,15 @@ describe('setTimeout', function() {
     }, 0);
   });
 
-  it('should allow cancelation of fns registered with setTimeout during invocation',
-     function(done) {
-       const testZone = Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({name: 'TestZone'});
-       testZone.run(() => {
-         const cancelId = setTimeout(function() {
-           clearTimeout(cancelId);
-           done();
-         }, 0);
-       });
-     });
+  it('should allow cancelation of fns registered with setTimeout during invocation', function(done) {
+    const testZone = Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({name: 'TestZone'});
+    testZone.run(() => {
+      const cancelId = setTimeout(function() {
+        clearTimeout(cancelId);
+        done();
+      }, 0);
+    });
+  });
 
   it('should return the original timeout Id', function() {
     // Node returns complex object from setTimeout, ignore this test.
@@ -119,5 +129,4 @@ describe('setTimeout', function() {
     clearTimeout(null);
     clearTimeout(<any>{});
   });
-
 });

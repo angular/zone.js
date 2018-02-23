@@ -27,17 +27,18 @@ describe('Observable.count', () => {
 
     subscriptionZone.run(() => {
       observable1.subscribe(
-          (result: any) => {
-            log.push(result);
-            expect(Zone.current.name).toEqual(subscriptionZone.name);
-          },
-          () => {
-            fail('should not call error');
-          },
-          () => {
-            log.push('completed');
-            expect(Zone.current.name).toEqual(subscriptionZone.name);
-          });
+        (result: any) => {
+          log.push(result);
+          expect(Zone.current.name).toEqual(subscriptionZone.name);
+        },
+        () => {
+          fail('should not call error');
+        },
+        () => {
+          log.push('completed');
+          expect(Zone.current.name).toEqual(subscriptionZone.name);
+        }
+      );
     });
     expect(log).toEqual([1, 'completed']);
   });

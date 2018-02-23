@@ -21,31 +21,30 @@ describe('element', function() {
   });
 
   // https://github.com/angular/zone.js/issues/190
-  it('should work when addEventListener / removeEventListener are called in the global context',
-     function() {
-       const clickEvent = document.createEvent('Event');
-       let callCount = 0;
+  it('should work when addEventListener / removeEventListener are called in the global context', function() {
+    const clickEvent = document.createEvent('Event');
+    let callCount = 0;
 
-       clickEvent.initEvent('click', true, true);
+    clickEvent.initEvent('click', true, true);
 
-       const listener = function(event: Event) {
-         callCount++;
-         expect(event).toBe(clickEvent);
-       };
+    const listener = function(event: Event) {
+      callCount++;
+      expect(event).toBe(clickEvent);
+    };
 
-       // `this` would be null inside the method when `addEventListener` is called from strict mode
-       // it would be `window`:
-       // - when called from non strict-mode,
-       // - when `window.addEventListener` is called explicitly.
-       addEventListener('click', listener);
+    // `this` would be null inside the method when `addEventListener` is called from strict mode
+    // it would be `window`:
+    // - when called from non strict-mode,
+    // - when `window.addEventListener` is called explicitly.
+    addEventListener('click', listener);
 
-       button.dispatchEvent(clickEvent);
-       expect(callCount).toEqual(1);
+    button.dispatchEvent(clickEvent);
+    expect(callCount).toEqual(1);
 
-       removeEventListener('click', listener);
-       button.dispatchEvent(clickEvent);
-       expect(callCount).toEqual(1);
-     });
+    removeEventListener('click', listener);
+    button.dispatchEvent(clickEvent);
+    expect(callCount).toEqual(1);
+  });
 
   it('should work with addEventListener when called with a function listener', function() {
     const clickEvent = document.createEvent('Event');
@@ -61,7 +60,7 @@ describe('element', function() {
   it('should not call microtasks early when an event is invoked', function(done) {
     let log = '';
     button.addEventListener('click', () => {
-      Zone.current.scheduleMicroTask('test', () => log += 'microtask;');
+      Zone.current.scheduleMicroTask('test', () => (log += 'microtask;'));
       log += 'click;';
     });
     button.click();
@@ -94,7 +93,7 @@ describe('element', function() {
     (window as any)[(Zone as any).__symbol__('setTimeout')](() => {
       let log = '';
       button.addEventListener('click', () => {
-        Zone.current.scheduleMicroTask('test', () => log += 'microtask;');
+        Zone.current.scheduleMicroTask('test', () => (log += 'microtask;'));
         log += 'click;';
       });
       button.click();
@@ -104,25 +103,24 @@ describe('element', function() {
     });
   });
 
-  it('should work with addEventListener when called with an EventListener-implementing listener',
-     function() {
-       const eventListener = {
-         x: 5,
-         handleEvent: function(event: Event) {
-           // Test that context is preserved
-           expect(this.x).toBe(5);
+  it('should work with addEventListener when called with an EventListener-implementing listener', function() {
+    const eventListener = {
+      x: 5,
+      handleEvent: function(event: Event) {
+        // Test that context is preserved
+        expect(this.x).toBe(5);
 
-           expect(event).toBe(clickEvent);
-         }
-       };
+        expect(event).toBe(clickEvent);
+      }
+    };
 
-       const clickEvent = document.createEvent('Event');
-       clickEvent.initEvent('click', true, true);
+    const clickEvent = document.createEvent('Event');
+    clickEvent.initEvent('click', true, true);
 
-       button.addEventListener('click', eventListener);
+    button.addEventListener('click', eventListener);
 
-       button.dispatchEvent(clickEvent);
-     });
+    button.dispatchEvent(clickEvent);
+  });
 
   it('should respect removeEventListener when called with a function listener', function() {
     let log = '';
@@ -157,8 +155,10 @@ describe('element', function() {
 
   it('should have no effect while calling addEventListener without listener', function() {
     const onAddEventListenerSpy = jasmine.createSpy('addEventListener');
-    const eventListenerZone =
-        Zone.current.fork({name: 'eventListenerZone', onScheduleTask: onAddEventListenerSpy});
+    const eventListenerZone = Zone.current.fork({
+      name: 'eventListenerZone',
+      onScheduleTask: onAddEventListenerSpy
+    });
     expect(function() {
       eventListenerZone.run(function() {
         button.addEventListener('click', null);
@@ -170,8 +170,10 @@ describe('element', function() {
 
   it('should have no effect while calling removeEventListener without listener', function() {
     const onAddEventListenerSpy = jasmine.createSpy('removeEventListener');
-    const eventListenerZone =
-        Zone.current.fork({name: 'eventListenerZone', onScheduleTask: onAddEventListenerSpy});
+    const eventListenerZone = Zone.current.fork({
+      name: 'eventListenerZone',
+      onScheduleTask: onAddEventListenerSpy
+    });
     expect(function() {
       eventListenerZone.run(function() {
         button.removeEventListener('click', null);
@@ -180,7 +182,6 @@ describe('element', function() {
     }).not.toThrowError();
     expect(onAddEventListenerSpy).not.toHaveBeenCalledWith();
   });
-
 
   it('should only add a listener once for a given set of arguments', function() {
     const log: string[] = [];
@@ -251,16 +252,17 @@ describe('element', function() {
   });
 
   describe('onclick', function() {
-
     function supportsOnClick() {
       const div = document.createElement('div');
       const clickPropDesc = Object.getOwnPropertyDescriptor(div, 'onclick');
       return !(
-          EventTarget && div instanceof EventTarget && clickPropDesc &&
-          clickPropDesc.value === null);
+        EventTarget &&
+        div instanceof EventTarget &&
+        clickPropDesc &&
+        clickPropDesc.value === null
+      );
     }
     (<any>supportsOnClick).message = 'Supports Element#onclick patching';
-
 
     ifEnvSupports(supportsOnClick, function() {
       it('should spawn new child zones', function() {
@@ -274,7 +276,6 @@ describe('element', function() {
       });
     });
 
-
     it('should only allow one onclick handler', function() {
       let log = '';
       button.onclick = function() {
@@ -287,7 +288,6 @@ describe('element', function() {
       button.click();
       expect(log).toEqual('b');
     });
-
 
     it('should handler removing onclick', function() {
       let log = '';
@@ -336,5 +336,4 @@ describe('element', function() {
       expect(checkbox.checked).toBe(true);
     });
   });
-
 });

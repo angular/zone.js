@@ -62,39 +62,45 @@ describe('Microtasks', function() {
     });
   });
 
-  it('should execute Promise wrapCallback in the zone where they are scheduled even if resolved ' +
-         'in different zone.',
-     function(done) {
-       let resolve: Function;
-       const promise = new Promise(function(rs) {
-         resolve = rs;
-       });
+  it(
+    'should execute Promise wrapCallback in the zone where they are scheduled even if resolved ' +
+      'in different zone.',
+    function(done) {
+      let resolve: Function;
+      const promise = new Promise(function(rs) {
+        resolve = rs;
+      });
 
-       const testZone = Zone.current.fork({name: 'test'});
+      const testZone = Zone.current.fork({name: 'test'});
 
-       testZone.run(function() {
-         promise.then(function() {
-           expect(Zone.current).toBe(testZone);
-           done();
-         });
-       });
+      testZone.run(function() {
+        promise.then(function() {
+          expect(Zone.current).toBe(testZone);
+          done();
+        });
+      });
 
-       Zone.current.fork({name: 'test'}).run(function() {
-         resolve(null);
-       });
-     });
+      Zone.current.fork({name: 'test'}).run(function() {
+        resolve(null);
+      });
+    }
+  );
 
   describe('Promise', function() {
     it('should go through scheduleTask', function(done) {
       let called = false;
       const testZone = Zone.current.fork({
         name: 'test',
-        onScheduleTask: function(delegate: ZoneDelegate, current: Zone, target: Zone, task: Task):
-            Task {
-              called = true;
-              delegate.scheduleTask(target, task);
-              return task;
-            }
+        onScheduleTask: function(
+          delegate: ZoneDelegate,
+          current: Zone,
+          target: Zone,
+          task: Task
+        ): Task {
+          called = true;
+          delegate.scheduleTask(target, task);
+          return task;
+        }
       });
 
       testZone.run(function() {

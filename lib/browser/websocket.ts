@@ -7,7 +7,14 @@
  */
 
 import {patchEventTarget} from '../common/events';
-import {ADD_EVENT_LISTENER_STR, ArraySlice, ObjectCreate, ObjectGetOwnPropertyDescriptor, patchOnProperties, REMOVE_EVENT_LISTENER_STR} from '../common/utils';
+import {
+  ADD_EVENT_LISTENER_STR,
+  ArraySlice,
+  ObjectCreate,
+  ObjectGetOwnPropertyDescriptor,
+  patchOnProperties,
+  REMOVE_EVENT_LISTENER_STR
+} from '../common/utils';
 
 // we have to patch the instance since the proto is non-configurable
 export function apply(api: _ZonePrivate, _global: any) {
@@ -32,7 +39,8 @@ export function apply(api: _ZonePrivate, _global: any) {
       // patchOnProperties method
       proxySocketProto = socket;
       [ADD_EVENT_LISTENER_STR, REMOVE_EVENT_LISTENER_STR, 'send', 'close'].forEach(function(
-          propName) {
+        propName
+      ) {
         proxySocket[propName] = function() {
           const args = ArraySlice.call(arguments);
           if (propName === ADD_EVENT_LISTENER_STR || propName === REMOVE_EVENT_LISTENER_STR) {

@@ -29,16 +29,21 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
 
   const empty = {
     closed: true,
-    next(value: any): void{},
-    error(err: any): void{throw err;},
-    complete(): void{}
+    next(value: any): void {},
+    error(err: any): void {
+      throw err;
+    },
+    complete(): void {}
   };
 
   function toSubscriber<T>(
-      nextOrObserver?: any, error?: (error: any) => void, complete?: () => void): Subscriber<T> {
+    nextOrObserver?: any,
+    error?: (error: any) => void,
+    complete?: () => void
+  ): Subscriber<T> {
     if (nextOrObserver) {
       if (nextOrObserver instanceof Subscriber) {
-        return (<Subscriber<T>>nextOrObserver);
+        return <Subscriber<T>>nextOrObserver;
       }
 
       if (nextOrObserver[rxSubscriber]) {
@@ -57,8 +62,8 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
     const ObservablePrototype: any = Observable.prototype;
     const symbolSubscribe = symbol('subscribe');
     const _symbolSubscribe = symbol('_subscribe');
-    const _subscribe = ObservablePrototype[_symbolSubscribe] = ObservablePrototype._subscribe;
-    const subscribe = ObservablePrototype[symbolSubscribe] = ObservablePrototype.subscribe;
+    const _subscribe = (ObservablePrototype[_symbolSubscribe] = ObservablePrototype._subscribe);
+    const subscribe = (ObservablePrototype[symbolSubscribe] = ObservablePrototype.subscribe);
 
     ObjectDefineProperties(Observable.prototype, {
       _zone: {value: null, writable: true, configurable: true},
@@ -109,8 +114,8 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
 
   const patchSubscription = function() {
     const unsubscribeSymbol = symbol('unsubscribe');
-    const unsubscribe = (Subscription.prototype as any)[unsubscribeSymbol] =
-        Subscription.prototype.unsubscribe;
+    const unsubscribe = ((Subscription.prototype as any)[unsubscribeSymbol] =
+      Subscription.prototype.unsubscribe);
     ObjectDefineProperties(Subscription.prototype, {
       _zone: {value: null, writable: true, configurable: true},
       _zoneUnsubscribe: {value: null, writable: true, configurable: true},
@@ -212,7 +217,7 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
     if (obj[symbolFactory]) {
       return;
     }
-    const factoryCreator: any = obj[symbolFactory] = obj[factoryName];
+    const factoryCreator: any = (obj[symbolFactory] = obj[factoryName]);
     if (!factoryCreator) {
       return;
     }
@@ -231,7 +236,7 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
     if (obj[symbolFactory]) {
       return;
     }
-    const factory: any = obj[symbolFactory] = obj[factoryName];
+    const factory: any = (obj[symbolFactory] = obj[factoryName]);
     if (!factory) {
       return;
     }
@@ -247,7 +252,7 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
     if (obj[symbolFactory]) {
       return;
     }
-    const factory: any = obj[symbolFactory] = obj[factoryName];
+    const factory: any = (obj[symbolFactory] = obj[factoryName]);
     if (!factory) {
       return;
     }
@@ -282,7 +287,7 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
     if (obj[symbolFactory]) {
       return;
     }
-    const factory: any = obj[symbolFactory] = obj[factoryName];
+    const factory: any = (obj[symbolFactory] = obj[factoryName]);
     if (!factory) {
       return;
     }
@@ -325,7 +330,7 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
       return;
     }
 
-    const schedule = asap[scheduleSymbol] = asap.schedule;
+    const schedule = (asap[scheduleSymbol] = asap.schedule);
     asap.schedule = function() {
       const args = Array.prototype.slice.call(arguments);
       const work = args.length > 0 ? args[0] : undefined;

@@ -25,17 +25,18 @@ describe('Observable.forkjoin', () => {
 
     subscriptionZone.run(() => {
       observable1.subscribe(
-          (result: any) => {
-            expect(Zone.current.name).toEqual(subscriptionZone.name);
-            log.push(result);
-          },
-          () => {
-            fail('should not call error');
-          },
-          () => {
-            expect(Zone.current.name).toEqual(subscriptionZone.name);
-            log.push('completed');
-          });
+        (result: any) => {
+          expect(Zone.current.name).toEqual(subscriptionZone.name);
+          log.push(result);
+        },
+        () => {
+          fail('should not call error');
+        },
+        () => {
+          expect(Zone.current.name).toEqual(subscriptionZone.name);
+          log.push('completed');
+        }
+      );
     });
 
     expect(log).toEqual([[2, 5], 'completed']);
@@ -43,26 +44,29 @@ describe('Observable.forkjoin', () => {
 
   it('forkjoin func callback with selector should run in the correct zone', () => {
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.forkJoin(
-          Rx.Observable.range(1, 2), Rx.Observable.from([4, 5]), function(x, y) {
-            expect(Zone.current.name).toEqual(constructorZone1.name);
-            return x + y;
-          });
+      return Rx.Observable.forkJoin(Rx.Observable.range(1, 2), Rx.Observable.from([4, 5]), function(
+        x,
+        y
+      ) {
+        expect(Zone.current.name).toEqual(constructorZone1.name);
+        return x + y;
+      });
     });
 
     subscriptionZone.run(() => {
       observable1.subscribe(
-          (result: any) => {
-            expect(Zone.current.name).toEqual(subscriptionZone.name);
-            log.push(result);
-          },
-          () => {
-            fail('should not call error');
-          },
-          () => {
-            expect(Zone.current.name).toEqual(subscriptionZone.name);
-            log.push('completed');
-          });
+        (result: any) => {
+          expect(Zone.current.name).toEqual(subscriptionZone.name);
+          log.push(result);
+        },
+        () => {
+          fail('should not call error');
+        },
+        () => {
+          expect(Zone.current.name).toEqual(subscriptionZone.name);
+          log.push('completed');
+        }
+      );
     });
 
     expect(log).toEqual([7, 'completed']);

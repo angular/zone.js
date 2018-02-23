@@ -13,10 +13,7 @@
     function __() {
       this.constructor = d;
     }
-    d.prototype =
-      b === null
-        ? Object.create(b)
-        : ((__.prototype = b.prototype), new (__ as any)());
+    d.prototype = b === null ? Object.create(b) : ((__.prototype = b.prototype), new (__ as any)());
   };
   // Patch jasmine's describe/it/beforeEach/afterEach functions so test code always runs
   // in a testZone (ProxyZone). (See: angular/zone.js#91 & angular/angular#10503)
@@ -26,10 +23,8 @@
     throw new Error(`'jasmine' has already been patched with 'Zone'.`);
   (jasmine as any)['__zone_patch__'] = true;
 
-  const SyncTestZoneSpec: { new (name: string): ZoneSpec } = (Zone as any)[
-    'SyncTestZoneSpec'
-  ];
-  const ProxyZoneSpec: { new (): ZoneSpec } = (Zone as any)['ProxyZoneSpec'];
+  const SyncTestZoneSpec: {new (name: string): ZoneSpec} = (Zone as any)['SyncTestZoneSpec'];
+  const ProxyZoneSpec: {new (): ZoneSpec} = (Zone as any)['ProxyZoneSpec'];
   if (!SyncTestZoneSpec) throw new Error('Missing: SyncTestZoneSpec');
   if (!ProxyZoneSpec) throw new Error('Missing: ProxyZoneSpec');
 
@@ -45,15 +40,8 @@
   const jasmineEnv: any = jasmine.getEnv();
   ['describe', 'xdescribe', 'fdescribe'].forEach(methodName => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
-    jasmineEnv[methodName] = function(
-      description: string,
-      specDefinitions: Function
-    ) {
-      return originalJasmineFn.call(
-        this,
-        description,
-        wrapDescribeInZone(specDefinitions)
-      );
+    jasmineEnv[methodName] = function(description: string, specDefinitions: Function) {
+      return originalJasmineFn.call(this, description, wrapDescribeInZone(specDefinitions));
     };
   });
   ['it', 'xit', 'fit'].forEach(methodName => {
@@ -71,16 +59,12 @@
   ['beforeEach', 'afterEach'].forEach(methodName => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
     jasmineEnv[symbol(methodName)] = originalJasmineFn;
-    jasmineEnv[methodName] = function(
-      specDefinitions: Function,
-      timeout: number
-    ) {
+    jasmineEnv[methodName] = function(specDefinitions: Function, timeout: number) {
       arguments[0] = wrapTestInZone(specDefinitions);
       return originalJasmineFn.apply(this, arguments);
     };
   });
-  const originalClockFn: Function = ((jasmine as any)[symbol('clock')] =
-    jasmine['clock']);
+  const originalClockFn: Function = ((jasmine as any)[symbol('clock')] = jasmine['clock']);
   (jasmine as any)['clock'] = function() {
     const clock = originalClockFn.apply(this, arguments);
     const originalTick = (clock[symbol('tick')] = clock.tick);
@@ -98,16 +82,13 @@
         const dateTime = arguments[0];
         return fakeAsyncZoneSpec.setCurrentRealTime.apply(
           fakeAsyncZoneSpec,
-          dateTime && typeof dateTime.getTime === 'function'
-            ? [dateTime.getTime()]
-            : arguments
+          dateTime && typeof dateTime.getTime === 'function' ? [dateTime.getTime()] : arguments
         );
       }
       return originalMockDate.apply(this, arguments);
     };
     ['install', 'uninstall'].forEach(methodName => {
-      const originalClockFn: Function = (clock[symbol(methodName)] =
-        clock[methodName]);
+      const originalClockFn: Function = (clock[symbol(methodName)] = clock[methodName]);
       clock[methodName] = function() {
         const FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
         if (FakeAsyncTestZoneSpec) {
@@ -130,11 +111,7 @@
     };
   }
 
-  function runInTestZone(
-    testBody: Function,
-    queueRunner: any,
-    done?: Function
-  ) {
+  function runInTestZone(testBody: Function, queueRunner: any, done?: Function) {
     const isClockInstalled = !!(jasmine as any)[symbol('clockInstalled')];
     const testProxyZoneSpec = queueRunner.testProxyZoneSpec;
     const testProxyZone = queueRunner.testProxyZone;
@@ -184,13 +161,13 @@
     execute(): void;
   }
   interface QueueRunnerAttrs {
-    queueableFns: { fn: Function }[];
+    queueableFns: {fn: Function}[];
     onComplete: () => void;
     clearStack: (fn: any) => void;
     onException: (error: any) => void;
     catchException: () => boolean;
     userContext: any;
-    timeout: { setTimeout: Function; clearTimeout: Function };
+    timeout: {setTimeout: Function; clearTimeout: Function};
     fail: () => void;
   }
 
@@ -199,10 +176,7 @@
   };
   (jasmine as any).QueueRunner = (function(_super) {
     __extends(ZoneQueueRunner, _super);
-    function ZoneQueueRunner(attrs: {
-      onComplete: Function;
-      userContext?: any;
-    }) {
+    function ZoneQueueRunner(attrs: {onComplete: Function; userContext?: any}) {
       attrs.onComplete = (fn => () => {
         // All functions are done, clear the test zone.
         this.testProxyZone = null;
@@ -235,8 +209,7 @@
         zone = zone.parent;
       }
 
-      if (!isChildOfAmbientZone)
-        throw new Error('Unexpected Zone: ' + Zone.current.name);
+      if (!isChildOfAmbientZone) throw new Error('Unexpected Zone: ' + Zone.current.name);
 
       // This is the zone which will be used for running individual tests.
       // It will be a proxy zone, so that the tests function can retroactively install

@@ -7,9 +7,9 @@
  */
 
 declare const __karma__: {
-  loaded: Function,
-  start: Function,
-  error: Function,
+  loaded: Function;
+  start: Function;
+  error: Function;
 };
 
 __karma__.loaded = function() {};
@@ -17,9 +17,9 @@ __karma__.loaded = function() {};
 System.config({
   defaultJSExtensions: true,
   map: {
-    'rxjs': 'base/node_modules/rxjs',
+    rxjs: 'base/node_modules/rxjs',
     'es6-promise': 'base/node_modules/es6-promise/dist/es6-promise'
-  },
+  }
 });
 
 let browserPatchedPromise: any = null;
@@ -32,18 +32,19 @@ if ((window as any)[(Zone as any).__symbol__('setTimeout')]) {
 }
 
 browserPatchedPromise.then(() => {
-  let testFrameworkPatch = typeof(window as any).Mocha !== 'undefined' ?
-      '/base/build/test/test-env-setup-mocha' :
-      '/base/build/test/test-env-setup-jasmine';
+  let testFrameworkPatch =
+    typeof (window as any).Mocha !== 'undefined'
+      ? '/base/build/test/test-env-setup-mocha'
+      : '/base/build/test/test-env-setup-jasmine';
   // Setup test environment
   System.import(testFrameworkPatch).then(() => {
-    System.import('/base/build/test/browser_entry_point')
-        .then(
-            () => {
-              __karma__.start();
-            },
-            (error) => {
-              console.error(error.stack || error);
-            });
+    System.import('/base/build/test/browser_entry_point').then(
+      () => {
+        __karma__.start();
+      },
+      error => {
+        console.error(error.stack || error);
+      }
+    );
   });
 });

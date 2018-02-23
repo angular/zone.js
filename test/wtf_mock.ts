@@ -88,6 +88,6 @@
 
   (<any>global).wtfMock = wtfMock;
   (<any>global).wtf = wtfMock;
-})(typeof window === 'object' && window || typeof self === 'object' && self || global);
+})((typeof window === 'object' && window) || (typeof self === 'object' && self) || global);
 
 declare const wtfMock: any;

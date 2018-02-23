@@ -424,12 +424,12 @@ gulp.task('lint', () => {
   const tslint = require('gulp-tslint');
   // Built-in rules are at
   // https://github.com/palantir/tslint#supported-rules
-  const tslintConfig = require('./tslint.json');
+  // const tslintConfig = require('./tslint.json');
 
   return gulp.src(['lib/**/*.ts', 'test/**/*.ts'])
       .pipe(tslint({
         tslint: require('tslint').default,
-        configuration: tslintConfig,
+        configuration: './tslint.json',
         formatter: 'prose',
       }))
       .pipe(tslint.report({emitError: true}));

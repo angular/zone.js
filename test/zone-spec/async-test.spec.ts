@@ -25,12 +25,16 @@ describe('AsyncTestZoneSpec', function() {
     log = [];
   });
 
-  it('should call finish after zone is run', (done) => {
+  it('should call finish after zone is run', done => {
     let finished = false;
-    const testZoneSpec = new AsyncTestZoneSpec(() => {
-      expect(finished).toBe(true);
-      done();
-    }, failCallback, 'name');
+    const testZoneSpec = new AsyncTestZoneSpec(
+      () => {
+        expect(finished).toBe(true);
+        done();
+      },
+      failCallback,
+      'name'
+    );
 
     const atz = Zone.current.fork(testZoneSpec);
 
@@ -39,18 +43,19 @@ describe('AsyncTestZoneSpec', function() {
     });
   });
 
-  it('should call finish after a setTimeout is done', (done) => {
+  it('should call finish after a setTimeout is done', done => {
     let finished = false;
 
     const testZoneSpec = new AsyncTestZoneSpec(
-        () => {
-          expect(finished).toBe(true);
-          done();
-        },
-        () => {
-          done.fail('async zone called failCallback unexpectedly');
-        },
-        'name');
+      () => {
+        expect(finished).toBe(true);
+        done();
+      },
+      () => {
+        done.fail('async zone called failCallback unexpectedly');
+      },
+      'name'
+    );
 
     const atz = Zone.current.fork(testZoneSpec);
 
@@ -61,18 +66,19 @@ describe('AsyncTestZoneSpec', function() {
     });
   });
 
-  it('should call finish after microtasks are done', (done) => {
+  it('should call finish after microtasks are done', done => {
     let finished = false;
 
     const testZoneSpec = new AsyncTestZoneSpec(
-        () => {
-          expect(finished).toBe(true);
-          done();
-        },
-        () => {
-          done.fail('async zone called failCallback unexpectedly');
-        },
-        'name');
+      () => {
+        expect(finished).toBe(true);
+        done();
+      },
+      () => {
+        done.fail('async zone called failCallback unexpectedly');
+      },
+      'name'
+    );
 
     const atz = Zone.current.fork(testZoneSpec);
 
@@ -83,23 +89,24 @@ describe('AsyncTestZoneSpec', function() {
     });
   });
 
-  it('should call finish after both micro and macrotasks are done', (done) => {
+  it('should call finish after both micro and macrotasks are done', done => {
     let finished = false;
 
     const testZoneSpec = new AsyncTestZoneSpec(
-        () => {
-          expect(finished).toBe(true);
-          done();
-        },
-        () => {
-          done.fail('async zone called failCallback unexpectedly');
-        },
-        'name');
+      () => {
+        expect(finished).toBe(true);
+        done();
+      },
+      () => {
+        done.fail('async zone called failCallback unexpectedly');
+      },
+      'name'
+    );
 
     const atz = Zone.current.fork(testZoneSpec);
 
     atz.run(function() {
-      new Promise((resolve) => {
+      new Promise(resolve => {
         setTimeout(() => {
           resolve();
         }, 10);
@@ -109,18 +116,19 @@ describe('AsyncTestZoneSpec', function() {
     });
   });
 
-  it('should call finish after both macro and microtasks are done', (done) => {
+  it('should call finish after both macro and microtasks are done', done => {
     let finished = false;
 
     const testZoneSpec = new AsyncTestZoneSpec(
-        () => {
-          expect(finished).toBe(true);
-          done();
-        },
-        () => {
-          done.fail('async zone called failCallback unexpectedly');
-        },
-        'name');
+      () => {
+        expect(finished).toBe(true);
+        done();
+      },
+      () => {
+        done.fail('async zone called failCallback unexpectedly');
+      },
+      'name'
+    );
 
     const atz = Zone.current.fork(testZoneSpec);
 
@@ -133,141 +141,152 @@ describe('AsyncTestZoneSpec', function() {
     });
   });
 
-  describe('event tasks', ifEnvSupports('document', () => {
-             let button: HTMLButtonElement;
-             beforeEach(function() {
-               button = document.createElement('button');
-               document.body.appendChild(button);
-             });
-             afterEach(function() {
-               document.body.removeChild(button);
-             });
+  describe(
+    'event tasks',
+    ifEnvSupports('document', () => {
+      let button: HTMLButtonElement;
+      beforeEach(function() {
+        button = document.createElement('button');
+        document.body.appendChild(button);
+      });
+      afterEach(function() {
+        document.body.removeChild(button);
+      });
 
-             it('should call finish after an event task is done', (done) => {
-               let finished = false;
+      it('should call finish after an event task is done', done => {
+        let finished = false;
 
-               const testZoneSpec = new AsyncTestZoneSpec(
-                   () => {
-                     expect(finished).toBe(true);
-                     done();
-                   },
-                   () => {
-                     done.fail('async zone called failCallback unexpectedly');
-                   },
-                   'name');
+        const testZoneSpec = new AsyncTestZoneSpec(
+          () => {
+            expect(finished).toBe(true);
+            done();
+          },
+          () => {
+            done.fail('async zone called failCallback unexpectedly');
+          },
+          'name'
+        );
 
-               const atz = Zone.current.fork(testZoneSpec);
+        const atz = Zone.current.fork(testZoneSpec);
 
-               atz.run(function() {
-                 button.addEventListener('click', () => {
-                   finished = true;
-                 });
+        atz.run(function() {
+          button.addEventListener('click', () => {
+            finished = true;
+          });
 
-                 const clickEvent = document.createEvent('Event');
-                 clickEvent.initEvent('click', true, true);
+          const clickEvent = document.createEvent('Event');
+          clickEvent.initEvent('click', true, true);
 
-                 button.dispatchEvent(clickEvent);
-               });
-             });
+          button.dispatchEvent(clickEvent);
+        });
+      });
 
-             it('should call finish after an event task is done asynchronously', (done) => {
-               let finished = false;
+      it('should call finish after an event task is done asynchronously', done => {
+        let finished = false;
 
-               const testZoneSpec = new AsyncTestZoneSpec(
-                   () => {
-                     expect(finished).toBe(true);
-                     done();
-                   },
-                   () => {
-                     done.fail('async zone called failCallback unexpectedly');
-                   },
-                   'name');
+        const testZoneSpec = new AsyncTestZoneSpec(
+          () => {
+            expect(finished).toBe(true);
+            done();
+          },
+          () => {
+            done.fail('async zone called failCallback unexpectedly');
+          },
+          'name'
+        );
 
-               const atz = Zone.current.fork(testZoneSpec);
+        const atz = Zone.current.fork(testZoneSpec);
 
-               atz.run(function() {
-                 button.addEventListener('click', () => {
-                   setTimeout(() => {
-                     finished = true;
-                   }, 10);
-                 });
+        atz.run(function() {
+          button.addEventListener('click', () => {
+            setTimeout(() => {
+              finished = true;
+            }, 10);
+          });
 
-                 const clickEvent = document.createEvent('Event');
-                 clickEvent.initEvent('click', true, true);
+          const clickEvent = document.createEvent('Event');
+          clickEvent.initEvent('click', true, true);
 
-                 button.dispatchEvent(clickEvent);
-               });
-             });
-           }));
+          button.dispatchEvent(clickEvent);
+        });
+      });
+    })
+  );
 
-  describe('XHRs', ifEnvSupports('XMLHttpRequest', () => {
-             it('should wait for XHRs to complete', function(done) {
-               let req: XMLHttpRequest;
-               let finished = false;
+  describe(
+    'XHRs',
+    ifEnvSupports('XMLHttpRequest', () => {
+      it('should wait for XHRs to complete', function(done) {
+        let req: XMLHttpRequest;
+        let finished = false;
 
-               const testZoneSpec = new AsyncTestZoneSpec(
-                   () => {
-                     expect(finished).toBe(true);
-                     done();
-                   },
-                   (err: Error) => {
-                     done.fail('async zone called failCallback unexpectedly');
-                   },
-                   'name');
+        const testZoneSpec = new AsyncTestZoneSpec(
+          () => {
+            expect(finished).toBe(true);
+            done();
+          },
+          (err: Error) => {
+            done.fail('async zone called failCallback unexpectedly');
+          },
+          'name'
+        );
 
-               const atz = Zone.current.fork(testZoneSpec);
+        const atz = Zone.current.fork(testZoneSpec);
 
-               atz.run(function() {
-                 req = new XMLHttpRequest();
+        atz.run(function() {
+          req = new XMLHttpRequest();
 
-                 req.onreadystatechange = () => {
-                   if (req.readyState === XMLHttpRequest.DONE) {
-                     finished = true;
-                   }
-                 };
+          req.onreadystatechange = () => {
+            if (req.readyState === XMLHttpRequest.DONE) {
+              finished = true;
+            }
+          };
 
-                 req.open('get', '/', true);
-                 req.send();
-               });
-             });
+          req.open('get', '/', true);
+          req.send();
+        });
+      });
 
-             it('should fail if an xhr fails', function(done) {
-               let req: XMLHttpRequest;
+      it('should fail if an xhr fails', function(done) {
+        let req: XMLHttpRequest;
 
-               const testZoneSpec = new AsyncTestZoneSpec(
-                   () => {
-                     done.fail('expected failCallback to be called');
-                   },
-                   (err: Error) => {
-                     expect(err.message).toEqual('bad url failure');
-                     done();
-                   },
-                   'name');
+        const testZoneSpec = new AsyncTestZoneSpec(
+          () => {
+            done.fail('expected failCallback to be called');
+          },
+          (err: Error) => {
+            expect(err.message).toEqual('bad url failure');
+            done();
+          },
+          'name'
+        );
 
-               const atz = Zone.current.fork(testZoneSpec);
+        const atz = Zone.current.fork(testZoneSpec);
 
-               atz.run(function() {
-                 req = new XMLHttpRequest();
-                 req.onload = () => {
-                   if (req.status != 200) {
-                     throw new Error('bad url failure');
-                   }
-                 };
-                 req.open('get', '/bad-url', true);
-                 req.send();
-               });
-             });
-           }));
+        atz.run(function() {
+          req = new XMLHttpRequest();
+          req.onload = () => {
+            if (req.status != 200) {
+              throw new Error('bad url failure');
+            }
+          };
+          req.open('get', '/bad-url', true);
+          req.send();
+        });
+      });
+    })
+  );
 
-  it('should not fail if setInterval is used and canceled', (done) => {
+  it('should not fail if setInterval is used and canceled', done => {
     const testZoneSpec = new AsyncTestZoneSpec(
-        () => {
-          done();
-        },
-        (err: Error) => {
-          done.fail('async zone called failCallback unexpectedly');
-        },
-        'name');
+      () => {
+        done();
+      },
+      (err: Error) => {
+        done.fail('async zone called failCallback unexpectedly');
+      },
+      'name'
+    );
 
     const atz = Zone.current.fork(testZoneSpec);
 
@@ -278,16 +297,17 @@ describe('AsyncTestZoneSpec', function() {
     });
   });
 
-  it('should fail if an error is thrown asynchronously', (done) => {
+  it('should fail if an error is thrown asynchronously', done => {
     const testZoneSpec = new AsyncTestZoneSpec(
-        () => {
-          done.fail('expected failCallback to be called');
-        },
-        (err: Error) => {
-          expect(err.message).toEqual('my error');
-          done();
-        },
-        'name');
+      () => {
+        done.fail('expected failCallback to be called');
+      },
+      (err: Error) => {
+        expect(err.message).toEqual('my error');
+        done();
+      },
+      'name'
+    );
 
     const atz = Zone.current.fork(testZoneSpec);
 
@@ -298,38 +318,39 @@ describe('AsyncTestZoneSpec', function() {
     });
   });
 
-  it('should fail if a promise rejection is unhandled', (done) => {
+  it('should fail if a promise rejection is unhandled', done => {
     const testZoneSpec = new AsyncTestZoneSpec(
-        () => {
-          done.fail('expected failCallback to be called');
-        },
-        (err: Error) => {
-          expect(err.message).toEqual('Uncaught (in promise): my reason');
-          done();
-        },
-        'name');
+      () => {
+        done.fail('expected failCallback to be called');
+      },
+      (err: Error) => {
+        expect(err.message).toEqual('Uncaught (in promise): my reason');
+        done();
+      },
+      'name'
+    );
 
     const atz = Zone.current.fork(testZoneSpec);
 
     atz.run(function() {
       Promise.reject('my reason');
     });
-
   });
 
   describe('non zone aware async task in promise should be detected', () => {
-    it('should be able to detect non zone aware async task in promise', (done) => {
+    it('should be able to detect non zone aware async task in promise', done => {
       let finished = false;
 
       const testZoneSpec = new AsyncTestZoneSpec(
-          () => {
-            expect(finished).toBe(true);
-            done();
-          },
-          () => {
-            done.fail('async zone called failCallback unexpectedly');
-          },
-          'name');
+        () => {
+          expect(finished).toBe(true);
+          done();
+        },
+        () => {
+          done.fail('async zone called failCallback unexpectedly');
+        },
+        'name'
+      );
 
       const atz = Zone.current.fork(testZoneSpec);
 
