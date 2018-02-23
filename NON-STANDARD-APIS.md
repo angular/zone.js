@@ -1,14 +1,14 @@
 # Zone.js's support for non standard apis
 
 Zone.js patched most standard APIs such as DOM event listeners, XMLHttpRequest in Browser, EventEmitter and fs API in Node.js so they can be in zone.
-  
-But there are still a lot of non standard APIs that are not patched by default, such as MediaQuery, Notification, 
- WebAudio and so on. We are adding support to those APIs, and our progress is updated here.
- 
-## Currently supported non standard Web APIs 
+
+But there are still a lot of non standard APIs that are not patched by default, such as MediaQuery, Notification,
+WebAudio and so on. We are adding support to those APIs, and our progress is updated here.
+
+## Currently supported non standard Web APIs
 
 * MediaQuery
-* Notification 
+* Notification
 
 ## Currently supported polyfills
 
@@ -28,7 +28,7 @@ Usage:
 
 * bluebird promise
 
-Browser Usage: 
+Browser Usage:
 
 ```
   <script src="zone.js"></script>
@@ -75,11 +75,11 @@ remove the comment of the following line
 
 ## Others
 
-* Cordova 
+* Cordova
 
 patch `cordova.exec` API
 
-`cordova.exec(success, error, service, action, args);` 
+`cordova.exec(success, error, service, action, args);`
 
 `success` and `error` will be patched with `Zone.wrap`.
 
@@ -96,12 +96,12 @@ to load the patch, you should load in the following order.
 By default, those APIs' support will not be loaded in zone.js or zone-node.js,
 so if you want to load those API's support, you should load those files by yourself.
 
-For example, if you want to add MediaQuery patch, you should do like this: 
+For example, if you want to add MediaQuery patch, you should do like this:
 
 ```
-  <script src="path/zone.js"></script> 
-  <script src="path/webapis-media-query.js"></script> 
-```  
+  <script src="path/zone.js"></script>
+  <script src="path/webapis-media-query.js"></script>
+```
 
 * rxjs
 
@@ -127,28 +127,28 @@ constructorZone.run(() => {
 
 subscriptionZone.run(() => {
   observable.subscribe(() => {
-    console.log('current zone when subscription next', Zone.current.name); // will output subscription. 
+    console.log('current zone when subscription next', Zone.current.name); // will output subscription.
   }, () => {
-    console.log('current zone when subscription error', Zone.current.name); // will output subscription. 
+    console.log('current zone when subscription error', Zone.current.name); // will output subscription.
   }, () => {
-    console.log('current zone when subscription complete', Zone.current.name); // will output subscription. 
+    console.log('current zone when subscription complete', Zone.current.name); // will output subscription.
   });
 });
 
 operatorZone.run(() => {
   observable.map(() => {
-    console.log('current zone when map operator', Zone.current.name); // will output operator. 
+    console.log('current zone when map operator', Zone.current.name); // will output operator.
   });
 });
 ```
 
 Currently basically everything the `rxjs` API includes
 
-- Observable
-- Subscription
-- Subscriber
-- Operators 
-- Scheduler 
+* Observable
+* Subscription
+* Subscriber
+* Operators
+* Scheduler
 
 is patched, so each asynchronous call will run in the correct zone.
 
@@ -194,7 +194,7 @@ user need to patch `io` themselves just like following code.
     </script>
 ```
 
-please reference the sample repo [zone-socketio](https://github.com/JiaLiPassion/zone-socketio) about 
+please reference the sample repo [zone-socketio](https://github.com/JiaLiPassion/zone-socketio) about
 detail usage.
 
 * jsonp
@@ -208,14 +208,15 @@ there is a sampel repo [zone-jsonp](https://github.com/JiaLiPassion/test-zone-js
 sample usage is:
 
 ```javascript
-import 'zone.js/dist/zone-patch-jsonp';
-Zone['__zone_symbol__jsonp']({
+import "zone.js/dist/zone-patch-jsonp";
+Zone["__zone_symbol__jsonp"]({
   jsonp: getJSONP,
-  sendFuncName: 'send',
-  successFuncName: 'jsonpSuccessCallback', 
-  failedFuncName: 'jsonpFailedCallback'
+  sendFuncName: "send",
+  successFuncName: "jsonpSuccessCallback",
+  failedFuncName: "jsonpFailedCallback"
 });
 ```
+
 * ResizeObserver
 
 Currently only `Chrome 64` native support this feature.
@@ -227,3 +228,28 @@ import 'zone.js/dist/zone-patch-resize-observer';
 ```
 
 there is a sample repo [zone-resize-observer](https://github.com/JiaLiPassion/zone-resize-observer) here
+
+* customize root zone
+
+In some application, especially for performance test or async tracing, user may want a predefined root zone.
+For example,i when you include `google map` into `index.html` by adding `script tag` such as
+`<script src="https://maps.googleapis.com/maps/api/js?key=KEY"></script>`, `google map js` will add some event
+listeners or do some async operations during loading the js file, all those operations happens in `root zone`,
+if we want to intercept those async operations, we need to modify root zone.
+
+You can do like this:
+
+```javascript
+<script src="folder/zone.js" />
+<script>
+  var customizeRootZone = Zone.current.fork({
+    name: 'myRoot'
+  });
+  window.__zone_symbol__customizeRootZone = customizeRootZone;
+</script>
+<script src="folder/zone-patch-customize-root-zone.js" />
+```
+
+** Remind, this is not a public api or formal feature of zone.js, it will not be included in future tc39 proposal,
+and it is not by design, it is just a helper method to let you customize rootZone for some test and suppose to change
+in the future, please use it on your own risk**
