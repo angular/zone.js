@@ -108,7 +108,7 @@ class ProxyZoneSpec implements ZoneSpec {
   onInvokeTask(
       parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task,
       applyThis: any, applyArgs: any): any {
-    if (this._delegateSpec && this._delegateSpec.onFork) {
+    if (this._delegateSpec && this._delegateSpec.onInvokeTask) {
       return this._delegateSpec.onInvokeTask(
           parentZoneDelegate, currentZone, targetZone, task, applyThis, applyArgs);
     } else {
