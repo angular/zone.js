@@ -547,4 +547,52 @@ describe('AsyncTestZoneSpec', function() {
       }));
     });
   });
+
+  describe('should be able to handle async for both beforeEach and it', () => {
+    let log: string[];
+    const AsyncTestZoneSpec = (Zone as any)['AsyncTestZoneSpec'];
+  
+    function asyncTest(testBody: () => void, finishCallback: Function, failCallback: Function) {
+      return function() {
+        const proxyZoneSpec = Zone.current.get('ProxyZoneSpec');
+        if (!proxyZoneSpec) {
+          throw new Error('ProxyZone not found!');
+        }
+        const lastDelegate = proxyZoneSpec.getDelegate();
+        // construct AsyncTestZoneSpec in parent zone
+        // to prevent infinite loop
+        Zone.current.parent.run(() => {
+          proxyZoneSpec.setDelegate(new AsyncTestZoneSpec(() => {
+            proxyZoneSpec.setDelegate(lastDelegate);
+            finishCallback();
+          }, () => {
+            proxyZoneSpec.setDelegate(lastDelegate);
+            failCallback();
+          }), 'async');
+        });
+        testBody.apply(this, arguments);
+      };
+    }
+
+    beforeEach(asyncTest(() => {
+      log = [];
+      setTimeout(() => {
+        log.push('beforeEach');
+      }, 50);
+    }, () => {
+      expect(log).toEqual(['beforeEach']);
+    }, () => {
+      fail('should not fail');
+    }));
+
+    it('should support asyncTest with an async beforeEach', asyncTest(() => {
+      setTimeout(() => {
+        log.push('timeout');
+      }, 50); 
+    }, () => {
+      expect(log).toEqual(['beforeEach', 'timeout']);
+    }, () => {
+      fail('should not fail');
+    }));
+  });
 });

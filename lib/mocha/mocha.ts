@@ -158,9 +158,6 @@
 
     Mocha.Runner.prototype.run = function(fn: Function) {
       this.on('test', (e: any) => {
-        if (Zone.current !== rootZone) {
-          throw new Error('Unexpected zone: ' + Zone.current.name);
-        }
         testZone = rootZone.fork(new ProxyZoneSpec());
       });
 
