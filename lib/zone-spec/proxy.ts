@@ -14,6 +14,9 @@ class ProxyZoneSpec implements ZoneSpec {
   properties: {[k: string]: any} = {'ProxyZoneSpec': this};
   propertyKeys: string[] = null;
 
+  lastTaskState: HasTaskState = null;
+  isNeedToTriggerHasTask = false;
+
   static get(): ProxyZoneSpec {
     return Zone.current.get('ProxyZoneSpec');
   }
@@ -35,12 +38,19 @@ class ProxyZoneSpec implements ZoneSpec {
 
 
   setDelegate(delegateSpec: ZoneSpec) {
+    const isNewDelegate = this._delegateSpec !== delegateSpec;
     this._delegateSpec = delegateSpec;
     this.propertyKeys && this.propertyKeys.forEach((key) => delete this.properties[key]);
     this.propertyKeys = null;
     if (delegateSpec && delegateSpec.properties) {
       this.propertyKeys = Object.keys(delegateSpec.properties);
       this.propertyKeys.forEach((k) => this.properties[k] = delegateSpec.properties[k]);
+    }
+    // if set a new delegateSpec, shoulde check whether need to
+    // trigger hasTask or not
+    if (isNewDelegate && this.lastTaskState &&
+        (this.lastTaskState.macroTask || this.lastTaskState.microTask)) {
+      this.isNeedToTriggerHasTask = true;
     }
   }
 
@@ -51,6 +61,15 @@ class ProxyZoneSpec implements ZoneSpec {
 
   resetDelegate() {
     this.setDelegate(this.defaultSpecDelegate);
+  }
+
+  tryTriggerHasTask(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone) {
+    if (this.isNeedToTriggerHasTask && this.lastTaskState) {
+      // last delegateSpec has microTask or macroTask
+      // should call onHasTask in current delegateSpec
+      this.isNeedToTriggerHasTask = false;
+      this.onHasTask(parentZoneDelegate, currentZone, targetZone, this.lastTaskState); 
+    }
   }
 
 
@@ -79,6 +98,7 @@ class ProxyZoneSpec implements ZoneSpec {
   onInvoke(
       parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function,
       applyThis: any, applyArgs: any[], source: string): any {
+    this.tryTriggerHasTask(parentZoneDelegate, currentZone, targetZone);
     if (this._delegateSpec && this._delegateSpec.onInvoke) {
       return this._delegateSpec.onInvoke(
           parentZoneDelegate, currentZone, targetZone, delegate, applyThis, applyArgs, source);
@@ -108,7 +128,8 @@ class ProxyZoneSpec implements ZoneSpec {
   onInvokeTask(
       parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task,
       applyThis: any, applyArgs: any): any {
-    if (this._delegateSpec && this._delegateSpec.onFork) {
+    this.tryTriggerHasTask(parentZoneDelegate, currentZone, targetZone);
+    if (this._delegateSpec && this._delegateSpec.onInvokeTask) {
       return this._delegateSpec.onInvokeTask(
           parentZoneDelegate, currentZone, targetZone, task, applyThis, applyArgs);
     } else {
@@ -118,6 +139,7 @@ class ProxyZoneSpec implements ZoneSpec {
 
   onCancelTask(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
       any {
+    this.tryTriggerHasTask(parentZoneDelegate, currentZone, targetZone);
     if (this._delegateSpec && this._delegateSpec.onCancelTask) {
       return this._delegateSpec.onCancelTask(parentZoneDelegate, currentZone, targetZone, task);
     } else {
@@ -126,6 +148,7 @@ class ProxyZoneSpec implements ZoneSpec {
   }
 
   onHasTask(delegate: ZoneDelegate, current: Zone, target: Zone, hasTaskState: HasTaskState): void {
+    this.lastTaskState = hasTaskState;
     if (this._delegateSpec && this._delegateSpec.onHasTask) {
       this._delegateSpec.onHasTask(delegate, current, target, hasTaskState);
     } else {
