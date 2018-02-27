@@ -144,4 +144,67 @@ describe('ProxySpec', () => {
       proxyZone.cancelTask(task);
     });
   });
+
+  describe('delegateSpec change', () => {
+    let log: string[] = [];
+    beforeEach(() => {
+      log = [];
+    });
+    it('should trigger hasTask when invoke', (done: Function) => {
+      const zoneSpec1 = {
+        name: 'zone1',
+        onHasTask: (delegate: ZoneDelegate, curr: Zone, target: Zone, hasTask: HasTaskState) => {
+          log.push(`zoneSpec1 hasTask: ${hasTask.microTask},${hasTask.macroTask}`);
+          return delegate.hasTask(target, hasTask);
+        }
+      };
+      const zoneSpec2 = {
+        name: 'zone2',
+        onHasTask: (delegate: ZoneDelegate, curr: Zone, target: Zone, hasTask: HasTaskState) => {
+          log.push(`zoneSpec2 hasTask: ${hasTask.microTask},${hasTask.macroTask}`);
+          return delegate.hasTask(target, hasTask);
+        }
+      };
+      proxyZoneSpec.setDelegate(zoneSpec1);
+      proxyZone.run(() => {
+        setTimeout(() => {
+          log.push('timeout in zoneSpec1');
+        }, 50);
+      });
+      proxyZoneSpec.setDelegate(zoneSpec2);
+      proxyZone.run(() => {
+        Promise.resolve(1).then(() => {
+          log.push('then in zoneSpec2');
+        });
+      });
+      proxyZoneSpec.setDelegate(null);
+      proxyZone.run(() => {
+        setTimeout(() => {
+          log.push('timeout in null spec');
+        }, 50);
+      });
+      proxyZoneSpec.setDelegate(zoneSpec2);
+      proxyZone.run(() => {
+        Promise.resolve(1).then(() => {
+          log.push('then in zoneSpec2');
+        });
+      });
+
+      setTimeout(() => {
+        expect(log).toEqual([
+          'zoneSpec1 hasTask: false,true',
+          'zoneSpec2 hasTask: false,true',
+          'zoneSpec2 hasTask: true,true',
+          'zoneSpec2 hasTask: true,true',
+          'then in zoneSpec2',
+          'then in zoneSpec2',
+          'zoneSpec2 hasTask: false,true',
+          'timeout in zoneSpec1',
+          'timeout in null spec',
+          'zoneSpec2 hasTask: false,false'
+        ]);
+        done();
+      }, 300);
+    });
+  });
 });
