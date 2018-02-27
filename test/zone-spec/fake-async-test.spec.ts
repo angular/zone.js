@@ -206,6 +206,18 @@ describe('FakeAsyncTestZoneSpec', () => {
       });
     });
 
+    it('should pass arguments to times', () => {
+      fakeAsyncTestZone.run(() => {
+        let value = 'genuine value';
+        let id = setTimeout((arg1, arg2) => {
+          value = arg1 + arg2;
+        }, 0, 'expected', ' value');
+    
+        testZoneSpec.tick();
+        expect(value).toEqual('expected value');
+      });
+    });
+
     it('should run periodic timers', () => {
       fakeAsyncTestZone.run(() => {
         let cycles = 0;
@@ -224,6 +236,18 @@ describe('FakeAsyncTestZoneSpec', () => {
 
         testZoneSpec.tick(30);
         expect(cycles).toEqual(6);
+      });
+    });
+
+    it('should pass arguments to periodic timers', () => {
+      fakeAsyncTestZone.run(() => {
+        let value = 'genuine value';
+        let id = setInterval((arg1, arg2) => {
+          value = arg1 + arg2;
+        }, 10, 'expected', ' value');
+    
+        testZoneSpec.tick(10);
+        expect(value).toEqual('expected value');
       });
     });
 

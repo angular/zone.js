@@ -294,7 +294,7 @@
       this._scheduler.removeScheduledFunctionWithId(id);
     }
 
-    private _setInterval(fn: Function, interval: number, ...args: any[]): number {
+    private _setInterval(fn: Function, interval: number, args: any[]): number {
       let id = this._scheduler.nextId;
       let completers = {onSuccess: null as Function, onError: this._dequeuePeriodicTimer(id)};
       let cb = this._fnAndFlush(fn, completers);
@@ -410,11 +410,11 @@
           switch (task.source) {
             case 'setTimeout':
               task.data['handleId'] =
-                  this._setTimeout(task.invoke, task.data['delay'], (task.data as any)['args']);
+                  this._setTimeout(task.invoke, task.data['delay'], Array.prototype.slice.call((task.data as any)['args'], 2));
               break;
             case 'setInterval':
               task.data['handleId'] =
-                  this._setInterval(task.invoke, task.data['delay'], (task.data as any)['args']);
+                  this._setInterval(task.invoke, task.data['delay'], Array.prototype.slice.call((task.data as any)['args'], 2));
               break;
             case 'XMLHttpRequest.send':
               throw new Error(
