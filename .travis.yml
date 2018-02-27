@@ -1,7 +1,9 @@
 language: node_js
 sudo: false
+dist: trusty
+cache: yarn
 node_js:
-  - '6.3.1'
+  - 6
 env:
   global:
     - BROWSER_PROVIDER_READY_FILE=/tmp/sauce-connect-ready
@@ -16,21 +18,23 @@ env:
     # (password is in Valentine)
     - TSD_GITHUB_TOKEN=ef474500309daea53d5991b3079159a29520a40b
 
+before_install:
+  - npm install -g yarn
 before_script:
   - mkdir -p $LOGS_DIR
   - ./scripts/sauce/sauce_connect_setup.sh
   - ./scripts/sauce/sauce_connect_block.sh
 
 script:
-  - npm run tslint
+  - yarn tslint
   - node_modules/.bin/gulp lint
   - node_modules/.bin/gulp format:enforce
   - node_modules/.bin/gulp build
   - node_modules/.bin/gulp filesize
   - scripts/closure/closure_compiler.sh
   - node_modules/.bin/gulp promisetest
-  - npm run promisefinallytest
-  - npm run test:phantomjs-single
+  - yarn promisefinallytest
+  - yarn test:phantomjs-single
   - node_modules/.bin/karma start karma-dist-sauce-jasmine.conf.js --single-run
   - node_modules/.bin/karma start karma-build-sauce-mocha.conf.js --single-run
   - node_modules/.bin/karma start karma-dist-sauce-selenium3-jasmine.conf.js --single-run
@@ -38,7 +42,7 @@ script:
   - node_modules/.bin/gulp test/node
   - node simple-server.js 2>&1> server.log&
   - node ./test/webdriver/test.sauce.js
-  - npm install jasmine@3.0.0 jasmine-core@3.0.0
-  - npm run test:phantomjs-single
+  - yarn add jasmine@3.0.0 jasmine-core@3.0.0
+  - yarn test:phantomjs-single
   - node_modules/.bin/karma start karma-dist-sauce-jasmine3.conf.js --single-run
   - node_modules/.bin/gulp test/node

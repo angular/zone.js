@@ -10,31 +10,31 @@ To run tests
 
 Make sure your environment is set up with:
 
-`npm install`
+`yarn`
 
 In a separate process, run the WebSockets server:
 
-`npm run ws-server`
+`yarn ws-server`
 
 Run the browser tests using Karma:
 
-`npm test`
+`yarn test`
 
 Run the node.js tests:
 
-`npm run test-node`
+`yarn test-node`
 
 Run tslint:
 
-`npm run lint`
+`yarn lint`
 
 Run format with clang-format:
 
-`npm run format`
+`yarn format`
 
 Run all checks (lint/format/browser test/test-node):
 
-`npm run ci`
+`yarn ci`
 
 Before Commit
 ------------
@@ -44,12 +44,12 @@ Please make sure you pass all following checks before commit
 - gulp lint (tslint) 
 - gulp format:enforce (clang-format)
 - gulp promisetest (promise a+ test)
-- npm test (karma browser test)
+- yarn test (karma browser test)
 - gulp test-node (node test)
 
 You can run 
 
-`npm run ci`
+`yarn ci`
 
 to do all those checks for you.
 You can also add the script into your git pre-commit hook
@@ -67,9 +67,9 @@ Webdriver Test
 1. run locally
 
 ```
-npm run webdriver-start
-npm run webdriver-http
-npm run webdriver-test
+yarn webdriver-start
+yarn webdriver-http
+yarn webdriver-test
 ```
 
 2. run locally with sauce connect
@@ -80,6 +80,6 @@ export SAUCE_USERNAME=XXXX
 export SAUCE_ACCESS_KEY=XXX
 
 sc -u $SAUCE_USERNAME -k $SAUCE_ACCESS_KEY
-npm run webdriver-http
-npm run webdriver-sauce-test
+yarn webdriver-http
+yarn webdriver-sauce-test
 ```
