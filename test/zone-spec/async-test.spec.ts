@@ -546,5 +546,19 @@ describe('AsyncTestZoneSpec', function() {
         expect(logs).toEqual(['beforeEach', 'timeout']);
       }));
     });
+
+    describe('return promise', () => {
+      let value = 'init';
+      it('should only call finish once', testAsync(() => {
+        return new Promise((resolve, _) => {
+          setTimeout(() => {
+            value = 'timeout';
+            resolve();
+          }, 100);
+        });
+      }, () => {
+        expect(value).toEqual('timeout');
+      }));
+    });
   });
 });
