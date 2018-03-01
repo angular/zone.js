@@ -9,8 +9,6 @@
 class AsyncTestZoneSpec implements ZoneSpec {
   static symbolParentUnresolved = Zone.__symbol__('parentUnresolved');
 
-  _finishCallback: Function;
-  _failCallback: Function;
   _pendingMicroTasks: boolean = false;
   _pendingMacroTasks: boolean = false;
   _alreadyErrored: boolean = false;
@@ -18,9 +16,7 @@ class AsyncTestZoneSpec implements ZoneSpec {
   runZone = Zone.current;
   unresolvedChainedPromiseCount = 0;
 
-  constructor(finishCallback: Function, failCallback: Function, namePrefix: string) {
-    this._finishCallback = finishCallback;
-    this._failCallback = failCallback;
+  constructor(private finishCallback: Function, private failCallback: Function, namePrefix: string) {
     this.name = 'asyncTestZone for ' + namePrefix;
     this.properties = {
       'AsyncTestZoneSpec': this 
@@ -33,7 +29,7 @@ class AsyncTestZoneSpec implements ZoneSpec {
       this.runZone.run(() => {
         setTimeout(() => {
           if (!this._alreadyErrored && !(this._pendingMicroTasks || this._pendingMacroTasks)) {
-            this._finishCallback();
+            this.finishCallback();
           }
         }, 0);
       });
@@ -115,7 +111,7 @@ class AsyncTestZoneSpec implements ZoneSpec {
     // Let the parent try to handle the error.
     const result = parentZoneDelegate.handleError(targetZone, error);
     if (result) {
-      this._failCallback(error);
+      this.failCallback(error);
       this._alreadyErrored = true;
     }
     return false;

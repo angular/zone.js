@@ -164,6 +164,13 @@
         testZone = rootZone.fork(new ProxyZoneSpec());
       });
 
+      this.on('fail', (test:any, err: any) => {
+        const proxyZoneSpec = testZone && testZone.get('ProxyZoneSpec');
+        if (proxyZoneSpec && err) {
+          err.message += proxyZoneSpec.getAndClearPendingTasksInfo();
+        }
+      });
+
       return originalRun.call(this, fn);
     };
 
