@@ -22,13 +22,6 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
     return obj ? obj.toString() : Object.prototype.toString.call(obj);
   }
 
-  interface UncaughtPromiseError extends Error {
-    zone: AmbientZone;
-    task: Task;
-    promise: ZoneAwarePromise<any>;
-    rejection: any;
-  }
-
   const __symbol__ = api.symbol;
   const _uncaughtPromiseErrors: UncaughtPromiseError[] = [];
   const symbolPromise = __symbol__('Promise');
