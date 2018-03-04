@@ -43,6 +43,7 @@
     "test:single": "npm run tsc && concurrently \"npm run ws-server\" \"npm run karma-jasmine:autoclose\"",
     "test-dist": "concurrently \"npm run tsc:w\" \"npm run ws-server\" \"karma start karma-dist-jasmine.conf.js\"",
     "test-node": "gulp test/node",
+    "test-bluebird": "gulp test/bluebird",
     "test-mocha": "npm run tsc && concurrently \"npm run tsc:w\" \"npm run ws-server\" \"karma start karma-build-mocha.conf.js\"",
     "serve": "python -m SimpleHTTPServer 8000"
   },
@@ -61,6 +62,7 @@
     "@types/node": "^6.0.96",
     "@types/systemjs": "^0.19.30",
     "assert": "^1.4.1",
+    "bluebird": "^3.5.1",
     "clang-format": "1.0.46",
     "concurrently": "^2.2.0",
     "conventional-changelog": "^1.1.7",
