@@ -438,16 +438,17 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
 
   function patchThen(Ctor: Function) {
     const proto = Ctor.prototype;
+
+    const prop = ObjectGetOwnPropertyDescriptor(proto, 'then');
+    if (prop && (prop.writable === false || !prop.configurable)) {
+      // check Ctor.prototype.then propertyDescriptor is writable or not
+      // in meteor env, writable is false, we should ignore such case
+      return;
+    }
+
     const originalThen = proto.then;
     // Keep a reference to the original method.
     proto[symbolThen] = originalThen;
-
-    // check Ctor.prototype.then propertyDescriptor is writable or not
-    // in meteor env, writable is false, we have to make it to be true.
-    const prop = ObjectGetOwnPropertyDescriptor(Ctor.prototype, 'then');
-    if (prop && prop.writable === false && prop.configurable) {
-      ObjectDefineProperty(Ctor.prototype, 'then', {writable: true});
-    }
 
     Ctor.prototype.then = function(onResolve: any, onReject: any) {
       const wrapped = new ZoneAwarePromise((resolve, reject) => {
