@@ -63,7 +63,7 @@ Zone.__load_patch('Error', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
     // Process the stack trace and rewrite the frames.
     if ((ZoneAwareError as any)[stackRewrite] && originalStack) {
       let frames: string[] = originalStack.split('\n');
-      let zoneFrame = api.currentZoneFrame();
+      let zoneFrame: _ZoneFrame|null = api.currentZoneFrame();
       let i = 0;
       // Find the first frame
       while (!(frames[i] === zoneAwareFrame1 || frames[i] === zoneAwareFrame2) &&
@@ -295,20 +295,20 @@ Zone.__load_patch('Error', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
                       () => {
                         throw new (ZoneAwareError as any)(ZoneAwareError, NativeError);
                       },
-                      null,
+                      undefined,
                       (t: Task) => {
                         (t as any)._transitionTo = fakeTransitionTo;
                         t.invoke();
                       });
                 },
-                null,
+                undefined,
                 (t) => {
                   (t as any)._transitionTo = fakeTransitionTo;
                   t.invoke();
                 },
                 () => {});
           },
-          null,
+          undefined,
           (t) => {
             (t as any)._transitionTo = fakeTransitionTo;
             t.invoke();

@@ -41,7 +41,7 @@ describe('XMLHttpRequest', function() {
       req.send();
       const lastScheduled = wtfMock.log[wtfMock.log.length - 1];
       expect(lastScheduled).toMatch('# Zone:schedule:macroTask:XMLHttpRequest.send');
-    }, null, null, 'unit-test');
+    }, null, undefined, 'unit-test');
   });
 
   it('should not trigger Zone callback of internal onreadystatechange', function(done) {
@@ -77,14 +77,14 @@ describe('XMLHttpRequest', function() {
       req = new XMLHttpRequest();
       req.onreadystatechange = function() {
         // Make sure that the wrapCallback will only be called once
-        req.onreadystatechange = null;
+        req.onreadystatechange = null as any;
         expect(Zone.current).toBe(testZone);
         done();
       };
       req.open('get', '/', true);
     });
 
-    req.send();
+    req!.send();
   });
 
   it('should return null when access ontimeout first time without error', function() {
@@ -105,14 +105,14 @@ describe('XMLHttpRequest', function() {
                  req = new XMLHttpRequest();
                  req.onprogress = function() {
                    // Make sure that the wrapCallback will only be called once
-                   req.onprogress = null;
+                   req.onprogress = null as any;
                    expect(Zone.current).toBe(testZone);
                    done();
                  };
                  req.open('get', '/', true);
                });
 
-               req.send();
+               req!.send();
              });
 
              it('should allow canceling of an XMLHttpRequest', function(done) {
@@ -222,7 +222,7 @@ describe('XMLHttpRequest', function() {
          req.open('get', '/', true);
          req.send();
          req.onload = function() {
-           req.onload = null;
+           req.onload = null as any;
            req.open('get', '/', true);
            req.onload = function() {
              done();

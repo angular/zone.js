@@ -19,13 +19,12 @@ class MicroTaskQueueZoneSpec implements ZoneSpec {
   flush() {
     while (this.queue.length) {
       const task = this.queue.shift();
-      task.invoke();
+      task!.invoke();
     }
   }
 
-  onScheduleTask(delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: MicroTask):
-      any {
-    this.queue.push(task);
+  onScheduleTask(delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task): any {
+    this.queue.push(task as MicroTask);
   }
 }
 
@@ -34,8 +33,8 @@ function flushMicrotasks() {
 }
 
 class TestRejection {
-  prop1: string;
-  prop2: string;
+  prop1?: string;
+  prop2?: string;
 }
 
 describe(
@@ -52,7 +51,7 @@ describe(
         pZone = Zone.current.fork({
           name: 'promise-zone',
           onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                           task: MicroTask): any => {
+                           task: Task): any => {
             log.push('scheduleTask');
             parentZoneDelegate.scheduleTask(targetZone, task);
           }
@@ -185,7 +184,7 @@ describe(
 
       describe('Promise API', function() {
         it('should work with .then', function(done) {
-          let resolve: Function = null;
+          let resolve: Function|null = null;
 
           testZone.run(function() {
             new Promise(function(resolveFn) {
@@ -196,11 +195,11 @@ describe(
             });
           });
 
-          resolve();
+          resolve!();
         });
 
         it('should work with .catch', function(done) {
-          let reject: () => void = null;
+          let reject: (() => void)|null = null;
 
           testZone.run(function() {
             new Promise(function(resolveFn, rejectFn) {
@@ -212,11 +211,11 @@ describe(
           });
 
 
-          expect(reject()).toBe(undefined);
+          expect(reject!()).toBe(undefined);
         });
 
         it('should work with .finally with resolved promise', function(done) {
-          let resolve: Function = null;
+          let resolve: Function|null = null;
 
           testZone.run(function() {
             new Promise(function(resolveFn) {
@@ -228,11 +227,11 @@ describe(
             });
           });
 
-          resolve('value');
+          resolve!('value');
         });
 
         it('should work with .finally with rejected promise', function(done) {
-          let reject: Function = null;
+          let reject: Function|null = null;
 
           testZone.run(function() {
             new Promise(function(_, rejectFn) {
@@ -244,7 +243,7 @@ describe(
             });
           });
 
-          reject('error');
+          reject!('error');
         });
 
         it('should work with Promise.resolve', () => {
@@ -344,10 +343,10 @@ describe(
              });
 
           it('should notify Zone.onHandleError if no one catches promise', (done) => {
-            let promiseError: Error = null;
-            let zone: Zone = null;
-            let task: Task = null;
-            let error: Error = null;
+            let promiseError: Error|null = null;
+            let zone: Zone|null = null;
+            let task: Task|null = null;
+            let error: Error|null = null;
             queueZone
                 .fork({
                   name: 'promise-error',
@@ -370,11 +369,12 @@ describe(
                   Promise.reject(error);
                   expect(promiseError).toBe(null);
                 });
-            setTimeout((): void => null);
+            setTimeout((): any => null);
             setTimeout(() => {
-              expect(promiseError.message)
+              expect(promiseError!.message)
                   .toBe(
-                      'Uncaught (in promise): ' + error + (error.stack ? '\n' + error.stack : ''));
+                      'Uncaught (in promise): ' + error +
+                      (error!.stack ? '\n' + error!.stack : ''));
               expect((promiseError as any)['rejection']).toBe(error);
               expect((promiseError as any)['zone']).toBe(zone);
               expect((promiseError as any)['task']).toBe(task);
@@ -383,9 +383,9 @@ describe(
           });
 
           it('should print readable information when throw a not error object', (done) => {
-            let promiseError: Error = null;
-            let zone: Zone = null;
-            let task: Task = null;
+            let promiseError: Error|null = null;
+            let zone: Zone|null = null;
+            let task: Task|null = null;
             let rejectObj: TestRejection;
             queueZone
                 .fork({
@@ -406,9 +406,9 @@ describe(
                   Promise.reject(rejectObj);
                   expect(promiseError).toBe(null);
                 });
-            setTimeout((): void => null);
+            setTimeout((): any => null);
             setTimeout(() => {
-              expect(promiseError.message)
+              expect(promiseError!.message)
                   .toMatch(/Uncaught \(in promise\):.*: {"prop1":"value1","prop2":"value2"}/);
               done();
             });
@@ -540,7 +540,7 @@ describe(
                 expect(result).toBe('foo');
                 done && done();
               });
-        } 
+        }
 
         it('should resolve if the Promise subclass resolves', jasmine ? function(done) {
           testPromiseSubClass(done);

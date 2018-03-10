@@ -154,7 +154,7 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
       if (!storedTask) {
         target[XHR_TASK] = task;
       }
-      sendNative.apply(target, data.args);
+      sendNative!.apply(target, data.args);
       (XMLHttpRequest as any)[XHR_SCHEDULED] = true;
       return task;
     }
@@ -166,31 +166,25 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
       // Note - ideally, we would call data.target.removeEventListener here, but it's too late
       // to prevent it from firing. So instead, we store info for the event listener.
       data.aborted = true;
-      return abortNative.apply(data.target, data.args);
+      return abortNative!.apply(data.target, data.args);
     }
 
-    const openNative: Function =
+    const openNative =
         patchMethod(XMLHttpRequestPrototype, 'open', () => function(self: any, args: any[]) {
           self[XHR_SYNC] = args[2] == false;
           self[XHR_URL] = args[1];
-          return openNative.apply(self, args);
+          return openNative!.apply(self, args);
         });
 
     const XMLHTTPREQUEST_SOURCE = 'XMLHttpRequest.send';
-    const sendNative: Function =
+    const sendNative =
         patchMethod(XMLHttpRequestPrototype, 'send', () => function(self: any, args: any[]) {
           if (self[XHR_SYNC]) {
             // if the XHR is sync there is no task to schedule, just execute the code.
-            return sendNative.apply(self, args);
+            return sendNative!.apply(self, args);
           } else {
-            const options: XHROptions = {
-              target: self,
-              url: self[XHR_URL],
-              isPeriodic: false,
-              delay: null,
-              args: args,
-              aborted: false
-            };
+            const options: XHROptions =
+                {target: self, url: self[XHR_URL], isPeriodic: false, args: args, aborted: false};
             return scheduleMacroTaskWithCurrentZone(
                 XMLHTTPREQUEST_SOURCE, placeholderCallback, options, scheduleTask, clearTask);
           }

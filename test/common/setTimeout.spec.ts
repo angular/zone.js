@@ -39,7 +39,7 @@ describe('setTimeout', function() {
       expect(wtfMock.log[1]).toEqual('> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")');
       expect(wtfMock.log[2])
           .toContain('# Zone:schedule:macroTask:setTimeout("<root>::ProxyZone::WTF::TestZone"');
-    }, null, null, 'unit-test');
+    }, null, undefined, 'unit-test');
   });
 
   it('should allow canceling of fns registered with setTimeout', function(done) {
@@ -116,7 +116,7 @@ describe('setTimeout', function() {
   });
 
   it('should pass invalid values through', function() {
-    clearTimeout(null);
+    clearTimeout(null as any);
     clearTimeout(<any>{});
   });
 

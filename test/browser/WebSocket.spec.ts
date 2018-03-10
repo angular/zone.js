@@ -121,7 +121,7 @@ if (!window['saucelabs']) {
                  log += 'a';
                };
 
-               socket.onmessage = null;
+               socket.onmessage = null as any;
 
                socket.send('hi');
 

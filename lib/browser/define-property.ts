@@ -48,7 +48,7 @@ export function propertyPatch() {
 
   Object.getOwnPropertyDescriptor = function(obj, prop) {
     const desc = _getOwnPropertyDescriptor(obj, prop);
-    if (isUnconfigurable(obj, prop)) {
+    if (desc && isUnconfigurable(obj, prop)) {
       desc.configurable = false;
     }
     return desc;
@@ -97,7 +97,7 @@ function _tryDefineProperty(obj: any, prop: string, desc: any, originalConfigura
       try {
         return _defineProperty(obj, prop, desc);
       } catch (error) {
-        let descJson: string = null;
+        let descJson: string|null = null;
         try {
           descJson = JSON.stringify(desc);
         } catch (error) {

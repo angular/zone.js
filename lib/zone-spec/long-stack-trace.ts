@@ -57,7 +57,7 @@ function addErrorStack(lines: string[], error: Error): void {
   }
 }
 
-function renderLongStackTrace(frames: LongStackTrace[], stack: string): string {
+function renderLongStackTrace(frames: LongStackTrace[], stack?: string): string {
   const longTrace: string[] = [stack ? stack.trim() : ''];
 
   if (frames) {
@@ -83,16 +83,17 @@ function renderLongStackTrace(frames: LongStackTrace[], stack: string): string {
   longStackTraceLimit: 10,  // Max number of task to keep the stack trace for.
   // add a getLongStackTrace method in spec to
   // handle handled reject promise error.
-  getLongStackTrace: function(error: Error): string {
-    if (!error) {
-      return undefined;
-    }
-    const trace = (error as any)[(Zone as any).__symbol__('currentTaskTrace')];
-    if (!trace) {
-      return error.stack;
-    }
-    return renderLongStackTrace(trace, error.stack);
-  },
+  getLongStackTrace: function(error: Error): string |
+      undefined {
+        if (!error) {
+          return undefined;
+        }
+        const trace = (error as any)[(Zone as any).__symbol__('currentTaskTrace')];
+        if (!trace) {
+          return error.stack;
+        }
+        return renderLongStackTrace(trace, error.stack);
+      },
 
   onScheduleTask: function(
       parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task): any {

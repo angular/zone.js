@@ -47,8 +47,8 @@ try {
       supportsPassive = true;
     }
   });
-  window.addEventListener('test', null, opts);
-  window.removeEventListener('test', null, opts);
+  window.addEventListener('test', null as any, opts);
+  window.removeEventListener('test', null as any, opts);
 } catch (e) {
 }
 
@@ -89,7 +89,8 @@ describe('Zone', function() {
       const myZone = Zone.current.fork({
         name: 'spy',
         onInvoke: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                   callback: Function, applyThis: any, applyArgs: any[], source: string): any => {
+                   callback: Function, applyThis?: any, applyArgs?: any[],
+                   source?: string): any => {
           if (source) {
             spies[source].apply(null, applyArgs);
           } else {
@@ -336,11 +337,11 @@ describe('Zone', function() {
                  span.onmousedown = listener1;
                });
 
-               expect(handler1).toBe(handler2);
+               expect(handler1!).toBe(handler2!);
 
-               handler1.apply(undefined, [{type: 'click', target: span}]);
+               handler1!.apply(undefined, [{type: 'click', target: span}]);
 
-               handler2.apply(undefined, [{type: 'mousedown', target: span}]);
+               handler2!.apply(undefined, [{type: 'mousedown', target: span}]);
 
                expect(hookSpy).toHaveBeenCalled();
                expect(logs).toEqual(['listener1', 'listener2']);
@@ -1070,7 +1071,7 @@ describe('Zone', function() {
         });
         let listeners = (button as any).eventListeners('click');
         expect(listeners.length).toBe(1);
-        eventTask.zone.cancelTask(eventTask);
+        eventTask!.zone.cancelTask(eventTask!);
 
         listeners = (button as any).eventListeners('click');
         button.dispatchEvent(clickEvent);
@@ -1098,7 +1099,7 @@ describe('Zone', function() {
            });
            let listeners = (button as any).eventListeners('click');
            expect(listeners.length).toBe(1);
-           eventTask.zone.cancelTask(eventTask);
+           eventTask!.zone.cancelTask(eventTask!);
 
            listeners = (button as any).eventListeners('click');
            button.dispatchEvent(clickEvent);
@@ -1133,7 +1134,7 @@ describe('Zone', function() {
            button.dispatchEvent(clickEvent);
            expect(logs.length).toBe(2);
            expect(logs).toEqual(['click1', 'click2']);
-           eventTask.zone.cancelTask(eventTask);
+           eventTask!.zone.cancelTask(eventTask!);
            logs = [];
 
            listeners = (button as any).eventListeners('click');
@@ -1170,7 +1171,7 @@ describe('Zone', function() {
            button.dispatchEvent(clickEvent);
            expect(logs.length).toBe(2);
            expect(logs).toEqual(['click1', 'click2']);
-           eventTask.zone.cancelTask(eventTask);
+           eventTask!.zone.cancelTask(eventTask!);
            logs = [];
 
            listeners = (button as any).eventListeners('click');
@@ -1207,7 +1208,7 @@ describe('Zone', function() {
            button.dispatchEvent(clickEvent);
            expect(logs.length).toBe(2);
            expect(logs).toEqual(['click1', 'click2']);
-           eventTask.zone.cancelTask(eventTask);
+           eventTask!.zone.cancelTask(eventTask!);
            logs = [];
 
            listeners = (button as any).eventListeners('click');
@@ -2436,7 +2437,7 @@ describe('Zone', function() {
        ifEnvSupportsWithDone(supportCanvasTest, (done: Function) => {
          const canvas = document.createElement('canvas');
          const d = canvas.width;
-         const ctx = canvas.getContext('2d');
+         const ctx = canvas.getContext('2d')!;
          ctx.beginPath();
          ctx.moveTo(d / 2, 0);
          ctx.lineTo(d, d);
@@ -2462,7 +2463,7 @@ describe('Zone', function() {
              expect(scheduleSpy).toHaveBeenCalled();
 
              const reader = new FileReader();
-             reader.readAsDataURL(blob);
+             reader.readAsDataURL(blob!);
              reader.onloadend = function() {
                const base64data = reader.result;
                expect(base64data).toEqual(canvasData);
@@ -2472,61 +2473,59 @@ describe('Zone', function() {
          });
        }));
 
-      describe('ResizeObserver', ifEnvSupports('ResizeObserver', () => {
-        it('ResizeObserver callback should be in zone', (done) => {
-          const ResizeObserver = (window as any)['ResizeObserver'];
-          const div = document.createElement('div');
-          const zone = Zone.current.fork({
-            name: 'observer'
-          });
-          const observer = new ResizeObserver((entries: any, ob: any) => {
-            expect(Zone.current.name).toEqual(zone.name);
+    describe(
+        'ResizeObserver', ifEnvSupports('ResizeObserver', () => {
+          it('ResizeObserver callback should be in zone', (done) => {
+            const ResizeObserver = (window as any)['ResizeObserver'];
+            const div = document.createElement('div');
+            const zone = Zone.current.fork({name: 'observer'});
+            const observer = new ResizeObserver((entries: any, ob: any) => {
+              expect(Zone.current.name).toEqual(zone.name);
 
-            expect(entries.length).toBe(1);
-            expect(entries[0].target).toBe(div);
-            done();
-          });
-
-          zone.run(() => {
-            observer.observe(div);
-          });
-
-          document.body.appendChild(div);
-        });
-
-        it('ResizeObserver callback should be able to in different zones which when they were observed', (done) => {
-          const ResizeObserver = (window as any)['ResizeObserver'];
-          const div1 = document.createElement('div');
-          const div2 = document.createElement('div');
-          const zone = Zone.current.fork({
-            name: 'observer'
-          });
-          let count = 0;
-          const observer = new ResizeObserver((entries: any, ob: any) => {
-            entries.forEach((entry: any) => {
-              if (entry.target === div1) {
-                expect(Zone.current.name).toEqual(zone.name);
-              } else {
-                expect(Zone.current.name).toEqual('<root>');
-              }
-            });
-            count ++;
-            if (count === 2) {
+              expect(entries.length).toBe(1);
+              expect(entries[0].target).toBe(div);
               done();
-            }
+            });
+
+            zone.run(() => {
+              observer.observe(div);
+            });
+
+            document.body.appendChild(div);
           });
 
-          zone.run(() => {
-            observer.observe(div1);
-          });
-          Zone.root.run(() => {
-            observer.observe(div2);
-          });
+          it('ResizeObserver callback should be able to in different zones which when they were observed',
+             (done) => {
+               const ResizeObserver = (window as any)['ResizeObserver'];
+               const div1 = document.createElement('div');
+               const div2 = document.createElement('div');
+               const zone = Zone.current.fork({name: 'observer'});
+               let count = 0;
+               const observer = new ResizeObserver((entries: any, ob: any) => {
+                 entries.forEach((entry: any) => {
+                   if (entry.target === div1) {
+                     expect(Zone.current.name).toEqual(zone.name);
+                   } else {
+                     expect(Zone.current.name).toEqual('<root>');
+                   }
+                 });
+                 count++;
+                 if (count === 2) {
+                   done();
+                 }
+               });
 
-          document.body.appendChild(div1);
-          document.body.appendChild(div2);
-        });
-      }));
+               zone.run(() => {
+                 observer.observe(div1);
+               });
+               Zone.root.run(() => {
+                 observer.observe(div2);
+               });
+
+               document.body.appendChild(div1);
+               document.body.appendChild(div2);
+             });
+        }));
 
     xdescribe('getUserMedia', () => {
       it('navigator.mediaDevices.getUserMedia should in zone',
