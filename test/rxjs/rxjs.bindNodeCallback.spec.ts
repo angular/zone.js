@@ -70,7 +70,7 @@ describe('Observable.bindNodeCallback', () => {
            expect(Zone.current.name).toEqual(constructorZone.name);
            callback(null, arg);
          };
-         boundFunc = Rx.Observable.bindCallback(func, null, Rx.Scheduler.asap);
+         boundFunc = Rx.Observable.bindCallback(func, undefined, Rx.Scheduler.asap);
          observable = boundFunc('test');
        });
 

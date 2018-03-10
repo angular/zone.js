@@ -16,9 +16,9 @@ describe('Microtasks', function() {
   it('should execute microtasks enqueued in the root zone', function(done) {
     const log: number[] = [];
 
-    Zone.current.scheduleMicroTask('test', () => log.push(1), null, scheduleFn);
-    Zone.current.scheduleMicroTask('test', () => log.push(2), null, scheduleFn);
-    Zone.current.scheduleMicroTask('test', () => log.push(3), null, scheduleFn);
+    Zone.current.scheduleMicroTask('test', () => log.push(1), undefined, scheduleFn);
+    Zone.current.scheduleMicroTask('test', () => log.push(2), undefined, scheduleFn);
+    Zone.current.scheduleMicroTask('test', () => log.push(3), undefined, scheduleFn);
 
     setTimeout(function() {
       expect(log).toEqual([1, 2, 3]);
@@ -29,11 +29,11 @@ describe('Microtasks', function() {
   it('should correctly scheduleMacroTask microtasks vs macrotasks', function(done) {
     const log = ['+root'];
 
-    Zone.current.scheduleMicroTask('test', () => log.push('root.mit'), null, scheduleFn);
+    Zone.current.scheduleMicroTask('test', () => log.push('root.mit'), undefined, scheduleFn);
 
     setTimeout(function() {
       log.push('+mat1');
-      Zone.current.scheduleMicroTask('test', () => log.push('mat1.mit'), null, scheduleFn);
+      Zone.current.scheduleMicroTask('test', () => log.push('mat1.mit'), undefined, scheduleFn);
       log.push('-mat1');
     }, 10);
 

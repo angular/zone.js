@@ -12,7 +12,12 @@
     "downlevelIteration": true,
     "noEmitOnError": false,
     "stripInternal": false,
-    "lib": ["es5", "dom", "es2015.promise"]
+    "strict": true,
+    "lib": [
+      "es5",
+      "dom",
+      "es2015.promise"
+    ]
   },
   "exclude": [
     "node_modules",

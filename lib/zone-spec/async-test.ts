@@ -108,7 +108,7 @@ class AsyncTestZoneSpec implements ZoneSpec {
   // was scheduled/invoked/canceled.
   onInvoke(
       parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function,
-      applyThis: any, applyArgs: any[], source: string): any {
+      applyThis: any, applyArgs?: any[], source?: string): any {
     let previousTaskCounts: any = null;
     try {
       this._isSync = true;

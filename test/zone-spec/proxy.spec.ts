@@ -136,7 +136,7 @@ describe('ProxySpec', () => {
     });
 
     it('should Task', () => {
-      const fn = () => null as void;
+      const fn = (): any => null;
       const task = proxyZone.scheduleMacroTask('test', fn, {}, () => null, () => null);
       expect(task.source).toEqual('test');
       proxyZone.cancelTask(task);

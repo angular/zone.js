@@ -384,7 +384,7 @@ function canPatchViaPropertyDescriptor() {
     const detectFunc = () => {};
     req.onreadystatechange = detectFunc;
     const result = (req as any)[SYMBOL_FAKE_ONREADYSTATECHANGE] === detectFunc;
-    req.onreadystatechange = null;
+    req.onreadystatechange = null as any;
     return result;
   }
 }

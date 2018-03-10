@@ -234,7 +234,7 @@
       _super.call(this, attrs);
     }
     ZoneQueueRunner.prototype.execute = function() {
-      let zone: Zone = Zone.current;
+      let zone: Zone|null = Zone.current;
       let isChildOfAmbientZone = false;
       while (zone) {
         if (zone === ambientZone) {

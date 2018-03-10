@@ -57,7 +57,7 @@ describe('setInterval', function() {
       expect(wtfMock.log[1]).toEqual('> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")');
       expect(wtfMock.log[2])
           .toContain('# Zone:schedule:macroTask:setInterval("<root>::ProxyZone::WTF::TestZone"');
-    }, null, null, 'unit-test');
+    }, null, undefined, 'unit-test');
   });
 
   it('should not cancel the task after invoke the setInterval callback', (done) => {

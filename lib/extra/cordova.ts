@@ -10,7 +10,7 @@ Zone.__load_patch('cordova', (global: any, Zone: ZoneType, api: _ZonePrivate) =>
     const SUCCESS_SOURCE = 'cordova.exec.success';
     const ERROR_SOURCE = 'cordova.exec.error';
     const FUNCTION = 'function';
-    const nativeExec: Function =
+    const nativeExec: Function|null =
         api.patchMethod(global.cordova, 'exec', () => function(self: any, args: any[]) {
           if (args.length > 0 && typeof args[0] === FUNCTION) {
             args[0] = Zone.current.wrap(args[0], SUCCESS_SOURCE);
@@ -18,7 +18,7 @@ Zone.__load_patch('cordova', (global: any, Zone: ZoneType, api: _ZonePrivate) =>
           if (args.length > 1 && typeof args[1] === FUNCTION) {
             args[1] = Zone.current.wrap(args[1], ERROR_SOURCE);
           }
-          return nativeExec.apply(self, args);
+          return nativeExec!.apply(self, args);
         });
   }
 });

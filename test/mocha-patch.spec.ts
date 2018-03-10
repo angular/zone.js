@@ -25,17 +25,17 @@ ifEnvSupports('Mocha', function() {
 
   describe('Mocha BDD-style', () => {
     let throwOnAsync = false;
-    let beforeEachZone: Zone = null;
-    let itZone: Zone = null;
+    let beforeEachZone: Zone|null = null;
+    let itZone: Zone|null = null;
     const syncZone = Zone.current;
-    let beforeZone: Zone = null;
+    let beforeZone: Zone|null = null;
 
     before(() => {
       beforeZone = Zone.current;
     });
 
     try {
-      Zone.current.scheduleMicroTask('dontallow', () => null as void);
+      Zone.current.scheduleMicroTask('dontallow', (): any => null);
     } catch (e) {
       throwOnAsync = true;
     }
@@ -62,9 +62,9 @@ ifEnvSupports('Mocha', function() {
   });
 
   suite('Mocha TDD-style', () => {
-    let testZone: Zone = null;
-    let beforeEachZone: Zone = null;
-    let suiteSetupZone: Zone = null;
+    let testZone: Zone|null = null;
+    let beforeEachZone: Zone|null = null;
+    let suiteSetupZone: Zone|null = null;
 
     suiteSetup(() => {
       suiteSetupZone = Zone.current;

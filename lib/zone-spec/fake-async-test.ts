@@ -19,7 +19,7 @@
 
   interface MicroTaskScheduledFunction {
     func: Function;
-    args: any[];
+    args?: any[];
     target: any;
   }
 
@@ -137,7 +137,7 @@
           break;
         } else {
           // Time to run scheduled function. Remove it from the head of queue.
-          let current = this._schedulerQueue.shift();
+          let current = this._schedulerQueue.shift()!;
           lastCurrentTime = this._currentTime;
           this._currentTime = current.endTime;
           if (doTick) {
@@ -192,7 +192,7 @@
           break;
         }
 
-        const current = this._schedulerQueue.shift();
+        const current = this._schedulerQueue.shift()!;
         lastCurrentTime = this._currentTime;
         this._currentTime = current.endTime;
         if (doTick) {
@@ -218,7 +218,7 @@
 
     private _scheduler: Scheduler = new Scheduler();
     private _microtasks: MicroTaskScheduledFunction[] = [];
-    private _lastError: Error = null;
+    private _lastError: Error|null = null;
     private _uncaughtPromiseErrors: {rejection: any}[] =
         (Promise as any)[(Zone as any).__symbol__('uncaughtPromiseErrors')];
 
@@ -306,7 +306,7 @@
 
     private _setInterval(fn: Function, interval: number, args: any[]): number {
       let id = this._scheduler.nextId;
-      let completers = {onSuccess: null as Function, onError: this._dequeuePeriodicTimer(id)};
+      let completers = {onSuccess: null as any, onError: this._dequeuePeriodicTimer(id)};
       let cb = this._fnAndFlush(fn, completers);
 
       // Use the callback created above to requeue on success.
@@ -400,7 +400,7 @@
         }
       };
       while (this._microtasks.length > 0) {
-        let microtask = this._microtasks.shift();
+        let microtask = this._microtasks.shift()!;
         microtask.func.apply(microtask.target, microtask.args);
       }
       flushErrors();
@@ -429,7 +429,7 @@
           // should pass additional arguments to callback if have any
           // currently we know process.nextTick will have such additional
           // arguments
-          let additionalArgs: any[];
+          let additionalArgs: any[]|undefined;
           if (args) {
             let callbackIndex = (task.data as any).cbIdx;
             if (typeof args.length === 'number' && args.length > callbackIndex + 1) {
@@ -445,17 +445,17 @@
         case 'macroTask':
           switch (task.source) {
             case 'setTimeout':
-              task.data['handleId'] = this._setTimeout(
-                  task.invoke, task.data['delay'],
+              task.data!['handleId'] = this._setTimeout(
+                  task.invoke, task.data!['delay']!,
                   Array.prototype.slice.call((task.data as any)['args'], 2));
               break;
             case 'setImmediate':
-              task.data['handleId'] = this._setTimeout(
+              task.data!['handleId'] = this._setTimeout(
                   task.invoke, 0, Array.prototype.slice.call((task.data as any)['args'], 1));
               break;
             case 'setInterval':
-              task.data['handleId'] = this._setInterval(
-                  task.invoke, task.data['delay'],
+              task.data!['handleId'] = this._setInterval(
+                  task.invoke, task.data!['delay']!,
                   Array.prototype.slice.call((task.data as any)['args'], 2));
               break;
             case 'XMLHttpRequest.send':
@@ -467,7 +467,7 @@
             case 'mozRequestAnimationFrame':
               // Simulate a requestAnimationFrame by using a setTimeout with 16 ms.
               // (60 frames per second)
-              task.data['handleId'] = this._setTimeout(
+              task.data!['handleId'] = this._setTimeout(
                   task.invoke, 16, (task.data as any)['args'],
                   this.trackPendingRequestAnimationFrame);
               break;
@@ -482,11 +482,11 @@
                     macroTaskOption.callbackArgs ? macroTaskOption.callbackArgs : args;
                 if (!!macroTaskOption.isPeriodic) {
                   // periodic macroTask, use setInterval to simulate
-                  task.data['handleId'] = this._setInterval(task.invoke, delay, callbackArgs);
-                  task.data.isPeriodic = true;
+                  task.data!['handleId'] = this._setInterval(task.invoke, delay, callbackArgs);
+                  task.data!.isPeriodic = true;
                 } else {
                   // not periodic, use setTimeout to simulate
-                  task.data['handleId'] = this._setTimeout(task.invoke, delay, callbackArgs);
+                  task.data!['handleId'] = this._setTimeout(task.invoke, delay, callbackArgs);
                 }
                 break;
               }
@@ -506,15 +506,15 @@
         case 'requestAnimationFrame':
         case 'webkitRequestAnimationFrame':
         case 'mozRequestAnimationFrame':
-          return this._clearTimeout(task.data['handleId']);
+          return this._clearTimeout(<number>task.data!['handleId']);
         case 'setInterval':
-          return this._clearInterval(task.data['handleId']);
+          return this._clearInterval(<number>task.data!['handleId']);
         default:
           // user can define which macroTask they want to support by passing
           // macroTaskOptions
           const macroTaskOption = this.findMacroTaskOption(task);
           if (macroTaskOption) {
-            const handleId = task.data['handleId'];
+            const handleId: number = <number>task.data!['handleId'];
             return macroTaskOption.isPeriodic ? this._clearInterval(handleId) :
                                                 this._clearTimeout(handleId);
           }
@@ -524,7 +524,7 @@
 
     onInvoke(
         delegate: ZoneDelegate, current: Zone, target: Zone, callback: Function, applyThis: any,
-        applyArgs: any[], source: string): any {
+        applyArgs?: any[], source?: string): any {
       try {
         FakeAsyncTestZoneSpec.patchDate();
         return delegate.invoke(target, callback, applyThis, applyArgs, source);

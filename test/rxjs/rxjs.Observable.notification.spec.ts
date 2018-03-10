@@ -30,7 +30,7 @@ describe('Observable.notification', ifEnvSupports(supportNotification, () => {
                const notifA = new Rx.Notification('N', 'A');
                const notifB = new Rx.Notification('N', 'B');
                const notifE = new Rx.Notification('E', void 0, error);
-               const materialized = Rx.Observable.of(notifA, notifB, notifE);
+               const materialized = Rx.Observable.of(notifA, notifB, notifE as any);
                return materialized.dematerialize();
              });
 

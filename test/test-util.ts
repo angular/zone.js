@@ -42,7 +42,7 @@ function _ifEnvSupports(test: any, block: Function, withDone = false) {
   }
 }
 
-function _runTest(test: any, block: Function, done: Function) {
+function _runTest(test: any, block: Function, done?: Function) {
   const message = (test.message || test.name || test);
   if (typeof test === 'string' ? !!global[test] : test()) {
     if (done) {

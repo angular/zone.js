@@ -398,7 +398,7 @@ export function patchEventTarget(
         taskData.eventName = eventName;
         taskData.isExisting = isExisting;
 
-        const data = useGlobalCallback ? OPTIMIZED_ZONE_EVENT_TASK_DATA : null;
+        const data = useGlobalCallback ? OPTIMIZED_ZONE_EVENT_TASK_DATA : undefined;
 
         // keep taskData into data to allow onScheduleEventTask to access the task information
         if (data) {
