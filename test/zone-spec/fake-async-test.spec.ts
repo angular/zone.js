@@ -833,6 +833,26 @@ describe('FakeAsyncTestZoneSpec', () => {
     });
   });
 
+  describe('return promise', () => {
+    let log: string[];
+    beforeEach(() => {
+      log = [];
+    });
+
+    it('should wait for promise to resolve', () => {
+      return new Promise((res, _) => {
+        setTimeout(() => {
+          log.push('resolved');
+          res();
+        }, 100);
+      });
+    });
+
+    afterEach(() => {
+      expect(log).toEqual(['resolved']);
+    });
+  });
+
   describe('fakeAsyncTest should patch Date', () => {
     let FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
     let testZoneSpec: any;
