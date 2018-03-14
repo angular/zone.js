@@ -1,54 +1,26 @@
 // Sauce configuration
 
-module.exports = function (config, ignoredLaunchers) {
+module.exports = function(config, ignoredLaunchers) {
   // The WS server is not available with Sauce
   config.files.unshift('test/saucelabs.js');
 
   var basicLaunchers = {
-    'SL_CHROME': {
-      base: 'SauceLabs',
-      browserName: 'chrome',
-      version: '48'
-    },
-    'SL_CHROME_60': {
-      base: 'SauceLabs',
-      browserName: 'chrome',
-      version: '60'
-    },
-    'SL_FIREFOX': {
-      base: 'SauceLabs',
-      browserName: 'firefox',
-      version: '52'
-    },
-    'SL_FIREFOX_54': {
-      base: 'SauceLabs',
-      browserName: 'firefox',
-      version: '54'
-    },
+    'SL_CHROME': {base: 'SauceLabs', browserName: 'chrome', version: '48'},
+    'SL_CHROME_60': {base: 'SauceLabs', browserName: 'chrome', version: '60'},
+    'SL_FIREFOX': {base: 'SauceLabs', browserName: 'firefox', version: '52'},
+    'SL_FIREFOX_54': {base: 'SauceLabs', browserName: 'firefox', version: '54'},
     /*'SL_SAFARI7': {
       base: 'SauceLabs',
         browserName: 'safari',
         platform: 'OS X 10.9',
         version: '7.0'
     },*/
-    'SL_SAFARI8': {
-      base: 'SauceLabs',
-      browserName: 'safari',
-      platform: 'OS X 10.10',
-      version: '8.0'
-    },
-    'SL_SAFARI9': {
-      base: 'SauceLabs',
-      browserName: 'safari',
-      platform: 'OS X 10.11',
-      version: '9.0'
-    },
-    'SL_SAFARI10': {
-      base: 'SauceLabs',
-      browserName: 'safari',
-      platform: 'OS X 10.11',
-      version: '10.0'
-    },
+    'SL_SAFARI8':
+        {base: 'SauceLabs', browserName: 'safari', platform: 'OS X 10.10', version: '8.0'},
+    'SL_SAFARI9':
+        {base: 'SauceLabs', browserName: 'safari', platform: 'OS X 10.11', version: '9.0'},
+    'SL_SAFARI10':
+        {base: 'SauceLabs', browserName: 'safari', platform: 'OS X 10.11', version: '10.0'},
     /*
      no longer supported in SauceLabs
     'SL_IOS7': {
@@ -57,24 +29,14 @@ module.exports = function (config, ignoredLaunchers) {
       platform: 'OS X 10.10',
       version: '7.1'
     },*/
-    'SL_IOS8': {
+    /*'SL_IOS8': {
       base: 'SauceLabs',
       browserName: 'iphone',
       platform: 'OS X 10.10',
       version: '8.4'
-    },
-    'SL_IOS9': {
-      base: 'SauceLabs',
-      browserName: 'iphone',
-      platform: 'OS X 10.10',
-      version: '9.3'
-    },
-    'SL_IOS10': {
-      base: 'SauceLabs',
-      browserName: 'iphone',
-      platform: 'OS X 10.10',
-      version: '10.2'
-    },
+    },*/
+    'SL_IOS9': {base: 'SauceLabs', browserName: 'iphone', platform: 'OS X 10.10', version: '9.3'},
+    'SL_IOS10': {base: 'SauceLabs', browserName: 'iphone', platform: 'OS X 10.10', version: '10.2'},
     'SL_IE9': {
       base: 'SauceLabs',
       browserName: 'internet explorer',
@@ -125,24 +87,9 @@ module.exports = function (config, ignoredLaunchers) {
       platform: 'Linux',
       version: '4.3'
     },*/
-    'SL_ANDROID4.4': {
-      base: 'SauceLabs',
-      browserName: 'android',
-      platform: 'Linux',
-      version: '4.4'
-    },
-    'SL_ANDROID5.1': {
-      base: 'SauceLabs',
-      browserName: 'android',
-      platform: 'Linux',
-      version: '5.1'
-    },
-    'SL_ANDROID6.0': {
-      base: 'SauceLabs',
-      browserName: 'android',
-      platform: 'Linux',
-      version: '6.0'
-    },
+    'SL_ANDROID4.4': {base: 'SauceLabs', browserName: 'android', platform: 'Linux', version: '4.4'},
+    'SL_ANDROID5.1': {base: 'SauceLabs', browserName: 'android', platform: 'Linux', version: '5.1'},
+    'SL_ANDROID6.0': {base: 'SauceLabs', browserName: 'android', platform: 'Linux', version: '6.0'},
     'SL_ANDROID7.1': {
       base: 'SauceLabs',
       browserName: 'Chrome',
@@ -158,7 +105,11 @@ module.exports = function (config, ignoredLaunchers) {
     customLaunchers = basicLaunchers;
   } else {
     Object.keys(basicLaunchers).forEach(function(key) {
-      if (ignoredLaunchers.filter(function(ignore) {return ignore === key;}).length === 0) {
+      if (ignoredLaunchers
+              .filter(function(ignore) {
+                return ignore === key;
+              })
+              .length === 0) {
         customLaunchers[key] = basicLaunchers[key];
       }
     });
@@ -173,11 +124,11 @@ module.exports = function (config, ignoredLaunchers) {
       startConnect: false,
       recordVideo: false,
       recordScreenshots: false,
-      options:  {
-          'selenium-version': '2.53.0',
-          'command-timeout': 600,
-          'idle-timeout': 600,
-          'max-duration': 5400
+      options: {
+        'selenium-version': '2.53.0',
+        'command-timeout': 600,
+        'idle-timeout': 600,
+        'max-duration': 5400
       }
     },
 
@@ -189,13 +140,12 @@ module.exports = function (config, ignoredLaunchers) {
 
     singleRun: true,
 
-    plugins: [
-      'karma-*'
-    ]
+    plugins: ['karma-*']
   });
 
   if (process.env.TRAVIS) {
-    config.sauceLabs.build = 'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')';
+    config.sauceLabs.build =
+        'TRAVIS #' + process.env.TRAVIS_BUILD_NUMBER + ' (' + process.env.TRAVIS_BUILD_ID + ')';
     config.sauceLabs.tunnelIdentifier = process.env.TRAVIS_JOB_NUMBER;
 
     process.env.SAUCE_ACCESS_KEY = process.env.SAUCE_ACCESS_KEY.split('').reverse().join('');

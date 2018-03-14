@@ -6,8 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import '../../lib/zone-spec/proxy';
-
 describe('ProxySpec', () => {
   let ProxyZoneSpec: any;
   let delegate: ZoneSpec;
@@ -192,16 +190,10 @@ describe('ProxySpec', () => {
 
       setTimeout(() => {
         expect(log).toEqual([
-          'zoneSpec1 hasTask: false,true',
-          'zoneSpec2 hasTask: false,true',
-          'zoneSpec2 hasTask: true,true',
-          'zoneSpec2 hasTask: true,true',
-          'then in zoneSpec2',
-          'then in zoneSpec2',
-          'zoneSpec2 hasTask: false,true',
-          'timeout in zoneSpec1',
-          'timeout in null spec',
-          'zoneSpec2 hasTask: false,false'
+          'zoneSpec1 hasTask: false,true', 'zoneSpec2 hasTask: false,true',
+          'zoneSpec2 hasTask: true,true', 'zoneSpec2 hasTask: true,true', 'then in zoneSpec2',
+          'then in zoneSpec2', 'zoneSpec2 hasTask: false,true', 'timeout in zoneSpec1',
+          'timeout in null spec', 'zoneSpec2 hasTask: false,false'
         ]);
         done();
       }, 300);
