@@ -8,5 +8,5 @@
 
 module.exports = function (config) {
   require('./karma-dist-mocha.conf.js')(config);
-  require('./sauce-selenium3.conf')(config);
+  require('./sauce-selenium3.conf')(config, ['SL_IE9']);
 };
