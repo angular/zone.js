@@ -40,6 +40,7 @@ script:
   - node_modules/.bin/karma start karma-dist-sauce-selenium3-jasmine.conf.js --single-run
   - node_modules/.bin/karma start karma-build-sauce-selenium3-mocha.conf.js --single-run
   - node_modules/.bin/gulp test/node
+  - node_modules/.bin/gulp test/bluebird
   - node simple-server.js 2>&1> server.log&
   - node ./test/webdriver/test.sauce.js
   - yarn add jasmine@3.0.0 jasmine-core@3.0.0 mocha@5.0.1
