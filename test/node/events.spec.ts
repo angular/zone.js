@@ -66,6 +66,13 @@ describe('nodejs EventEmitter', () => {
       emitter.emit('test2', 'test value');
     });
   });
+  it('remove listener should return event emitter', () => {
+    zoneA.run(() => {
+      emitter.on('test', shouldNotRun);
+      expect(emitter.removeListener('test', shouldNotRun)).toEqual(emitter);
+      emitter.emit('test', 'test value');
+    });
+  });
   it('should return all listeners for an event', () => {
     zoneA.run(() => {
       emitter.on('test', expectZoneA);
@@ -103,6 +110,14 @@ describe('nodejs EventEmitter', () => {
       emitter.on('test', expectZoneA);
       emitter.on('test', expectZoneA);
       emitter.removeAllListeners('test');
+      expect(emitter.listeners('test').length).toEqual(0);
+    });
+  });
+  it('remove All listeners should return event emitter', () => {
+    zoneA.run(() => {
+      emitter.on('test', expectZoneA);
+      emitter.on('test', expectZoneA);
+      expect(emitter.removeAllListeners('test')).toEqual(emitter);
       expect(emitter.listeners('test').length).toEqual(0);
     });
   });
