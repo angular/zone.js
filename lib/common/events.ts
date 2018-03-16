@@ -497,6 +497,9 @@ export function patchEventTarget(
               target[symbolEventName] = null;
             }
             existingTask.zone.cancelTask(existingTask);
+            if (returnTarget) {
+              return target;
+            }
             return;
           }
         }
@@ -570,6 +573,10 @@ export function patchEventTarget(
             }
           }
         }
+      }
+
+      if (returnTarget) {
+        return this;
       }
     };
 

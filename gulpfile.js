@@ -391,11 +391,9 @@ gulp.task('build', [
   'build/closure.js'
 ]);
 
-gulp.task('test/node', ['compile-node'], function(cb) {
+function nodeTest(specFiles, cb) {
   var JasmineRunner = require('jasmine');
   var jrunner = new JasmineRunner();
-
-  var specFiles = ['build/test/node_entry_point.js'];
 
   jrunner.configureDefaultReporter({showColors: true});
 
@@ -417,6 +415,16 @@ gulp.task('test/node', ['compile-node'], function(cb) {
   jrunner.specDir = '';
   jrunner.addSpecFiles(specFiles);
   jrunner.execute();
+}
+
+gulp.task('test/node', ['compile-node'], function(cb) {
+  var specFiles = ['build/test/node_entry_point.js'];
+  nodeTest(specFiles, cb);
+});
+
+gulp.task('test/bluebird', ['compile-node'], function(cb) {
+  var specFiles = ['build/test/node_bluebird_entry_point.js'];
+  nodeTest(specFiles, cb);
 });
 
 // Check the coding standards and programming errors

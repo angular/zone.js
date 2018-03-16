@@ -14,6 +14,7 @@ class AsyncTestZoneSpec implements ZoneSpec {
   _pendingMicroTasks: boolean = false;
   _pendingMacroTasks: boolean = false;
   _alreadyErrored: boolean = false;
+  _isSync: boolean = false;
   runZone = Zone.current;
   unresolvedChainedPromiseCount = 0;
 
@@ -60,6 +61,9 @@ class AsyncTestZoneSpec implements ZoneSpec {
   properties: {[key: string]: any};
 
   onScheduleTask(delegate: ZoneDelegate, current: Zone, target: Zone, task: Task): Task {
+    if (task.type !== 'eventTask') {
+      this._isSync = false;
+    }
     if (task.type === 'microTask' && task.data && task.data instanceof Promise) {
       // check whether the promise is a chained promise 
       if ((task.data as any)[AsyncTestZoneSpec.symbolParentUnresolved] === true) {
@@ -70,18 +74,39 @@ class AsyncTestZoneSpec implements ZoneSpec {
     return delegate.scheduleTask(target, task);
   }
 
+  onInvokeTask(delegate: ZoneDelegate, current: Zone, target: Zone, task: Task, applyThis: any, applyArgs: any) {
+    if (task.type !== 'eventTask') {
+      this._isSync = false;
+    }
+    return delegate.invokeTask(target, task, applyThis, applyArgs);
+  }
+
+  onCancelTask(delegate: ZoneDelegate, current: Zone, target: Zone, task: Task) {
+    if (task.type !== 'eventTask') {
+      this._isSync = false;
+    }
+    return delegate.cancelTask(target, task);
+  }
+
   // Note - we need to use onInvoke at the moment to call finish when a test is
   // fully synchronous. TODO(juliemr): remove this when the logic for
   // onHasTask changes and it calls whenever the task queues are dirty.
+  // updated by(JiaLiPassion), only call finish callback when no task
+  // was scheduled/invoked/canceled.
   onInvoke(
       parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function,
       applyThis: any, applyArgs: any[], source: string): any {
+    let previousTaskCounts: any = null;
     try {
       this.patchPromiseForTest();
+      this._isSync = true;
       return parentZoneDelegate.invoke(targetZone, delegate, applyThis, applyArgs, source);
     } finally {
       this.unPatchPromiseForTest();
-      this._finishCallbackIfDone();
+      const afterTaskCounts: any = (parentZoneDelegate as any)._taskCounts;
+      if (this._isSync) {
+        this._finishCallbackIfDone();
+      }
     }
   }
 

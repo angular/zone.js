@@ -18,6 +18,7 @@
         ? Object.create(b)
         : ((__.prototype = b.prototype), new (__ as any)());
   };
+  const _global: any = typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global;
   // Patch jasmine's describe/it/beforeEach/afterEach functions so test code always runs
   // in a testZone (ProxyZone). (See: angular/zone.js#91 & angular/angular#10503)
   if (!Zone) throw new Error('Missing: zone.js');
@@ -202,6 +203,7 @@
     function ZoneQueueRunner(attrs: {
       onComplete: Function;
       userContext?: any;
+      timeout?: { setTimeout: Function; clearTimeout: Function };
     }) {
       attrs.onComplete = (fn => () => {
         // All functions are done, clear the test zone.
@@ -209,6 +211,16 @@
         this.testProxyZoneSpec = null;
         ambientZone.scheduleMicroTask('jasmine.onComplete', fn);
       })(attrs.onComplete);
+
+      const nativeSetTimeout = _global['__zone_symbol__setTimeout'];
+      const nativeClearTimeout = _global['__zone_symbol__clearTimeout'];
+      if (nativeSetTimeout) {
+        // should run setTimeout inside jasmine outside of zone
+        attrs.timeout = {
+          setTimeout: nativeSetTimeout ? nativeSetTimeout : _global.setTimeout,
+          clearTimeout: nativeClearTimeout ? nativeClearTimeout : _global.clearTimeout
+        };
+      }
       // create a userContext to hold the queueRunner itself
       // so we can access the testProxy in it/xit/beforeEach ...
       if ((jasmine as any).UserContext) {
