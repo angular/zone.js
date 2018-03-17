@@ -20,4 +20,6 @@ import '../lib/zone-spec/task-tracking';
 import '../lib/zone-spec/wtf';
 import '../lib/extra/cordova';
 import '../lib/testing/promise-testing';
+import '../lib/testing/async-testing';
+import '../lib/testing/fake-async';
 import '../lib/browser/webapis-resize-observer';

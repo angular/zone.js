@@ -25,6 +25,8 @@ import '../lib/zone-spec/wtf';
 import '../lib/rxjs/rxjs';
 
 import '../lib/testing/promise-testing';
+import '../lib/testing/async-testing';
+import '../lib/testing/fake-async';
 // Setup test environment
 import './test-env-setup-jasmine';
 

@@ -110,7 +110,7 @@
     };
   }
 
-  function runInTestZone(testBody: Function, queueRunner: any, done?: Function) {
+  function runInTestZone(testBody: Function, applyThis: any, queueRunner: any, done?: Function) {
     const isClockInstalled = !!(jasmine as any)[symbol('clockInstalled')];
     const testProxyZoneSpec = queueRunner.testProxyZoneSpec;
     const testProxyZone = queueRunner.testProxyZone;
@@ -121,16 +121,21 @@
         const _fakeAsyncTestZoneSpec = new FakeAsyncTestZoneSpec();
         lastDelegate = (testProxyZoneSpec as any).getDelegate();
         (testProxyZoneSpec as any).setDelegate(_fakeAsyncTestZoneSpec);
+        _fakeAsyncTestZoneSpec.lockDatePatch();
       }
     }
     try {
       if (done) {
-        return testProxyZone.run(testBody, this, [done]);
+        return testProxyZone.run(testBody, applyThis, [done]);
       } else {
-        return testProxyZone.run(testBody, this);
+        return testProxyZone.run(testBody, applyThis);
       }
     } finally {
       if (isClockInstalled) {
+        const _fakeAsyncTestZoneSpec = testProxyZoneSpec.getDelegate();
+        if (_fakeAsyncTestZoneSpec) {
+          _fakeAsyncTestZoneSpec.unlockDatePatch();
+        }
         (testProxyZoneSpec as any).setDelegate(lastDelegate);
       }
     }
@@ -146,9 +151,9 @@
     // Note we have to make a function with correct number of arguments, otherwise jasmine will
     // think that all functions are sync or async.
     return (testBody && (testBody.length ? function(done: Function) {
-              return runInTestZone(testBody, this.queueRunner, done);
+              return runInTestZone(testBody, this, this.queueRunner, done);
             } : function() {
-              return runInTestZone(testBody, this.queueRunner);
+              return runInTestZone(testBody, this, this.queueRunner);
             }));
   }
   interface QueueRunner {
