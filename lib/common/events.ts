@@ -18,6 +18,23 @@ interface EventTaskData extends TaskData {
   readonly useG?: boolean;
 }
 
+let passiveSupported = false;
+
+if (typeof window !== 'undefined') {
+  try {
+    const options = Object.defineProperty({}, 'passive', {
+      get: function() {
+        passiveSupported = true;
+      }
+    });
+
+    window.addEventListener('test', options, options);
+    window.removeEventListener('test', options, options);
+  } catch (err) {
+    passiveSupported = false;
+  }
+}
+
 // an identifier to tell ZoneTask do not create a new invoke closure
 const OPTIMIZED_ZONE_EVENT_TASK_DATA: EventTaskData = {
   useG: true
@@ -50,6 +67,8 @@ export interface PatchEventTargetOptions {
   rt?: boolean;
   // event compare handler
   diff?: (task: any, delegate: any) => boolean;
+  // support passive or not
+  supportPassive?: boolean;
 }
 
 export function patchEventTarget(
@@ -212,12 +231,25 @@ export function patchEventTarget(
           proto[patchOptions.prepend];
     }
 
-    const customScheduleGlobal = function() {
+    function checkIsPassive(task: Task) {
+      if (!passiveSupported && typeof taskData.options !== 'boolean' &&
+          typeof taskData.options !== 'undefined' && taskData.options !== null) {
+        // options is a non-null non-undefined object
+        // passive is not supported
+        // don't pass options as object
+        // just pass capture as a boolean
+        (task as any).options = !!taskData.options.capture;
+        taskData.options = (task as any).options;
+      }
+    }
+
+    const customScheduleGlobal = function(task: Task) {
       // if there is already a task for the eventName + capture,
       // just return, because we use the shared globalZoneAwareCallback here.
       if (taskData.isExisting) {
         return;
       }
+      checkIsPassive(task);
       return nativeAddEventListener.call(
           taskData.target, taskData.eventName,
           taskData.capture ? globalZoneAwareCaptureCallback : globalZoneAwareCallback,
@@ -265,6 +297,7 @@ export function patchEventTarget(
     };
 
     const customScheduleNonGlobal = function(task: Task) {
+      checkIsPassive(task);
       return nativeAddEventListener.call(
           taskData.target, taskData.eventName, task.invoke, taskData.options);
     };
@@ -422,7 +455,11 @@ export function patchEventTarget(
         if (once) {
           options.once = true;
         }
-        task.options = options;
+        if (!(!passiveSupported && typeof task.options === 'boolean')) {
+          // if not support passive, and we pass an option object
+          // to addEventListener, we should save the options to task
+          task.options = options;
+        }
         task.target = target;
         task.capture = capture;
         task.eventName = eventName;
