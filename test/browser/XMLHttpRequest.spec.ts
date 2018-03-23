@@ -17,22 +17,36 @@ describe('XMLHttpRequest', function() {
 
   it('should intercept XHRs and treat them as MacroTasks', function(done) {
     let req: XMLHttpRequest;
-    const testZoneWithWtf =
-        Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({name: 'TestZone'});
+    let onStable: any;
+    const testZoneWithWtf = Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({
+      name: 'TestZone',
+      onHasTask: (delegate: ZoneDelegate, curr: Zone, target: Zone, hasTask: HasTaskState) => {
+        if (!hasTask.macroTask) {
+          onStable && onStable();
+        }
+      }
+    });
 
     testZoneWithWtf.run(() => {
       req = new XMLHttpRequest();
+      const logs: string[] = [];
       req.onload = () => {
-        // The last entry in the log should be the invocation for the current onload,
-        // which will vary depending on browser environment. The prior entries
-        // should be the invocation of the send macrotask.
-        expect(wtfMock.log[wtfMock.log.length - 3])
-            .toEqual('> Zone:invokeTask:XMLHttpRequest.send("<root>::ProxyZone::WTF::TestZone")');
+        logs.push('onload');
+      };
+      onStable = function() {
         expect(wtfMock.log[wtfMock.log.length - 2])
+            .toEqual('> Zone:invokeTask:XMLHttpRequest.send("<root>::ProxyZone::WTF::TestZone")');
+        expect(wtfMock.log[wtfMock.log.length - 1])
             .toEqual('< Zone:invokeTask:XMLHttpRequest.send');
         if (supportPatchXHROnProperty()) {
-          expect(wtfMock.log[wtfMock.log.length - 1])
+          expect(wtfMock.log[wtfMock.log.length - 3])
+              .toMatch(/\< Zone\:invokeTask.*addEventListener\:load/);
+          expect(wtfMock.log[wtfMock.log.length - 4])
               .toMatch(/\> Zone\:invokeTask.*addEventListener\:load/);
+        }
+        // if browser can patch onload
+        if ((req as any)['__zone_symbol__loadfalse']) {
+          expect(logs).toEqual(['onload']);
         }
         done();
       };
