@@ -76,6 +76,11 @@ declare const global: any;
           throw new Error(`Expected ${expected} to be ${actual}`);
         }
       },
+      toBeGreaterThan: function(actual: number) {
+        if (expected <= actual) {
+          throw new Error(`Expected ${expected} to be greater than ${actual}`);
+        }
+      },
       toBeDefined: function() {
         if (!expected) {
           throw new Error(`Expected ${expected} to be defined`);
