@@ -17,6 +17,8 @@ class ProxyZoneSpec implements ZoneSpec {
   lastTaskState: HasTaskState = null;
   isNeedToTriggerHasTask = false;
 
+  private tasks: Task[] = [];
+
   static get(): ProxyZoneSpec {
     return Zone.current.get('ProxyZoneSpec');
   }
@@ -35,7 +37,6 @@ class ProxyZoneSpec implements ZoneSpec {
   constructor(private defaultSpecDelegate: ZoneSpec = null) {
     this.setDelegate(defaultSpecDelegate);
   }
-
 
   setDelegate(delegateSpec: ZoneSpec) {
     const isNewDelegate = this._delegateSpec !== delegateSpec;
@@ -72,6 +73,37 @@ class ProxyZoneSpec implements ZoneSpec {
     }
   }
 
+  removeFromTasks(task: Task) {
+    if (!this.tasks) {
+      return;
+    }
+    for (let i = 0; i < this.tasks.length; i ++) {
+      if (this.tasks[i] === task) {
+        this.tasks.splice(i, 1);
+        return;
+      }
+    }
+  }
+
+  getAndClearPendingTasksInfo() {
+    if (this.tasks.length === 0) {
+      return '';
+    }
+    const taskInfo = this.tasks.map((task: Task) => {
+      const dataInfo = task.data &&
+          Object.keys(task.data)
+              .map((key: string) => {
+                return key + ':' + (task.data as any)[key];
+              })
+              .join(',');
+      return `type: ${task.type}, source: ${task.source}, args: {${dataInfo}}`;
+    });
+    const pendingTasksInfo = '--Pendng async tasks are: [' + taskInfo + ']';
+    // clear tasks
+    this.tasks = [];
+
+    return pendingTasksInfo;
+  }
 
   onFork(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, zoneSpec: ZoneSpec):
       Zone {
@@ -118,6 +150,9 @@ class ProxyZoneSpec implements ZoneSpec {
 
   onScheduleTask(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
       Task {
+    if (task.type !== 'eventTask') {
+      this.tasks.push(task);
+    }
     if (this._delegateSpec && this._delegateSpec.onScheduleTask) {
       return this._delegateSpec.onScheduleTask(parentZoneDelegate, currentZone, targetZone, task);
     } else {
@@ -128,6 +163,9 @@ class ProxyZoneSpec implements ZoneSpec {
   onInvokeTask(
       parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task,
       applyThis: any, applyArgs: any): any {
+    if (task.type !== 'eventTask') {
+      this.removeFromTasks(task);
+    }
     this.tryTriggerHasTask(parentZoneDelegate, currentZone, targetZone);
     if (this._delegateSpec && this._delegateSpec.onInvokeTask) {
       return this._delegateSpec.onInvokeTask(
@@ -139,6 +177,9 @@ class ProxyZoneSpec implements ZoneSpec {
 
   onCancelTask(parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
       any {
+    if (task.type !== 'eventTask') {
+      this.removeFromTasks(task);
+    }
     this.tryTriggerHasTask(parentZoneDelegate, currentZone, targetZone);
     if (this._delegateSpec && this._delegateSpec.onCancelTask) {
       return this._delegateSpec.onCancelTask(parentZoneDelegate, currentZone, targetZone, task);
