@@ -226,6 +226,8 @@ describe('FakeAsyncTestZoneSpec', () => {
           cycles++;
         }, 10);
 
+        expect(id).toBeGreaterThan(0);
+
         testZoneSpec.tick(10);
         expect(cycles).toEqual(1);
 

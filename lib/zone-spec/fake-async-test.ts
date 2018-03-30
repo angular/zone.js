@@ -56,7 +56,7 @@
 
   class Scheduler {
     // Next scheduler id.
-    public nextId: number = 0;
+    public nextId: number = 1;
 
     // Scheduler queue with the tuple of end time and callback function - sorted by end time.
     private _schedulerQueue: ScheduledFunction[] = [];
@@ -409,12 +409,14 @@
         case 'macroTask':
           switch (task.source) {
             case 'setTimeout':
-              task.data['handleId'] =
-                  this._setTimeout(task.invoke, task.data['delay'], Array.prototype.slice.call((task.data as any)['args'], 2));
+              task.data['handleId'] = this._setTimeout(
+                  task.invoke, task.data['delay'],
+                  Array.prototype.slice.call((task.data as any)['args'], 2));
               break;
             case 'setInterval':
-              task.data['handleId'] =
-                  this._setInterval(task.invoke, task.data['delay'], Array.prototype.slice.call((task.data as any)['args'], 2));
+              task.data['handleId'] = this._setInterval(
+                  task.invoke, task.data['delay'],
+                  Array.prototype.slice.call((task.data as any)['args'], 2));
               break;
             case 'XMLHttpRequest.send':
               throw new Error(
@@ -480,7 +482,9 @@
       }
     }
 
-    onInvoke(delegate: ZoneDelegate, current: Zone, target: Zone, callback: Function, applyThis: any, applyArgs: any[], source: string): any {
+    onInvoke(
+        delegate: ZoneDelegate, current: Zone, target: Zone, callback: Function, applyThis: any,
+        applyArgs: any[], source: string): any {
       try {
         FakeAsyncTestZoneSpec.patchDate();
         return delegate.invoke(target, callback, applyThis, applyArgs, source);
