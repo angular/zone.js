@@ -1,3 +1,38 @@
+<a name="0.8.21"></a>
+## [0.8.21](https://github.com/angular/zone.js/compare/v0.8.20...0.8.21) (2018-03-30)
+
+
+### Bug Fixes
+
+* add OriginalDelegate prop to Function::toString ([#993](https://github.com/angular/zone.js/issues/993)) ([2dc7e5c](https://github.com/angular/zone.js/commit/2dc7e5c))
+* **core:** fix [#1000](https://github.com/angular/zone.js/issues/1000), check target is null or not when patchOnProperty ([#1004](https://github.com/angular/zone.js/issues/1004)) ([5c139e5](https://github.com/angular/zone.js/commit/5c139e5))
+* **core:** fix [#946](https://github.com/angular/zone.js/issues/946), don't patch promise if it is not writable ([#1041](https://github.com/angular/zone.js/issues/1041)) ([c8c5990](https://github.com/angular/zone.js/commit/c8c5990))
+* **event:** fix [#1021](https://github.com/angular/zone.js/issues/1021), removeListener/removeAllListeners should return eventEmitter ([#1022](https://github.com/angular/zone.js/issues/1022)) ([ab72df6](https://github.com/angular/zone.js/commit/ab72df6))
+* **fakeAsync:** fix [#1056](https://github.com/angular/zone.js/issues/1056), fakeAsync timerId should not be zero ([#1057](https://github.com/angular/zone.js/issues/1057)) ([68682cd](https://github.com/angular/zone.js/commit/68682cd))
+* **jasmine:** fix [#1015](https://github.com/angular/zone.js/issues/1015), make jasmine patch compatible to jasmine 3.x ([#1016](https://github.com/angular/zone.js/issues/1016)) ([e1df4bc](https://github.com/angular/zone.js/commit/e1df4bc))
+* **patch:** fix [#998](https://github.com/angular/zone.js/issues/998), patch mediaQuery for new Safari ([#1003](https://github.com/angular/zone.js/issues/1003)) ([c7c7db5](https://github.com/angular/zone.js/commit/c7c7db5))
+* **proxy:** proxyZone should call onHasTask when change delegate ([#1030](https://github.com/angular/zone.js/issues/1030)) ([40b110d](https://github.com/angular/zone.js/commit/40b110d))
+* **test:** fix mocha compatible issue ([#1028](https://github.com/angular/zone.js/issues/1028)) ([c554e9f](https://github.com/angular/zone.js/commit/c554e9f))
+* **testing:** fix [#1032](https://github.com/angular/zone.js/issues/1032), fakeAsync should pass parameters correctly ([#1033](https://github.com/angular/zone.js/issues/1033)) ([eefe983](https://github.com/angular/zone.js/commit/eefe983))
+
+
+### Features
+
+* **bluebird:** fix [#921](https://github.com/angular/zone.js/issues/921), [#977](https://github.com/angular/zone.js/issues/977), support bluebird ([#1039](https://github.com/angular/zone.js/issues/1039)) ([438210c](https://github.com/angular/zone.js/commit/438210c))
+* **build:** use yarn instead of npm ([#1025](https://github.com/angular/zone.js/issues/1025)) ([ebd348c](https://github.com/angular/zone.js/commit/ebd348c))
+* **core:** fix [#996](https://github.com/angular/zone.js/issues/996), expose UncaughtPromiseError ([#1040](https://github.com/angular/zone.js/issues/1040)) ([7f178b1](https://github.com/angular/zone.js/commit/7f178b1))
+* **jasmine:** support Date.now in fakeAsyncTest ([#1009](https://github.com/angular/zone.js/issues/1009)) ([f22065e](https://github.com/angular/zone.js/commit/f22065e))
+* **jsonp:** provide a help method to patch jsonp ([#997](https://github.com/angular/zone.js/issues/997)) ([008fd43](https://github.com/angular/zone.js/commit/008fd43))
+* **patch:** fix [#1011](https://github.com/angular/zone.js/issues/1011), patch ResizeObserver ([#1012](https://github.com/angular/zone.js/issues/1012)) ([8ee88da](https://github.com/angular/zone.js/commit/8ee88da))
+* **patch:** fix [#828](https://github.com/angular/zone.js/issues/828), patch socket.io client ([b3db9f4](https://github.com/angular/zone.js/commit/b3db9f4))
+* **promise:** support Promise.prototype.finally ([#1005](https://github.com/angular/zone.js/issues/1005)) ([6a1a830](https://github.com/angular/zone.js/commit/6a1a830))
+* **rollup:** use new rollup config to prevent warning ([#1006](https://github.com/angular/zone.js/issues/1006)) ([6b6b38a](https://github.com/angular/zone.js/commit/6b6b38a))
+* **test:** can handle non zone aware task in promise ([#1014](https://github.com/angular/zone.js/issues/1014)) ([6852f1d](https://github.com/angular/zone.js/commit/6852f1d))
+* **test:** move async/fakeAsync from angular to zone.js ([#1048](https://github.com/angular/zone.js/issues/1048)) ([a4b42cd](https://github.com/angular/zone.js/commit/a4b42cd))
+* **testing:** can display pending tasks info when test timeout in jasmine/mocha ([#1038](https://github.com/angular/zone.js/issues/1038)) ([57bc80c](https://github.com/angular/zone.js/commit/57bc80c))
+
+
+
 <a name="0.8.20"></a>
 ## [0.8.20](https://github.com/angular/zone.js/compare/v0.8.19...0.8.20) (2018-01-10)
 
