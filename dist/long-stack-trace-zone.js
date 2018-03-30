@@ -28,7 +28,7 @@ var creationTrace = '__creationTrace__';
 var ERROR_TAG = 'STACKTRACE TRACKING';
 var SEP_TAG = '__SEP_TAG__';
 var sepTemplate = SEP_TAG + '@[native]';
-var LongStackTrace = (function () {
+var LongStackTrace = /** @class */ (function () {
     function LongStackTrace() {
         this.error = getStacktrace();
         this.timestamp = new Date();

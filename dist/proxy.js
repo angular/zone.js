@@ -18,13 +18,16 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var ProxyZoneSpec = (function () {
+var ProxyZoneSpec = /** @class */ (function () {
     function ProxyZoneSpec(defaultSpecDelegate) {
         if (defaultSpecDelegate === void 0) { defaultSpecDelegate = null; }
         this.defaultSpecDelegate = defaultSpecDelegate;
         this.name = 'ProxyZone';
         this.properties = { 'ProxyZoneSpec': this };
         this.propertyKeys = null;
+        this.lastTaskState = null;
+        this.isNeedToTriggerHasTask = false;
+        this.tasks = [];
         this.setDelegate(defaultSpecDelegate);
     }
     ProxyZoneSpec.get = function () {
@@ -34,13 +37,14 @@ var ProxyZoneSpec = (function () {
         return ProxyZoneSpec.get() instanceof ProxyZoneSpec;
     };
     ProxyZoneSpec.assertPresent = function () {
-        if (!this.isLoaded()) {
+        if (!ProxyZoneSpec.isLoaded()) {
             throw new Error("Expected to be running in 'ProxyZone', but it was not found.");
         }
         return ProxyZoneSpec.get();
     };
     ProxyZoneSpec.prototype.setDelegate = function (delegateSpec) {
         var _this = this;
+        var isNewDelegate = this._delegateSpec !== delegateSpec;
         this._delegateSpec = delegateSpec;
         this.propertyKeys && this.propertyKeys.forEach(function (key) { return delete _this.properties[key]; });
         this.propertyKeys = null;
@@ -48,12 +52,55 @@ var ProxyZoneSpec = (function () {
             this.propertyKeys = Object.keys(delegateSpec.properties);
             this.propertyKeys.forEach(function (k) { return _this.properties[k] = delegateSpec.properties[k]; });
         }
+        // if set a new delegateSpec, shoulde check whether need to
+        // trigger hasTask or not
+        if (isNewDelegate && this.lastTaskState &&
+            (this.lastTaskState.macroTask || this.lastTaskState.microTask)) {
+            this.isNeedToTriggerHasTask = true;
+        }
     };
     ProxyZoneSpec.prototype.getDelegate = function () {
         return this._delegateSpec;
     };
     ProxyZoneSpec.prototype.resetDelegate = function () {
         this.setDelegate(this.defaultSpecDelegate);
+    };
+    ProxyZoneSpec.prototype.tryTriggerHasTask = function (parentZoneDelegate, currentZone, targetZone) {
+        if (this.isNeedToTriggerHasTask && this.lastTaskState) {
+            // last delegateSpec has microTask or macroTask
+            // should call onHasTask in current delegateSpec
+            this.isNeedToTriggerHasTask = false;
+            this.onHasTask(parentZoneDelegate, currentZone, targetZone, this.lastTaskState);
+        }
+    };
+    ProxyZoneSpec.prototype.removeFromTasks = function (task) {
+        if (!this.tasks) {
+            return;
+        }
+        for (var i = 0; i < this.tasks.length; i++) {
+            if (this.tasks[i] === task) {
+                this.tasks.splice(i, 1);
+                return;
+            }
+        }
+    };
+    ProxyZoneSpec.prototype.getAndClearPendingTasksInfo = function () {
+        if (this.tasks.length === 0) {
+            return '';
+        }
+        var taskInfo = this.tasks.map(function (task) {
+            var dataInfo = task.data &&
+                Object.keys(task.data)
+                    .map(function (key) {
+                    return key + ':' + task.data[key];
+                })
+                    .join(',');
+            return "type: " + task.type + ", source: " + task.source + ", args: {" + dataInfo + "}";
+        });
+        var pendingTasksInfo = '--Pendng async tasks are: [' + taskInfo + ']';
+        // clear tasks
+        this.tasks = [];
+        return pendingTasksInfo;
     };
     ProxyZoneSpec.prototype.onFork = function (parentZoneDelegate, currentZone, targetZone, zoneSpec) {
         if (this._delegateSpec && this._delegateSpec.onFork) {
@@ -72,6 +119,7 @@ var ProxyZoneSpec = (function () {
         }
     };
     ProxyZoneSpec.prototype.onInvoke = function (parentZoneDelegate, currentZone, targetZone, delegate, applyThis, applyArgs, source) {
+        this.tryTriggerHasTask(parentZoneDelegate, currentZone, targetZone);
         if (this._delegateSpec && this._delegateSpec.onInvoke) {
             return this._delegateSpec.onInvoke(parentZoneDelegate, currentZone, targetZone, delegate, applyThis, applyArgs, source);
         }
@@ -88,6 +136,9 @@ var ProxyZoneSpec = (function () {
         }
     };
     ProxyZoneSpec.prototype.onScheduleTask = function (parentZoneDelegate, currentZone, targetZone, task) {
+        if (task.type !== 'eventTask') {
+            this.tasks.push(task);
+        }
         if (this._delegateSpec && this._delegateSpec.onScheduleTask) {
             return this._delegateSpec.onScheduleTask(parentZoneDelegate, currentZone, targetZone, task);
         }
@@ -96,7 +147,11 @@ var ProxyZoneSpec = (function () {
         }
     };
     ProxyZoneSpec.prototype.onInvokeTask = function (parentZoneDelegate, currentZone, targetZone, task, applyThis, applyArgs) {
-        if (this._delegateSpec && this._delegateSpec.onFork) {
+        if (task.type !== 'eventTask') {
+            this.removeFromTasks(task);
+        }
+        this.tryTriggerHasTask(parentZoneDelegate, currentZone, targetZone);
+        if (this._delegateSpec && this._delegateSpec.onInvokeTask) {
             return this._delegateSpec.onInvokeTask(parentZoneDelegate, currentZone, targetZone, task, applyThis, applyArgs);
         }
         else {
@@ -104,6 +159,10 @@ var ProxyZoneSpec = (function () {
         }
     };
     ProxyZoneSpec.prototype.onCancelTask = function (parentZoneDelegate, currentZone, targetZone, task) {
+        if (task.type !== 'eventTask') {
+            this.removeFromTasks(task);
+        }
+        this.tryTriggerHasTask(parentZoneDelegate, currentZone, targetZone);
         if (this._delegateSpec && this._delegateSpec.onCancelTask) {
             return this._delegateSpec.onCancelTask(parentZoneDelegate, currentZone, targetZone, task);
         }
@@ -112,6 +171,7 @@ var ProxyZoneSpec = (function () {
         }
     };
     ProxyZoneSpec.prototype.onHasTask = function (delegate, current, target, hasTaskState) {
+        this.lastTaskState = hasTaskState;
         if (this._delegateSpec && this._delegateSpec.onHasTask) {
             this._delegateSpec.onHasTask(delegate, current, target, hasTaskState);
         }

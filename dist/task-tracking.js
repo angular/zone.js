@@ -24,7 +24,7 @@
  * This is useful in tests. For example to see which tasks are preventing a test from completing
  * or an automated way of releasing all of the event listeners at the end of the test.
  */
-var TaskTrackingZoneSpec = (function () {
+var TaskTrackingZoneSpec = /** @class */ (function () {
     function TaskTrackingZoneSpec() {
         this.name = 'TaskTrackingZone';
         this.microTasks = [];
