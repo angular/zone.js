@@ -5,7 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-
 class ProxyZoneSpec implements ZoneSpec {
   name: string = 'ProxyZone';
 
@@ -28,7 +27,7 @@ class ProxyZoneSpec implements ZoneSpec {
   }
 
   static assertPresent(): ProxyZoneSpec {
-    if (!this.isLoaded()) {
+    if (!ProxyZoneSpec.isLoaded()) {
       throw new Error(`Expected to be running in 'ProxyZone', but it was not found.`);
     }
     return ProxyZoneSpec.get();
@@ -69,7 +68,7 @@ class ProxyZoneSpec implements ZoneSpec {
       // last delegateSpec has microTask or macroTask
       // should call onHasTask in current delegateSpec
       this.isNeedToTriggerHasTask = false;
-      this.onHasTask(parentZoneDelegate, currentZone, targetZone, this.lastTaskState); 
+      this.onHasTask(parentZoneDelegate, currentZone, targetZone, this.lastTaskState);
     }
   }
 

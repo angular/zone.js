@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import '../../lib/zone-spec/sync-test';
 import {ifEnvSupports} from '../test-util';
 
 describe('SyncTestZoneSpec', () => {

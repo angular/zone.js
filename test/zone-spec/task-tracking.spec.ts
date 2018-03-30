@@ -6,8 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import '../../lib/zone-spec/task-tracking';
-
 import {supportPatchXHROnProperty} from '../test-util';
 
 declare const global: any;
