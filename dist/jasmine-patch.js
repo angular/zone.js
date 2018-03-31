@@ -116,7 +116,7 @@
             return syncZone.run(describeBody, this, arguments);
         };
     }
-    function runInTestZone(testBody, queueRunner, done) {
+    function runInTestZone(testBody, applyThis, queueRunner, done) {
         var isClockInstalled = !!jasmine[symbol('clockInstalled')];
         var testProxyZoneSpec = queueRunner.testProxyZoneSpec;
         var testProxyZone = queueRunner.testProxyZone;
@@ -127,18 +127,23 @@
                 var _fakeAsyncTestZoneSpec = new FakeAsyncTestZoneSpec();
                 lastDelegate = testProxyZoneSpec.getDelegate();
                 testProxyZoneSpec.setDelegate(_fakeAsyncTestZoneSpec);
+                _fakeAsyncTestZoneSpec.lockDatePatch();
             }
         }
         try {
             if (done) {
-                return testProxyZone.run(testBody, this, [done]);
+                return testProxyZone.run(testBody, applyThis, [done]);
             }
             else {
-                return testProxyZone.run(testBody, this);
+                return testProxyZone.run(testBody, applyThis);
             }
         }
         finally {
             if (isClockInstalled) {
+                var _fakeAsyncTestZoneSpec = testProxyZoneSpec.getDelegate();
+                if (_fakeAsyncTestZoneSpec) {
+                    _fakeAsyncTestZoneSpec.unlockDatePatch();
+                }
                 testProxyZoneSpec.setDelegate(lastDelegate);
             }
         }
@@ -153,9 +158,9 @@
         // Note we have to make a function with correct number of arguments, otherwise jasmine will
         // think that all functions are sync or async.
         return (testBody && (testBody.length ? function (done) {
-            return runInTestZone(testBody, this.queueRunner, done);
+            return runInTestZone(testBody, this, this.queueRunner, done);
         } : function () {
-            return runInTestZone(testBody, this.queueRunner);
+            return runInTestZone(testBody, this, this.queueRunner);
         }));
     }
     var QueueRunner = jasmine.QueueRunner;

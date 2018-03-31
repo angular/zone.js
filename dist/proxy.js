@@ -63,6 +63,7 @@ var ProxyZoneSpec = /** @class */ (function () {
         return this._delegateSpec;
     };
     ProxyZoneSpec.prototype.resetDelegate = function () {
+        var delegateSpec = this.getDelegate();
         this.setDelegate(this.defaultSpecDelegate);
     };
     ProxyZoneSpec.prototype.tryTriggerHasTask = function (parentZoneDelegate, currentZone, targetZone) {

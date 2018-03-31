@@ -136,6 +136,20 @@ describe('FakeAsyncTestZoneSpec', () => {
       });
     });
 
+    it('should run queued immediate timer on zero tick', () => {
+      fakeAsyncTestZone.run(() => {
+        let ran = false;
+        setImmediate(() => {
+          ran = true;
+        });
+
+        expect(ran).toEqual(false);
+
+        testZoneSpec.tick();
+        expect(ran).toEqual(true);
+      });
+    });
+
     it('should run queued timer after sufficient clock ticks', () => {
       fakeAsyncTestZone.run(() => {
         let ran = false;
@@ -212,6 +226,18 @@ describe('FakeAsyncTestZoneSpec', () => {
         let id = setTimeout((arg1, arg2) => {
           value = arg1 + arg2;
         }, 0, 'expected', ' value');
+
+        testZoneSpec.tick();
+        expect(value).toEqual('expected value');
+      });
+    });
+
+    it('should pass arguments to setImmediate', () => {
+      fakeAsyncTestZone.run(() => {
+        let value = 'genuine value';
+        let id = setImmediate((arg1, arg2) => {
+          value = arg1 + arg2;
+        }, 'expected', ' value');
 
         testZoneSpec.tick();
         expect(value).toEqual('expected value');

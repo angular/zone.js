@@ -1,3 +1,14 @@
+<a name="0.8.22"></a>
+## [0.8.22](https://github.com/angular/zone.js/compare/v0.8.21...0.8.22) (2018-03-31)
+
+
+### Bug Fixes
+
+* **fakeAsync:** fix [#1050](https://github.com/angular/zone.js/issues/1050), should only reset patched Date.now until fakeAsync exit  ([#1051](https://github.com/angular/zone.js/issues/1051)) ([e15d735](https://github.com/angular/zone.js/commit/e15d735))
+* **fakeAsyncTest:** fix [#1061](https://github.com/angular/zone.js/issues/1061), fakeAsync should support setImmediate ([#1062](https://github.com/angular/zone.js/issues/1062)) ([66c6f97](https://github.com/angular/zone.js/commit/66c6f97))
+
+
+
 <a name="0.8.21"></a>
 ## [0.8.21](https://github.com/angular/zone.js/compare/v0.8.20...0.8.21) (2018-03-30)
 

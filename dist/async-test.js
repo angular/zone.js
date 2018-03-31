@@ -29,13 +29,11 @@ var AsyncTestZoneSpec = /** @class */ (function () {
         this.runZone = Zone.current;
         this.unresolvedChainedPromiseCount = 0;
         this.name = 'asyncTestZone for ' + namePrefix;
-        this.properties = {
-            'AsyncTestZoneSpec': this
-        };
+        this.properties = { 'AsyncTestZoneSpec': this };
     }
     AsyncTestZoneSpec.prototype._finishCallbackIfDone = function () {
         var _this = this;
-        if (!(this._pendingMicroTasks || this._pendingMacroTasks || this.unresolvedChainedPromiseCount !== 0)) {
+        if (!(this._pendingMicroTasks || this._pendingMacroTasks)) {
             // We do this because we would like to catch unhandled rejected promises.
             this.runZone.run(function () {
                 setTimeout(function () {
@@ -63,7 +61,7 @@ var AsyncTestZoneSpec = /** @class */ (function () {
             this._isSync = false;
         }
         if (task.type === 'microTask' && task.data && task.data instanceof Promise) {
-            // check whether the promise is a chained promise 
+            // check whether the promise is a chained promise
             if (task.data[AsyncTestZoneSpec.symbolParentUnresolved] === true) {
                 // chained promise is being scheduled
                 this.unresolvedChainedPromiseCount--;
@@ -90,12 +88,10 @@ var AsyncTestZoneSpec = /** @class */ (function () {
     // was scheduled/invoked/canceled.
     AsyncTestZoneSpec.prototype.onInvoke = function (parentZoneDelegate, currentZone, targetZone, delegate, applyThis, applyArgs, source) {
         try {
-            this.patchPromiseForTest();
             this._isSync = true;
             return parentZoneDelegate.invoke(targetZone, delegate, applyThis, applyArgs, source);
         }
         finally {
-            this.unPatchPromiseForTest();
             var afterTaskCounts = parentZoneDelegate._taskCounts;
             if (this._isSync) {
                 this._finishCallbackIfDone();
