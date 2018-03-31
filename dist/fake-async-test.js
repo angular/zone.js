@@ -192,6 +192,7 @@
             this._uncaughtPromiseErrors = Promise[Zone.__symbol__('uncaughtPromiseErrors')];
             this.pendingPeriodicTimers = [];
             this.pendingTimers = [];
+            this.patchDateLocked = false;
             this.properties = { 'FakeAsyncTestZoneSpec': this };
             this.name = 'fakeAsyncTestZone for ' + namePrefix;
             // in case user can't access the construction of FakeAsyncTestSpec
@@ -307,11 +308,20 @@
                 return;
             }
             global['Date'] = FakeDate;
+            FakeDate.prototype = OriginalDate.prototype;
         };
         FakeAsyncTestZoneSpec.resetDate = function () {
             if (global['Date'] === FakeDate) {
                 global['Date'] = OriginalDate;
             }
+        };
+        FakeAsyncTestZoneSpec.prototype.lockDatePatch = function () {
+            this.patchDateLocked = true;
+            FakeAsyncTestZoneSpec.patchDate();
+        };
+        FakeAsyncTestZoneSpec.prototype.unlockDatePatch = function () {
+            this.patchDateLocked = false;
+            FakeAsyncTestZoneSpec.resetDate();
         };
         FakeAsyncTestZoneSpec.prototype.tick = function (millis, doTick) {
             if (millis === void 0) { millis = 0; }
@@ -370,6 +380,9 @@
                     switch (task.source) {
                         case 'setTimeout':
                             task.data['handleId'] = this._setTimeout(task.invoke, task.data['delay'], Array.prototype.slice.call(task.data['args'], 2));
+                            break;
+                        case 'setImmediate':
+                            task.data['handleId'] = this._setTimeout(task.invoke, 0, Array.prototype.slice.call(task.data['args'], 1));
                             break;
                         case 'setInterval':
                             task.data['handleId'] = this._setInterval(task.invoke, task.data['delay'], Array.prototype.slice.call(task.data['args'], 2));
@@ -439,7 +452,9 @@
                 return delegate.invoke(target, callback, applyThis, applyArgs, source);
             }
             finally {
-                FakeAsyncTestZoneSpec.resetDate();
+                if (!this.patchDateLocked) {
+                    FakeAsyncTestZoneSpec.resetDate();
+                }
             }
         };
         FakeAsyncTestZoneSpec.prototype.findMacroTaskOption = function (task) {

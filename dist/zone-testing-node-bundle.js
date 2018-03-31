@@ -643,16 +643,6 @@ var Zone$1 = (function (global) {
     return global['Zone'] = Zone;
 })(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);
 
-var __values = (undefined && undefined.__values) || function (o) {
-    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
-    if (m) return m.call(o);
-    return {
-        next: function () {
-            if (o && i >= o.length) o = void 0;
-            return { value: o && o[i++], done: !o };
-        }
-    };
-};
 Zone.__load_patch('ZoneAwarePromise', function (global, Zone, api) {
     var ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
     var ObjectDefineProperty = Object.defineProperty;
@@ -926,24 +916,14 @@ Zone.__load_patch('ZoneAwarePromise', function (global, Zone, api) {
             function onReject(error) {
                 promise && (promise = null || reject(error));
             }
-            try {
-                for (var values_1 = __values(values), values_1_1 = values_1.next(); !values_1_1.done; values_1_1 = values_1.next()) {
-                    var value = values_1_1.value;
-                    if (!isThenable(value)) {
-                        value = this.resolve(value);
-                    }
-                    value.then(onResolve, onReject);
+            for (var _i = 0, values_1 = values; _i < values_1.length; _i++) {
+                var value = values_1[_i];
+                if (!isThenable(value)) {
+                    value = this.resolve(value);
                 }
-            }
-            catch (e_1_1) { e_1 = { error: e_1_1 }; }
-            finally {
-                try {
-                    if (values_1_1 && !values_1_1.done && (_a = values_1.return)) _a.call(values_1);
-                }
-                finally { if (e_1) throw e_1.error; }
+                value.then(onResolve, onReject);
             }
             return promise;
-            var e_1, _a;
         };
         ZoneAwarePromise.all = function (values) {
             var resolve;
@@ -954,33 +934,23 @@ Zone.__load_patch('ZoneAwarePromise', function (global, Zone, api) {
             });
             var count = 0;
             var resolvedValues = [];
-            try {
-                for (var values_2 = __values(values), values_2_1 = values_2.next(); !values_2_1.done; values_2_1 = values_2.next()) {
-                    var value = values_2_1.value;
-                    if (!isThenable(value)) {
-                        value = this.resolve(value);
+            for (var _i = 0, values_2 = values; _i < values_2.length; _i++) {
+                var value = values_2[_i];
+                if (!isThenable(value)) {
+                    value = this.resolve(value);
+                }
+                value.then((function (index) { return function (value) {
+                    resolvedValues[index] = value;
+                    count--;
+                    if (!count) {
+                        resolve(resolvedValues);
                     }
-                    value.then((function (index) { return function (value) {
-                        resolvedValues[index] = value;
-                        count--;
-                        if (!count) {
-                            resolve(resolvedValues);
-                        }
-                    }; })(count), reject);
-                    count++;
-                }
-            }
-            catch (e_2_1) { e_2 = { error: e_2_1 }; }
-            finally {
-                try {
-                    if (values_2_1 && !values_2_1.done && (_a = values_2.return)) _a.call(values_2);
-                }
-                finally { if (e_2) throw e_2.error; }
+                }; })(count), reject);
+                count++;
             }
             if (!count)
                 resolve(resolvedValues);
             return promise;
-            var e_2, _a;
         };
         ZoneAwarePromise.prototype.then = function (onFulfilled, onRejected) {
             var chainPromise = new this.constructor(null);
@@ -2537,6 +2507,7 @@ var ProxyZoneSpec = /** @class */ (function () {
         return this._delegateSpec;
     };
     ProxyZoneSpec.prototype.resetDelegate = function () {
+        var delegateSpec = this.getDelegate();
         this.setDelegate(this.defaultSpecDelegate);
     };
     ProxyZoneSpec.prototype.tryTriggerHasTask = function (parentZoneDelegate, currentZone, targetZone) {
@@ -2793,7 +2764,7 @@ Zone['SyncTestZoneSpec'] = SyncTestZoneSpec;
             return syncZone.run(describeBody, this, arguments);
         };
     }
-    function runInTestZone(testBody, queueRunner, done) {
+    function runInTestZone(testBody, applyThis, queueRunner, done) {
         var isClockInstalled = !!jasmine[symbol('clockInstalled')];
         var testProxyZoneSpec = queueRunner.testProxyZoneSpec;
         var testProxyZone = queueRunner.testProxyZone;
@@ -2804,18 +2775,23 @@ Zone['SyncTestZoneSpec'] = SyncTestZoneSpec;
                 var _fakeAsyncTestZoneSpec = new FakeAsyncTestZoneSpec();
                 lastDelegate = testProxyZoneSpec.getDelegate();
                 testProxyZoneSpec.setDelegate(_fakeAsyncTestZoneSpec);
+                _fakeAsyncTestZoneSpec.lockDatePatch();
             }
         }
         try {
             if (done) {
-                return testProxyZone.run(testBody, this, [done]);
+                return testProxyZone.run(testBody, applyThis, [done]);
             }
             else {
-                return testProxyZone.run(testBody, this);
+                return testProxyZone.run(testBody, applyThis);
             }
         }
         finally {
             if (isClockInstalled) {
+                var _fakeAsyncTestZoneSpec = testProxyZoneSpec.getDelegate();
+                if (_fakeAsyncTestZoneSpec) {
+                    _fakeAsyncTestZoneSpec.unlockDatePatch();
+                }
                 testProxyZoneSpec.setDelegate(lastDelegate);
             }
         }
@@ -2830,9 +2806,9 @@ Zone['SyncTestZoneSpec'] = SyncTestZoneSpec;
         // Note we have to make a function with correct number of arguments, otherwise jasmine will
         // think that all functions are sync or async.
         return (testBody && (testBody.length ? function (done) {
-            return runInTestZone(testBody, this.queueRunner, done);
+            return runInTestZone(testBody, this, this.queueRunner, done);
         } : function () {
-            return runInTestZone(testBody, this.queueRunner);
+            return runInTestZone(testBody, this, this.queueRunner);
         }));
     }
     var QueueRunner = jasmine.QueueRunner;
@@ -2947,13 +2923,11 @@ var AsyncTestZoneSpec = /** @class */ (function () {
         this.runZone = Zone.current;
         this.unresolvedChainedPromiseCount = 0;
         this.name = 'asyncTestZone for ' + namePrefix;
-        this.properties = {
-            'AsyncTestZoneSpec': this
-        };
+        this.properties = { 'AsyncTestZoneSpec': this };
     }
     AsyncTestZoneSpec.prototype._finishCallbackIfDone = function () {
         var _this = this;
-        if (!(this._pendingMicroTasks || this._pendingMacroTasks || this.unresolvedChainedPromiseCount !== 0)) {
+        if (!(this._pendingMicroTasks || this._pendingMacroTasks)) {
             // We do this because we would like to catch unhandled rejected promises.
             this.runZone.run(function () {
                 setTimeout(function () {
@@ -2981,7 +2955,7 @@ var AsyncTestZoneSpec = /** @class */ (function () {
             this._isSync = false;
         }
         if (task.type === 'microTask' && task.data && task.data instanceof Promise) {
-            // check whether the promise is a chained promise 
+            // check whether the promise is a chained promise
             if (task.data[AsyncTestZoneSpec.symbolParentUnresolved] === true) {
                 // chained promise is being scheduled
                 this.unresolvedChainedPromiseCount--;
@@ -3008,12 +2982,10 @@ var AsyncTestZoneSpec = /** @class */ (function () {
     // was scheduled/invoked/canceled.
     AsyncTestZoneSpec.prototype.onInvoke = function (parentZoneDelegate, currentZone, targetZone, delegate, applyThis, applyArgs, source) {
         try {
-            this.patchPromiseForTest();
             this._isSync = true;
             return parentZoneDelegate.invoke(targetZone, delegate, applyThis, applyArgs, source);
         }
         finally {
-            this.unPatchPromiseForTest();
             var afterTaskCounts = parentZoneDelegate._taskCounts;
             if (this._isSync) {
                 this._finishCallbackIfDone();
@@ -3228,6 +3200,7 @@ Zone['AsyncTestZoneSpec'] = AsyncTestZoneSpec;
             this._uncaughtPromiseErrors = Promise[Zone.__symbol__('uncaughtPromiseErrors')];
             this.pendingPeriodicTimers = [];
             this.pendingTimers = [];
+            this.patchDateLocked = false;
             this.properties = { 'FakeAsyncTestZoneSpec': this };
             this.name = 'fakeAsyncTestZone for ' + namePrefix;
             // in case user can't access the construction of FakeAsyncTestSpec
@@ -3343,11 +3316,20 @@ Zone['AsyncTestZoneSpec'] = AsyncTestZoneSpec;
                 return;
             }
             global['Date'] = FakeDate;
+            FakeDate.prototype = OriginalDate.prototype;
         };
         FakeAsyncTestZoneSpec.resetDate = function () {
             if (global['Date'] === FakeDate) {
                 global['Date'] = OriginalDate;
             }
+        };
+        FakeAsyncTestZoneSpec.prototype.lockDatePatch = function () {
+            this.patchDateLocked = true;
+            FakeAsyncTestZoneSpec.patchDate();
+        };
+        FakeAsyncTestZoneSpec.prototype.unlockDatePatch = function () {
+            this.patchDateLocked = false;
+            FakeAsyncTestZoneSpec.resetDate();
         };
         FakeAsyncTestZoneSpec.prototype.tick = function (millis, doTick) {
             if (millis === void 0) { millis = 0; }
@@ -3406,6 +3388,9 @@ Zone['AsyncTestZoneSpec'] = AsyncTestZoneSpec;
                     switch (task.source) {
                         case 'setTimeout':
                             task.data['handleId'] = this._setTimeout(task.invoke, task.data['delay'], Array.prototype.slice.call(task.data['args'], 2));
+                            break;
+                        case 'setImmediate':
+                            task.data['handleId'] = this._setTimeout(task.invoke, 0, Array.prototype.slice.call(task.data['args'], 1));
                             break;
                         case 'setInterval':
                             task.data['handleId'] = this._setInterval(task.invoke, task.data['delay'], Array.prototype.slice.call(task.data['args'], 2));
@@ -3475,7 +3460,9 @@ Zone['AsyncTestZoneSpec'] = AsyncTestZoneSpec;
                 return delegate.invoke(target, callback, applyThis, applyArgs, source);
             }
             finally {
-                FakeAsyncTestZoneSpec.resetDate();
+                if (!this.patchDateLocked) {
+                    FakeAsyncTestZoneSpec.resetDate();
+                }
             }
         };
         FakeAsyncTestZoneSpec.prototype.findMacroTaskOption = function (task) {
@@ -3574,10 +3561,91 @@ Zone.__load_patch('promisefortest', function (global, Zone, api) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-/**
- * Wraps a test function in an asynchronous test zone. The test will automatically
- * complete when all asynchronous calls within this zone are done.
- */
+Zone.__load_patch('asynctest', function (global, Zone, api) {
+    /**
+     * Wraps a test function in an asynchronous test zone. The test will automatically
+     * complete when all asynchronous calls within this zone are done.
+     */
+    Zone[api.symbol('asyncTest')] = function asyncTest(fn) {
+        // If we're running using the Jasmine test framework, adapt to call the 'done'
+        // function when asynchronous activity is finished.
+        if (global.jasmine) {
+            // Not using an arrow function to preserve context passed from call site
+            return function (done) {
+                if (!done) {
+                    // if we run beforeEach in @angular/core/testing/testing_internal then we get no done
+                    // fake it here and assume sync.
+                    done = function () { };
+                    done.fail = function (e) {
+                        throw e;
+                    };
+                }
+                runInTestZone(fn, this, done, function (err) {
+                    if (typeof err === 'string') {
+                        return done.fail(new Error(err));
+                    }
+                    else {
+                        done.fail(err);
+                    }
+                });
+            };
+        }
+        // Otherwise, return a promise which will resolve when asynchronous activity
+        // is finished. This will be correctly consumed by the Mocha framework with
+        // it('...', async(myFn)); or can be used in a custom framework.
+        // Not using an arrow function to preserve context passed from call site
+        return function () {
+            var _this = this;
+            return new Promise(function (finishCallback, failCallback) {
+                runInTestZone(fn, _this, finishCallback, failCallback);
+            });
+        };
+    };
+    function runInTestZone(fn, context, finishCallback, failCallback) {
+        var currentZone = Zone.current;
+        var AsyncTestZoneSpec = Zone['AsyncTestZoneSpec'];
+        if (AsyncTestZoneSpec === undefined) {
+            throw new Error('AsyncTestZoneSpec is needed for the async() test helper but could not be found. ' +
+                'Please make sure that your environment includes zone.js/dist/async-test.js');
+        }
+        var ProxyZoneSpec = Zone['ProxyZoneSpec'];
+        if (ProxyZoneSpec === undefined) {
+            throw new Error('ProxyZoneSpec is needed for the async() test helper but could not be found. ' +
+                'Please make sure that your environment includes zone.js/dist/proxy.js');
+        }
+        var proxyZoneSpec = ProxyZoneSpec.get();
+        ProxyZoneSpec.assertPresent();
+        // We need to create the AsyncTestZoneSpec outside the ProxyZone.
+        // If we do it in ProxyZone then we will get to infinite recursion.
+        var proxyZone = Zone.current.getZoneWith('ProxyZoneSpec');
+        var previousDelegate = proxyZoneSpec.getDelegate();
+        proxyZone.parent.run(function () {
+            var testZoneSpec = new AsyncTestZoneSpec(function () {
+                // Need to restore the original zone.
+                if (proxyZoneSpec.getDelegate() == testZoneSpec) {
+                    // Only reset the zone spec if it's
+                    // sill this one. Otherwise, assume
+                    // it's OK.
+                    proxyZoneSpec.setDelegate(previousDelegate);
+                }
+                currentZone.run(function () {
+                    finishCallback();
+                });
+            }, function (error) {
+                // Need to restore the original zone.
+                if (proxyZoneSpec.getDelegate() == testZoneSpec) {
+                    // Only reset the zone spec if it's sill this one. Otherwise, assume it's OK.
+                    proxyZoneSpec.setDelegate(previousDelegate);
+                }
+                currentZone.run(function () {
+                    failCallback(error);
+                });
+            }, 'test');
+            proxyZoneSpec.setDelegate(testZoneSpec);
+        });
+        return Zone.current.runGuarded(fn, context);
+    }
+});
 
 /**
  * @license
@@ -3586,69 +3654,145 @@ Zone.__load_patch('promisefortest', function (global, Zone, api) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var FakeAsyncTestZoneSpec = Zone && Zone['FakeAsyncTestZoneSpec'];
-var ProxyZoneSpec$1 = Zone && Zone['ProxyZoneSpec'];
-/**
- * Clears out the shared fake async zone for a test.
- * To be called in a global `beforeEach`.
- *
- * @experimental
- */
-
-/**
- * Wraps a function to be executed in the fakeAsync zone:
- * - microtasks are manually executed by calling `flushMicrotasks()`,
- * - timers are synchronous, `tick()` simulates the asynchronous passage of time.
- *
- * If there are any pending timers at the end of the function, an exception will be thrown.
- *
- * Can be used to wrap inject() calls.
- *
- * ## Example
- *
- * {@example core/testing/ts/fake_async.ts region='basic'}
- *
- * @param fn
- * @returns The function wrapped to be executed in the fakeAsync zone
- *
- * @experimental
- */
-
-/**
- * Simulates the asynchronous passage of time for the timers in the fakeAsync zone.
- *
- * The microtasks queue is drained at the very start of this function and after any timer callback
- * has been executed.
- *
- * ## Example
- *
- * {@example core/testing/ts/fake_async.ts region='basic'}
- *
- * @experimental
- */
-
-/**
- * Simulates the asynchronous passage of time for the timers in the fakeAsync zone by
- * draining the macrotask queue until it is empty. The returned value is the milliseconds
- * of time that would have been elapsed.
- *
- * @param maxTurns
- * @returns The simulated time elapsed, in millis.
- *
- * @experimental
- */
-
-/**
- * Discard all remaining periodic tasks.
- *
- * @experimental
- */
-
-/**
- * Flush any pending microtasks.
- *
- * @experimental
- */
+Zone.__load_patch('fakeasync', function (global, Zone, api) {
+    var FakeAsyncTestZoneSpec = Zone && Zone['FakeAsyncTestZoneSpec'];
+    var ProxyZoneSpec = Zone && Zone['ProxyZoneSpec'];
+    var _fakeAsyncTestZoneSpec = null;
+    /**
+     * Clears out the shared fake async zone for a test.
+     * To be called in a global `beforeEach`.
+     *
+     * @experimental
+     */
+    function resetFakeAsyncZone() {
+        if (_fakeAsyncTestZoneSpec) {
+            _fakeAsyncTestZoneSpec.unlockDatePatch();
+        }
+        _fakeAsyncTestZoneSpec = null;
+        // in node.js testing we may not have ProxyZoneSpec in which case there is nothing to reset.
+        ProxyZoneSpec && ProxyZoneSpec.assertPresent().resetDelegate();
+    }
+    /**
+    * Wraps a function to be executed in the fakeAsync zone:
+    * - microtasks are manually executed by calling `flushMicrotasks()`,
+    * - timers are synchronous, `tick()` simulates the asynchronous passage of time.
+    *
+    * If there are any pending timers at the end of the function, an exception will be thrown.
+    *
+    * Can be used to wrap inject() calls.
+    *
+    * ## Example
+    *
+    * {@example core/testing/ts/fake_async.ts region='basic'}
+    *
+    * @param fn
+    * @returns The function wrapped to be executed in the fakeAsync zone
+    *
+    * @experimental
+    */
+    function fakeAsync(fn) {
+        // Not using an arrow function to preserve context passed from call site
+        return function () {
+            var args = [];
+            for (var _i = 0; _i < arguments.length; _i++) {
+                args[_i] = arguments[_i];
+            }
+            var proxyZoneSpec = ProxyZoneSpec.assertPresent();
+            if (Zone.current.get('FakeAsyncTestZoneSpec')) {
+                throw new Error('fakeAsync() calls can not be nested');
+            }
+            try {
+                // in case jasmine.clock init a fakeAsyncTestZoneSpec
+                if (!_fakeAsyncTestZoneSpec) {
+                    if (proxyZoneSpec.getDelegate() instanceof FakeAsyncTestZoneSpec) {
+                        throw new Error('fakeAsync() calls can not be nested');
+                    }
+                    _fakeAsyncTestZoneSpec = new FakeAsyncTestZoneSpec();
+                }
+                var res = void 0;
+                var lastProxyZoneSpec = proxyZoneSpec.getDelegate();
+                proxyZoneSpec.setDelegate(_fakeAsyncTestZoneSpec);
+                _fakeAsyncTestZoneSpec.lockDatePatch();
+                try {
+                    res = fn.apply(this, args);
+                    flushMicrotasks();
+                }
+                finally {
+                    proxyZoneSpec.setDelegate(lastProxyZoneSpec);
+                }
+                if (_fakeAsyncTestZoneSpec.pendingPeriodicTimers.length > 0) {
+                    throw new Error(_fakeAsyncTestZoneSpec.pendingPeriodicTimers.length + " " +
+                        "periodic timer(s) still in the queue.");
+                }
+                if (_fakeAsyncTestZoneSpec.pendingTimers.length > 0) {
+                    throw new Error(_fakeAsyncTestZoneSpec.pendingTimers.length + " timer(s) still in the queue.");
+                }
+                return res;
+            }
+            finally {
+                resetFakeAsyncZone();
+            }
+        };
+    }
+    function _getFakeAsyncZoneSpec() {
+        if (_fakeAsyncTestZoneSpec == null) {
+            _fakeAsyncTestZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
+            if (_fakeAsyncTestZoneSpec == null) {
+                throw new Error('The code should be running in the fakeAsync zone to call this function');
+            }
+        }
+        return _fakeAsyncTestZoneSpec;
+    }
+    /**
+     * Simulates the asynchronous passage of time for the timers in the fakeAsync zone.
+     *
+     * The microtasks queue is drained at the very start of this function and after any timer callback
+     * has been executed.
+     *
+     * ## Example
+     *
+     * {@example core/testing/ts/fake_async.ts region='basic'}
+     *
+     * @experimental
+     */
+    function tick(millis) {
+        if (millis === void 0) { millis = 0; }
+        _getFakeAsyncZoneSpec().tick(millis);
+    }
+    /**
+     * Simulates the asynchronous passage of time for the timers in the fakeAsync zone by
+     * draining the macrotask queue until it is empty. The returned value is the milliseconds
+     * of time that would have been elapsed.
+     *
+     * @param maxTurns
+     * @returns The simulated time elapsed, in millis.
+     *
+     * @experimental
+     */
+    function flush(maxTurns) {
+        return _getFakeAsyncZoneSpec().flush(maxTurns);
+    }
+    /**
+     * Discard all remaining periodic tasks.
+     *
+     * @experimental
+     */
+    function discardPeriodicTasks() {
+        var zoneSpec = _getFakeAsyncZoneSpec();
+        var pendingTimers = zoneSpec.pendingPeriodicTimers;
+        zoneSpec.pendingPeriodicTimers.length = 0;
+    }
+    /**
+     * Flush any pending microtasks.
+     *
+     * @experimental
+     */
+    function flushMicrotasks() {
+        _getFakeAsyncZoneSpec().flushMicrotasks();
+    }
+    Zone[api.symbol('fakeAsyncTest')] =
+        { resetFakeAsyncZone: resetFakeAsyncZone, flushMicrotasks: flushMicrotasks, discardPeriodicTasks: discardPeriodicTasks, tick: tick, flush: flush, fakeAsync: fakeAsync };
+});
 
 /**
  * @license
