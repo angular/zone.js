@@ -12,7 +12,6 @@ import '../../lib/rxjs/rxjs-fake-async';
 import {Observable} from 'rxjs/Observable';
 
 import {isNode, patchMacroTask} from '../../lib/common/utils';
-import {discardPeriodicTasks, fakeAsync, flush, flushMicrotasks, tick} from '../../lib/testing/fake-async';
 import {ifEnvSupports} from '../test-util';
 
 function supportNode() {
@@ -874,6 +873,13 @@ describe('FakeAsyncTestZoneSpec', () => {
         expect(end - start).toBe(100);
       });
     });
+
+    it('should check date type correctly', () => {
+      fakeAsyncTestZone.run(() => {
+        const d: any = new Date();
+        expect(d instanceof Date).toBe(true);
+      });
+    });
   });
 
   describe(
@@ -889,6 +895,11 @@ describe('FakeAsyncTestZoneSpec', () => {
 
             afterEach(() => {
               jasmine.clock().uninstall();
+            });
+
+            it('should check date type correctly', () => {
+              const d: any = new Date();
+              expect(d instanceof Date).toBe(true);
             });
 
             it('should get date diff correctly', () => {
@@ -978,6 +989,8 @@ class Log {
 
 const resolvedPromise = Promise.resolve(null);
 const ProxyZoneSpec: {assertPresent: () => void} = (Zone as any)['ProxyZoneSpec'];
+const fakeAsyncTestModule = (Zone as any)[Zone.__symbol__('fakeAsyncTest')];
+const {fakeAsync, tick, discardPeriodicTasks, flush, flushMicrotasks} = fakeAsyncTestModule;
 
 {
   describe('fake async', () => {
