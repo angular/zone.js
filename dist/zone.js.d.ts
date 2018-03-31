@@ -285,6 +285,12 @@ interface ZoneType {
      */
     root: Zone;
 }
+interface UncaughtPromiseError extends Error {
+    zone: Zone;
+    task: Task;
+    promise: Promise<any>;
+    rejection: any;
+}
 /**
  * Provides a way to configure the interception of zone events.
  *

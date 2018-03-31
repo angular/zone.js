@@ -19,15 +19,48 @@
  * found in the LICENSE file at https://angular.io/license
  */
 (function (global) {
-    var Scheduler = (function () {
+    var OriginalDate = global.Date;
+    var FakeDate = /** @class */ (function () {
+        function FakeDate() {
+            var d = new OriginalDate();
+            d.setTime(global.Date.now());
+            return d;
+        }
+        FakeDate.UTC = function () {
+            return OriginalDate.UTC();
+        };
+        FakeDate.now = function () {
+            var fakeAsyncTestZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
+            if (fakeAsyncTestZoneSpec) {
+                return fakeAsyncTestZoneSpec.getCurrentRealTime() + fakeAsyncTestZoneSpec.getCurrentTime();
+            }
+            return OriginalDate.now.apply(this, arguments);
+        };
+        FakeDate.parse = function () {
+            return OriginalDate.parse();
+        };
+        return FakeDate;
+    }());
+    var Scheduler = /** @class */ (function () {
         function Scheduler() {
             // Next scheduler id.
-            this.nextId = 0;
+            this.nextId = 1;
             // Scheduler queue with the tuple of end time and callback function - sorted by end time.
             this._schedulerQueue = [];
             // Current simulated time in millis.
             this._currentTime = 0;
+            // Current real time in millis.
+            this._currentRealTime = Date.now();
         }
+        Scheduler.prototype.getCurrentTime = function () {
+            return this._currentTime;
+        };
+        Scheduler.prototype.getCurrentRealTime = function () {
+            return this._currentRealTime;
+        };
+        Scheduler.prototype.setCurrentRealTime = function (realTime) {
+            this._currentRealTime = realTime;
+        };
         Scheduler.prototype.scheduleFunction = function (cb, delay, args, isPeriodic, isRequestAnimationFrame, id) {
             if (args === void 0) { args = []; }
             if (isPeriodic === void 0) { isPeriodic = false; }
@@ -148,7 +181,7 @@
         };
         return Scheduler;
     }());
-    var FakeAsyncTestZoneSpec = (function () {
+    var FakeAsyncTestZoneSpec = /** @class */ (function () {
         function FakeAsyncTestZoneSpec(namePrefix, trackPendingRequestAnimationFrame, macroTaskOptions) {
             if (trackPendingRequestAnimationFrame === void 0) { trackPendingRequestAnimationFrame = false; }
             this.trackPendingRequestAnimationFrame = trackPendingRequestAnimationFrame;
@@ -238,11 +271,7 @@
             FakeAsyncTestZoneSpec._removeTimer(this.pendingTimers, id);
             this._scheduler.removeScheduledFunctionWithId(id);
         };
-        FakeAsyncTestZoneSpec.prototype._setInterval = function (fn, interval) {
-            var args = [];
-            for (var _i = 2; _i < arguments.length; _i++) {
-                args[_i - 2] = arguments[_i];
-            }
+        FakeAsyncTestZoneSpec.prototype._setInterval = function (fn, interval, args) {
             var id = this._scheduler.nextId;
             var completers = { onSuccess: null, onError: this._dequeuePeriodicTimer(id) };
             var cb = this._fnAndFlush(fn, completers);
@@ -262,6 +291,27 @@
             this._uncaughtPromiseErrors.length = 0;
             this._lastError = null;
             throw error;
+        };
+        FakeAsyncTestZoneSpec.prototype.getCurrentTime = function () {
+            return this._scheduler.getCurrentTime();
+        };
+        FakeAsyncTestZoneSpec.prototype.getCurrentRealTime = function () {
+            return this._scheduler.getCurrentRealTime();
+        };
+        FakeAsyncTestZoneSpec.prototype.setCurrentRealTime = function (realTime) {
+            this._scheduler.setCurrentRealTime(realTime);
+        };
+        FakeAsyncTestZoneSpec.patchDate = function () {
+            if (global['Date'] === FakeDate) {
+                // already patched
+                return;
+            }
+            global['Date'] = FakeDate;
+        };
+        FakeAsyncTestZoneSpec.resetDate = function () {
+            if (global['Date'] === FakeDate) {
+                global['Date'] = OriginalDate;
+            }
         };
         FakeAsyncTestZoneSpec.prototype.tick = function (millis, doTick) {
             if (millis === void 0) { millis = 0; }
@@ -319,12 +369,10 @@
                 case 'macroTask':
                     switch (task.source) {
                         case 'setTimeout':
-                            task.data['handleId'] =
-                                this._setTimeout(task.invoke, task.data['delay'], task.data['args']);
+                            task.data['handleId'] = this._setTimeout(task.invoke, task.data['delay'], Array.prototype.slice.call(task.data['args'], 2));
                             break;
                         case 'setInterval':
-                            task.data['handleId'] =
-                                this._setInterval(task.invoke, task.data['delay'], task.data['args']);
+                            task.data['handleId'] = this._setInterval(task.invoke, task.data['delay'], Array.prototype.slice.call(task.data['args'], 2));
                             break;
                         case 'XMLHttpRequest.send':
                             throw new Error('Cannot make XHRs from within a fake async test. Request URL: ' +
@@ -383,6 +431,15 @@
                             this._clearTimeout(handleId);
                     }
                     return delegate.cancelTask(target, task);
+            }
+        };
+        FakeAsyncTestZoneSpec.prototype.onInvoke = function (delegate, current, target, callback, applyThis, applyArgs, source) {
+            try {
+                FakeAsyncTestZoneSpec.patchDate();
+                return delegate.invoke(target, callback, applyThis, applyArgs, source);
+            }
+            finally {
+                FakeAsyncTestZoneSpec.resetDate();
             }
         };
         FakeAsyncTestZoneSpec.prototype.findMacroTaskOption = function (task) {
