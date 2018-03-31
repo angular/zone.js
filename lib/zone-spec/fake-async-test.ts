@@ -425,6 +425,10 @@
                   task.invoke, task.data['delay'],
                   Array.prototype.slice.call((task.data as any)['args'], 2));
               break;
+            case 'setImmediate':
+              task.data['handleId'] = this._setTimeout(
+                  task.invoke, 0, Array.prototype.slice.call((task.data as any)['args'], 1));
+              break;
             case 'setInterval':
               task.data['handleId'] = this._setInterval(
                   task.invoke, task.data['delay'],
