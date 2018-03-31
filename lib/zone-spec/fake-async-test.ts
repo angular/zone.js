@@ -217,6 +217,8 @@
     pendingPeriodicTimers: number[] = [];
     pendingTimers: number[] = [];
 
+    private patchDateLocked = false;
+
     constructor(
         namePrefix: string, private trackPendingRequestAnimationFrame = false,
         private macroTaskOptions?: MacroTaskOptions[]) {
@@ -338,12 +340,22 @@
         return;
       }
       global['Date'] = FakeDate;
+      FakeDate.prototype = OriginalDate.prototype;
     }
 
     static resetDate() {
       if (global['Date'] === FakeDate) {
         global['Date'] = OriginalDate;
       }
+    }
+
+    lockDatePatch() {
+      this.patchDateLocked = true;
+      FakeAsyncTestZoneSpec.patchDate();
+    }
+    unlockDatePatch() {
+      this.patchDateLocked = false;
+      FakeAsyncTestZoneSpec.resetDate();
     }
 
     tick(millis: number = 0, doTick?: (elapsed: number) => void): void {
@@ -489,7 +501,9 @@
         FakeAsyncTestZoneSpec.patchDate();
         return delegate.invoke(target, callback, applyThis, applyArgs, source);
       } finally {
-        FakeAsyncTestZoneSpec.resetDate();
+        if (!this.patchDateLocked) {
+          FakeAsyncTestZoneSpec.resetDate();
+        }
       }
     }
 

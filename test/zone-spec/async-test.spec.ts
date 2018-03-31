@@ -6,7 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {asyncTest} from '../../lib/testing/async-testing';
 import {ifEnvSupports} from '../test-util';
 
 describe('AsyncTestZoneSpec', function() {
@@ -318,32 +317,7 @@ describe('AsyncTestZoneSpec', function() {
 
   });
 
-  describe('non zone aware async task in promise should be detected', () => {
-    it('should be able to detect non zone aware async task in promise', (done) => {
-      let finished = false;
-
-      const testZoneSpec = new AsyncTestZoneSpec(
-          () => {
-            expect(finished).toBe(true);
-            done();
-          },
-          () => {
-            done.fail('async zone called failCallback unexpectedly');
-          },
-          'name');
-
-      const atz = Zone.current.fork(testZoneSpec);
-
-      atz.run(() => {
-        new Promise((res, rej) => {
-          const g: any = typeof window === 'undefined' ? global : window;
-          g[Zone.__symbol__('setTimeout')](res, 100);
-        }).then(() => {
-          finished = true;
-        });
-      });
-    });
-  });
+  const asyncTest: any = (Zone as any)[Zone.__symbol__('asyncTest')];
 
   function wrapAsyncTest(fn: Function, doneFn?: Function) {
     return function(done: Function) {
@@ -358,6 +332,26 @@ describe('AsyncTestZoneSpec', function() {
   }
 
   describe('async', () => {
+    // TODO: @JiaLiPassion, get this feature back when all tests pass
+    // in angular
+    xdescribe('non zone aware async task in promise should be detected', () => {
+      let finished = false;
+      it('should be able to detect non zone aware async task in promise',
+         wrapAsyncTest(
+             () => {
+               new Promise((res, rej) => {
+                 const g: any = typeof window === 'undefined' ? global : window;
+                 g[Zone.__symbol__('setTimeout')](res, 100);
+               }).then(() => {
+                 finished = true;
+               });
+             },
+             () => {
+               expect(finished).toBe(true);
+             }));
+    });
+
+
     describe('test without beforeEach', () => {
       const logs: string[] = [];
       it('should automatically done after async tasks finished',

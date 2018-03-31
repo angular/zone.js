@@ -60,6 +60,7 @@ class ProxyZoneSpec implements ZoneSpec {
 
 
   resetDelegate() {
+    const delegateSpec = this.getDelegate();
     this.setDelegate(this.defaultSpecDelegate);
   }
 
@@ -76,7 +77,7 @@ class ProxyZoneSpec implements ZoneSpec {
     if (!this.tasks) {
       return;
     }
-    for (let i = 0; i < this.tasks.length; i ++) {
+    for (let i = 0; i < this.tasks.length; i++) {
       if (this.tasks[i] === task) {
         this.tasks.splice(i, 1);
         return;

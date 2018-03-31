@@ -319,6 +319,14 @@ gulp.task('build/sync-test.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/zone-spec/sync-test.ts', 'sync-test.js', false, cb);
 });
 
+gulp.task('build/zone-async-testing.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/testing/async-testing.ts', 'zone-async-testing.js', false, cb);
+});
+
+gulp.task('build/zone-fake-async.js', ['compile-esm'], function(cb) {
+  return generateScript('./lib/testing/fake-async.ts', 'zone-fake-async.js', false, cb);
+});
+
 gulp.task('build/rxjs.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/rxjs/rxjs.ts', 'zone-patch-rxjs.js', false, cb);
 });
@@ -391,6 +399,8 @@ gulp.task('build', [
   'build/async-test.js',
   'build/fake-async-test.js',
   'build/sync-test.js',
+  'build/zone-async-testing.js',
+  'build/zone-fake-async.js',
   'build/rxjs.js',
   'build/rxjs.min.js',
   'build/rxjs-fake-async.js',
