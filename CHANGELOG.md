@@ -1,3 +1,13 @@
+<a name="0.8.23"></a>
+## [0.8.23](https://github.com/angular/zone.js/compare/v0.8.22...0.8.23) (2018-04-01)
+
+
+### Bug Fixes
+
+* **test:** check setImmediate supports ([6c7e45b](https://github.com/angular/zone.js/commit/6c7e45b))
+
+
+
 <a name="0.8.22"></a>
 ## [0.8.22](https://github.com/angular/zone.js/compare/v0.8.21...0.8.22) (2018-03-31)
 
