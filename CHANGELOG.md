@@ -1,3 +1,23 @@
+<a name="0.8.24"></a>
+## [0.8.24](https://github.com/angular/zone.js/compare/v0.8.23...0.8.24) (2018-04-02)
+
+
+### Bug Fixes
+
+* **test:** add flag to patch jasmine.clock, move fakeAsync/async into original bundle ([#1067](https://github.com/angular/zone.js/issues/1067)) ([389762c](https://github.com/angular/zone.js/commit/389762c))
+
+
+
+<a name="0.8.24"></a>
+## [0.8.24](https://github.com/angular/zone.js/compare/v0.8.23...0.8.24) (2018-04-02)
+
+
+### Bug Fixes
+
+* **test:** add flag to patch jasmine.clock, move fakeAsync/async into original bundle ([#1067](https://github.com/angular/zone.js/issues/1067)) ([389762c](https://github.com/angular/zone.js/commit/389762c))
+
+
+
 <a name="0.8.23"></a>
 ## [0.8.23](https://github.com/angular/zone.js/compare/v0.8.22...0.8.23) (2018-04-01)
 
