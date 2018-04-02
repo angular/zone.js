@@ -308,23 +308,15 @@ gulp.task('build/wtf.min.js', ['compile-esm'], function(cb) {
 });
 
 gulp.task('build/async-test.js', ['compile-esm'], function(cb) {
-  return generateScript('./lib/zone-spec/async-test.ts', 'async-test.js', false, cb);
+  return generateScript('./lib/testing/async-testing.ts', 'async-test.js', false, cb);
 });
 
 gulp.task('build/fake-async-test.js', ['compile-esm'], function(cb) {
-  return generateScript('./lib/zone-spec/fake-async-test.ts', 'fake-async-test.js', false, cb);
+  return generateScript('./lib/testing/fake-async.ts', 'fake-async-test.js', false, cb);
 });
 
 gulp.task('build/sync-test.js', ['compile-esm'], function(cb) {
   return generateScript('./lib/zone-spec/sync-test.ts', 'sync-test.js', false, cb);
-});
-
-gulp.task('build/zone-async-testing.js', ['compile-esm'], function(cb) {
-  return generateScript('./lib/testing/async-testing.ts', 'zone-async-testing.js', false, cb);
-});
-
-gulp.task('build/zone-fake-async.js', ['compile-esm'], function(cb) {
-  return generateScript('./lib/testing/fake-async.ts', 'zone-fake-async.js', false, cb);
 });
 
 gulp.task('build/rxjs.js', ['compile-esm'], function(cb) {
@@ -399,8 +391,6 @@ gulp.task('build', [
   'build/async-test.js',
   'build/fake-async-test.js',
   'build/sync-test.js',
-  'build/zone-async-testing.js',
-  'build/zone-fake-async.js',
   'build/rxjs.js',
   'build/rxjs.min.js',
   'build/rxjs-fake-async.js',
@@ -409,6 +399,14 @@ gulp.task('build', [
 ]);
 
 function nodeTest(specFiles, cb) {
+  // load zone-node here to let jasmine be able to use jasmine.clock().install()
+  // without throw error
+  require('./build/lib/node/rollup-main');
+  var args = process.argv;
+  if (args.length > 3) {
+    require('./build/test/test-env-setup-jasmine' + args[3]); 
+  }
+  var JasmineRunner = require('jasmine');	
   var JasmineRunner = require('jasmine');
   var jrunner = new JasmineRunner();
 

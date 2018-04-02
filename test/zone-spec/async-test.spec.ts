@@ -332,10 +332,16 @@ describe('AsyncTestZoneSpec', function() {
   }
 
   describe('async', () => {
-    // TODO: @JiaLiPassion, get this feature back when all tests pass
-    // in angular
-    xdescribe('non zone aware async task in promise should be detected', () => {
+    describe('non zone aware async task in promise should be detected', () => {
       let finished = false;
+      const _global: any =
+          typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global;
+      beforeEach(() => {
+        _global[Zone.__symbol__('supportWaitUnResolvedChainedPromise')] = true;
+      });
+      afterEach(() => {
+        _global[Zone.__symbol__('supportWaitUnResolvedChainedPromise')] = false;
+      });
       it('should be able to detect non zone aware async task in promise',
          wrapAsyncTest(
              () => {

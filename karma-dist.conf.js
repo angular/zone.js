@@ -14,14 +14,12 @@ module.exports = function(config) {
   config.files.push('dist/zone.js');
   config.files.push('dist/zone-patch-user-media.js');
   config.files.push('dist/zone-patch-resize-observer.js');
-  config.files.push('dist/async-test.js');
-  config.files.push('dist/fake-async-test.js');
   config.files.push('dist/long-stack-trace-zone.js');
   config.files.push('dist/proxy.js');
   config.files.push('dist/sync-test.js');
+  config.files.push('dist/async-test.js');
+  config.files.push('dist/fake-async-test.js');
   config.files.push('dist/task-tracking.js');
-  config.files.push('dist/zone-async-testing.js');
-  config.files.push('dist/zone-fake-async.js');
   config.files.push('dist/zone-patch-promise-test.js');
   config.files.push('dist/wtf.js');
   config.files.push('build/test/main.js');

@@ -5,7 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-
+const _global: any =
+    typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global;
 class AsyncTestZoneSpec implements ZoneSpec {
   static symbolParentUnresolved = Zone.__symbol__('parentUnresolved');
 
@@ -16,14 +17,23 @@ class AsyncTestZoneSpec implements ZoneSpec {
   runZone = Zone.current;
   unresolvedChainedPromiseCount = 0;
 
+  supportWaitUnresolvedChainedPromise = false;
+
   constructor(
       private finishCallback: Function, private failCallback: Function, namePrefix: string) {
     this.name = 'asyncTestZone for ' + namePrefix;
     this.properties = {'AsyncTestZoneSpec': this};
+    this.supportWaitUnresolvedChainedPromise =
+        _global[Zone.__symbol__('supportWaitUnResolvedChainedPromise')] === true;
+  }
+
+  isUnresolvedChainedPromisePending() {
+    return this.unresolvedChainedPromiseCount > 0;
   }
 
   _finishCallbackIfDone() {
-    if (!(this._pendingMicroTasks || this._pendingMacroTasks)) {
+    if (!(this._pendingMicroTasks || this._pendingMacroTasks ||
+          (this.supportWaitUnresolvedChainedPromise && this.isUnresolvedChainedPromisePending()))) {
       // We do this because we would like to catch unhandled rejected promises.
       this.runZone.run(() => {
         setTimeout(() => {
@@ -36,6 +46,9 @@ class AsyncTestZoneSpec implements ZoneSpec {
   }
 
   patchPromiseForTest() {
+    if (!this.supportWaitUnresolvedChainedPromise) {
+      return;
+    }
     const patchPromiseForTest = (Promise as any)[Zone.__symbol__('patchPromiseForTest')];
     if (patchPromiseForTest) {
       patchPromiseForTest();
@@ -43,6 +56,9 @@ class AsyncTestZoneSpec implements ZoneSpec {
   }
 
   unPatchPromiseForTest() {
+    if (!this.supportWaitUnresolvedChainedPromise) {
+      return;
+    }
     const unPatchPromiseForTest = (Promise as any)[Zone.__symbol__('unPatchPromiseForTest')];
     if (unPatchPromiseForTest) {
       unPatchPromiseForTest();

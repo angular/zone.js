@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import '../zone-spec/async-test';
 
 Zone.__load_patch('asynctest', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   /**
@@ -79,6 +80,7 @@ Zone.__load_patch('asynctest', (global: any, Zone: ZoneType, api: _ZonePrivate) 
               // it's OK.
               proxyZoneSpec.setDelegate(previousDelegate);
             }
+            (testZoneSpec as any).unPatchPromiseForTest();
             currentZone.run(() => {
               finishCallback();
             });
@@ -89,12 +91,14 @@ Zone.__load_patch('asynctest', (global: any, Zone: ZoneType, api: _ZonePrivate) 
               // Only reset the zone spec if it's sill this one. Otherwise, assume it's OK.
               proxyZoneSpec.setDelegate(previousDelegate);
             }
+            (testZoneSpec as any).unPatchPromiseForTest();
             currentZone.run(() => {
               failCallback(error);
             });
           },
           'test');
       proxyZoneSpec.setDelegate(testZoneSpec);
+      (testZoneSpec as any).patchPromiseForTest();
     });
     return Zone.current.runGuarded(fn, context);
   }
