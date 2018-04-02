@@ -29,7 +29,7 @@ module.exports = function (config) {
       require('karma-sourcemap-loader')
     ],
 
-  preprocessors: {
+    preprocessors: {
       '**/*.js': ['sourcemap']
     },
 

@@ -14,5 +14,3 @@ import '../jasmine/jasmine';
 import '../zone-spec/async-test';
 import '../zone-spec/fake-async-test';
 import './promise-testing';
-import './async-testing';
-import './fake-async';

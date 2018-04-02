@@ -39,6 +39,9 @@
 
   const symbol = Zone.__symbol__;
 
+  // whether patch jasmine clock when in fakeAsync
+  const enableClockPatch = _global[symbol('fakeAsyncPatchLock')] === true;
+
   // Monkey patch all of the jasmine DSL so that each function runs in appropriate zone.
   const jasmineEnv: any = jasmine.getEnv();
   ['describe', 'xdescribe', 'fdescribe'].forEach(methodName => {
@@ -64,41 +67,44 @@
       return originalJasmineFn.apply(this, arguments);
     };
   });
-  const originalClockFn: Function = ((jasmine as any)[symbol('clock')] = jasmine['clock']);
-  (jasmine as any)['clock'] = function() {
-    const clock = originalClockFn.apply(this, arguments);
-    const originalTick = (clock[symbol('tick')] = clock.tick);
-    clock.tick = function() {
-      const fakeAsyncZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
-      if (fakeAsyncZoneSpec) {
-        return fakeAsyncZoneSpec.tick.apply(fakeAsyncZoneSpec, arguments);
-      }
-      return originalTick.apply(this, arguments);
-    };
-    const originalMockDate = (clock[symbol('mockDate')] = clock.mockDate);
-    clock.mockDate = function() {
-      const fakeAsyncZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
-      if (fakeAsyncZoneSpec) {
-        const dateTime = arguments[0];
-        return fakeAsyncZoneSpec.setCurrentRealTime.apply(
-            fakeAsyncZoneSpec,
-            dateTime && typeof dateTime.getTime === 'function' ? [dateTime.getTime()] : arguments);
-      }
-      return originalMockDate.apply(this, arguments);
-    };
-    ['install', 'uninstall'].forEach(methodName => {
-      const originalClockFn: Function = (clock[symbol(methodName)] = clock[methodName]);
-      clock[methodName] = function() {
-        const FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
-        if (FakeAsyncTestZoneSpec) {
-          (jasmine as any)[symbol('clockInstalled')] = 'install' === methodName;
-          return;
+  if (enableClockPatch) {
+    const originalClockFn: Function = ((jasmine as any)[symbol('clock')] = jasmine['clock']);
+    (jasmine as any)['clock'] = function() {
+      const clock = originalClockFn.apply(this, arguments);
+      const originalTick = (clock[symbol('tick')] = clock.tick);
+      clock.tick = function() {
+        const fakeAsyncZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
+        if (fakeAsyncZoneSpec) {
+          return fakeAsyncZoneSpec.tick.apply(fakeAsyncZoneSpec, arguments);
         }
-        return originalClockFn.apply(this, arguments);
+        return originalTick.apply(this, arguments);
       };
-    });
-    return clock;
-  };
+      const originalMockDate = (clock[symbol('mockDate')] = clock.mockDate);
+      clock.mockDate = function() {
+        const fakeAsyncZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
+        if (fakeAsyncZoneSpec) {
+          const dateTime = arguments[0];
+          return fakeAsyncZoneSpec.setCurrentRealTime.apply(
+              fakeAsyncZoneSpec,
+              dateTime && typeof dateTime.getTime === 'function' ? [dateTime.getTime()] :
+                                                                   arguments);
+        }
+        return originalMockDate.apply(this, arguments);
+      };
+      ['install', 'uninstall'].forEach(methodName => {
+        const originalClockFn: Function = (clock[symbol(methodName)] = clock[methodName]);
+        clock[methodName] = function() {
+          const FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
+          if (FakeAsyncTestZoneSpec) {
+            (jasmine as any)[symbol('clockInstalled')] = 'install' === methodName;
+            return;
+          }
+          return originalClockFn.apply(this, arguments);
+        };
+      });
+      return clock;
+    };
+  }
 
   /**
    * Gets a function wrapping the body of a Jasmine `describe` block to execute in a
@@ -115,29 +121,17 @@
     const testProxyZoneSpec = queueRunner.testProxyZoneSpec;
     const testProxyZone = queueRunner.testProxyZone;
     let lastDelegate;
-    if (isClockInstalled) {
-      const FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
-      if (FakeAsyncTestZoneSpec) {
-        const _fakeAsyncTestZoneSpec = new FakeAsyncTestZoneSpec();
-        lastDelegate = (testProxyZoneSpec as any).getDelegate();
-        (testProxyZoneSpec as any).setDelegate(_fakeAsyncTestZoneSpec);
-        _fakeAsyncTestZoneSpec.lockDatePatch();
+    if (isClockInstalled && enableClockPatch) {
+      // auto run a fakeAsync
+      const fakeAsyncModule = (Zone as any)[Zone.__symbol__('fakeAsyncTest')];
+      if (fakeAsyncModule && typeof fakeAsyncModule.fakeAsync === 'function') {
+        testBody = fakeAsyncModule.fakeAsync(testBody);
       }
     }
-    try {
-      if (done) {
-        return testProxyZone.run(testBody, applyThis, [done]);
-      } else {
-        return testProxyZone.run(testBody, applyThis);
-      }
-    } finally {
-      if (isClockInstalled) {
-        const _fakeAsyncTestZoneSpec = testProxyZoneSpec.getDelegate();
-        if (_fakeAsyncTestZoneSpec) {
-          _fakeAsyncTestZoneSpec.unlockDatePatch();
-        }
-        (testProxyZoneSpec as any).setDelegate(lastDelegate);
-      }
+    if (done) {
+      return testProxyZone.run(testBody, applyThis, [done]);
+    } else {
+      return testProxyZone.run(testBody, applyThis);
     }
   }
 

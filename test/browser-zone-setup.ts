@@ -7,15 +7,12 @@
  */
 if (typeof window !== 'undefined') {
   (window as any)['__Zone_enable_cross_context_check'] = true;
+  (window as any)['__zone_symbol__fakeAsyncPatchLock'] = true;
 }
 import '../lib/common/to-string';
 import '../lib/browser/browser';
 import '../lib/browser/webapis-user-media';
-import '../lib/zone-spec/async-test';
-import '../lib/zone-spec/fake-async-test';
-import '../lib/zone-spec/long-stack-trace';
-import '../lib/zone-spec/proxy';
-import '../lib/zone-spec/sync-test';
+import '../lib/testing/zone-testing';
 import '../lib/zone-spec/task-tracking';
 import '../lib/zone-spec/wtf';
 import '../lib/extra/cordova';
