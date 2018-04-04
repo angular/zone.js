@@ -1,6 +1,6 @@
 {
   "name": "zone.js",
-  "version": "0.8.24",
+  "version": "0.8.25",
   "description": "Zones for JavaScript",
   "main": "dist/zone-node.js",
   "browser": "dist/zone.js",
