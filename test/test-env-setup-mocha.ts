@@ -81,6 +81,11 @@ declare const global: any;
           throw new Error(`Expected ${expected} to be greater than ${actual}`);
         }
       },
+      toBeLessThan: function(actual: number) {
+        if (expected >= actual) {
+          throw new Error(`Expected ${expected} to be lesser than ${actual}`);
+        }
+      },
       toBeDefined: function() {
         if (!expected) {
           throw new Error(`Expected ${expected} to be defined`);
@@ -107,6 +112,11 @@ declare const global: any;
       toBeTruthy: function() {
         if (!expected) {
           throw new Error(`Expected ${expected} to be truthy`);
+        }
+      },
+      toBeFalsy: function(actual: any) {
+        if (!!actual) {
+          throw new Error(`Expected ${actual} to be falsy`);
         }
       },
       toContain: function(actual: any) {
@@ -159,7 +169,11 @@ declare const global: any;
           if (expected > actual) {
             throw new Error(`Expected ${expected} not to be greater than ${actual}`);
           }
-
+        },
+        toBeLessThan: function(actual: number) {
+          if (expected < actual) {
+            throw new Error(`Expected ${expected} not to be lesser than ${actual}`);
+          }
         },
         toHaveBeenCalledWith: function(params: any[]) {
           if (!eq(expected.callArgs, params)) {
