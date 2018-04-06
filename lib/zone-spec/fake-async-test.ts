@@ -32,13 +32,14 @@
   const OriginalDate = global.Date;
   class FakeDate {
     constructor() {
-      const d = new OriginalDate();
-      d.setTime(global.Date.now());
-      return d;
-    }
-
-    static UTC() {
-      return OriginalDate.UTC();
+      if (arguments.length === 0) {
+        const d = new OriginalDate();
+        d.setTime(FakeDate.now());
+        return d;
+      } else {
+        const args = Array.prototype.slice.call(arguments);
+        return new OriginalDate(...args);
+      }
     }
 
     static now() {
@@ -48,11 +49,18 @@
       }
       return OriginalDate.now.apply(this, arguments);
     }
-
-    static parse() {
-      return OriginalDate.parse();
-    }
   }
+
+  (FakeDate as any).UTC = OriginalDate.UTC;
+  (FakeDate as any).parse = OriginalDate.parse;
+
+  // keep a reference for zone patched timer function
+  const timers = {
+    setTimeout: global.setTimeout,
+    setInterval: global.setInterval,
+    clearTimeout: global.clearTimeout,
+    clearInterval: global.clearInterval
+  };
 
   class Scheduler {
     // Next scheduler id.
@@ -63,7 +71,7 @@
     // Current simulated time in millis.
     private _currentTime: number = 0;
     // Current real time in millis.
-    private _currentRealTime: number = Date.now();
+    private _currentRealTime: number = OriginalDate.now();
 
     constructor() {}
 
@@ -341,11 +349,27 @@
       }
       global['Date'] = FakeDate;
       FakeDate.prototype = OriginalDate.prototype;
+
+      // try check and reset timers
+      // because jasmine.clock().install() may
+      // have replaced the global timer
+      FakeAsyncTestZoneSpec.checkTimerPatch();
     }
 
     static resetDate() {
       if (global['Date'] === FakeDate) {
         global['Date'] = OriginalDate;
+      }
+    }
+
+    static checkTimerPatch() {
+      if (global.setTimeout !== timers.setTimeout) {
+        global.setTimeout = timers.setTimeout;
+        global.clearTimeout = timers.clearTimeout;
+      }
+      if (global.setInterval !== timers.setInterval) {
+        global.setInterval = timers.setInterval;
+        global.clearInterval = timers.clearInterval;
       }
     }
 
