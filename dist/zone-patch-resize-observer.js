@@ -11,6 +11,16 @@
 	(factory());
 }(this, (function () { 'use strict';
 
+var __values = (undefined && undefined.__values) || function (o) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator], i = 0;
+    if (m) return m.call(o);
+    return {
+        next: function () {
+            if (o && i >= o.length) o = void 0;
+            return { value: o && o[i++], done: !o };
+        }
+    };
+};
 /**
  * @license
  * Copyright Google Inc. All Rights Reserved.
@@ -31,17 +41,26 @@ Zone.__load_patch('ResizeObserver', function (global, Zone, api) {
                 var _this = this;
                 var zones = {};
                 var currZone = Zone.current;
-                for (var _i = 0, entries_1 = entries; _i < entries_1.length; _i++) {
-                    var entry = entries_1[_i];
-                    var zone = entry.target[resizeObserverSymbol];
-                    if (!zone) {
-                        zone = currZone;
+                try {
+                    for (var entries_1 = __values(entries), entries_1_1 = entries_1.next(); !entries_1_1.done; entries_1_1 = entries_1.next()) {
+                        var entry = entries_1_1.value;
+                        var zone = entry.target[resizeObserverSymbol];
+                        if (!zone) {
+                            zone = currZone;
+                        }
+                        var zoneEntriesInfo = zones[zone.name];
+                        if (!zoneEntriesInfo) {
+                            zones[zone.name] = zoneEntriesInfo = { entries: [], zone: zone };
+                        }
+                        zoneEntriesInfo.entries.push(entry);
                     }
-                    var zoneEntriesInfo = zones[zone.name];
-                    if (!zoneEntriesInfo) {
-                        zones[zone.name] = zoneEntriesInfo = { entries: [], zone: zone };
+                }
+                catch (e_1_1) { e_1 = { error: e_1_1 }; }
+                finally {
+                    try {
+                        if (entries_1_1 && !entries_1_1.done && (_a = entries_1.return)) _a.call(entries_1);
                     }
-                    zoneEntriesInfo.entries.push(entry);
+                    finally { if (e_1) throw e_1.error; }
                 }
                 Object.keys(zones).forEach(function (zoneName) {
                     var zoneEntriesInfo = zones[zoneName];
@@ -52,6 +71,7 @@ Zone.__load_patch('ResizeObserver', function (global, Zone, api) {
                         callback.call(_this, zoneEntriesInfo.entries, observer);
                     }
                 });
+                var e_1, _a;
             };
         }
         return args.length > 0 ? new ResizeObserver(args[0]) : new ResizeObserver();
