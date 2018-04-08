@@ -2724,42 +2724,48 @@ Zone['SyncTestZoneSpec'] = SyncTestZoneSpec;
             return originalJasmineFn.apply(this, arguments);
         };
     });
-    if (enableClockPatch) {
-        var originalClockFn_1 = (jasmine[symbol('clock')] = jasmine['clock']);
-        jasmine['clock'] = function () {
-            var clock = originalClockFn_1.apply(this, arguments);
-            var originalTick = (clock[symbol('tick')] = clock.tick);
+    // need to patch jasmine.clock().mockDate and jasmine.clock().tick() so
+    // they can work properly in FakeAsyncTest
+    var originalClockFn = (jasmine[symbol('clock')] = jasmine['clock']);
+    jasmine['clock'] = function () {
+        var clock = originalClockFn.apply(this, arguments);
+        if (!clock[symbol('patched')]) {
+            clock[symbol('patched')] = symbol('patched');
+            var originalTick_1 = (clock[symbol('tick')] = clock.tick);
             clock.tick = function () {
                 var fakeAsyncZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
                 if (fakeAsyncZoneSpec) {
                     return fakeAsyncZoneSpec.tick.apply(fakeAsyncZoneSpec, arguments);
                 }
-                return originalTick.apply(this, arguments);
+                return originalTick_1.apply(this, arguments);
             };
-            var originalMockDate = (clock[symbol('mockDate')] = clock.mockDate);
+            var originalMockDate_1 = (clock[symbol('mockDate')] = clock.mockDate);
             clock.mockDate = function () {
                 var fakeAsyncZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
                 if (fakeAsyncZoneSpec) {
-                    var dateTime = arguments[0];
+                    var dateTime = arguments.length > 0 ? arguments[0] : new Date();
                     return fakeAsyncZoneSpec.setCurrentRealTime.apply(fakeAsyncZoneSpec, dateTime && typeof dateTime.getTime === 'function' ? [dateTime.getTime()] :
                         arguments);
                 }
-                return originalMockDate.apply(this, arguments);
+                return originalMockDate_1.apply(this, arguments);
             };
-            ['install', 'uninstall'].forEach(function (methodName) {
-                var originalClockFn = (clock[symbol(methodName)] = clock[methodName]);
-                clock[methodName] = function () {
-                    var FakeAsyncTestZoneSpec = Zone['FakeAsyncTestZoneSpec'];
-                    if (FakeAsyncTestZoneSpec) {
-                        jasmine[symbol('clockInstalled')] = 'install' === methodName;
-                        return;
-                    }
-                    return originalClockFn.apply(this, arguments);
-                };
-            });
-            return clock;
-        };
-    }
+            // for auto go into fakeAsync feature, we need the flag to enable it
+            if (enableClockPatch) {
+                ['install', 'uninstall'].forEach(function (methodName) {
+                    var originalClockFn = (clock[symbol(methodName)] = clock[methodName]);
+                    clock[methodName] = function () {
+                        var FakeAsyncTestZoneSpec = Zone['FakeAsyncTestZoneSpec'];
+                        if (FakeAsyncTestZoneSpec) {
+                            jasmine[symbol('clockInstalled')] = 'install' === methodName;
+                            return;
+                        }
+                        return originalClockFn.apply(this, arguments);
+                    };
+                });
+            }
+        }
+        return clock;
+    };
     /**
      * Gets a function wrapping the body of a Jasmine `describe` block to execute in a
      * synchronous-only zone.
@@ -3127,17 +3133,40 @@ Zone.__load_patch('asynctest', function (global, Zone, api) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+var __read = (undefined && undefined.__read) || function (o, n) {
+    var m = typeof Symbol === "function" && o[Symbol.iterator];
+    if (!m) return o;
+    var i = m.call(o), r, ar = [], e;
+    try {
+        while ((n === void 0 || n-- > 0) && !(r = i.next()).done) ar.push(r.value);
+    }
+    catch (error) { e = { error: error }; }
+    finally {
+        try {
+            if (r && !r.done && (m = i["return"])) m.call(i);
+        }
+        finally { if (e) throw e.error; }
+    }
+    return ar;
+};
+var __spread = (undefined && undefined.__spread) || function () {
+    for (var ar = [], i = 0; i < arguments.length; i++) ar = ar.concat(__read(arguments[i]));
+    return ar;
+};
 (function (global) {
     var OriginalDate = global.Date;
     var FakeDate = /** @class */ (function () {
         function FakeDate() {
-            var d = new OriginalDate();
-            d.setTime(global.Date.now());
-            return d;
+            if (arguments.length === 0) {
+                var d = new OriginalDate();
+                d.setTime(FakeDate.now());
+                return d;
+            }
+            else {
+                var args = Array.prototype.slice.call(arguments);
+                return new (OriginalDate.bind.apply(OriginalDate, __spread([void 0], args)))();
+            }
         }
-        FakeDate.UTC = function () {
-            return OriginalDate.UTC();
-        };
         FakeDate.now = function () {
             var fakeAsyncTestZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
             if (fakeAsyncTestZoneSpec) {
@@ -3145,11 +3174,17 @@ Zone.__load_patch('asynctest', function (global, Zone, api) {
             }
             return OriginalDate.now.apply(this, arguments);
         };
-        FakeDate.parse = function () {
-            return OriginalDate.parse();
-        };
         return FakeDate;
     }());
+    FakeDate.UTC = OriginalDate.UTC;
+    FakeDate.parse = OriginalDate.parse;
+    // keep a reference for zone patched timer function
+    var timers = {
+        setTimeout: global.setTimeout,
+        setInterval: global.setInterval,
+        clearTimeout: global.clearTimeout,
+        clearInterval: global.clearInterval
+    };
     var Scheduler = /** @class */ (function () {
         function Scheduler() {
             // Next scheduler id.
@@ -3159,7 +3194,7 @@ Zone.__load_patch('asynctest', function (global, Zone, api) {
             // Current simulated time in millis.
             this._currentTime = 0;
             // Current real time in millis.
-            this._currentRealTime = Date.now();
+            this._currentRealTime = OriginalDate.now();
         }
         Scheduler.prototype.getCurrentTime = function () {
             return this._currentTime;
@@ -3418,10 +3453,24 @@ Zone.__load_patch('asynctest', function (global, Zone, api) {
             }
             global['Date'] = FakeDate;
             FakeDate.prototype = OriginalDate.prototype;
+            // try check and reset timers
+            // because jasmine.clock().install() may
+            // have replaced the global timer
+            FakeAsyncTestZoneSpec.checkTimerPatch();
         };
         FakeAsyncTestZoneSpec.resetDate = function () {
             if (global['Date'] === FakeDate) {
                 global['Date'] = OriginalDate;
+            }
+        };
+        FakeAsyncTestZoneSpec.checkTimerPatch = function () {
+            if (global.setTimeout !== timers.setTimeout) {
+                global.setTimeout = timers.setTimeout;
+                global.clearTimeout = timers.clearTimeout;
+            }
+            if (global.setInterval !== timers.setInterval) {
+                global.setInterval = timers.setInterval;
+                global.clearInterval = timers.clearInterval;
             }
         };
         FakeAsyncTestZoneSpec.prototype.lockDatePatch = function () {
