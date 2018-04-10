@@ -266,6 +266,79 @@ describe('XMLHttpRequest', function() {
        });
      });
 
+  it('should trigger readystatechange if xhr request trigger cors error', (done) => {
+    const req = new XMLHttpRequest();
+    let err: any = null;
+    try {
+      req.open('get', 'file:///test', true);
+    } catch (err) {
+      // in IE, open will throw Access is denied error
+      done();
+      return;
+    }
+    req.addEventListener('readystatechange', function(ev) {
+      if (req.readyState === 4) {
+        const xhrScheduled = (req as any)['__zone_symbol__xhrScheduled'];
+        const task = (req as any)['__zone_symbol__xhrTask'];
+        if (xhrScheduled === false) {
+          expect(task.state).toEqual('scheduling');
+          setTimeout(() => {
+            if (err) {
+              expect(task.state).toEqual('unknown');
+            } else {
+              expect(task.state).toEqual('notScheduled');
+            }
+            done();
+          });
+        } else {
+          expect(task.state).toEqual('scheduled');
+          done();
+        }
+      }
+    });
+    try {
+      req.send();
+    } catch (error) {
+      err = error;
+    }
+  });
+
+  it('should invoke task if xhr request trigger cors error', (done) => {
+    const logs: string[] = [];
+    const zone = Zone.current.fork({
+      name: 'xhr',
+      onHasTask: (delegate: ZoneDelegate, curr: Zone, target: Zone, hasTask: HasTaskState) => {
+        logs.push(JSON.stringify(hasTask));
+      }
+    });
+    const req = new XMLHttpRequest();
+    try {
+      req.open('get', 'file:///test', true);
+    } catch (err) {
+      // in IE, open will throw Access is denied error
+      done();
+      return;
+    }
+    zone.run(() => {
+      let isError = false;
+      let timerId = null;
+      try {
+        timerId = (window as any)['__zone_symbol__setTimeout'](() => {
+          expect(logs).toEqual([
+            `{"microTask":false,"macroTask":true,"eventTask":false,"change":"macroTask"}`,
+            `{"microTask":false,"macroTask":false,"eventTask":false,"change":"macroTask"}`
+          ]);
+          done();
+        }, 500);
+        req.send();
+      } catch (error) {
+        isError = true;
+        (window as any)['__zone_symbol__clearTimeout'](timerId);
+        done();
+      }
+    });
+  });
+
   it('should not throw error when get XMLHttpRequest.prototype.onreadystatechange the first time',
      function() {
        const func = function() {
