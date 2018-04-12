@@ -6,8 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import '../../lib/browser/webapis-notification';
-
 import {zoneSymbol} from '../../lib/common/utils';
 import {ifEnvSupports} from '../test-util';
 declare const window: any;

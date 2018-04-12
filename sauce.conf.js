@@ -6,9 +6,9 @@ module.exports = function(config, ignoredLaunchers) {
 
   var basicLaunchers = {
     'SL_CHROME': {base: 'SauceLabs', browserName: 'chrome', version: '48'},
-    'SL_CHROME_60': {base: 'SauceLabs', browserName: 'chrome', version: '60'},
+    'SL_CHROME_65': {base: 'SauceLabs', browserName: 'chrome', version: '60'},
     'SL_FIREFOX': {base: 'SauceLabs', browserName: 'firefox', version: '52'},
-    'SL_FIREFOX_54': {base: 'SauceLabs', browserName: 'firefox', version: '54'},
+    'SL_FIREFOX_59': {base: 'SauceLabs', browserName: 'firefox', version: '54'},
     /*'SL_SAFARI7': {
       base: 'SauceLabs',
         browserName: 'safari',
