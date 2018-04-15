@@ -8,5 +8,6 @@
 
 import '../zone';
 import '../common/promise';
+import '../common/fetch';
 import '../common/to-string';
 import './browser';
