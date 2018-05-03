@@ -5,6 +5,10 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-
-import './mocha-patch';
-import './jasmine-bridge/jasmine-bridge';
+if (global && !(global as any).Mocha) {
+  try {
+    (global as any).Mocha = require('mocha');
+  } catch (err) {
+    console.log('err', err);
+  }
+}

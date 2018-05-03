@@ -45,6 +45,9 @@
     "test-node": "gulp test/node",
     "test-bluebird": "gulp test/bluebird",
     "test-mocha": "npm run tsc && concurrently \"npm run tsc:w\" \"npm run ws-server\" \"karma start karma-build-mocha.conf.js\"",
+    "prepare-mocha-jasmine-bridge": "npm run tsc && cp ./test/mocha/*.js ./build/test/mocha/",
+    "test-mocha-jasmine-bridge-browser": "npm run prepare-mocha-jasmine-bridge && concurrently \"npm run ws-server\" \"karma start karma-build-mocha-jasmine-bridge.conf.js\"",
+    "test-mocha-jasmine-bridge-node": "npm run prepare-mocha-jasmine-bridge && mocha ./build/test/mocha/mocha-node-test-entry-point.js",
     "serve": "python -m SimpleHTTPServer 8000"
   },
   "repository": {

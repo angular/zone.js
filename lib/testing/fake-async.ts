@@ -33,35 +33,46 @@ Zone.__load_patch('fakeasync', (global: any, Zone: ZoneType, api: _ZonePrivate) 
   }
 
   /**
-  * Wraps a function to be executed in the fakeAsync zone:
-  * - microtasks are manually executed by calling `flushMicrotasks()`,
-  * - timers are synchronous, `tick()` simulates the asynchronous passage of time.
-  *
-  * If there are any pending timers at the end of the function, an exception will be thrown.
-  *
-  * Can be used to wrap inject() calls.
-  *
-  * ## Example
-  *
-  * {@example core/testing/ts/fake_async.ts region='basic'}
-  *
-  * @param fn
-  * @returns The function wrapped to be executed in the fakeAsync zone
-  *
-  * @experimental
-  */
-  function fakeAsync(fn: Function): (...args: any[]) => any {
+   * Wraps a function to be executed in the fakeAsync zone:
+   * - microtasks are manually executed by calling `flushMicrotasks()`,
+   * - timers are synchronous, `tick()` simulates the asynchronous passage of time.
+   *
+   * If there are any pending timers at the end of the function, an exception will be thrown.
+   *
+   * Can be used to wrap inject() calls.
+   *
+   * ## Example
+   *
+   * {@example core/testing/ts/fake_async.ts region='basic'}
+   *
+   * @param fn
+   * @returns The function wrapped to be executed in the fakeAsync zone
+   *
+   * @experimental
+   */
+  function fakeAsync(fn: Function, options: {
+    checkNested?: boolean,
+    checkRemainingMacrotasks?: boolean
+  } = {checkNested: true, checkRemainingMacrotasks: true}): (...args: any[]) => any {
     // Not using an arrow function to preserve context passed from call site
     return function(...args: any[]) {
       const proxyZoneSpec = ProxyZoneSpec.assertPresent();
       if (Zone.current.get('FakeAsyncTestZoneSpec')) {
-        throw new Error('fakeAsync() calls can not be nested');
+        if (options.checkNested) {
+          throw new Error('fakeAsync() calls can not be nested');
+        }
+        // already in fakeAsyncZone
+        return fn.apply(this, args);
       }
       try {
         // in case jasmine.clock init a fakeAsyncTestZoneSpec
         if (!_fakeAsyncTestZoneSpec) {
           if (proxyZoneSpec.getDelegate() instanceof FakeAsyncTestZoneSpec) {
-            throw new Error('fakeAsync() calls can not be nested');
+            if (options.checkNested) {
+              throw new Error('fakeAsync() calls can not be nested');
+            }
+            // already in fakeAsyncZone
+            return fn.apply(this, args);
           }
 
           _fakeAsyncTestZoneSpec = new FakeAsyncTestZoneSpec();
@@ -78,15 +89,19 @@ Zone.__load_patch('fakeasync', (global: any, Zone: ZoneType, api: _ZonePrivate) 
           proxyZoneSpec.setDelegate(lastProxyZoneSpec);
         }
 
-        if (_fakeAsyncTestZoneSpec.pendingPeriodicTimers.length > 0) {
-          throw new Error(
-              `${_fakeAsyncTestZoneSpec.pendingPeriodicTimers.length} ` +
-              `periodic timer(s) still in the queue.`);
-        }
+        // TODO: @JiaLiPassion, we don't need to report error here.
+        // need to confirm.
+        if (options.checkRemainingMacrotasks) {
+          if (_fakeAsyncTestZoneSpec.pendingPeriodicTimers.length > 0) {
+            throw new Error(
+                `${_fakeAsyncTestZoneSpec.pendingPeriodicTimers.length} ` +
+                `periodic timer(s) still in the queue.`);
+          }
 
-        if (_fakeAsyncTestZoneSpec.pendingTimers.length > 0) {
-          throw new Error(
-              `${_fakeAsyncTestZoneSpec.pendingTimers.length} timer(s) still in the queue.`);
+          if (_fakeAsyncTestZoneSpec.pendingTimers.length > 0) {
+            throw new Error(
+                `${_fakeAsyncTestZoneSpec.pendingTimers.length} timer(s) still in the queue.`);
+          }
         }
         return res;
       } finally {

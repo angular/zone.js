@@ -5,6 +5,5 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-
-import './mocha-patch';
-import './jasmine-bridge/jasmine-bridge';
+(window as any)['__zone_symbol__test_entry_point'] =
+    '/base/build/test/mocha/mocha-browser-test-entry-point';

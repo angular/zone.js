@@ -10,7 +10,8 @@
 import '../zone-spec/long-stack-trace';
 import '../zone-spec/proxy';
 import '../zone-spec/sync-test';
-import '../jasmine/jasmine';
 import './async-testing';
 import './fake-async';
 import './promise-testing';
+import '../jasmine/jasmine';
+import '../mocha/mocha';

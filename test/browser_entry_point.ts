@@ -22,6 +22,5 @@ import './browser/XMLHttpRequest.spec';
 import './browser/MediaQuery.spec';
 import './browser/Notification.spec';
 import './browser/Worker.spec';
-import './mocha-patch.spec';
 import './jasmine-patch.spec';
 import './extra/cordova.spec';

@@ -7,7 +7,8 @@
  */
 
 'use strict';
-(() => {
+import {patchJasmineClock} from './jasmine.clock';
+Zone.__load_patch('jasmine', (global: any) => {
   const __extends = function(d: any, b: any) {
     for (const p in b)
       if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -16,12 +17,13 @@
     }
     d.prototype = b === null ? Object.create(b) : ((__.prototype = b.prototype), new (__ as any)());
   };
-  const _global: any =
-      typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global;
   // Patch jasmine's describe/it/beforeEach/afterEach functions so test code always runs
   // in a testZone (ProxyZone). (See: angular/zone.js#91 & angular/angular#10503)
   if (!Zone) throw new Error('Missing: zone.js');
-  if (typeof jasmine == 'undefined') throw new Error('Missing: jasmine.js');
+  if (typeof jasmine == 'undefined') {
+    // not using jasmine, just return;
+    return;
+  }
   if ((jasmine as any)['__zone_patch__'])
     throw new Error(`'jasmine' has already been patched with 'Zone'.`);
   (jasmine as any)['__zone_patch__'] = true;
@@ -40,7 +42,7 @@
   const symbol = Zone.__symbol__;
 
   // whether patch jasmine clock when in fakeAsync
-  const enableClockPatch = _global[symbol('fakeAsyncPatchLock')] === true;
+  const enableClockPatch = global[symbol('fakeAsyncPatchLock')] === true;
 
   // Monkey patch all of the jasmine DSL so that each function runs in appropriate zone.
   const jasmineEnv: any = jasmine.getEnv();
@@ -68,51 +70,7 @@
     };
   });
 
-  // need to patch jasmine.clock().mockDate and jasmine.clock().tick() so
-  // they can work properly in FakeAsyncTest
-  const originalClockFn: Function = ((jasmine as any)[symbol('clock')] = jasmine['clock']);
-  (jasmine as any)['clock'] = function() {
-    const clock = originalClockFn.apply(this, arguments);
-    if (!clock[symbol('patched')]) {
-      clock[symbol('patched')] = symbol('patched');
-      const originalTick = (clock[symbol('tick')] = clock.tick);
-      clock.tick = function() {
-        const fakeAsyncZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
-        if (fakeAsyncZoneSpec) {
-          return fakeAsyncZoneSpec.tick.apply(fakeAsyncZoneSpec, arguments);
-        }
-        return originalTick.apply(this, arguments);
-      };
-      const originalMockDate = (clock[symbol('mockDate')] = clock.mockDate);
-      clock.mockDate = function() {
-        const fakeAsyncZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
-        if (fakeAsyncZoneSpec) {
-          const dateTime = arguments.length > 0 ? arguments[0] : new Date();
-          return fakeAsyncZoneSpec.setCurrentRealTime.apply(
-              fakeAsyncZoneSpec,
-              dateTime && typeof dateTime.getTime === 'function' ? [dateTime.getTime()] :
-                                                                   arguments);
-        }
-        return originalMockDate.apply(this, arguments);
-      };
-      // for auto go into fakeAsync feature, we need the flag to enable it
-      if (enableClockPatch) {
-        ['install', 'uninstall'].forEach(methodName => {
-          const originalClockFn: Function = (clock[symbol(methodName)] = clock[methodName]);
-          clock[methodName] = function() {
-            const FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
-            if (FakeAsyncTestZoneSpec) {
-              (jasmine as any)[symbol('clockInstalled')] = 'install' === methodName;
-              return;
-            }
-            return originalClockFn.apply(this, arguments);
-          };
-        });
-      }
-    }
-    return clock;
-  };
-
+  patchJasmineClock(jasmine, enableClockPatch);
   /**
    * Gets a function wrapping the body of a Jasmine `describe` block to execute in a
    * synchronous-only zone.
@@ -127,7 +85,6 @@
     const isClockInstalled = !!(jasmine as any)[symbol('clockInstalled')];
     const testProxyZoneSpec = queueRunner.testProxyZoneSpec;
     const testProxyZone = queueRunner.testProxyZone;
-    let lastDelegate;
     if (isClockInstalled && enableClockPatch) {
       // auto run a fakeAsync
       const fakeAsyncModule = (Zone as any)[Zone.__symbol__('fakeAsyncTest')];
@@ -177,7 +134,8 @@
   (jasmine as any).QueueRunner = (function(_super) {
     __extends(ZoneQueueRunner, _super);
     function ZoneQueueRunner(attrs: {
-      onComplete: Function; userContext?: any;
+      onComplete: Function;
+      userContext?: any;
       timeout?: {setTimeout: Function; clearTimeout: Function};
       onException?: (error: any) => void;
     }) {
@@ -188,13 +146,13 @@
         ambientZone.scheduleMicroTask('jasmine.onComplete', fn);
       })(attrs.onComplete);
 
-      const nativeSetTimeout = _global['__zone_symbol__setTimeout'];
-      const nativeClearTimeout = _global['__zone_symbol__clearTimeout'];
+      const nativeSetTimeout = global['__zone_symbol__setTimeout'];
+      const nativeClearTimeout = global['__zone_symbol__clearTimeout'];
       if (nativeSetTimeout) {
         // should run setTimeout inside jasmine outside of zone
         attrs.timeout = {
-          setTimeout: nativeSetTimeout ? nativeSetTimeout : _global.setTimeout,
-          clearTimeout: nativeClearTimeout ? nativeClearTimeout : _global.clearTimeout
+          setTimeout: nativeSetTimeout ? nativeSetTimeout : global.setTimeout,
+          clearTimeout: nativeClearTimeout ? nativeClearTimeout : global.clearTimeout
         };
       }
 
@@ -272,4 +230,4 @@
     };
     return ZoneQueueRunner;
   })(QueueRunner);
-})();
+});
