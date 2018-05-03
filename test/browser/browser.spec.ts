@@ -84,13 +84,13 @@ describe('Zone', function() {
       const alertSpy = jasmine.createSpy('alert');
       const promptSpy = jasmine.createSpy('prompt');
       const confirmSpy = jasmine.createSpy('confirm');
-      const spies: {[k: string]:
-                        Function} = {'alert': alertSpy, 'prompt': promptSpy, 'confirm': confirmSpy};
+      const spies:
+          {[k: string]: Function} = {'alert': alertSpy, 'prompt': promptSpy, 'confirm': confirmSpy};
       const myZone = Zone.current.fork({
         name: 'spy',
-        onInvoke: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                   callback: Function, applyThis?: any, applyArgs?: any[],
-                   source?: string): any => {
+        onInvoke: (
+            parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+            callback: Function, applyThis?: any, applyArgs?: any[], source?: string): any => {
           if (source) {
             spies[source].apply(null, applyArgs);
           } else {
@@ -117,11 +117,12 @@ describe('Zone', function() {
           let hookSpy: Spy, eventListenerSpy: Spy;
           const zone = rootZone.fork({
             name: 'spy',
-            onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                             task: Task): any => {
-              hookSpy();
-              return parentZoneDelegate.scheduleTask(targetZone, task);
-            }
+            onScheduleTask:
+                (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                    any => {
+                      hookSpy();
+                      return parentZoneDelegate.scheduleTask(targetZone, task);
+                    }
           });
 
           beforeEach(function() {
@@ -381,7 +382,6 @@ describe('Zone', function() {
                };
                expect(testFn).not.toThrow();
              }));
-
         }));
 
     describe('eventListener hooks', function() {
@@ -404,11 +404,12 @@ describe('Zone', function() {
         const eventListenerSpy = jasmine.createSpy('eventListener');
         const zone = rootZone.fork({
           name: 'spy',
-          onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                           task: Task): any => {
-            hookSpy();
-            return parentZoneDelegate.scheduleTask(targetZone, task);
-          }
+          onScheduleTask:
+              (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                  any => {
+                    hookSpy();
+                    return parentZoneDelegate.scheduleTask(targetZone, task);
+                  }
         });
 
         zone.run(function() {
@@ -430,15 +431,16 @@ describe('Zone', function() {
         let scheduleTask;
         const zone = rootZone.fork({
           name: 'spy',
-          onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                           task: Task): any => {
-            hookSpy();
-            scheduleButton = (task.data as any).taskData.target;
-            scheduleEventName = (task.data as any).taskData.eventName;
-            scheduleCapture = (task.data as any).taskData.capture;
-            scheduleTask = task;
-            return parentZoneDelegate.scheduleTask(targetZone, task);
-          }
+          onScheduleTask:
+              (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                  any => {
+                    hookSpy();
+                    scheduleButton = (task.data as any).taskData.target;
+                    scheduleEventName = (task.data as any).taskData.eventName;
+                    scheduleCapture = (task.data as any).taskData.capture;
+                    scheduleTask = task;
+                    return parentZoneDelegate.scheduleTask(targetZone, task);
+                  }
         });
 
         zone.run(function() {
@@ -460,11 +462,12 @@ describe('Zone', function() {
            const eventListenerSpy = jasmine.createSpy('eventListener');
            const zone = rootZone.fork({
              name: 'spy',
-             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
-               hookSpy();
-               return parentZoneDelegate.scheduleTask(targetZone, task);
-             }
+             onScheduleTask: (
+                 parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                 any => {
+                   hookSpy();
+                   return parentZoneDelegate.scheduleTask(targetZone, task);
+                 }
            });
 
            zone.run(function() {
@@ -482,11 +485,12 @@ describe('Zone', function() {
         const eventListenerSpy = jasmine.createSpy('eventListener');
         const zone = rootZone.fork({
           name: 'spy',
-          onCancelTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                         task: Task): any => {
-            hookSpy();
-            return parentZoneDelegate.cancelTask(targetZone, task);
-          }
+          onCancelTask:
+              (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                  any => {
+                    hookSpy();
+                    return parentZoneDelegate.cancelTask(targetZone, task);
+                  }
         });
 
         zone.run(function() {
@@ -508,16 +512,18 @@ describe('Zone', function() {
             let logs: string[];
             const zone = rootZone.fork({
               name: 'spy',
-              onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone,
-                               targetZone: Zone, task: Task): any => {
-                hookSpy();
-                return parentZoneDelegate.scheduleTask(targetZone, task);
-              },
-              onCancelTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                             task: Task): any => {
-                cancelSpy();
-                return parentZoneDelegate.cancelTask(targetZone, task);
-              }
+              onScheduleTask:
+                  (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                   task: Task): any => {
+                    hookSpy();
+                    return parentZoneDelegate.scheduleTask(targetZone, task);
+                  },
+              onCancelTask:
+                  (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                   task: Task): any => {
+                    cancelSpy();
+                    return parentZoneDelegate.cancelTask(targetZone, task);
+                  }
             });
 
             const docListener = () => {
@@ -573,7 +579,6 @@ describe('Zone', function() {
               button.dispatchEvent(clickEvent);
               expect(logs).toEqual([]);
             });
-
           }));
 
       describe(
@@ -584,16 +589,18 @@ describe('Zone', function() {
             let logs: string[];
             const zone = rootZone.fork({
               name: 'spy',
-              onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone,
-                               targetZone: Zone, task: Task): any => {
-                hookSpy();
-                return parentZoneDelegate.scheduleTask(targetZone, task);
-              },
-              onCancelTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                             task: Task): any => {
-                cancelSpy();
-                return parentZoneDelegate.cancelTask(targetZone, task);
-              }
+              onScheduleTask:
+                  (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                   task: Task): any => {
+                    hookSpy();
+                    return parentZoneDelegate.scheduleTask(targetZone, task);
+                  },
+              onCancelTask:
+                  (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                   task: Task): any => {
+                    cancelSpy();
+                    return parentZoneDelegate.cancelTask(targetZone, task);
+                  }
             });
 
             const docListener = () => {
@@ -658,16 +665,18 @@ describe('Zone', function() {
             let logs: string[];
             const zone = rootZone.fork({
               name: 'spy',
-              onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone,
-                               targetZone: Zone, task: Task): any => {
-                hookSpy();
-                return parentZoneDelegate.scheduleTask(targetZone, task);
-              },
-              onCancelTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                             task: Task): any => {
-                cancelSpy();
-                return parentZoneDelegate.cancelTask(targetZone, task);
-              }
+              onScheduleTask:
+                  (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                   task: Task): any => {
+                    hookSpy();
+                    return parentZoneDelegate.scheduleTask(targetZone, task);
+                  },
+              onCancelTask:
+                  (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+                   task: Task): any => {
+                    cancelSpy();
+                    return parentZoneDelegate.cancelTask(targetZone, task);
+                  }
             });
 
             const docListener = () => {
@@ -817,11 +826,12 @@ describe('Zone', function() {
            let logs: string[] = [];
            const zone = rootZone.fork({
              name: 'spy',
-             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
-               hookSpy();
-               return parentZoneDelegate.scheduleTask(targetZone, task);
-             }
+             onScheduleTask: (
+                 parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                 any => {
+                   hookSpy();
+                   return parentZoneDelegate.scheduleTask(targetZone, task);
+                 }
            });
 
            zone.run(function() {
@@ -847,11 +857,12 @@ describe('Zone', function() {
            let logs: string[] = [];
            const zone = rootZone.fork({
              name: 'spy',
-             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
-               hookSpy();
-               return parentZoneDelegate.scheduleTask(targetZone, task);
-             }
+             onScheduleTask: (
+                 parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                 any => {
+                   hookSpy();
+                   return parentZoneDelegate.scheduleTask(targetZone, task);
+                 }
            });
 
            zone.run(function() {
@@ -991,11 +1002,12 @@ describe('Zone', function() {
            const logs: string[] = [];
            const zone = rootZone.fork({
              name: 'spy',
-             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
-               hookSpy();
-               return parentZoneDelegate.scheduleTask(targetZone, task);
-             }
+             onScheduleTask: (
+                 parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                 any => {
+                   hookSpy();
+                   return parentZoneDelegate.scheduleTask(targetZone, task);
+                 }
            });
 
            const listener = (e: Event) => {
@@ -1022,11 +1034,12 @@ describe('Zone', function() {
            const logs: string[] = [];
            const zone = rootZone.fork({
              name: 'spy',
-             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
-               hookSpy();
-               return parentZoneDelegate.scheduleTask(targetZone, task);
-             }
+             onScheduleTask: (
+                 parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                 any => {
+                   hookSpy();
+                   return parentZoneDelegate.scheduleTask(targetZone, task);
+                 }
            });
 
            const listener1 = (e: Event) => {
@@ -1057,11 +1070,12 @@ describe('Zone', function() {
         let eventTask: Task;
         const zone = rootZone.fork({
           name: 'spy',
-          onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                           task: Task): any => {
-            eventTask = task;
-            return parentZoneDelegate.scheduleTask(targetZone, task);
-          }
+          onScheduleTask:
+              (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                  any => {
+                    eventTask = task;
+                    return parentZoneDelegate.scheduleTask(targetZone, task);
+                  }
         });
 
         zone.run(() => {
@@ -1085,11 +1099,12 @@ describe('Zone', function() {
            let eventTask: Task;
            const zone = rootZone.fork({
              name: 'spy',
-             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
-               eventTask = task;
-               return parentZoneDelegate.scheduleTask(targetZone, task);
-             }
+             onScheduleTask: (
+                 parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                 any => {
+                   eventTask = task;
+                   return parentZoneDelegate.scheduleTask(targetZone, task);
+                 }
            });
 
            zone.run(() => {
@@ -1113,11 +1128,12 @@ describe('Zone', function() {
            let eventTask: Task;
            const zone = rootZone.fork({
              name: 'spy',
-             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
-               eventTask = task;
-               return parentZoneDelegate.scheduleTask(targetZone, task);
-             }
+             onScheduleTask: (
+                 parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                 any => {
+                   eventTask = task;
+                   return parentZoneDelegate.scheduleTask(targetZone, task);
+                 }
            });
 
            zone.run(() => {
@@ -1150,11 +1166,12 @@ describe('Zone', function() {
            let eventTask: Task;
            const zone = rootZone.fork({
              name: 'spy',
-             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
-               eventTask = task;
-               return parentZoneDelegate.scheduleTask(targetZone, task);
-             }
+             onScheduleTask: (
+                 parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                 any => {
+                   eventTask = task;
+                   return parentZoneDelegate.scheduleTask(targetZone, task);
+                 }
            });
 
            zone.run(() => {
@@ -1187,11 +1204,12 @@ describe('Zone', function() {
            let eventTask: Task;
            const zone = rootZone.fork({
              name: 'spy',
-             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
-               eventTask = task;
-               return parentZoneDelegate.scheduleTask(targetZone, task);
-             }
+             onScheduleTask: (
+                 parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                 any => {
+                   eventTask = task;
+                   return parentZoneDelegate.scheduleTask(targetZone, task);
+                 }
            });
 
            zone.run(() => {
@@ -1229,17 +1247,18 @@ describe('Zone', function() {
            };
            const zone1 = Zone.current.fork({
              name: 'zone1',
-             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
-               if ((task.type === 'eventTask' || task.type === 'macroTask') &&
-                   isBlacklistedEvent(task.source)) {
-                 task.cancelScheduleRequest();
+             onScheduleTask: (
+                 parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                 any => {
+                   if ((task.type === 'eventTask' || task.type === 'macroTask') &&
+                       isBlacklistedEvent(task.source)) {
+                     task.cancelScheduleRequest();
 
-                 return zone2.scheduleTask(task);
-               } else {
-                 return parentZoneDelegate.scheduleTask(targetZone, task);
-               }
-             },
+                     return zone2.scheduleTask(task);
+                   } else {
+                     return parentZoneDelegate.scheduleTask(targetZone, task);
+                   }
+                 },
              onInvokeTask(
                  parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task,
                  applyThis: any, applyArgs: any) {
@@ -1249,11 +1268,12 @@ describe('Zone', function() {
            });
            const zone2 = Zone.current.fork({
              name: 'zone2',
-             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
-               hookSpy2();
-               return parentZoneDelegate.scheduleTask(targetZone, task);
-             },
+             onScheduleTask: (
+                 parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                 any => {
+                   hookSpy2();
+                   return parentZoneDelegate.scheduleTask(targetZone, task);
+                 },
              onInvokeTask(
                  parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task,
                  applyThis: any, applyArgs: any) {
@@ -1298,11 +1318,12 @@ describe('Zone', function() {
         const hookSpy = jasmine.createSpy('hook');
         const zone = rootZone.fork({
           name: 'spy',
-          onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                           task: Task): any => {
-            hookSpy();
-            return parentZoneDelegate.scheduleTask(targetZone, task);
-          }
+          onScheduleTask:
+              (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                  any => {
+                    hookSpy();
+                    return parentZoneDelegate.scheduleTask(targetZone, task);
+                  }
         });
 
         zone.run(function() {
@@ -2282,11 +2303,12 @@ describe('Zone', function() {
            const hookSpy = jasmine.createSpy('hook');
            const zone = rootZone.fork({
              name: 'spy',
-             onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                              task: Task): any => {
-               hookSpy();
-               return parentZoneDelegate.scheduleTask(targetZone, task);
-             }
+             onScheduleTask: (
+                 parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                 any => {
+                   hookSpy();
+                   return parentZoneDelegate.scheduleTask(targetZone, task);
+                 }
            });
            let logs: string[] = [];
 
@@ -2573,7 +2595,6 @@ describe('Zone', function() {
                      });
                });
              }));
-
     });
   });
 });

@@ -12,15 +12,17 @@ const testClosureFunction = () => {
   const testZoneSpec: ZoneSpec = {
     name: 'closure',
     properties: {},
-    onFork: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-             zoneSpec: ZoneSpec) => {
-      return parentZoneDelegate.fork(targetZone, zoneSpec);
-    },
+    onFork:
+        (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+         zoneSpec: ZoneSpec) => {
+          return parentZoneDelegate.fork(targetZone, zoneSpec);
+        },
 
-    onIntercept: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                  delegate: Function, source: string) => {
-      return parentZoneDelegate.intercept(targetZone, delegate, source);
-    },
+    onIntercept:
+        (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function,
+         source: string) => {
+          return parentZoneDelegate.intercept(targetZone, delegate, source);
+        },
 
     onInvoke: function(
         parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function,

@@ -7,7 +7,6 @@
  */
 
 describe('defineProperty', function() {
-
   it('should not throw when defining length on an array', function() {
     const someArray: any[] = [];
     expect(() => Object.defineProperty(someArray, 'length', {value: 2, writable: false}))
@@ -25,5 +24,4 @@ describe('defineProperty', function() {
     Object.freeze(obj);
     Object.defineProperty(obj, 'prop', {configurable: true, writable: true, value: 'value'});
   });
-
 });

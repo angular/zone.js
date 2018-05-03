@@ -11,7 +11,6 @@ import {isNode, zoneSymbol} from '../../lib/common/utils';
 declare const global: any;
 
 describe('setInterval', function() {
-
   it('should work with setInterval', function(done) {
     let cancelId: any;
     const testZone = Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({name: 'TestZone'});
@@ -86,5 +85,4 @@ describe('setInterval', function() {
       }, 300);
     });
   });
-
 });

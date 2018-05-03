@@ -30,8 +30,10 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
   const empty = {
     closed: true,
     next(value: any): void{},
-    error(err: any): void{throw err;},
-    complete(): void{}
+    error(err: any): void {
+      throw err;
+    },
+    complete(): void {}
   };
 
   function toSubscriber<T>(

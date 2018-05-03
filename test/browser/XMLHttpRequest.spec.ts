@@ -122,13 +122,14 @@ describe('XMLHttpRequest', function() {
 
                const trackingTestZone = Zone.current.fork({
                  name: 'tracking test zone',
-                 onHasTask: (delegate: ZoneDelegate, current: Zone, target: Zone,
-                             hasTaskState: HasTaskState) => {
-                   if (hasTaskState.change == 'macroTask') {
-                     pending = hasTaskState.macroTask;
-                   }
-                   delegate.hasTask(target, hasTaskState);
-                 }
+                 onHasTask:
+                     (delegate: ZoneDelegate, current: Zone, target: Zone,
+                      hasTaskState: HasTaskState) => {
+                       if (hasTaskState.change == 'macroTask') {
+                         pending = hasTaskState.macroTask;
+                       }
+                       delegate.hasTask(target, hasTaskState);
+                     }
                });
 
                trackingTestZone.run(function() {

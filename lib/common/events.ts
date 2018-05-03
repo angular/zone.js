@@ -285,7 +285,6 @@ export function patchEventTarget(
       const typeOfDelegate = typeof delegate;
       return (typeOfDelegate === 'function' && task.callback === delegate) ||
           (typeOfDelegate === 'object' && task.originalDelegate === delegate);
-
     };
 
     const compare =

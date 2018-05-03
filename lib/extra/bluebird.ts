@@ -16,22 +16,23 @@ Zone.__load_patch('bluebird', (global: any, Zone: ZoneType, api: _ZonePrivate) =
     // patch method of Bluebird.prototype which not using `then` internally
     const bluebirdApis: string[] = ['then', 'spread', 'finally'];
     bluebirdApis.forEach(bapi => {
-      api.patchMethod(Bluebird.prototype, bapi, (delegate: Function) => (self: any, args: any[]) => {
-        const zone = Zone.current;
-        for (let i = 0; i < args.length; i ++) {
-          const func = args[i];
-          if (typeof func === 'function') {
-            args[i] = function() {
-              const argSelf: any = this;
-              const argArgs: any = arguments;
-              zone.scheduleMicroTask('Promise.then', () => {
-                return func.apply(argSelf, argArgs);
-              });
-            };
-          }
-        }
-        return delegate.apply(self, args);
-      });
+      api.patchMethod(
+          Bluebird.prototype, bapi, (delegate: Function) => (self: any, args: any[]) => {
+            const zone = Zone.current;
+            for (let i = 0; i < args.length; i++) {
+              const func = args[i];
+              if (typeof func === 'function') {
+                args[i] = function() {
+                  const argSelf: any = this;
+                  const argArgs: any = arguments;
+                  zone.scheduleMicroTask('Promise.then', () => {
+                    return func.apply(argSelf, argArgs);
+                  });
+                };
+              }
+            }
+            return delegate.apply(self, args);
+          });
     });
 
     // override global promise

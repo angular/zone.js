@@ -53,7 +53,7 @@ Zone.__load_patch('mediaQuery', (global: any, Zone: ZoneType, api: _ZonePrivate)
           patchAddListener(mql);
           patchRemoveListener(mql);
         } else if (mql['addListener']) {
-          // proto not exists, or proto has no addListener method 
+          // proto not exists, or proto has no addListener method
           // try to patch mql instance
           patchAddListener(mql);
           patchRemoveListener(mql);

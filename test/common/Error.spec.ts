@@ -164,7 +164,7 @@ describe('ZoneAwareError', () => {
       spy(args);
     };
     expect((Error as any)['customProperty']).toBe('customProperty');
-    expect(typeof(Error as any)['customFunction']).toBe('function');
+    expect(typeof (Error as any)['customFunction']).toBe('function');
     (Error as any)['customFunction']('test');
     expect(spy).toHaveBeenCalledWith('test');
   });

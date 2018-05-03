@@ -161,7 +161,7 @@
         testZone = rootZone.fork(new ProxyZoneSpec());
       });
 
-      this.on('fail', (test:any, err: any) => {
+      this.on('fail', (test: any, err: any) => {
         const proxyZoneSpec = testZone && testZone.get('ProxyZoneSpec');
         if (proxyZoneSpec && err) {
           err.message += proxyZoneSpec.getAndClearPendingTasksInfo();
@@ -170,8 +170,5 @@
 
       return originalRun.call(this, fn);
     };
-
-
   })(Mocha.Runner.prototype.runTest, Mocha.Runner.prototype.run);
-
 })(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);

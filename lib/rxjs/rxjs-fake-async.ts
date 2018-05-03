@@ -7,8 +7,8 @@
  */
 
 import {Scheduler} from 'rxjs/Scheduler';
-import {async} from 'rxjs/scheduler/async';
 import {asap} from 'rxjs/scheduler/asap';
+import {async} from 'rxjs/scheduler/async';
 
 Zone.__load_patch('rxjs.Scheduler.now', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   api.patchMethod(Scheduler, 'now', (delegate: Function) => (self: any, args: any[]) => {

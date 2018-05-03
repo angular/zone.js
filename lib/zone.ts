@@ -827,8 +827,8 @@ const Zone: ZoneType = (function(global: any) {
         let newZone: any = this;
         while (newZone) {
           if (newZone === task.zone) {
-            throw Error(`can not reschedule task to ${this
-                            .name} which is descendants of the original zone ${task.zone.name}`);
+            throw Error(`can not reschedule task to ${
+                this.name} which is descendants of the original zone ${task.zone.name}`);
           }
           newZone = newZone.parent;
         }
@@ -911,15 +911,18 @@ const Zone: ZoneType = (function(global: any) {
 
   const DELEGATE_ZS: ZoneSpec = {
     name: '',
-    onHasTask: (delegate: AmbientZoneDelegate, _: AmbientZone, target: AmbientZone,
-                hasTaskState: HasTaskState): void => delegate.hasTask(target, hasTaskState),
-    onScheduleTask: (delegate: AmbientZoneDelegate, _: AmbientZone, target: AmbientZone,
-                     task: Task): Task => delegate.scheduleTask(target, task),
-    onInvokeTask: (delegate: AmbientZoneDelegate, _: AmbientZone, target: AmbientZone, task: Task,
-                   applyThis: any, applyArgs: any): any =>
-                      delegate.invokeTask(target, task, applyThis, applyArgs),
+    onHasTask:
+        (delegate: AmbientZoneDelegate, _: AmbientZone, target: AmbientZone,
+         hasTaskState: HasTaskState): void => delegate.hasTask(target, hasTaskState),
+    onScheduleTask:
+        (delegate: AmbientZoneDelegate, _: AmbientZone, target: AmbientZone, task: Task): Task =>
+            delegate.scheduleTask(target, task),
+    onInvokeTask:
+        (delegate: AmbientZoneDelegate, _: AmbientZone, target: AmbientZone, task: Task,
+         applyThis: any, applyArgs: any): any =>
+            delegate.invokeTask(target, task, applyThis, applyArgs),
     onCancelTask: (delegate: AmbientZoneDelegate, _: AmbientZone, target: AmbientZone, task: Task):
-                      any => delegate.cancelTask(target, task)
+        any => delegate.cancelTask(target, task)
   };
 
   class ZoneDelegate implements AmbientZoneDelegate {
@@ -1051,25 +1054,24 @@ const Zone: ZoneType = (function(global: any) {
 
     intercept(targetZone: Zone, callback: Function, source: string): Function {
       return this._interceptZS ?
-          this._interceptZS.onIntercept!(
-              this._interceptDlgt!, this._interceptCurrZone!, targetZone, callback, source) :
+          this._interceptZS.onIntercept!
+          (this._interceptDlgt!, this._interceptCurrZone!, targetZone, callback, source) :
           callback;
     }
 
     invoke(
         targetZone: Zone, callback: Function, applyThis: any, applyArgs?: any[],
         source?: string): any {
-      return this._invokeZS ?
-          this._invokeZS.onInvoke!(
-              this._invokeDlgt!, this._invokeCurrZone!, targetZone, callback, applyThis, applyArgs,
-              source) :
-          callback.apply(applyThis, applyArgs);
+      return this._invokeZS ? this._invokeZS.onInvoke!
+                              (this._invokeDlgt!, this._invokeCurrZone!, targetZone, callback,
+                               applyThis, applyArgs, source) :
+                              callback.apply(applyThis, applyArgs);
     }
 
     handleError(targetZone: Zone, error: any): boolean {
       return this._handleErrorZS ?
-          this._handleErrorZS.onHandleError!(
-              this._handleErrorDlgt!, this._handleErrorCurrZone!, targetZone, error) :
+          this._handleErrorZS.onHandleError!
+          (this._handleErrorDlgt!, this._handleErrorCurrZone!, targetZone, error) :
           true;
     }
 
@@ -1079,9 +1081,9 @@ const Zone: ZoneType = (function(global: any) {
         if (this._hasTaskZS) {
           returnTask._zoneDelegates!.push(this._hasTaskDlgtOwner!);
         }
-        returnTask = this._scheduleTaskZS.onScheduleTask!(
-            this._scheduleTaskDlgt!, this._scheduleTaskCurrZone!, targetZone,
-            task) as ZoneTask<any>;
+        returnTask = this._scheduleTaskZS.onScheduleTask!
+                     (this._scheduleTaskDlgt!, this._scheduleTaskCurrZone!, targetZone, task) as
+            ZoneTask<any>;
         if (!returnTask) returnTask = task as ZoneTask<any>;
       } else {
         if (task.scheduleFn) {
@@ -1096,18 +1098,17 @@ const Zone: ZoneType = (function(global: any) {
     }
 
     invokeTask(targetZone: Zone, task: Task, applyThis: any, applyArgs?: any[]): any {
-      return this._invokeTaskZS ?
-          this._invokeTaskZS.onInvokeTask!(
-              this._invokeTaskDlgt!, this._invokeTaskCurrZone!, targetZone, task, applyThis,
-              applyArgs) :
-          task.callback.apply(applyThis, applyArgs);
+      return this._invokeTaskZS ? this._invokeTaskZS.onInvokeTask!
+                                  (this._invokeTaskDlgt!, this._invokeTaskCurrZone!, targetZone,
+                                   task, applyThis, applyArgs) :
+                                  task.callback.apply(applyThis, applyArgs);
     }
 
     cancelTask(targetZone: Zone, task: Task): any {
       let value: any;
       if (this._cancelTaskZS) {
-        value = this._cancelTaskZS.onCancelTask!(
-            this._cancelTaskDlgt!, this._cancelTaskCurrZone!, targetZone, task);
+        value = this._cancelTaskZS.onCancelTask!
+                (this._cancelTaskDlgt!, this._cancelTaskCurrZone!, targetZone, task);
       } else {
         if (!task.cancelFn) {
           throw Error('Task is not cancelable');
@@ -1122,8 +1123,8 @@ const Zone: ZoneType = (function(global: any) {
       // can still trigger hasTask callback
       try {
         this._hasTaskZS &&
-            this._hasTaskZS.onHasTask!(
-                this._hasTaskDlgt!, this._hasTaskCurrZone!, targetZone, isEmpty);
+            this._hasTaskZS.onHasTask!
+            (this._hasTaskDlgt!, this._hasTaskCurrZone!, targetZone, isEmpty);
       } catch (err) {
         this.handleError(targetZone, err);
       }
@@ -1216,12 +1217,9 @@ const Zone: ZoneType = (function(global: any) {
           this._zoneDelegates = null;
         }
       } else {
-        throw new Error(
-            `${this.type} '${this.source}': can not transition to '${toState
-                                        }', expecting state '${fromState1}'${fromState2 ?
-                ' or \'' + fromState2 + '\'' :
-                ''
-                }, was '${this._state}'.`);
+        throw new Error(`${this.type} '${this.source}': can not transition to '${
+            toState}', expecting state '${fromState1}'${
+            fromState2 ? ' or \'' + fromState2 + '\'' : ''}, was '${this._state}'.`);
       }
     }
 

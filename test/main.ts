@@ -32,7 +32,7 @@ if ((window as any)[(Zone as any).__symbol__('setTimeout')]) {
 }
 
 browserPatchedPromise.then(() => {
-  let testFrameworkPatch = typeof(window as any).Mocha !== 'undefined' ?
+  let testFrameworkPatch = typeof (window as any).Mocha !== 'undefined' ?
       '/base/build/test/test-env-setup-mocha' :
       '/base/build/test/test-env-setup-jasmine';
   // Setup test environment

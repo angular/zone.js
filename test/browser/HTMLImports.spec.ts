@@ -76,5 +76,4 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function() {
                document.head.appendChild(link!);
              });
            });
-
          }));

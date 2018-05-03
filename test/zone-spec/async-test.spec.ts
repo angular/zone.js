@@ -314,7 +314,6 @@ describe('AsyncTestZoneSpec', function() {
     atz.run(function() {
       Promise.reject('my reason');
     });
-
   });
 
   const asyncTest: any = (Zone as any)[Zone.__symbol__('asyncTest')];
@@ -529,5 +528,4 @@ describe('AsyncTestZoneSpec', function() {
              }));
     });
   });
-
 });

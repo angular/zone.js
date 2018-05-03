@@ -177,7 +177,8 @@
   (jasmine as any).QueueRunner = (function(_super) {
     __extends(ZoneQueueRunner, _super);
     function ZoneQueueRunner(attrs: {
-      onComplete: Function; userContext?: any;
+      onComplete: Function;
+      userContext?: any;
       timeout?: {setTimeout: Function; clearTimeout: Function};
       onException?: (error: any) => void;
     }) {
