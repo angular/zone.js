@@ -7,7 +7,7 @@
  */
 
 const noop = function() {};
-let log: {zone: string, taskZone: undefined | string, toState: TaskState, fromState: TaskState}[] =
+let log: {zone: string, taskZone: undefined|string, toState: TaskState, fromState: TaskState}[] =
     [];
 const detectTask = Zone.current.scheduleMacroTask('detectTask', noop, undefined, noop, noop);
 const originalTransitionTo = detectTask.constructor.prototype._transitionTo;
@@ -904,7 +904,6 @@ describe('task lifecycle', () => {
                {toState: 'notScheduled', fromState: 'canceling'}
              ]);
        }));
-
   });
 
   describe('reschedule zone', () => {

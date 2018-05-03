@@ -50,11 +50,12 @@ describe(
 
         pZone = Zone.current.fork({
           name: 'promise-zone',
-          onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                           task: Task): any => {
-            log.push('scheduleTask');
-            parentZoneDelegate.scheduleTask(targetZone, task);
-          }
+          onScheduleTask:
+              (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                  any => {
+                    log.push('scheduleTask');
+                    parentZoneDelegate.scheduleTask(targetZone, task);
+                  }
         });
 
         queueZone = Zone.current.fork(new MicroTaskQueueZoneSpec());
@@ -351,11 +352,11 @@ describe(
                 .fork({
                   name: 'promise-error',
                   onHandleError: (delegate: ZoneDelegate, current: Zone, target: Zone, error: any):
-                                     boolean => {
-                                       promiseError = error;
-                                       delegate.handleError(target, error);
-                                       return false;
-                                     }
+                      boolean => {
+                        promiseError = error;
+                        delegate.handleError(target, error);
+                        return false;
+                      }
                 })
                 .run(() => {
                   zone = Zone.current;
@@ -391,11 +392,11 @@ describe(
                 .fork({
                   name: 'promise-error',
                   onHandleError: (delegate: ZoneDelegate, current: Zone, target: Zone, error: any):
-                                     boolean => {
-                                       promiseError = error;
-                                       delegate.handleError(target, error);
-                                       return false;
-                                     }
+                      boolean => {
+                        promiseError = error;
+                        delegate.handleError(target, error);
+                        return false;
+                      }
                 })
                 .run(() => {
                   zone = Zone.current;
@@ -462,27 +463,27 @@ describe(
             });
           });
 
-          it('should resolve generators', ifEnvSupports(
-                                              () => {
-                                                return isNode;
-                                              },
-                                              () => {
-                                                const generators: any = function*() {
-                                                  yield Promise.resolve(1);
-                                                  yield Promise.resolve(2);
-                                                  return;
-                                                };
-                                                queueZone.run(() => {
-                                                  let value = null;
-                                                  Promise.all(generators()).then(val => {
-                                                    value = val;
-                                                  });
-                                                  // expect(Zone.current.get('queue').length).toEqual(2);
-                                                  flushMicrotasks();
-                                                  expect(value).toEqual([1, 2]);
-                                                });
-
-                                              }));
+          it('should resolve generators',
+             ifEnvSupports(
+                 () => {
+                   return isNode;
+                 },
+                 () => {
+                   const generators: any = function*() {
+                     yield Promise.resolve(1);
+                     yield Promise.resolve(2);
+                     return;
+                   };
+                   queueZone.run(() => {
+                     let value = null;
+                     Promise.all(generators()).then(val => {
+                       value = val;
+                     });
+                     // expect(Zone.current.get('queue').length).toEqual(2);
+                     flushMicrotasks();
+                     expect(value).toEqual([1, 2]);
+                   });
+                 }));
         });
       });
 
@@ -619,6 +620,5 @@ describe(
                      });
                    });
                  });
-
                }));
     }));

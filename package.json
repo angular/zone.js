@@ -63,7 +63,7 @@
     "@types/systemjs": "^0.19.30",
     "assert": "^1.4.1",
     "bluebird": "^3.5.1",
-    "clang-format": "1.0.46",
+    "clang-format": "^1.2.3",
     "concurrently": "^2.2.0",
     "conventional-changelog": "^1.1.7",
     "es6-promise": "^3.0.2",

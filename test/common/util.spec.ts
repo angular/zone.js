@@ -9,7 +9,6 @@
 import {patchMethod, patchProperty, patchPrototype, zoneSymbol} from '../../lib/common/utils';
 
 describe('utils', function() {
-
   describe('patchMethod', () => {
     it('should patch target where the method is defined', () => {
       let args;

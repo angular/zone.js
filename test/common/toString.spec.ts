@@ -37,7 +37,8 @@ describe('global function patch', () => {
     });
 
     it('Function toString should look like native', () => {
-      expect(Function.prototype.toString.call(Function.prototype.toString)).toContain('[native code]');
+      expect(Function.prototype.toString.call(Function.prototype.toString))
+          .toContain('[native code]');
     });
 
     it('EventTarget addEventListener should look like native', ifEnvSupports('HTMLElement', () => {

@@ -24,9 +24,9 @@ describe('nodejs file system', () => {
       const zoneASpec = {
         name: 'A',
         onScheduleTask: (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
-                            Task => {
-                              return delegate.scheduleTask(targetZone, task);
-                            }
+            Task => {
+              return delegate.scheduleTask(targetZone, task);
+            }
       };
       const zoneA = Zone.current.fork(zoneASpec);
       spyOn(zoneASpec, 'onScheduleTask').and.callThrough();
@@ -43,9 +43,9 @@ describe('nodejs file system', () => {
     const zoneASpec = {
       name: 'A',
       onScheduleTask: (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
-                          Task => {
-                            return delegate.scheduleTask(targetZone, task);
-                          }
+          Task => {
+            return delegate.scheduleTask(targetZone, task);
+          }
     };
 
     it('fs.watch has been patched as eventTask', (done) => {

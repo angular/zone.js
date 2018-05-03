@@ -80,12 +80,13 @@ describe('ProxySpec', () => {
       let called = false;
       proxyZoneSpec.setDelegate({
         name: '.',
-        onFork: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                 zoneSpec: ZoneSpec) => {
-          expect(currentZone).toBe(proxyZone);
-          expect(targetZone).toBe(proxyZone), expect(zoneSpec.name).toBe('fork2');
-          called = true;
-        }
+        onFork:
+            (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+             zoneSpec: ZoneSpec) => {
+              expect(currentZone).toBe(proxyZone);
+              expect(targetZone).toBe(proxyZone), expect(zoneSpec.name).toBe('fork2');
+              called = true;
+            }
       });
       proxyZone.fork({name: 'fork2'});
       expect(called).toBe(true);
@@ -96,10 +97,11 @@ describe('ProxySpec', () => {
       expect(proxyZone.wrap(fn, 'test')('works')).toEqual('works');
       proxyZoneSpec.setDelegate({
         name: '.',
-        onIntercept: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                      delegate: Function, source: string): Function => {
-          return () => '(works)';
-        }
+        onIntercept:
+            (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+             delegate: Function, source: string): Function => {
+              return () => '(works)';
+            }
       });
       expect(proxyZone.wrap(fn, 'test')('works')).toEqual('(works)');
     });
@@ -109,11 +111,12 @@ describe('ProxySpec', () => {
       expect(proxyZone.run(fn)).toEqual('works');
       proxyZoneSpec.setDelegate({
         name: '.',
-        onInvoke: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                   delegate: Function, applyThis: any, applyArgs: any[], source: string) => {
-          return `(${parentZoneDelegate.invoke(
-              targetZone, delegate, applyThis, applyArgs, source)})`;
-        }
+        onInvoke:
+            (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+             delegate: Function, applyThis: any, applyArgs: any[], source: string) => {
+              return `(${
+                  parentZoneDelegate.invoke(targetZone, delegate, applyThis, applyArgs, source)})`;
+            }
       });
       expect(proxyZone.run(fn)).toEqual('(works)');
     });
@@ -126,11 +129,12 @@ describe('ProxySpec', () => {
       expect(() => proxyZone.run(fn)).toThrow(error);
       proxyZoneSpec.setDelegate({
         name: '.',
-        onHandleError: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                        error: any): boolean => {
-          expect(error).toEqual(error);
-          return false;
-        }
+        onHandleError:
+            (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, error: any):
+                boolean => {
+                  expect(error).toEqual(error);
+                  return false;
+                }
       });
       expect(() => proxyZone.runGuarded(fn)).not.toThrow();
     });

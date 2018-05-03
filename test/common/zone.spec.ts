@@ -15,7 +15,6 @@ describe('Zone', function() {
   });
 
   describe('hooks', function() {
-
     it('should throw if onError is not defined', function() {
       expect(function() {
         Zone.current.run(throwError);
@@ -126,10 +125,10 @@ describe('Zone', function() {
     const zone: Zone = Zone.current.fork({
       name: 'parent',
       onHasTask: (delegate: ZoneDelegate, current: Zone, target: Zone, hasTaskState: HasTaskState):
-                     void => {
-                       (hasTaskState as any)['zone'] = target.name;
-                       log.push(hasTaskState);
-                     },
+          void => {
+            (hasTaskState as any)['zone'] = target.name;
+            log.push(hasTaskState);
+          },
       onScheduleTask: (delegate: ZoneDelegate, current: Zone, target: Zone, task: Task) => {
         // Do nothing to prevent tasks from being run on VM turn;
         // Tests run task explicitly.
@@ -397,10 +396,11 @@ describe('Zone', function() {
       const spy = jasmine.createSpy('error');
       const hasTaskZone = Zone.current.fork({
         name: 'hasTask',
-        onHasTask: (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                    hasTasState: HasTaskState) => {
-          throw new Error('onHasTask Error');
-        },
+        onHasTask:
+            (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+             hasTasState: HasTaskState) => {
+              throw new Error('onHasTask Error');
+            },
         onHandleError:
             (delegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, error: Error) => {
               spy(error.message);

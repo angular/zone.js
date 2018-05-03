@@ -251,7 +251,6 @@ describe('element', function() {
   });
 
   describe('onclick', function() {
-
     function supportsOnClick() {
       const div = document.createElement('div');
       const clickPropDesc = Object.getOwnPropertyDescriptor(div, 'onclick');
@@ -336,5 +335,4 @@ describe('element', function() {
       expect(checkbox.checked).toBe(true);
     });
   });
-
 });

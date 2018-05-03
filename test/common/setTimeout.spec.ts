@@ -119,5 +119,4 @@ describe('setTimeout', function() {
     clearTimeout(null as any);
     clearTimeout(<any>{});
   });
-
 });

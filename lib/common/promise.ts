@@ -34,9 +34,9 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       if (rejection) {
         console.error(
             'Unhandled Promise rejection:',
-            rejection instanceof Error ? rejection.message : rejection, '; Zone:',
-            (<Zone>e.zone).name, '; Task:', e.task && (<Task>e.task).source, '; Value:', rejection,
-            rejection instanceof Error ? rejection.stack : undefined);
+            rejection instanceof Error ? rejection.message : rejection,
+            '; Zone:', (<Zone>e.zone).name, '; Task:', e.task && (<Task>e.task).source,
+            '; Value:', rejection, rejection instanceof Error ? rejection.stack : undefined);
       } else {
         console.error(e);
       }
@@ -239,8 +239,8 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
 
   function scheduleResolveOrReject<R, U1, U2>(
       promise: ZoneAwarePromise<any>, zone: AmbientZone, chainPromise: ZoneAwarePromise<any>,
-      onFulfilled?: ((value: R) => U1) | null | undefined,
-      onRejected?: ((error: any) => U2) | null | undefined): void {
+      onFulfilled?: ((value: R) => U1)|null|undefined,
+      onRejected?: ((error: any) => U2)|null|undefined): void {
     clearRejectedNoCatch(promise);
     const promiseState = (promise as any)[symbolState];
     const delegate = promiseState ?

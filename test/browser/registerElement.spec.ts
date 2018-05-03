@@ -20,7 +20,6 @@ function registerElement() {
 
 describe(
     'document.registerElement', ifEnvSupports(registerElement, function() {
-
       // register a custom element for each callback
       const callbackNames = ['created', 'attached', 'detached', 'attributeChanged'];
       const callbacks: any = {};
@@ -111,9 +110,11 @@ describe(
            testZone.run(function() {
              const proto = Object.create(HTMLElement.prototype);
 
-             Object.defineProperties(
-                 proto,
-                 {createdCallback: <any>{writable: false, configurable: false, value: checkZone}});
+             Object.defineProperties(proto, {
+               createdCallback: <any> {
+                 writable: false, configurable: false, value: checkZone
+               }
+             });
 
              (<any>document).registerElement('x-props-desc', {prototype: proto});
 
@@ -128,10 +129,10 @@ describe(
 
       it('should not throw with frozen prototypes ', function() {
         testZone.run(function() {
-
           const proto = Object.create(HTMLElement.prototype, Object.freeze(<PropertyDescriptorMap>{
-            createdCallback:
-                <PropertyDescriptor>{value: () => {}, writable: true, configurable: true}
+            createdCallback: <PropertyDescriptor> {
+              value: () => {}, writable: true, configurable: true
+            }
           }));
 
           Object.defineProperty(
@@ -169,5 +170,4 @@ describe(
           (<any>document).registerElement('x-no-opts');
         }).not.toThrow();
       });
-
     }));

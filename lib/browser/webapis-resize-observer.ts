@@ -45,44 +45,49 @@ Zone.__load_patch('ResizeObserver', (global: any, Zone: any, api: _ZonePrivate) 
     return args.length > 0 ? new ResizeObserver(args[0]) : new ResizeObserver();
   });
 
-  api.patchMethod(ResizeObserver.prototype, 'observe', (delegate: Function) => (self: any, args: any[]) => {
-    const target = args.length > 0 ? args[0] : null;
-    if (!target) {
-      return delegate.apply(self, args);
-    }
-    let targets = self[resizeObserverSymbol];
-    if (!targets) {
-      targets = self[resizeObserverSymbol] = [];
-    }
-    targets.push(target);
-    target[resizeObserverSymbol] = Zone.current;
-    return delegate.apply(self, args);
-  });
-
-  api.patchMethod(ResizeObserver.prototype, 'unobserve', (delegate: Function) => (self: any, args: any[]) => {
-    const target = args.length > 0 ? args[0] : null;
-    if (!target) {
-      return delegate.apply(self, args);
-    }
-    let targets = self[resizeObserverSymbol];
-    if (targets) {
-      for (let i = 0; i < targets.length; i ++) {
-        if (targets[i] === target) {
-          targets.splice(i, 1);
-          break;
+  api.patchMethod(
+      ResizeObserver.prototype, 'observe', (delegate: Function) => (self: any, args: any[]) => {
+        const target = args.length > 0 ? args[0] : null;
+        if (!target) {
+          return delegate.apply(self, args);
         }
-      }
-    }
-    target[resizeObserverSymbol] = undefined;
-    return delegate.apply(self, args);
-  });
+        let targets = self[resizeObserverSymbol];
+        if (!targets) {
+          targets = self[resizeObserverSymbol] = [];
+        }
+        targets.push(target);
+        target[resizeObserverSymbol] = Zone.current;
+        return delegate.apply(self, args);
+      });
 
-  api.patchMethod(ResizeObserver.prototype, 'disconnect', (delegate: Function) => (self: any, args: any[]) => {
-    const targets = self[resizeObserverSymbol];
-    if (targets) {
-      targets.forEach((target: any) => {target[resizeObserverSymbol] = undefined;});
-      self[resizeObserverSymbol] = undefined;
-    }
-    return delegate.apply(self, args);
-  });
+  api.patchMethod(
+      ResizeObserver.prototype, 'unobserve', (delegate: Function) => (self: any, args: any[]) => {
+        const target = args.length > 0 ? args[0] : null;
+        if (!target) {
+          return delegate.apply(self, args);
+        }
+        let targets = self[resizeObserverSymbol];
+        if (targets) {
+          for (let i = 0; i < targets.length; i++) {
+            if (targets[i] === target) {
+              targets.splice(i, 1);
+              break;
+            }
+          }
+        }
+        target[resizeObserverSymbol] = undefined;
+        return delegate.apply(self, args);
+      });
+
+  api.patchMethod(
+      ResizeObserver.prototype, 'disconnect', (delegate: Function) => (self: any, args: any[]) => {
+        const targets = self[resizeObserverSymbol];
+        if (targets) {
+          targets.forEach((target: any) => {
+            target[resizeObserverSymbol] = undefined;
+          });
+          self[resizeObserverSymbol] = undefined;
+        }
+        return delegate.apply(self, args);
+      });
 });

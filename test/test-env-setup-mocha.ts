@@ -131,8 +131,8 @@ declare const global: any;
       },
       toHaveBeenCalledWith: function(...params: any[]) {
         if (!eq(expected.callArgs, params)) {
-          throw new Error(`Expected ${expected} to been called with ${expected.callArgs
-                          }, called with: ${params}`);
+          throw new Error(`Expected ${expected} to been called with ${
+              expected.callArgs}, called with: ${params}`);
         }
       },
       toMatch: function(actual: any) {

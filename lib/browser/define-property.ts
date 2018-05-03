@@ -103,8 +103,8 @@ function _tryDefineProperty(obj: any, prop: string, desc: any, originalConfigura
         } catch (error) {
           descJson = desc.toString();
         }
-        console.log(`Attempting to configure '${prop}' with descriptor '${descJson
-                    }' on object '${obj}' and got error, giving up: ${error}`);
+        console.log(`Attempting to configure '${prop}' with descriptor '${descJson}' on object '${
+            obj}' and got error, giving up: ${error}`);
       }
     } else {
       throw error;

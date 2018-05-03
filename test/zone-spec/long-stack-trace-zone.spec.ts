@@ -21,12 +21,13 @@ describe(
       beforeEach(function() {
         lstz = Zone.current.fork(longStackTraceZoneSpec).fork({
           name: 'long-stack-trace-zone-test',
-          onHandleError: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                          error: any): boolean => {
-            parentZoneDelegate.handleError(targetZone, error);
-            log.push(error);
-            return false;
-          }
+          onHandleError:
+              (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, error: any):
+                  boolean => {
+                    parentZoneDelegate.handleError(targetZone, error);
+                    log.push(error);
+                    return false;
+                  }
         });
 
         log = [];
