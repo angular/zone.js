@@ -6,4 +6,6 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-// import '../lib/mocha';
+if (global && (global as any).Mocha) {
+  (global as any).Mocha.__zone_symbol__TIMEOUT = 5000;
+}

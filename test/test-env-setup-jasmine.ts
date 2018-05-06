@@ -7,4 +7,3 @@
  */
 
 (<any>jasmine).DEFAULT_TIMEOUT_INTERVAL = 5000;
-import '../lib/jasmine/jasmine';

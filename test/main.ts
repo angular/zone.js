@@ -32,15 +32,20 @@ if ((window as any)[(Zone as any).__symbol__('setTimeout')]) {
 }
 
 browserPatchedPromise.then(() => {
+  let testFrameworkPatch = typeof (window as any).Mocha !== 'undefined' ?
+      '/base/build/test/test-env-setup-mocha' :
+      '/base/build/test/test-env-setup-jasmine';
   // Setup test environment
   const entryPoint =
       (window as any)['__zone_symbol__test_entry_point'] || '/base/build/test/browser_entry_point';
-  System.import(entryPoint)
-      .then(
-          () => {
-            __karma__.start();
-          },
-          (error) => {
-            console.error(error.stack || error);
-          });
+  System.import(testFrameworkPatch).then(() => {
+    System.import(entryPoint)
+        .then(
+            () => {
+              __karma__.start();
+            },
+            (error) => {
+              console.error(error.stack || error);
+            });
+  });
 });

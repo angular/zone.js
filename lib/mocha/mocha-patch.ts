@@ -15,6 +15,10 @@ Zone.__load_patch('Mocha', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
     return;
   }
 
+  if (Mocha['__zone_symbol__isJasmineBridge']) {
+    return;
+  }
+
   if (typeof Zone === 'undefined') {
     throw new Error('Missing Zone.js');
   }
