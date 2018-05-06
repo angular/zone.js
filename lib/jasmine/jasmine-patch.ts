@@ -61,16 +61,26 @@ Zone.__load_patch('jasmine', (global: any) => {
     jasmineEnv[symbol(methodName)] = originalJasmineFn;
     jasmineEnv[methodName] = function(
         description: string, specDefinitions: Function, timeout: number) {
-      arguments[1] = wrapTestInZone(specDefinitions);
-      return originalJasmineFn.apply(this, arguments);
+      if (typeof timeout !== 'number') {
+        timeout = (jasmine as any)[symbol('mochaTimeout')];
+      }
+      const wrappedSpecDef = wrapTestInZone(specDefinitions);
+      return originalJasmineFn.apply(
+          this,
+          typeof timeout === 'number' ? [description, wrappedSpecDef, timeout] :
+                                        [description, wrappedSpecDef]);
     };
   });
   ['beforeEach', 'afterEach'].forEach(methodName => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
     jasmineEnv[symbol(methodName)] = originalJasmineFn;
     jasmineEnv[methodName] = function(specDefinitions: Function, timeout: number) {
-      arguments[0] = wrapTestInZone(specDefinitions);
-      return originalJasmineFn.apply(this, arguments);
+      if (typeof timeout !== 'number') {
+        timeout = (jasmine as any)[symbol('mochaTimeout')];
+      }
+      const wrappedSpecDef = wrapTestInZone(specDefinitions);
+      return originalJasmineFn.apply(
+          this, typeof timeout === 'number' ? [wrappedSpecDef, timeout] : [wrappedSpecDef]);
     };
   });
 
@@ -81,6 +91,19 @@ Zone.__load_patch('jasmine', (global: any) => {
    */
   function wrapDescribeInZone(describeBody: Function): Function {
     return function() {
+      (jasmine as any)[symbol('mochaTimeout')] = null;
+      if (this && !this.timeout) {
+        this.timeout = function(timeout: number) {
+          (jasmine as any)[symbol('mochaTimeout')] = timeout;
+        }
+      }
+      if (this && !this.skip) {
+        this.skip = function() {
+          if (typeof global['pending'] === 'function') {
+            global['pending']();
+          }
+        }
+      }
       return syncZone.run(describeBody, this, (arguments as any) as any[]);
     };
   }

@@ -9,9 +9,10 @@
 export function mappingBDD(Mocha: any, jasmine: any, global: any) {
   const mappings: {Mocha: string, jasmine: string, target?: any}[] = [
     {jasmine: 'beforeAll', Mocha: 'before'}, {jasmine: 'afterAll', Mocha: 'after'},
+    {jasmine: 'beforeEach', Mocha: 'setup'}, {jasmine: 'afterEach', Mocha: 'tearDown'},
     {jasmine: 'it', Mocha: 'it'}, {jasmine: 'it', Mocha: 'specify'}, {jasmine: 'it', Mocha: 'test'},
-    {jasmine: 'describe', Mocha: 'suite'}, {jasmine: 'beforeAll', Mocha: 'suiteSetup'},
-    {jasmine: 'afterAll', Mocha: 'suiteTeardown'},
+    {jasmine: 'describe', Mocha: 'suite'}, {jasmine: 'describe', Mocha: 'context'},
+    {jasmine: 'beforeAll', Mocha: 'suiteSetup'}, {jasmine: 'afterAll', Mocha: 'suiteTeardown'},
     {jasmine: 'xdescribe', Mocha: 'skip', target: global['describe']},
     {jasmine: 'fdescribe', Mocha: 'only', target: global['describe']},
     {jasmine: 'xit', Mocha: 'skip', target: global['it']}, {jasmine: 'fit', Mocha: 'only'}
