@@ -22,6 +22,7 @@ Zone.__load_patch('jasmine2mocha', (global: any) => {
   }
   // create a jasmine global object
   jasmine = global['jasmine'] = {};
+  jasmine['__zone_symbol__isBridge'] = true;
   // BDD mapping
   mappingBDD(jasmine, global.Mocha, global);
 

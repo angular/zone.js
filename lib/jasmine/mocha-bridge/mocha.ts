@@ -11,6 +11,7 @@ Zone.__load_patch('mocha-bridge', (global: any) => {
     return;
   }
   global.Mocha = {};
-  global.Mocha['__zone_symbol__isJasmineBridge'] = true;
+  // set a flag to tell global.Mocha is a mock.
+  global.Mocha['__zone_symbol__isBridge'] = true;
   mappingBDD(global.Mocha, global.jasmine, global);
 });

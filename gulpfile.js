@@ -404,9 +404,8 @@ function nodeTest(specFiles, cb) {
   require('./build/lib/node/rollup-main');
   var args = process.argv;
   if (args.length > 3) {
-    require('./build/test/test-env-setup-jasmine' + args[3]); 
+    require('./build/test/env/config/test-env-setup-jasmine' + args[3]);
   }
-  var JasmineRunner = require('jasmine');	
   var JasmineRunner = require('jasmine');
   var jrunner = new JasmineRunner();
 
@@ -433,12 +432,12 @@ function nodeTest(specFiles, cb) {
 }
 
 gulp.task('test/node', ['compile-node'], function(cb) {
-  var specFiles = ['build/test/node_entry_point.js'];
+  var specFiles = ['build/test/env/node/node_entry_point.js'];
   nodeTest(specFiles, cb);
 });
 
 gulp.task('test/bluebird', ['compile-node'], function(cb) {
-  var specFiles = ['build/test/node_bluebird_entry_point.js'];
+  var specFiles = ['build/test/env/node/node_bluebird_entry_point.js'];
   nodeTest(specFiles, cb);
 });
 
@@ -498,7 +497,7 @@ gulp.task('changelog', () => {
 // run promise aplus test
 gulp.task('promisetest', ['build/zone-node.js'], (cb) => {
   const promisesAplusTests = require('promises-aplus-tests');
-  const adapter = require('./promise-adapter');
+  const adapter = require('./test/spec/promise/promise-adapter');
   promisesAplusTests(adapter, {reporter: 'dot'}, function(err) {
     if (err) {
       cb(err);
@@ -510,8 +509,8 @@ gulp.task('promisetest', ['build/zone-node.js'], (cb) => {
 
 // check dist file size limitation
 gulp.task('filesize', ['build'], (cb) => {
-  const checker = require('./check-file-size');
-  const result = checker(require('./file-size-limit.json'));
+  const checker = require('./scripts/size/check-file-size');
+  const result = checker(require('./scripts/size/file-size-limit.json'));
   if (result) {
     cb();
   } else {

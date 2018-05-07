@@ -15,7 +15,7 @@ Zone.__load_patch('Mocha', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
     return;
   }
 
-  if (Mocha['__zone_symbol__isJasmineBridge']) {
+  if (Mocha['__zone_symbol__isBridge']) {
     return;
   }
 

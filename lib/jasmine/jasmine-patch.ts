@@ -8,6 +8,7 @@
 
 'use strict';
 import {patchJasmineClock} from './jasmine.clock';
+import { mappingMochaMethods } from './mocha-bridge/mocha.bdd';
 Zone.__load_patch('jasmine', (global: any) => {
   const __extends = function(d: any, b: any) {
     for (const p in b)
@@ -24,7 +25,7 @@ Zone.__load_patch('jasmine', (global: any) => {
     // not using jasmine, just return;
     return;
   }
-  if ((jasmine as any)['__zone_symbol__isMochaBridge']) {
+  if ((jasmine as any)['__zone_symbol__isBridge']) {
     // jasmine is a mock bridge
     return;
   }
@@ -61,9 +62,6 @@ Zone.__load_patch('jasmine', (global: any) => {
     jasmineEnv[symbol(methodName)] = originalJasmineFn;
     jasmineEnv[methodName] = function(
         description: string, specDefinitions: Function, timeout: number) {
-      if (typeof timeout !== 'number') {
-        timeout = (jasmine as any)[symbol('mochaTimeout')];
-      }
       const wrappedSpecDef = wrapTestInZone(specDefinitions);
       return originalJasmineFn.apply(
           this,
@@ -71,13 +69,10 @@ Zone.__load_patch('jasmine', (global: any) => {
                                         [description, wrappedSpecDef]);
     };
   });
-  ['beforeEach', 'afterEach'].forEach(methodName => {
+  ['beforeAll', 'afterAll', 'beforeEach', 'afterEach'].forEach(methodName => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
     jasmineEnv[symbol(methodName)] = originalJasmineFn;
     jasmineEnv[methodName] = function(specDefinitions: Function, timeout: number) {
-      if (typeof timeout !== 'number') {
-        timeout = (jasmine as any)[symbol('mochaTimeout')];
-      }
       const wrappedSpecDef = wrapTestInZone(specDefinitions);
       return originalJasmineFn.apply(
           this, typeof timeout === 'number' ? [wrappedSpecDef, timeout] : [wrappedSpecDef]);
@@ -91,19 +86,7 @@ Zone.__load_patch('jasmine', (global: any) => {
    */
   function wrapDescribeInZone(describeBody: Function): Function {
     return function() {
-      (jasmine as any)[symbol('mochaTimeout')] = null;
-      if (this && !this.timeout) {
-        this.timeout = function(timeout: number) {
-          (jasmine as any)[symbol('mochaTimeout')] = timeout;
-        }
-      }
-      if (this && !this.skip) {
-        this.skip = function() {
-          if (typeof global['pending'] === 'function') {
-            global['pending']();
-          }
-        }
-      }
+      mappingMochaMethods(jasmine, global, this);
       return syncZone.run(describeBody, this, (arguments as any) as any[]);
     };
   }
@@ -119,6 +102,7 @@ Zone.__load_patch('jasmine', (global: any) => {
         testBody = fakeAsyncModule.fakeAsync(testBody);
       }
     }
+    mappingMochaMethods(jasmine, global, applyThis);
     if (done) {
       return testProxyZone.run(testBody, applyThis, [done]);
     } else {
@@ -170,6 +154,10 @@ Zone.__load_patch('jasmine', (global: any) => {
         // All functions are done, clear the test zone.
         this.testProxyZone = null;
         this.testProxyZoneSpec = null;
+        const originalTimeout = (jasmine as any)['__zone_symbol__DEFAULT_TIMEOUT_INTERVAL'];
+        if (typeof originalTimeout === 'number') {
+          jasmine.DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
+        }
         ambientZone.scheduleMicroTask('jasmine.onComplete', fn);
       })(attrs.onComplete);
 

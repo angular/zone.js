@@ -18,7 +18,7 @@ export function mappingBDD(jasmine: any, Mocha: any, global: any) {
       const chains = mocha.split('.');
       let mochaMethod: any = null;
       for (let i = 0; i < chains.length; i++) {
-        mochaMethod = mochaMethod ? mochaMethod[chains[i]] : Mocha[chains[i]];
+        mochaMethod = mochaMethod ? mochaMethod[chains[i]] : global[chains[i]];
       }
       global[map.jasmine] = jasmine[map.jasmine] = function() {
         const args = Array.prototype.slice.call(arguments);

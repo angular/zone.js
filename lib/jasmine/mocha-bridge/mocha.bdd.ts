@@ -26,3 +26,20 @@ export function mappingBDD(Mocha: any, jasmine: any, global: any) {
     }
   });
 }
+
+const symbol = Zone.__symbol__;
+export function mappingMochaMethods(jasmine: any, global: any, context: any) {
+  if (context && !context.timeout) {
+    context.timeout = function (timeout: number) {
+      (jasmine as any)['__zone_symbol__DEFAULT_TIMEOUT_INTERVAL'] = jasmine.DEFAULT_TIMEOUT_INTERVAL;
+      jasmine.DEFAULT_TIMEOUT_INTERVAL = timeout;
+    };
+  }
+  if (context && !context.skip) {
+    context.skip = function () {
+      if (typeof global['pending'] === 'function') {
+        global['pending']();
+      }
+    };
+  }
+}
