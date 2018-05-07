@@ -41,11 +41,11 @@ describe('A suite', function() {
 /**
  ### It's Just Functions
  Since `describe` and `it` blocks are functions, they can contain any executable code necessary to
- implement the test. JavaScript scoping rules apply, so variables declared in a `describe` are
+ implement the test. JavaScript scoping rules apply, so letiables declared in a `describe` are
  available to any `it` block inside the suite.
  */
 describe('A suite is just a function', function() {
-  var a;
+  let a;
 
   it('and so is a spec', function() {
     a = true;
@@ -90,28 +90,28 @@ describe('The \'toBe\' matcher compares with ===', function() {
 
 describe('Included matchers:', function() {
   it('The \'toBe\' matcher compares with ===', function() {
-    var a = 12;
-    var b = a;
+    let a = 12;
+    let b = a;
 
     expect(a).toBe(b);
     expect(a).not.toBe(null);
   });
 
   describe('The \'toEqual\' matcher', function() {
-    it('works for simple literals and variables', function() {
-      var a = 12;
+    it('works for simple literals and letiables', function() {
+      let a = 12;
       expect(a).toEqual(12);
     });
 
     it('should work for objects', function() {
-      var foo = {a: 12, b: 34};
-      var bar = {a: 12, b: 34};
+      let foo = {a: 12, b: 34};
+      let bar = {a: 12, b: 34};
       expect(foo).toEqual(bar);
     });
   });
 
   it('The \'toMatch\' matcher is for regular expressions', function() {
-    var message = 'foo bar baz';
+    let message = 'foo bar baz';
 
     expect(message).toMatch(/bar/);
     expect(message).toMatch('bar');
@@ -119,22 +119,22 @@ describe('Included matchers:', function() {
   });
 
   it('The \'toBeDefined\' matcher compares against `undefined`', function() {
-    var a = {foo: 'foo'};
+    let a: any = {foo: 'foo'};
 
     expect(a.foo).toBeDefined();
     expect(a.bar).not.toBeDefined();
   });
 
   it('The `toBeUndefined` matcher compares against `undefined`', function() {
-    var a = {foo: 'foo'};
+    let a: any = {foo: 'foo'};
 
     expect(a.foo).not.toBeUndefined();
     expect(a.bar).toBeUndefined();
   });
 
   it('The \'toBeNull\' matcher compares against null', function() {
-    var a = null;
-    var foo = 'foo';
+    let a = null;
+    let foo = 'foo';
 
     expect(null).toBeNull();
     expect(a).toBeNull();
@@ -142,14 +142,14 @@ describe('Included matchers:', function() {
   });
 
   it('The \'toBeTruthy\' matcher is for boolean casting testing', function() {
-    var a, foo = 'foo';
+    let a, foo = 'foo';
 
     expect(foo).toBeTruthy();
     expect(a).not.toBeTruthy();
   });
 
   it('The \'toBeFalsy\' matcher is for boolean casting testing', function() {
-    var a, foo = 'foo';
+    let a, foo = 'foo';
 
     expect(a).toBeFalsy();
     expect(foo).not.toBeFalsy();
@@ -157,14 +157,14 @@ describe('Included matchers:', function() {
 
   describe('The \'toContain\' matcher', function() {
     it('works for finding an item in an Array', function() {
-      var a = ['foo', 'bar', 'baz'];
+      let a = ['foo', 'bar', 'baz'];
 
       expect(a).toContain('bar');
       expect(a).not.toContain('quux');
     });
 
     it('also works for finding a substring', function() {
-      var a = 'foo bar baz';
+      let a = 'foo bar baz';
 
       expect(a).toContain('bar');
       expect(a).not.toContain('quux');
@@ -172,44 +172,40 @@ describe('Included matchers:', function() {
   });
 
   it('The \'toBeLessThan\' matcher is for mathematical comparisons', function() {
-    var pi = 3.1415926, e = 2.78;
+    let pi = 3.1415926, e = 2.78;
 
     expect(e).toBeLessThan(pi);
     expect(pi).not.toBeLessThan(e);
   });
 
   it('The \'toBeGreaterThan\' matcher is for mathematical comparisons', function() {
-    var pi = 3.1415926, e = 2.78;
+    let pi = 3.1415926, e = 2.78;
 
     expect(pi).toBeGreaterThan(e);
     expect(e).not.toBeGreaterThan(pi);
   });
 
   it('The \'toBeCloseTo\' matcher is for precision math comparison', function() {
-    var pi = 3.1415926, e = 2.78;
+    let pi = 3.1415926, e = 2.78;
 
     expect(pi).not.toBeCloseTo(e, 2);
     expect(pi).toBeCloseTo(e, 0);
   });
 
   it('The \'toThrow\' matcher is for testing if a function throws an exception', function() {
-    var foo = function() {
+    let foo = function() {
       return 1 + 2;
     };
-    var bar = function() {
-      return a + 1;
-    };
-    var baz = function() {
+    let baz = function() {
       throw 'what';
     };
 
     expect(foo).not.toThrow();
-    expect(bar).toThrow();
     expect(baz).toThrow('what');
   });
 
   it('The \'toThrowError\' matcher is for testing a specific thrown exception', function() {
-    var foo = function() {
+    let foo = function() {
       throw new TypeError('foo bar baz');
     };
 
@@ -229,14 +225,14 @@ describe('Included matchers:', function() {
  */
 describe('A spec', function() {
   it('is just a function, so it can contain any code', function() {
-    var foo = 0;
+    let foo = 0;
     foo += 1;
 
     expect(foo).toEqual(1);
   });
 
   it('can have more than one expectation', function() {
-    var foo = 0;
+    let foo = 0;
     foo += 1;
 
     expect(foo).toEqual(1);
@@ -255,12 +251,12 @@ describe('A spec', function() {
  in which it is called, and the `afterEach` function is called once after each spec.
  *
  *
- Here is the same set of specs written a little differently. The variable under test is defined
+ Here is the same set of specs written a little differently. The letiable under test is defined
  at the top-level scope -- the `describe` block --  and initialization code is moved into a
- `beforeEach` function. The `afterEach` function resets the variable before continuing.
+ `beforeEach` function. The `afterEach` function resets the letiable before continuing.
  */
 describe('A spec using beforeEach and afterEach', function() {
-  var foo = 0;
+  let foo = 0;
 
   beforeEach(function() {
     foo += 1;
@@ -292,7 +288,7 @@ describe('A spec using beforeEach and afterEach', function() {
  * is easy to accidentally leak state between your specs so that they erroneously pass or fail.
  */
 describe('A spec using beforeAll and afterAll', function() {
-  var foo;
+  let foo: any;
 
   beforeAll(function() {
     foo = 1;
@@ -315,7 +311,7 @@ describe('A spec using beforeAll and afterAll', function() {
 
 // /**
 // ### The `this` keyword
-// Another way to share variables between a `beforeEach`, `it`, and `afterEach` is through the
+// Another way to share letiables between a `beforeEach`, `it`, and `afterEach` is through the
 // `this` keyword. Each spec's `beforeEach`/`it`/`afterEach` has the `this` as the same empty object
 // that is set back to empty for the next spec's `beforeEach`/`it`/`afterEach`.
 // */
@@ -344,7 +340,7 @@ describe('A spec', function() {
  the `afterEach` functions similarly.
  */
 describe('A spec', function() {
-  var foo;
+  let foo: any;
 
   beforeEach(function() {
     foo = 0;
@@ -365,7 +361,7 @@ describe('A spec', function() {
   });
 
   describe('nested inside a second describe', function() {
-    var bar;
+    let bar: any;
 
     beforeEach(function() {
       bar = 1;
@@ -383,7 +379,7 @@ describe('A spec', function() {
  skipped when run and thus their results will not appear in the results.
  */
 xdescribe('A spec', function() {
-  var foo;
+  let foo: any;
 
   beforeEach(function() {
     foo = 0;
@@ -438,11 +434,11 @@ describe('Pending specs', function() {
  */
 
 describe('A spy', function() {
-  var foo, bar = null;
+  let foo: any, bar: any = null;
 
   beforeEach(function() {
     foo = {
-      setBar: function(value) {
+      setBar: function(value: any) {
         bar = value;
       }
     };
@@ -473,11 +469,11 @@ describe('A spy', function() {
  addition it will delegate to the actual implementation.
  */
 describe('A spy, when configured to call through', function() {
-  var foo, bar, fetchedBar;
+  let foo: any, bar: any, fetchedBar: any;
 
   beforeEach(function() {
     foo = {
-      setBar: function(value) {
+      setBar: function(value: any) {
         bar = value;
       },
       getBar: function() {
@@ -510,11 +506,11 @@ describe('A spy, when configured to call through', function() {
  value.
  */
 describe('A spy, when configured to fake a return value', function() {
-  var foo, bar, fetchedBar;
+  let foo: any, bar: any, fetchedBar: any;
 
   beforeEach(function() {
     foo = {
-      setBar: function(value) {
+      setBar: function(value: any) {
         bar = value;
       },
       getBar: function() {
@@ -547,11 +543,11 @@ describe('A spy, when configured to fake a return value', function() {
  function.
  */
 describe('A spy, when configured with an alternate implementation', function() {
-  var foo, bar, fetchedBar;
+  let foo: any, bar: any, fetchedBar: any;
 
   beforeEach(function() {
     foo = {
-      setBar: function(value) {
+      setBar: function(value: any) {
         bar = value;
       },
       getBar: function() {
@@ -564,7 +560,7 @@ describe('A spy, when configured with an alternate implementation', function() {
      as
      * well
      */
-    spyOn(foo, 'getBar').and.callFake(function(arguments, can, be, received) {
+    spyOn(foo, 'getBar').and.callFake(function(arguments: any, can: any, be: any, received: any) {
       return 1001;
     });
 
@@ -592,11 +588,11 @@ describe('A spy, when configured with an alternate implementation', function() {
  as an error.
  */
 describe('A spy, when configured to throw an error', function() {
-  var foo, bar;
+  let foo: any, bar: any;
 
   beforeEach(function() {
     foo = {
-      setBar: function(value) {
+      setBar: function(value: any) {
         bar = value;
       }
     };
@@ -617,11 +613,11 @@ describe('A spy, when configured to throw an error', function() {
  time with `and.stub`.
  */
 describe('A spy', function() {
-  var foo, bar = null;
+  let foo: any, bar: any = null;
 
   beforeEach(function() {
     foo = {
-      setBar: function(value) {
+      setBar: function(value: any) {
         bar = value;
       }
     };
@@ -647,11 +643,11 @@ describe('A spy', function() {
  Every call to a spy is tracked and exposed on the `calls` property.
  */
 describe('A spy', function() {
-  var foo, bar = null;
+  let foo: any, bar: any = null;
 
   beforeEach(function() {
     foo = {
-      setBar: function(value) {
+      setBar: function(value: any) {
         bar = value;
       }
     };
@@ -743,9 +739,9 @@ describe('A spy', function() {
    * set to the value of `this` when the spy was called.
    */
   it('tracks the context', function() {
-    var spy = jasmine.createSpy('spy');
-    var baz = {fn: spy};
-    var quux = {fn: spy};
+    let spy = jasmine.createSpy('spy');
+    let baz = {fn: spy};
+    let quux = {fn: spy};
     baz.fn(123);
     quux.fn(456);
 
@@ -776,7 +772,7 @@ describe('A spy', function() {
  it. Spies are JavaScript objects and can be used as such.
  */
 describe('A spy, when created manually', function() {
-  var whatAmI;
+  let whatAmI: any;
 
   beforeEach(function() {
     whatAmI = jasmine.createSpy('whatAmI');
@@ -811,7 +807,7 @@ describe('A spy, when created manually', function() {
  strings. It returns an object that has a property for each string that is a spy.
  */
 describe('Multiple spies, when created manually', function() {
-  var tape;
+  let tape: any;
 
   beforeEach(function() {
     tape = jasmine.createSpyObj('tape', ['play', 'pause', 'stop', 'rewind']);
@@ -854,7 +850,7 @@ describe('jasmine.any', function() {
 
   describe('when used with a spy', function() {
     it('is useful for comparing arguments', function() {
-      var foo = jasmine.createSpy('foo');
+      let foo = jasmine.createSpy('foo');
       foo(12, function() {
         return true;
       });
@@ -871,7 +867,7 @@ describe('jasmine.any', function() {
  */
 
 describe('jasmine.objectContaining', function() {
-  var foo;
+  let foo: any;
 
   beforeEach(function() {
     foo = {a: 1, b: 2, bar: 'baz'};
@@ -884,7 +880,7 @@ describe('jasmine.objectContaining', function() {
 
   describe('when used with a spy', function() {
     it('is useful for comparing arguments', function() {
-      var callback = jasmine.createSpy('callback');
+      let callback = jasmine.createSpy('callback');
 
       callback({bar: 'baz'});
 
@@ -901,7 +897,7 @@ describe('jasmine.objectContaining', function() {
  The Jasmine Clock is available for testing time dependent code.
  */
 describe('Manually ticking the Jasmine Clock', function() {
-  var timerCallback;
+  let timerCallback: any;
 
   /**
    It is installed with a call to `jasmine.clock().install` in a spec or suite that needs to
@@ -962,7 +958,7 @@ describe('Manually ticking the Jasmine Clock', function() {
   */
   describe('Mocking the Date object', function() {
     it('mocks the Date object and sets it to a given time', function() {
-      var baseTime = new Date(2013, 9, 23);
+      let baseTime = new Date(2013, 9, 23);
       // If you do not provide a base time to `mockDate` it will use the current date.
       jasmine.clock().mockDate(baseTime);
 
@@ -979,7 +975,7 @@ describe('Manually ticking the Jasmine Clock', function() {
  Jasmine also has support for running specs that require testing asynchronous operations.
  */
 describe('Asynchronous specs', function() {
-  var value;
+  let value: any;
   /**
    Calls to `beforeAll`, `afterAll`, `beforeEach`, `afterEach`, and `it` can take an optional
    single argument that should be called when the async work is complete.
@@ -1014,7 +1010,7 @@ describe('Asynchronous specs', function() {
    set globally, outside of any given `describe`.
    */
   describe('long asynchronous specs', function() {
-    var originalTimeout;
+    let originalTimeout: any;
     beforeEach(function() {
       originalTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
       jasmine.DEFAULT_TIMEOUT_INTERVAL = 10000;
@@ -1084,7 +1080,7 @@ describe('custom equality', function() {
    * You can customize how jasmine determines if two objects are equal by defining your own custom
    * equality testers. A custom equality tester is a function that takes two arguments.
    */
-  var myCustomEquality = function(first, second) {
+  let myCustomEquality = function(first: any, second: any) {
     /**
      * If the custom equality tester knows how to compare the two items, it should return either
      * true or false
@@ -1138,7 +1134,7 @@ describe('custom equality', function() {
 /**
  * This object has a custom matcher named "toBeGoofy".
  */
-var customMatchers = {
+let customMatchers = {
 
   /**
    * ## Matcher Factories
@@ -1150,7 +1146,7 @@ var customMatchers = {
    *
    * [mu.js]: https://github.com/pivotal/jasmine/blob/master/src/core/matchers/matchersUtil.js
    */
-  toBeGoofy: function(util, customEqualityTesters) {
+  toBeGoofy: function(util: any, customEqualityTesters: any) {
     /**
      * The factory method should return an object with a `compare` function that will be called to
      * check the expectation.
@@ -1162,7 +1158,7 @@ var customMatchers = {
        * The compare function receives the value passed to `expect()` as the first argument - the
        * actual - and the value (if any) passed to the matcher itself as second argument.
        */
-      compare: function(actual, expected) {
+      compare: function(actual: any, expected: any) {
         /**
          * `toBeGoofy` takes an optional `expected` argument, so define it here if not passed in.
          */
@@ -1179,7 +1175,7 @@ var customMatchers = {
          * called/chained with `.not`, the expectation will negate this to determine whether the
          * expectation is met.
          */
-        var result = {};
+        let result: any = {};
 
         /**
          * `toBeGoofy` tests for equality of the actual's `hyuk` property to see if it matches the
@@ -1242,14 +1238,14 @@ describe('Custom matcher: \'toBeGoofy\'', function() {
    * Once a custom matcher is registered with Jasmine, it is available on any expectation.
    */
   it('is available on an expectation', function() {
-    expect({hyuk: 'gawrsh'}).toBeGoofy();
+    (expect({hyuk: 'gawrsh'}) as any).toBeGoofy();
   });
 
   it('can take an \'expected\' parameter', function() {
-    expect({hyuk: 'gawrsh is fun'}).toBeGoofy(' is fun');
+    (expect({hyuk: 'gawrsh is fun'}) as any).toBeGoofy(' is fun');
   });
 
   it('can be negated', function() {
-    expect({hyuk: 'this is fun'}).not.toBeGoofy();
+    (expect({hyuk: 'this is fun'}) as any).not.toBeGoofy();
   });
 });
