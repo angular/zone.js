@@ -8,6 +8,16 @@
 
 'use strict';
 
+declare function suite(description: string, suiteFn: () => void): void;
+declare function test(description: string, testFn: () => void): void;
+declare function specify(description: string, testFn: () => void): void;
+declare function setup(fn: () => void): void;
+declare function teardown(fn: () => void): void;
+declare function suiteSetup(fn: () => void): void;
+declare function suiteTeardown(fn: () => void): void;
+declare function before(fn: () => void): void;
+declare function after(fn: () => void): void;
+
 Zone.__load_patch('Mocha', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   const Mocha = global.Mocha;
 
@@ -85,6 +95,11 @@ Zone.__load_patch('Mocha', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
           this.afterEach('afterEach clear spies', function() {
             if (this.test && this.test.ctx && this.test.currentTest) {
               Mocha.clearSpies(this.test.ctx.currentTest);
+              if (Mocha.__zone_symbol__afterEach) {
+                Mocha.__zone_symbol__afterEach.forEach((afterEachCallback: any) => {
+                  afterEachCallback(this.test.ctx.currentTest);
+                });
+              }
             }
           });
           Mocha.__zone_symbol__suite = this;
@@ -106,6 +121,8 @@ Zone.__load_patch('Mocha', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
     if (test && typeof test.timeout === 'function' &&
         typeof Mocha.__zone_symbol__TIMEOUT === 'number') {
       test.timeout(Mocha.__zone_symbol__TIMEOUT);
+      // clear timeout, until user set jasmine.DEFAULT_TIMEOUT_INTERVAL again
+      Mocha.__zone_symbol__TIMEOUT = null;
     }
   }
 

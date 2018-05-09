@@ -41,9 +41,10 @@ Zone.__load_patch('jasmine2mocha', (global: any) => {
     configurable: true,
     enumerable: true,
     get: function() {
-      return global.Mocha.__zone_symbol__TIMEOUT;
+      return jasmine.__zone_symbol__TIMEOUT || 2000;
     },
     set: function(newValue: number) {
+      jasmine.__zone_symbol__TIMEOUT = newValue;
       global.Mocha.__zone_symbol__TIMEOUT = newValue;
     }
   });

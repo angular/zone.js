@@ -8,16 +8,6 @@
 
 // Extra Mocha-specific typings to make sure typescript compiler is happy
 // Didn't want to add @types/mocha because of duplication in typings-file with @types/jasmine
-declare function suite(description: string, suiteFn: () => void): void;
-declare function test(description: string, testFn: () => void): void;
-declare function specify(description: string, testFn: () => void): void;
-declare function setup(fn: () => void): void;
-declare function teardown(fn: () => void): void;
-declare function suiteSetup(fn: () => void): void;
-declare function suiteTeardown(fn: () => void): void;
-declare function before(fn: () => void): void;
-declare function after(fn: () => void): void;
-
 import {ifEnvSupports} from '../test-util';
 
 function expect(args: any) {
@@ -122,7 +112,7 @@ ifEnvSupports('Mocha', function() {
   });
 
   xdescribe('timeout', () => {
-    beforeEach(function () {
+    beforeEach(function() {
       this.timeout(10000);
     });
 

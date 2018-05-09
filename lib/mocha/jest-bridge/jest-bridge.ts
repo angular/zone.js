@@ -6,6 +6,4 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import './mocha-patch';
-import './jasmine-bridge/jasmine-bridge';
-import './jest-bridge/jest-bridge';
+import './jest';

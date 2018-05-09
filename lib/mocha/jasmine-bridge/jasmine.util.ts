@@ -156,3 +156,8 @@ export function eq(a: any, b: any) {
 
   return false;
 }
+
+export function toMatch(actual: any, expected: any) {
+  const regExp = actual instanceof RegExp ? actual : new RegExp(actual);
+  return regExp.test(expected);
+}

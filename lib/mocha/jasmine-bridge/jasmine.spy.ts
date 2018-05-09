@@ -170,6 +170,19 @@ export function addJasmineSpy(jasmine: any, Mocha: any, global: any) {
       };
     }
 
+    updateArgs(newArgs: SpyStrategyOptions) {
+      if (newArgs.identity) {
+        this.args.identity = newArgs.identity;
+        this.baseStrategy.identity = newArgs.identity;
+        this.and.identity = newArgs.identity;
+      }
+      if (newArgs.originalFn) {
+        this.args.originalFn = newArgs.originalFn;
+        this.baseStrategy.originalFn = newArgs.originalFn;
+        this.and.originalFn = newArgs.originalFn;
+      }
+    }
+
     exec(spy: any, args: any) {
       let strategy = this.strategyDict.get(args);
       if (!strategy) {
@@ -233,6 +246,9 @@ export function addJasmineSpy(jasmine: any, Mocha: any, global: any) {
     wrapper.and = spyStrategyDispatcher.and;
     wrapper.withArgs = function() {
       return spyStrategyDispatcher.withArgs.apply(spyStrategyDispatcher, arguments);
+    };
+    wrapper.updateArgs = function(newArgs: SpyStrategyOptions) {
+      spyStrategyDispatcher.updateArgs(newArgs);
     };
     return wrapper;
   }

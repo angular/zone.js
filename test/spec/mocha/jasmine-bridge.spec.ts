@@ -1249,3 +1249,11 @@ describe('Custom matcher: \'toBeGoofy\'', function() {
     (expect({hyuk: 'this is fun'}) as any).not.toBeGoofy();
   });
 });
+
+describe('failed', () => {
+  try {
+    fail('error');
+  } catch (error) {
+    expect(error).toEqual('error');
+  }
+});

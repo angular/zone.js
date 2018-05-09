@@ -42,4 +42,11 @@ export function mappingBDD(jasmine: any, Mocha: any, global: any) {
       }
     };
   }
+
+  if (!global['fail']) {
+    global['fail'] = function(error?: any) {
+      const err = error ? error : new Error();
+      throw err;
+    }
+  }
 }
