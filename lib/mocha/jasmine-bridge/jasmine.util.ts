@@ -135,7 +135,9 @@ export function eq(a: any, b: any) {
     if (Object.keys(a).length !== Object.keys(b).length) {
       return false;
     }
-
+    if (a instanceof Error && b instanceof Error) {
+      return a.message === b.message;
+    }
     let isEqual = true;
 
     for (let prop in a) {
@@ -154,10 +156,44 @@ export function eq(a: any, b: any) {
     return b.eq(a);
   }
 
+  if (a instanceof Error && typeof b === 'string') {
+    return a.message === b;
+  }
+  if (b instanceof Error && typeof a === 'string') {
+    return a === b.message;
+  }
+
   return false;
 }
 
 export function toMatch(actual: any, expected: any) {
-  const regExp = actual instanceof RegExp ? actual : new RegExp(actual);
-  return regExp.test(expected);
+  const regExp = expected instanceof RegExp ? expected : new RegExp(expected);
+  return regExp.test(actual);
+}
+
+const Mocha: any = typeof window === 'undefined' ? (global as any).Mocha : (window as any).Mocha;
+
+export function formatObject(obj: any) {
+  const stringify = Mocha.utils && Mocha.utils.stringify;
+  return stringify(obj);
+}
+
+export function buildFailureMessage(
+    matcherName: string, isNot: boolean, actual: any, ...expected: any[]) {
+  const englishyPredicate = matcherName.replace(/[A-Z]/g, function(s) {
+    return ' ' + s.toLowerCase();
+  });
+
+  var message = 'Expected ' + formatObject(actual) + (isNot ? ' not ' : ' ') + englishyPredicate;
+
+  if (expected.length > 0) {
+    for (var i = 0; i < expected.length; i++) {
+      if (i > 0) {
+        message += ',';
+      }
+      message += ' ' + formatObject(expected[i]);
+    }
+  }
+
+  return message + '.';
 }

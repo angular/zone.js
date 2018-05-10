@@ -6,8 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 export function mappingSpy(jest: any, jasmine: any, global: any) {
+  jest.__zone_symbol__mocks = [];
   function createSpy(spyFactory: (implFn?: Function) => any, implFn?: Function) {
-    const spy = jasmine.createSpy('jestSpy', implFn);
+    const spy = spyFactory(implFn);
     spy.defaultFn = implFn;
     const instances: any[] = [];
     const mockFn: any = function MockFn() {
@@ -101,6 +102,7 @@ export function mappingSpy(jest: any, jasmine: any, global: any) {
       global.Mocha.clearSpies(global.Mocha.__zone_symbol__current_ctx);
     };
 
+    jest.__zone_symbol__mocks.push(mockFn);
     return mockFn;
   }
 
@@ -111,5 +113,28 @@ export function mappingSpy(jest: any, jasmine: any, global: any) {
   jest.spyOn = function(obj: any, methodName: string, accessType?: string) {
     return accessType ? createSpy(() => global['spyOnProperty'](obj, methodName, accessType)) :
                         createSpy(() => global['spyOn'](obj, methodName));
+  };
+
+  jest.clearAllMocks = function() {
+    jest.__zone_symbol__mocks.forEach((mock: any) => {
+      mock.mockClear();
+    });
+    return jest;
+  };
+
+  jest.resetAllMocks = function() {
+    jest.__zone_symbol__mocks.forEach((mock: any) => {
+      mock.mockReset();
+    });
+    return jest;
+  };
+
+  jest.restoreAllMocks = function() {
+    global.Mocha.clearAllSpies();
+    return jest;
+  };
+
+  jest.isMockFunction = function(fn: Function) {
+    return jest.__zone_symbol__mocks.filter((m: any) => m === fn).length > 0;
   };
 }

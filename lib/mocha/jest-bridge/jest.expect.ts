@@ -109,7 +109,7 @@ export function expandExpect(global: any) {
     if (b instanceof ObjectContaining) {
       Object.keys(b.expectedObject).forEach(key => {
         if (b.expectedObject.hasOwnProperty(key)) {
-          if (!eq(a[key], b.expectedObject[key]) || !toMatch(b.expectedObject[key], a[key])) {
+          if (!eq(a[key], b.expectedObject[key]) || !toMatch(a[key], b.expectedObject[key])) {
             return false;
           }
         }
@@ -131,7 +131,7 @@ export function expandExpect(global: any) {
       if (typeof a !== 'string') {
         astr = Object.prototype.toString.call(a);
       }
-      return toMatch(b.expectedMatcher, astr);
+      return toMatch(astr, b.expectedMatcher);
     }
   });
 
@@ -156,21 +156,21 @@ export function expandExpect(global: any) {
     toHaveBeenCalledTimes: function(util: any, customEqualityTester: any) {
       return {
         compare: function(actual: any, expected: any) {
-          return {pass: expected.calls.count() === actual};
+          return {pass: actual.calls.count() === expected};
         }
       };
     },
     lastCalledWith: function(util: any, customEqualityTester: any) {
       return {
         compare: function(actual: any, expected: any) {
-          return {pass: util.equals(actual, expected.calls.last().args)};
+          return {pass: util.equals(actual.calls.last().args, expected)};
         }
       };
     },
     toHaveBeenLastCalledWith: function(util: any, customEqualityTester: any) {
       return {
         compare: function(actual: any, expected: any) {
-          return {pass: util.equals(actual, expected.calls.last().args)};
+          return {pass: util.equals(actual.calls.last().args, expected)};
         }
       };
     },

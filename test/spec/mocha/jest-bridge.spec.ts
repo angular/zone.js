@@ -147,7 +147,7 @@ describe('expect', () => {
     });
 
     test('rejects to octopus', async () => {
-      await (expect(Promise.reject(new Error('octopus'))) as any).rejects.toThrow('octopus');
+      return await (expect(Promise.reject(new Error('octopus'))) as any).rejects.toThrow('octopus');
     });
   });
 

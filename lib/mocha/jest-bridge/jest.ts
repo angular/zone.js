@@ -6,6 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import {mappingBDD} from './jest.bdd';
+import {addJestTimer} from './jest.clock';
 import {expandExpect} from './jest.expect';
 import {mappingSpy} from './jest.spy';
 
@@ -16,6 +17,7 @@ Zone.__load_patch('jest2mocha', (global: any) => {
     return;
   }
   // TODO: @JiaLiPassion, now we only support jest in Mocha runner
+  // support jasmine later.
   if (global.Mocha['__zone_symbol__isBridge']) {
     return;
   }
@@ -26,4 +28,12 @@ Zone.__load_patch('jest2mocha', (global: any) => {
   mappingBDD(jest, global.Mocha, global);
   expandExpect(global);
   mappingSpy(jest, jasmine, global);
+  addJestTimer(jest, global);
+
+  jest.setTimeout = function(timeout: number) {
+    const ctx = global.Mocha.__zone_symbol__current_ctx;
+    if (ctx && typeof ctx.timeout === 'function') {
+      ctx.timeout(timeout);
+    }
+  };
 });

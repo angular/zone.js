@@ -5,9 +5,10 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import {addCustomEqualityTester, Any, customEqualityTesters, eq, ObjectContaining, toMatch} from './jasmine.util';
+import {addCustomEqualityTester, Any, buildFailureMessage, customEqualityTesters, eq, ObjectContaining, toMatch} from './jasmine.util';
 
 export function addJasmineExpect(jasmine: any, global: any) {
+  jasmine['__zone_symbol__customMatchers'] = [];
   addExpect(global, jasmine);
   addAny(jasmine);
   addObjectContaining(jasmine);
@@ -28,364 +29,230 @@ function addObjectContaining(jasmine: any) {
 }
 
 function addCustomMatchers(jasmine: any, global: any) {
-  const originalExcept = jasmine['__zone_symbol__expect'];
   jasmine.addMatchers = function(customMatcher: any) {
-    let customMatchers = jasmine['__zone_symbol__customMatchers'];
-    if (!customMatchers) {
-      customMatchers = jasmine['__zone_symbol__customMatchers'] = [];
-    }
+    let customMatchers = getCustomMatchers(jasmine);
     customMatchers.push(customMatcher);
   };
 }
 
-function buildCustomMatchers(expectObj: any, jasmine: any, expected: any) {
-  const util = {equals: eq, toMatch: toMatch};
-  let customMatchers: any = jasmine['__zone_symbol__customMatchers'];
-  if (!customMatchers) {
-    return;
-  }
+function getCustomMatchers(jasmine: any) {
+  return jasmine['__zone_symbol__customMatchers'];
+}
+
+function buildCustomMatchers(jasmine: any, actual: any) {
+  const matchers: any = {not: {}};
+  const util = {equals: eq, toMatch: toMatch, buildFailureMessage: buildFailureMessage};
+  let customMatchers: any = getCustomMatchers(jasmine);
   customMatchers.forEach((matcher: any) => {
     Object.keys(matcher).forEach(key => {
       if (matcher.hasOwnProperty(key)) {
-        const customExpected = matcher[key](util, customEqualityTesters);
-        expectObj[key] = function(...actuals: any[]) {
-          // TODO: @JiaLiPassion use result.message
-          if (!customExpected.compare(expected, actuals[0], actuals[1]).pass) {
-            throw new Error(`${key} failed, expect: ${expected}, actual is: ${actuals[0]}`);
+        const customMatcher = matcher[key](util, customEqualityTesters);
+        matchers[key] = function(...expects: any[]) {
+          const args = expects ? expects : [];
+          args.unshift(actual);
+          const result = customMatcher.compare.apply(null, args);
+          if (!result.pass) {
+            const message = result.messge || util.buildFailureMessage(key, false, actual, expects);
+            throw new Error(message);
           }
         };
-        expectObj['not'][key] = function(...actuals: any[]) {
-          if (customExpected.compare(expected, actuals[0], actuals[1]).pass) {
-            throw new Error(`${key} failed, not expect: ${expected}, actual is: ${actuals[0]}`);
+        matchers['not'][key] = function(...expects: any[]) {
+          const args = expects ? expects : [];
+          args.unshift(actual);
+          const result = customMatcher.compare.apply(null, args);
+          if (result.pass) {
+            const message = result.messge || util.buildFailureMessage(key, true, actual, expects);
+            throw new Error(message);
           }
         };
       }
     });
   });
-  return expectObj;
+  return matchers;
 }
 
-function getMatchers(expected: any) {
+function getMatchers() {
   return {
-    nothing: function() {},
-    toBe: function(actual: any) {
-      if (expected !== actual) {
-        throw new Error(`Expected ${expected} to be ${actual}`);
-      }
+    nothing: function() {
+      return {compare: (actual: any) => ({pass: true})};
     },
-    toBeCloseTo: function(actual: any, precision: any) {
-      if (precision !== 0) {
-        precision = precision || 2;
-      }
-      const pow = Math.pow(10, precision + 1);
-      const delta = Math.abs(expected - actual);
-      const maxDelta = Math.pow(10, -precision) / 2;
-      if (Math.round(delta * pow) / pow > maxDelta) {
-        throw new Error(
-            `Expected ${expected} to be close to ${actual} with precision ${precision}`);
-      }
+    toBe: function() {
+      return {compare: (actual: any, expected: any) => ({pass: actual === expected})};
     },
-    toEqual: function(actual: any) {
-      if (!eq(expected, actual)) {
-        throw new Error(`Expected ${expected} to be ${actual}`);
-      }
+    toBeCloseTo: function() {
+      return {
+        compare: function(actual: any, expected: any, precision: any) {
+          if (precision !== 0) {
+            precision = precision || 2;
+          }
+          const pow = Math.pow(10, precision + 1);
+          const delta = Math.abs(expected - actual);
+          const maxDelta = Math.pow(10, -precision) / 2;
+          return {pass: Math.round(delta * pow) / pow <= maxDelta};
+        }
+      };
     },
-    toBeGreaterThan: function(actual: number) {
-      if (expected <= actual) {
-        throw new Error(`Expected ${expected} to be greater than ${actual}`);
-      }
+    toEqual: function() {
+      return {compare: (actual: any, expected: any) => ({pass: eq(actual, expected)})};
     },
-    toBeGreaterThanOrEqual: function(actual: number) {
-      if (expected < actual) {
-        throw new Error(`Expected ${expected} to be greater than or equal ${actual}`);
-      }
+    toBeGreaterThan: function() {
+      return {compare: (actual: any, expected: any) => ({pass: actual > expected})};
     },
-    toBeLessThan: function(actual: number) {
-      if (expected >= actual) {
-        throw new Error(`Expected ${expected} to be lesser than ${actual}`);
-      }
+    toBeGreaterThanOrEqual: function() {
+      return {compare: (actual: any, expected: any) => ({pass: actual >= expected})};
     },
-    toBeLessThanOrEqual: function(actual: number) {
-      if (expected > actual) {
-        throw new Error(`Expected ${expected} to be lesser than or equal ${actual}`);
-      }
+    toBeLessThan: function() {
+      return {compare: (actual: any, expected: any) => ({pass: actual < expected})};
+    },
+    toBeLessThanOrEqual: function() {
+      return {compare: (actual: any, expected: any) => ({pass: actual <= expected})};
     },
     toBeDefined: function() {
-      if (expected === undefined) {
-        throw new Error(`Expected ${expected} to be defined`);
-      }
+      return {compare: (actual: any) => ({pass: actual !== undefined})};
     },
     toBeNaN: function() {
-      if (expected === expected) {
-        throw new Error(`Expected ${expected} to be NaN`);
-      }
+      return {compare: (actual: any) => ({pass: actual !== actual})};
     },
     toBeNegativeInfinity: function() {
-      if (expected !== Number.NEGATIVE_INFINITY) {
-        throw new Error(`Expected ${expected} to be -Infinity`);
-      }
+      return {compare: (actual: any) => ({pass: actual === Number.NEGATIVE_INFINITY})};
     },
     toBeNull: function() {
-      if (expected !== null) {
-        throw new Error(`Expected ${expected} to be null`);
-      }
+      return {compare: (actual: any) => ({pass: actual === null})};
     },
     toBePositiveInfinity: function() {
-      if (expected !== Number.POSITIVE_INFINITY) {
-        throw new Error(`Expected ${expected} to be +Infinity`);
-      }
+      return {compare: (actual: any) => ({pass: actual === Number.POSITIVE_INFINITY})};
     },
     toBeUndefined: function() {
-      if (expected !== undefined) {
-        throw new Error(`Expected ${expected} to be undefined`);
-      }
+      return {compare: (actual: any) => ({pass: actual === undefined})};
     },
     toThrow: function() {
-      try {
-        expected();
-      } catch (error) {
-        return;
-      }
-
-      throw new Error(`Expected ${expected} to throw`);
+      return {
+        compare: (actual: any, expected: any) => {
+          let pass = false;
+          try {
+            if (typeof actual === 'function') {
+              actual();
+            } else {
+              pass = eq(actual, expected);
+            }
+          } catch (error) {
+            pass = eq(error, expected);
+          }
+          return {pass};
+        }
+      };
     },
-    toThrowError: function(errorToBeThrow: any) {
-      try {
-        expected();
-      } catch (error) {
-        return;
-      }
-
-      throw Error(`Expected ${expected} to throw: ${errorToBeThrow}`);
+    toThrowError: function() {
+      return {
+        compare: (actual: any) => {
+          let pass = false;
+          try {
+            if (typeof actual === 'function') {
+              actual();
+            } else {
+              pass = actual instanceof Error;
+            }
+          } catch (error) {
+            pass = true;
+          }
+          return {pass};
+        }
+      };
     },
     toBeTruthy: function() {
-      if (!expected) {
-        throw new Error(`Expected ${expected} to be truthy`);
-      }
+      return {compare: (actual: any) => ({pass: !!actual})};
     },
-    toBeFalsy: function(actual: any) {
-      if (!!actual) {
-        throw new Error(`Expected ${actual} to be falsy`);
-      }
+    toBeFalsy: function() {
+      return {compare: (actual: any) => ({pass: !actual})};
     },
-    toContain: function(actual: any) {
-      if (expected.indexOf(actual) === -1) {
-        throw new Error(`Expected ${expected} to contain ${actual}`);
-      }
+    toContain: function() {
+      return {compare: (actual: any, expected: any) => ({pass: actual.indexOf(expected) !== -1})};
     },
     toBeCalled: function() {
-      if (expected.calls.count() === 0) {
-        throw new Error(`Expected ${expected} to been called`);
-      }
+      return {compare: (actual: any) => ({pass: actual.calls.count() > 0})};
     },
     toHaveBeenCalled: function() {
-      if (expected.calls.count() === 0) {
-        throw new Error(`Expected ${expected} to been called`);
-      }
+      return {compare: (actual: any) => ({pass: actual.calls.count() > 0})};
     },
-    toBeCalledWith: function(...params: any[]) {
-      if (expected.calls.allArgs().filter((args: any) => eq(args, params)).length === 0) {
-        throw new Error(`Expected ${expected.calls.allArgs()} to been called with ${params}`);
-      }
+    toBeCalledWith: function() {
+      return {
+        compare: (actual: any, ...expected: any[]) =>
+            ({pass: actual.calls.allArgs().filter((args: any) => eq(args, expected)).length > 0})
+      };
     },
-    toHaveBeenCalledWith: function(...params: any[]) {
-      if (expected.calls.allArgs().filter((args: any) => eq(args, params)).length === 0) {
-        throw new Error(`Expected ${expected.calls.allArgs()} to been called with ${params}`);
-      }
+    toHaveBeenCalledWith: function() {
+      return {
+        compare: (actual: any, ...expected: any[]) =>
+            ({pass: actual.calls.allArgs().filter((args: any) => eq(args, expected)).length > 0})
+      };
     },
-    toMatch: function(actual: any) {
-      if (!toMatch(actual, expected)) {
-        throw new Error(`Expected ${expected} to match ${actual}`);
-      }
-    },
-    not: {
-      toBe: function(actual: any) {
-        if (expected === actual) {
-          throw new Error(`Expected ${expected} not to be ${actual}`);
-        }
-      },
-      toBeCloseTo: function(actual: any, precision: any) {
-        if (precision !== 0) {
-          precision = precision || 2;
-        }
-        const pow = Math.pow(10, precision + 1);
-        const delta = Math.abs(expected - actual);
-        const maxDelta = Math.pow(10, -precision) / 2;
-        if (Math.round(delta * pow) / pow <= maxDelta) {
-          throw new Error(
-              `Expected ${expected} not to be close to ${actual} with precision ${precision}`);
-        }
-      },
-      toEqual: function(actual: any) {
-        if (eq(expected, actual)) {
-          throw new Error(`Expected ${expected} not to be ${actual}`);
-        }
-      },
-      toThrow: function() {
-        try {
-          expected();
-        } catch (error) {
-          throw new Error(`Expected ${expected} to not throw`);
-        }
-      },
-      toThrowError: function() {
-        try {
-          expected();
-        } catch (error) {
-          throw Error(`Expected ${expected} to not throw error`);
-        }
-      },
-      toBeGreaterThan: function(actual: number) {
-        if (expected > actual) {
-          throw new Error(`Expected ${expected} not to be greater than ${actual}`);
-        }
-      },
-      toBeGreaterThanOrEqual: function(actual: number) {
-        if (expected >= actual) {
-          throw new Error(`Expected ${expected} not to be greater than or equal ${actual}`);
-        }
-      },
-      toBeLessThan: function(actual: number) {
-        if (expected < actual) {
-          throw new Error(`Expected ${expected} not to be lesser than ${actual}`);
-        }
-      },
-      toBeLessThanOrEqual: function(actual: number) {
-        if (expected <= actual) {
-          throw new Error(`Expected ${expected} not to be lesser than or equal ${actual}`);
-        }
-      },
-      toBeDefined: function() {
-        if (expected !== undefined) {
-          throw new Error(`Expected ${expected} not to be defined`);
-        }
-      },
-      toBeNaN: function() {
-        if (expected !== expected) {
-          throw new Error(`Expected ${expected} not to be NaN`);
-        }
-      },
-      toBeNegativeInfinity: function() {
-        if (expected === Number.NEGATIVE_INFINITY) {
-          throw new Error(`Expected ${expected} not to be -Infinity`);
-        }
-      },
-      toBeNull: function() {
-        if (expected === null) {
-          throw new Error(`Expected ${expected} not to be null`);
-        }
-      },
-      toBePositiveInfinity: function() {
-        if (expected === Number.POSITIVE_INFINITY) {
-          throw new Error(`Expected ${expected} not to be +Infinity`);
-        }
-      },
-      toBeUndefined: function() {
-        if (expected === undefined) {
-          throw new Error(`Expected ${expected} not to be undefined`);
-        }
-      },
-      toBeTruthy: function() {
-        if (!!expected) {
-          throw new Error(`Expected ${expected} not to be truthy`);
-        }
-      },
-      toBeFalsy: function() {
-        if (!expected) {
-          throw new Error(`Expected ${expected} not to be falsy`);
-        }
-      },
-      toContain: function(actual: any) {
-        if (expected.indexOf(actual) !== -1) {
-          throw new Error(`Expected ${expected} not to contain ${actual}`);
-        }
-      },
-      toMatch: function(actual: any) {
-        if (toMatch(actual, expected)) {
-          throw new Error(`Expected ${expected} not to match ${actual}`);
-        }
-      },
-      toBeCalled: function() {
-        if (expected.calls.count() > 0) {
-          throw new Error(`Expected ${expected} to not been called`);
-        }
-      },
-      toHaveBeenCalled: function() {
-        if (expected.calls.count() > 0) {
-          throw new Error(`Expected ${expected} to not been called`);
-        }
-      },
-      toBeCalledWith: function(params: any[]) {
-        if (expected.calls.allArgs().filter((args: any) => eq(args, params)).length > 0) {
-          throw new Error(`Expected ${expected.calls.allArgs()} to not been called with ${params}`);
-        }
-      },
-      toHaveBeenCalledWith: function(params: any[]) {
-        if (expected.calls.allArgs().filter((args: any) => eq(args, params)).length > 0) {
-          throw new Error(`Expected ${expected.calls.allArgs()} to not been called with ${params}`);
-        }
-      }
+    toMatch: function() {
+      return {compare: (actual: any, expected: any) => ({pass: toMatch(actual, expected)})};
     }
   };
 }
 
-function buildResolveRejects(key: string, matchers: any, expected: any, isNot = false) {
-  if (matchers.hasOwnProperty(key)) {
-    const resolveFnFactory = function(isNot = false) {
-      return function() {
-        const self = this;
-        const args = Array.prototype.slice.call(arguments);
-        return expected.then(
-            (value: any) => {
-              const newMatchers: any = getMatchers(value);
-              return isNot ? newMatchers.not[key].apply(self, args) :
-                             newMatchers[key].apply(self, args);
-            },
-            (error: any) => {
-              throw error;
-            });
-      };
+function buildResolveRejects(key: string, matchers: any, actual: any, isNot = false) {
+  const resolveFnFactory = function(isNot = false) {
+    return function() {
+      const self = this;
+      const args = Array.prototype.slice.call(arguments);
+      return actual.then(
+          (value: any) => {
+            const newMatchers: any = buildCustomMatchers(jasmine, value);
+            return isNot ? newMatchers.not[key].apply(self, args) :
+                           newMatchers[key].apply(self, args);
+          },
+          (error: any) => {
+            throw error;
+          });
     };
-    if (isNot) {
-      matchers.resolves.not[key] = resolveFnFactory(true);
-    } else {
-      matchers.resolves[key] = resolveFnFactory();
-    }
-    const rejectFnFactory = function(isNot = false) {
-      return function() {
-        const self = this;
-        const args = Array.prototype.slice.call(arguments);
-        return expected.then((value: any) => {}, (error: any) => {
-          const newMatchers: any = getMatchers(error);
-          return isNot ? newMatchers.not[key].apply(self, args) :
-                         newMatchers[key].apply(self, args);
-        });
-      };
+  };
+  if (isNot) {
+    matchers.resolves.not[key] = resolveFnFactory(true);
+  } else {
+    matchers.resolves[key] = resolveFnFactory();
+  }
+  const rejectFnFactory = function(isNot = false) {
+    return function() {
+      const self = this;
+      const args = Array.prototype.slice.call(arguments);
+      return actual.then((value: any) => {}, (error: any) => {
+        const newMatchers: any = buildCustomMatchers(jasmine, error);
+        return isNot ? newMatchers.not[key].apply(self, args) : newMatchers[key].apply(self, args);
+      });
     };
-    if (isNot) {
-      matchers.rejects.not[key] = rejectFnFactory(true);
-    } else {
-      matchers.rejects[key] = rejectFnFactory();
-    }
+  };
+  if (isNot) {
+    matchers.rejects.not[key] = rejectFnFactory(true);
+  } else {
+    matchers.rejects[key] = rejectFnFactory();
   }
 }
+
 function addExpect(global: any, jasmine: any) {
   jasmine.__zone_symbol__expect_assertions = 0;
-  global['expect'] = jasmine['__zone_symbol__expect'] = function(expected: any) {
+  const builtinMatchers: any = getMatchers();
+  const customMatchers = getCustomMatchers(jasmine);
+  customMatchers.unshift(builtinMatchers);
+  global['expect'] = jasmine['__zone_symbol__expect'] = function(actual: any) {
     jasmine.__zone_symbol__expect_assertions++;
-    const matchers: any = getMatchers(expected);
-    if (expected && typeof expected.then === 'function') {
+    const matchers = buildCustomMatchers(jasmine, actual);
+    if (actual && typeof actual.then === 'function') {
       // expected maybe a promise
       matchers.resolves = {not: {}};
       matchers.rejects = {not: {}};
       Object.keys(matchers).forEach(key => {
-        buildResolveRejects(key, matchers, expected);
+        if (matchers.hasOwnProperty(key)) {
+          buildResolveRejects(key, matchers, actual);
+        }
       });
       Object.keys(matchers.not).forEach(key => {
-        buildResolveRejects(key, matchers, expected, true);
+        if (matchers.not.hasOwnProperty(key)) {
+          buildResolveRejects(key, matchers, actual, true);
+        }
       });
     }
-    buildCustomMatchers(matchers, jasmine, expected);
     return matchers;
   };
 }

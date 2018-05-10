@@ -265,6 +265,14 @@ export function addJasmineSpy(jasmine: any, Mocha: any, global: any) {
       });
     }
 
+    clearAllSpies() {
+      if (this.registeredSpies.length === 0) {
+        return;
+      }
+      this.registeredSpies.forEach(spy => spy.unRegister());
+      this.registeredSpies.length = 0;
+    }
+
     clearSpies(testInfo: any) {
       if (this.registeredSpies.length === 0) {
         return;
@@ -287,6 +295,10 @@ export function addJasmineSpy(jasmine: any, Mocha: any, global: any) {
   const spyRegistry = new SpyRegistry();
   Mocha.clearSpies = function(testInfo: any) {
     spyRegistry.clearSpies(testInfo);
+  };
+
+  Mocha.clearAllSpies = function() {
+    spyRegistry.clearAllSpies();
   };
 
   jasmine.createSpy = function(spyName: string|Function, originalFn?: Function) {
