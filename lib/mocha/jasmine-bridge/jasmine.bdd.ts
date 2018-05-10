@@ -47,6 +47,6 @@ export function mappingBDD(jasmine: any, Mocha: any, global: any) {
     global['fail'] = function(error?: any) {
       const err = error ? error : new Error();
       throw err;
-    }
+    };
   }
 }

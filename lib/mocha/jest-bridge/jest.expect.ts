@@ -49,37 +49,33 @@ export function expandExpect(global: any) {
     constructor(public expectedArray: any[]) {}
   }
 
-  expect.arrayContaining =
-      function(expectedArray: string[]) {
+  expect.arrayContaining = function(expectedArray: string[]) {
     return new ArrayContaining(expectedArray);
-  }
+  };
 
   class ObjectContaining {
     constructor(public expectedObject: any) {}
   }
 
-  expect.objectContaining =
-      function(expectedObject: any) {
+  expect.objectContaining = function(expectedObject: any) {
     return new ObjectContaining(expectedObject);
-  }
+  };
 
   class StringContaining {
     constructor(public expectedString: string) {}
   }
 
-  expect.stringContaining =
-      function(expectedString: string) {
+  expect.stringContaining = function(expectedString: string) {
     return new StringContaining(expectedString);
-  }
+  };
 
   class StringMatching {
     constructor(public expectedMatcher: RegExp|string) {}
   }
 
-  expect.stringMatching =
-      function(expectedMatcher: RegExp|string) {
+  expect.stringMatching = function(expectedMatcher: RegExp|string) {
     return new StringMatching(expectedMatcher);
-  }
+  };
 
   const assertions: {test: any, numbers: number}[] = (expect as any).__zone_symbol__assertionsMap =
       [];
@@ -150,7 +146,7 @@ export function expandExpect(global: any) {
               return matcher(actual, expected);
             }
           };
-        }
+        };
       }
     });
     jasmine.addMatchers(jasmineMatchers);
@@ -258,11 +254,10 @@ export function expandExpect(global: any) {
     assertions.push({test: currentTest, numbers});
   };
 
-  expect.hasAssertions =
-      function() {
+  expect.hasAssertions = function() {
     const currentTest = global.Mocha.__zone_symbol__test;
     assertions.push({test: currentTest, numbers: 1});
-  }
+  };
 
   if (!global.Mocha.__zone_symbol__afterEach) {
     global.Mocha.__zone_symbol__afterEach = [];

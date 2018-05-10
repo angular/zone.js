@@ -344,7 +344,7 @@ function buildResolveRejects(key: string, matchers: any, expected: any, isNot = 
             (error: any) => {
               throw error;
             });
-      }
+      };
     };
     if (isNot) {
       matchers.resolves.not[key] = resolveFnFactory(true);
@@ -360,7 +360,7 @@ function buildResolveRejects(key: string, matchers: any, expected: any, isNot = 
           return isNot ? newMatchers.not[key].apply(self, args) :
                          newMatchers[key].apply(self, args);
         });
-      }
+      };
     };
     if (isNot) {
       matchers.rejects.not[key] = rejectFnFactory(true);
