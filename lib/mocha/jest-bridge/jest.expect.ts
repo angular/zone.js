@@ -6,34 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import {Any, eq, toMatch} from '../jasmine-bridge/jasmine.util';
-declare namespace jasmine {
-  interface Expect {
-    anything: () => any;
-    any: (expectedObject: any) => any;
-    arrayContaining: (expectedArray: string[]) => any;
-    objectContaining: (expectedObject: any) => any;
-    stringContaining: (expectedString: string) => any;
-    stringMatching: (expectedMatcher: RegExp|string) => any;
-    extend: (extendedMatchers: any) => any;
-    assertions: (numbers: number) => void;
-    hasAssertions: () => void;
-  }
-
-  interface Matchers {
-    toHaveBeenCalledTimes: (expected: number) => boolean;
-    lastCalledWith: (...params: any[]) => boolean;
-    toHaveBeenLastCalledWith: (...params: any[]) => boolean;
-    toBeInstanceOf: (expected: any) => boolean;
-    toContainEqual: (expected: any) => boolean;
-    toHaveLength: (expected: number) => boolean;
-    toHaveProperty: (expected: any, value: any) => boolean;
-    toMatchObject: (expected: any) => boolean;
-  }
-}
-
 export function expandExpect(global: any) {
   const jasmine = global.jasmine;
-  const expect: jasmine.Expect = global.expect;
+  const expect: any = global.expect;
 
   class Anything {}
 

@@ -48,16 +48,17 @@ function buildCustomMatchers(jasmine: any, actual: any) {
       if (matcher.hasOwnProperty(key)) {
         const customMatcher = matcher[key](util, customEqualityTesters);
         matchers[key] = function(...expects: any[]) {
-          const args = expects ? expects : [];
+          const args = expects ? [...expects] : [];
           args.unshift(actual);
           const result = customMatcher.compare.apply(null, args);
           if (!result.pass) {
+            console.log('compare ', args);
             const message = result.messge || util.buildFailureMessage(key, false, actual, expects);
             throw new Error(message);
           }
         };
         matchers['not'][key] = function(...expects: any[]) {
-          const args = expects ? expects : [];
+          const args = expects ? [...expects] : [];
           args.unshift(actual);
           const result = customMatcher.compare.apply(null, args);
           if (result.pass) {
@@ -133,10 +134,10 @@ function getMatchers() {
             if (typeof actual === 'function') {
               actual();
             } else {
-              pass = eq(actual, expected);
+              pass = (!expected && actual instanceof Error) || eq(actual, expected);
             }
           } catch (error) {
-            pass = eq(error, expected);
+            pass = !expected || eq(error, expected);
           }
           return {pass};
         }

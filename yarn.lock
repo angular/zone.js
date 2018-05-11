@@ -2,10 +2,6 @@
 # yarn lockfile v1
 
 
-"@types/jasmine@2.2.33":
-  version "2.2.33"
-  resolved "https://registry.yarnpkg.com/@types/jasmine/-/jasmine-2.2.33.tgz#4715cfd2ca7fbd632fc7f1784f13e637bed028c5"
-
 "@types/node@^6.0.96":
   version "6.0.101"
   resolved "https://registry.yarnpkg.com/@types/node/-/node-6.0.101.tgz#0c5911cfb434af4a51c0a499931fe6423207d921"

@@ -97,7 +97,11 @@ export function addCustomEqualityTester(jasmine: any) {
   };
 }
 
-export function eq(a: any, b: any) {
+function getErrorMessage(error: any) {
+  return error.message || error.description;
+}
+
+export function eq(a: any, b: any): boolean {
   for (let i = 0; i < customEqualityTesters.length; i++) {
     const result = customEqualityTesters[i](a, b);
     if (result === true || result === false) {
@@ -132,11 +136,12 @@ export function eq(a: any, b: any) {
     if (b instanceof ObjectContaining) {
       return b.match(a);
     }
+    if (a instanceof Error && b instanceof Error) {
+      return getErrorMessage(a) === getErrorMessage(b) ||
+          toMatch(getErrorMessage(a), getErrorMessage(b));
+    }
     if (Object.keys(a).length !== Object.keys(b).length) {
       return false;
-    }
-    if (a instanceof Error && b instanceof Error) {
-      return a.message === b.message;
     }
     let isEqual = true;
 
@@ -156,11 +161,11 @@ export function eq(a: any, b: any) {
     return b.eq(a);
   }
 
-  if (a instanceof Error && typeof b === 'string') {
-    return a.message === b;
+  if (a instanceof Error) {
+    return eq(getErrorMessage(a), b) || toMatch(getErrorMessage(a), b);
   }
-  if (b instanceof Error && typeof a === 'string') {
-    return a === b.message;
+  if (b instanceof Error) {
+    return eq(a, getErrorMessage(b)) || toMatch(a, getErrorMessage(b));
   }
 
   return false;
@@ -184,10 +189,10 @@ export function buildFailureMessage(
     return ' ' + s.toLowerCase();
   });
 
-  var message = 'Expected ' + formatObject(actual) + (isNot ? ' not ' : ' ') + englishyPredicate;
+  let message = 'Expected ' + formatObject(actual) + (isNot ? ' not ' : ' ') + englishyPredicate;
 
   if (expected.length > 0) {
-    for (var i = 0; i < expected.length; i++) {
+    for (let i = 0; i < expected.length; i++) {
       if (i > 0) {
         message += ',';
       }

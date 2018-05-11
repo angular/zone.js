@@ -5,9 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-declare let jest: any;
-declare function test(description: string, testFn: () => void): void;
-
 describe('extend', () => {
   (expect as any).extend({
     toBeDivisibleBy(received: any, argument: any) {
@@ -54,16 +51,12 @@ describe('expect', () => {
   describe('Beware of a misunderstanding! A sequence of dice rolls', () => {
     const expected = [1, 2, 3, 4, 5, 6];
     it('matches even with an unexpected number 7', () => {
-      expect([4, 1, 6, 7, 3, 5, 2, 5, 4, 6])
-          .toEqual(
-              (expect as any).arrayContaining(expected),
-          );
+      expect([4, 1, 6, 7, 3, 5, 2, 5, 4, 6]).toEqual((expect as any).arrayContaining(expected), );
     });
     it('does not match without an expected number 2', () => {
-      expect([4, 1, 6, 7, 3, 5, 7, 5, 4, 6])
-          .not.toEqual(
-              (expect as any).arrayContaining(expected),
-          );
+      expect([
+        4, 1, 6, 7, 3, 5, 7, 5, 4, 6
+      ]).not.toEqual((expect as any).arrayContaining(expected), );
     });
   });
 
@@ -92,13 +85,10 @@ describe('expect', () => {
   describe('objectContaining', () => {
     test('onPress should object containing with the right thing', () => {
       const onPress = {x: 100, y: 200, z: 300};
-      (expect(onPress) as any)
-          .toEqual(
-              (expect as any).objectContaining({
-                x: (expect as any).any(Number),
-                y: (expect as any).any(Number),
-              }),
-          );
+      (expect(onPress) as any).toEqual((expect as any).objectContaining({
+        x: (expect as any).any(Number),
+        y: (expect as any).any(Number),
+      }), );
     });
   });
 
@@ -114,16 +104,10 @@ describe('expect', () => {
       (expect as any).stringMatching(/^[BR]ob/),
     ];
     it('matches even if received contains additional elements', () => {
-      expect(['Alicia', 'Roberto', 'Evelina'])
-          .toEqual(
-              (expect as any).arrayContaining(expected),
-          );
+      expect(['Alicia', 'Roberto', 'Evelina']).toEqual((expect as any).arrayContaining(expected), );
     });
     it('does not match if received does not contain expected elements', () => {
-      expect(['Roberto', 'Evelina'])
-          .not.toEqual(
-              (expect as any).arrayContaining(expected),
-          );
+      expect(['Roberto', 'Evelina']).not.toEqual((expect as any).arrayContaining(expected), );
     });
   });
 
@@ -133,21 +117,18 @@ describe('expect', () => {
       return (expect(Promise.resolve('lemon')) as any).resolves.toBe('lemon');
     });
 
-    test('resolves to lemon with await', async () => {
-      await (expect(Promise.resolve('lemon')) as any).resolves.toBe('lemon');
-      await (expect(Promise.resolve('lemon')) as any).resolves.not.toBe('octopus');
+    test('resolves to lemon with await', async() => {
+      await(expect(Promise.resolve('lemon')) as any).resolves.toBe('lemon');
+      await(expect(Promise.resolve('lemon')) as any).resolves.not.toBe('octopus');
     });
 
     test('rejects to octopus', () => {
       // make sure to add a return statement
-      return (expect(Promise.reject(new Error('octopus'))) as any)
-          .rejects.toThrow(
-              'octopus',
-          );
+      return (expect(Promise.reject(new Error('octopus'))) as any).rejects.toThrow('octopus');
     });
 
-    test('rejects to octopus', async () => {
-      return await (expect(Promise.reject(new Error('octopus'))) as any).rejects.toThrow('octopus');
+    test('rejects to octopus', async() => {
+      return await(expect(Promise.reject(new Error('octopus'))) as any).rejects.toThrow('octopus');
     });
   });
 
@@ -243,11 +224,9 @@ describe('expect', () => {
 
       // Deep referencing using an array containing the keyPath
       (expect(houseForSale) as any).toHaveProperty(['kitchen', 'area'], 20);
-      (expect(houseForSale) as any)
-          .toHaveProperty(
-              ['kitchen', 'amenities'],
-              ['oven', 'stove', 'washer'],
-          );
+      (expect(houseForSale) as any).toHaveProperty(['kitchen', 'amenities'], [
+        'oven', 'stove', 'washer'
+      ], );
       (expect(houseForSale) as any).toHaveProperty(['kitchen', 'amenities', 0], 'oven');
 
       (expect(houseForSale).not as any).toHaveProperty(['kitchen', 'open']);
@@ -339,14 +318,14 @@ describe('expect', () => {
       expect(logs).toEqual(['first call', 'second call', 'default', 'default']);
     });
 
-    test('mockResolvedValue', async () => {
+    test('mockResolvedValue', async() => {
       const asyncMock = jest.fn().mockResolvedValue(43);
 
       const result = await asyncMock();  // 43
       expect(result).toBe(43);
     });
 
-    test('mockResolvedValueOnce', async () => {
+    test('mockResolvedValueOnce', async() => {
       const asyncMock = jest.fn()
                             .mockResolvedValue('default')
                             .mockResolvedValueOnce('first call')
@@ -360,7 +339,7 @@ describe('expect', () => {
       expect(logs).toEqual(['first call', 'second call', 'default', 'default']);
     });
 
-    test('mockRejectedValue', async () => {
+    test('mockRejectedValue', async() => {
       const asyncMock = jest.fn().mockRejectedValue(new Error('Async error'));
 
       try {
@@ -370,7 +349,7 @@ describe('expect', () => {
       }
     });
 
-    test('mockRejectedValueOnce', async () => {
+    test('mockRejectedValueOnce', async() => {
       const asyncMock = jest.fn()
                             .mockResolvedValueOnce('first call')
                             .mockRejectedValueOnce(new Error('Async error'));

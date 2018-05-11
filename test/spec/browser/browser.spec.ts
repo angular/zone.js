@@ -122,7 +122,6 @@ describe('Zone', function() {
               return parentZoneDelegate.scheduleTask(targetZone, task);
             }
           });
-
           beforeEach(function() {
             mouseEvent.initEvent('mousedown', true, true);
             hookSpy = jasmine.createSpy('hook');

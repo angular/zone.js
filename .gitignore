@@ -8,3 +8,4 @@ parsed-idl/
 .vscode
 npm-debug.log
 build-esm/
+yarn-error.log

@@ -1251,9 +1251,30 @@ describe('Custom matcher: \'toBeGoofy\'', function() {
 });
 
 describe('failed', () => {
-  try {
-    fail('error');
-  } catch (error) {
-    expect(error).toEqual('error');
-  }
+  it('should catch failed', () => {
+    try {
+      fail('error');
+    } catch (error) {
+      expect(error).toEqual('error');
+    }
+  });
+});
+
+describe('timeout', () => {
+  beforeEach(() => {
+    setTimeout(() => {
+      expect(true).toBe(true);
+    }, 2500);
+  }, 3000);
+
+  it('beforeEach timeout', () => {
+    expect(true).toBe(true);
+  });
+
+  it('test timeout', (done) => {
+    setTimeout(() => {
+      expect(true).toBe(true);
+      done();
+    }, 3100);
+  }, 3500);
 });

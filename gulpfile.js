@@ -106,6 +106,12 @@ gulp.task('build/zone.js.d.ts', ['compile-esm'], function() {
       .pipe(gulp.dest('./dist'));
 });
 
+gulp.task('build/zone-testing.d.ts', ['compile-esm'], function() {
+  return gulp.src('./build-esm/lib/testing/zone-testing.typing.d.ts')
+      .pipe(rename('zone-testing.d.ts'))
+      .pipe(gulp.dest('./dist'));
+});
+
 // Zone for Node.js environment.
 gulp.task('build/zone-node.js', ['compile-esm-node'], function(cb) {
   return generateScript('./lib/node/rollup-main.ts', 'zone-node.js', false, cb);

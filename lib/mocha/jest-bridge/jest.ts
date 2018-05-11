@@ -18,7 +18,7 @@ Zone.__load_patch('jest2mocha', (global: any) => {
   }
   // TODO: @JiaLiPassion, now we only support jest in Mocha runner
   // support jasmine later.
-  if (global.Mocha['__zone_symbol__isBridge']) {
+  if (!global.Mocha || global.Mocha['__zone_symbol__isBridge']) {
     return;
   }
   // create a jasmine global object

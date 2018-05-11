@@ -19,7 +19,6 @@ if (!window['saucelabs']) {
              const TEST_SERVER_URL = 'ws://localhost:8001';
              const testZone = Zone.current.fork({name: 'test'});
 
-
              beforeEach(function(done) {
                socket = new WebSocket(TEST_SERVER_URL);
                socket.addEventListener('open', function() {

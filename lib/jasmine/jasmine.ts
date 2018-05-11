@@ -6,4 +6,5 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import './jasmine-patch';
-import './mocha-bridge/mocha-bridge';
+// TODO: @JiaLiPassion, add mocha/jest bridge for jasmine later
+// import './mocha-bridge/mocha-bridge';

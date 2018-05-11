@@ -45,7 +45,7 @@ ifEnvSupports(supportJasmineSpec, () => {
       expect(beforeAllCalledCount).toBe(1);
     });
 
-    beforeEach(() => beforeEachZone = Zone.current);
+    beforeEach(() => { beforeEachZone = Zone.current; });
 
     it('should throw on async in describe', () => {
       expect(throwOnAsync).toBe(true);

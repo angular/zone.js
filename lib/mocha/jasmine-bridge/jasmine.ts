@@ -9,6 +9,7 @@ import {mappingBDD} from './jasmine.bdd';
 import {addJasmineClock} from './jasmine.clock';
 import {addJasmineExpect} from './jasmine.expect';
 import {addJasmineSpy} from './jasmine.spy';
+import { formatObject } from './jasmine.util';
 
 Zone.__load_patch('jasmine2mocha', (global: any) => {
   if (typeof global.Mocha === 'undefined') {
@@ -48,4 +49,8 @@ Zone.__load_patch('jasmine2mocha', (global: any) => {
       global.Mocha.__zone_symbol__TIMEOUT = newValue;
     }
   });
+
+  jasmine.pp = function (obj: any): string {
+    return formatObject(obj);
+  };
 });

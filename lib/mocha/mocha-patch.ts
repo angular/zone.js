@@ -8,16 +8,6 @@
 
 'use strict';
 
-declare function suite(description: string, suiteFn: () => void): void;
-declare function test(description: string, testFn: () => void): void;
-declare function specify(description: string, testFn: () => void): void;
-declare function setup(fn: () => void): void;
-declare function teardown(fn: () => void): void;
-declare function suiteSetup(fn: () => void): void;
-declare function suiteTeardown(fn: () => void): void;
-declare function before(fn: () => void): void;
-declare function after(fn: () => void): void;
-
 Zone.__load_patch('Mocha', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   const Mocha = global.Mocha;
 
@@ -148,8 +138,12 @@ Zone.__load_patch('Mocha', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   }
 
   function wrapTestInZone(args: IArguments): any[] {
+    const timeoutArgs = args.length > 0 ? args[args.length - 1] : null;
     const asyncTest = function(fn: Function) {
       return function(done: Function) {
+        if (this && typeof this.timeout === 'function' && typeof timeoutArgs === 'number') {
+          this.timeout(timeoutArgs);
+        }
         fn = beforeTest(this, fn);
         return testZone.run(fn, this, [done]);
       };
