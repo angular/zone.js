@@ -8,6 +8,9 @@
 /**
  * Zone testing type definition, mix jasmine/mocha/jest
  */
+/**
+ * Jasmine/Jest/Mocha BDD/TDD interface
+ */
 declare const describe: ZoneTest.Describe;
 declare const xdescribe: ZoneTest.Describe;
 declare const fdescribe: ZoneTest.Describe;
@@ -37,6 +40,23 @@ declare const suiteTeardown: ZoneTest.BeforeAndAfter;
 
 declare const expect: ZoneTest.Expect;
 declare function fail(error?: any): void;
+declare function pending(reason?: string): void;
+
+/**
+ * Zone testing global interface for asyncTest/syncTest/fakeAsyncTest
+ */
+
+declare function asyncTest(fn: ZoneTest.BeforeAndAfter | ZoneTest.Test): (done: ZoneTest.DoneCallback) => PromiseLike<any> | void;
+declare function fakeAsyncTest(fn: ZoneTest.BeforeAndAfter | ZoneTest.Test, fakeAsyncTestOptions?: {
+  checkNested?: boolean, checkRemainingMacrotasks?: boolean
+}): (done: ZoneTest.DoneCallback) => PromiseLike<any> | void;
+declare function resetFakeAsyncZone(): void;
+declare function flushMicrotasks(): void;
+declare function flushAndDiscardPeriodicTasks(): void;
+declare function discardPeriodicTasks(): void;
+declare function tick(millis?: number, doTick?: (elapsed: number) => void): void;
+declare function flush(maxTurns?: number): void;
+declare function clearAllMacrotasks(): void;
 
 declare namespace ZoneTest {
   interface DoneCallback extends Function {
@@ -229,7 +249,6 @@ declare namespace jest {
   function fn<T extends {}>(implementation: (...args: any[]) => T): Mock<T>;
   function fn<T>(implementation?: (...args: any[]) => any): Mock<T>;
   function isMockFunction(fn: any): fn is Mock<any>;
-  function runAllImmediates(): typeof jest;
   function runAllTicks(): typeof jest;
   function runAllTimers(): typeof jest;
   function runOnlyPendingTimers(): typeof jest;
@@ -268,4 +287,3 @@ declare namespace jest {
   }
 }
 
-declare function pending(reason?: string): void;

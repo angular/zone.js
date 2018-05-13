@@ -55,6 +55,9 @@ Zone.__load_patch('fakeasync', (global: any, Zone: ZoneType, api: _ZonePrivate) 
     checkRemainingMacrotasks?: boolean
   } = {checkNested: true, checkRemainingMacrotasks: true}): (...args: any[]) => any {
     // Not using an arrow function to preserve context passed from call site
+    if (global['__zone_symbol__fakeAsyncCheckRemaining'] === false) {
+      options.checkRemainingMacrotasks = false;
+    }
     return function(...args: any[]) {
       const proxyZoneSpec = ProxyZoneSpec.assertPresent();
       if (Zone.current.get('FakeAsyncTestZoneSpec')) {
@@ -132,8 +135,8 @@ Zone.__load_patch('fakeasync', (global: any, Zone: ZoneType, api: _ZonePrivate) 
    *
    * @experimental
    */
-  function tick(millis: number = 0): void {
-    _getFakeAsyncZoneSpec().tick(millis);
+  function tick(millis: number = 0, doTick?: (elapsed: number) => void): void {
+    _getFakeAsyncZoneSpec().tick(millis, doTick);
   }
 
   /**
@@ -146,8 +149,8 @@ Zone.__load_patch('fakeasync', (global: any, Zone: ZoneType, api: _ZonePrivate) 
    *
    * @experimental
    */
-  function flush(maxTurns?: number): number {
-    return _getFakeAsyncZoneSpec().flush(maxTurns);
+  function flush(maxTurns?: number, isPeriodic: boolean = false): number {
+    return _getFakeAsyncZoneSpec().flush(maxTurns, isPeriodic);
   }
 
   /**
@@ -169,6 +172,40 @@ Zone.__load_patch('fakeasync', (global: any, Zone: ZoneType, api: _ZonePrivate) 
   function flushMicrotasks(): void {
     _getFakeAsyncZoneSpec().flushMicrotasks();
   }
+
+  /**
+   * Clear all microtasks
+   *
+   * @experimental
+   */
+  function clearAllMacrotasks(): void {
+    _getFakeAsyncZoneSpec().clearAllMacrotasks();
+  }
+
+  /**
+   * flush all macroTasks and discard periodic tasks
+   *
+   * @experimental
+   */
+  function flushAndDiscardPeriodicTasks(): void {
+    const fakeAsyncSpec = _getFakeAsyncZoneSpec();
+    fakeAsyncSpec.flush(100, true);
+    discardPeriodicTasks();
+  }
+
+
   (Zone as any)[api.symbol('fakeAsyncTest')] =
-      {resetFakeAsyncZone, flushMicrotasks, discardPeriodicTasks, tick, flush, fakeAsync};
+      {resetFakeAsyncZone, flushMicrotasks, discardPeriodicTasks, tick, flush, fakeAsync, clearAllMacrotasks};
+
+  /**
+   * expose those function to global
+   */
+  global['resetFakeAsyncZone'] = resetFakeAsyncZone;
+  global['flushMicrotasks'] = flushMicrotasks;
+  global['discardPeriodicTasks'] = discardPeriodicTasks;
+  global['tick'] = tick;
+  global['flush'] = flush;
+  global['fakeAsyncTest'] = fakeAsync;
+  global['clearAllMacrotasks'] = clearAllMacrotasks;
+  global['flushAndDiscardPeriodicTasks'] = flushAndDiscardPeriodicTasks;
 });

@@ -5,6 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+const _jestGlobal: any = typeof window !== 'undefined' ? window : global;
+_jestGlobal['__zone_symbol__fakeAsyncCheckRemaining'] = false;
 describe('extend', () => {
   (expect as any).extend({
     toBeDivisibleBy(received: any, argument: any) {
@@ -361,6 +363,141 @@ describe('expect', () => {
       } catch (err) {
         expect(err.message).toEqual('Async error');
       }
+    });
+  });
+});
+
+describe('clock', () => {
+  test('clearAllTimeout', fakeAsyncTest(() => {
+    let timeoutCalledCount = 0;
+    let intervalCalledCount = 0;
+    setTimeout(() => {
+      timeoutCalledCount++;
+    }, 10);
+    setInterval(() => {
+      intervalCalledCount++;
+    }, 30);
+    clearAllMacrotasks();
+    jest.advanceTimersByTime(30);
+    expect(timeoutCalledCount).toBe(0);
+    expect(intervalCalledCount).toBe(0);
+  }));
+
+  test('runAllTimers', fakeAsyncTest(() => {
+    let timeoutCalledCount = 0;
+    let intervalCalledCount = 0;
+    setTimeout(() => {
+      timeoutCalledCount++;
+    }, 10);
+    setTimeout(() => {
+      timeoutCalledCount++;
+    }, 10);
+    const intervalId = setInterval(() => {
+      intervalCalledCount++;
+    }, 30);
+    expect(() => {
+      jest.runAllTimers();
+    }).toThrow();
+    clearInterval(intervalId);
+    jest.runAllTimers();
+    expect(timeoutCalledCount).toBe(2);
+    expect(intervalCalledCount).toBe(0);
+  }));
+
+  test('runOnlyPendingTimers', fakeAsyncTest(() => {
+    let timeoutCalledCount = 0;
+    let intervalCalledCount = 0;
+    setTimeout(() => {
+      timeoutCalledCount++;
+    }, 10);
+    setTimeout(() => {
+      timeoutCalledCount++;
+    }, 10);
+    const intervalId = setInterval(() => {
+      intervalCalledCount++;
+    }, 30);
+    jest.runOnlyPendingTimers();
+    expect(timeoutCalledCount).toBe(2);
+    expect(intervalCalledCount).toBe(1);
+  }));
+
+  test('advanceTimersByTime', fakeAsyncTest(() => {
+    let timeoutCalledCount = 0;
+    let intervalCalledCount = 0;
+    setTimeout(() => {
+      timeoutCalledCount++;
+    }, 10);
+    const intervalId = setInterval(() => {
+      intervalCalledCount++;
+    }, 30);
+    jest.advanceTimersByTime(30);
+    expect(timeoutCalledCount).toBe(1);
+    expect(intervalCalledCount).toBe(1);
+  }));
+
+  test('runAllTicks', fakeAsyncTest(() => {
+    let thenCalledCount = 0;
+    Promise.resolve().then(() => {
+      thenCalledCount++;
+    });
+    expect(thenCalledCount).toBe(0);
+    jest.runAllTicks();
+    expect(thenCalledCount).toBe(1);
+  }));
+
+  /*test('useFakeTimers', () => {
+    jest.useFakeTimers();
+    let thenCalledCount = 0;
+    let timeoutCalledCount = 0;
+    let intervalCalledCount = 0;
+    Promise.resolve().then(() => {
+      thenCalledCount++;
+    });
+    expect(thenCalledCount).toBe(0);
+    setTimeout(() => {
+      timeoutCalledCount++;
+    }, 10);
+    const intervalId = setInterval(() => {
+      intervalCalledCount++;
+    }, 30);
+    jest.advanceTimersByTime(30);
+    expect(timeoutCalledCount).toBe(1);
+    expect(intervalCalledCount).toBe(1);
+    expect(thenCalledCount).toBe(1);
+    jest.useRealTimers();
+  });*/
+
+  describe('FakeTimer', () => {
+    beforeEach(() => {
+      jest.useFakeTimers();
+    });
+
+    afterEach(() => {
+      jest.useRealTimers();
+    });
+
+    test('auto jump into fakeAsync', () => {
+      const fake = Zone.current.get('FakeAsyncTestZoneSpec');
+      let thenCalledCount = 0;
+      let timeoutCalledCount = 0;
+      let intervalCalledCount = 0;
+      Promise.resolve().then(() => {
+        thenCalledCount++;
+      });
+      expect(thenCalledCount).toBe(0);
+      setTimeout(() => {
+        timeoutCalledCount++;
+      }, 10);
+      const intervalId = setInterval(() => {
+        intervalCalledCount++;
+      }, 30);
+      // jest.advanceTimersByTime(30);
+      tick(30, (time: number) => {
+        console.log('fake time tick', time);
+      });
+      expect(timeoutCalledCount).toBe(1);
+      expect(intervalCalledCount).toBe(1);
+      expect(thenCalledCount).toBe(1);
     });
   });
 });

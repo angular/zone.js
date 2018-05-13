@@ -36,7 +36,7 @@ Zone.__load_patch('jasmine2mocha', (global: any) => {
   addJasmineSpy(jasmine, global.Mocha, global);
 
   // Add jasmine clock functionality
-  addJasmineClock(jasmine);
+  addJasmineClock(jasmine, global);
 
   Object.defineProperty(jasmine, 'DEFAULT_TIMEOUT_INTERVAL', {
     configurable: true,

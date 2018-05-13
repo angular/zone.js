@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import {patchJasmineClock} from '../../jasmine/jasmine.clock';
-export function addJasmineClock(jasmine: any) {
+export function addJasmineClock(jasmine: any, global: any) {
   jasmine.clock = function() {
     return {
       tick: function() {},
@@ -15,5 +15,5 @@ export function addJasmineClock(jasmine: any) {
       mockDate: function() {}
     };
   };
-  patchJasmineClock(jasmine, true);
+  patchJasmineClock(jasmine, global);
 }

@@ -52,7 +52,6 @@ function buildCustomMatchers(jasmine: any, actual: any) {
           args.unshift(actual);
           const result = customMatcher.compare.apply(null, args);
           if (!result.pass) {
-            console.log('compare ', args);
             const message = result.messge || util.buildFailureMessage(key, false, actual, expects);
             throw new Error(message);
           }

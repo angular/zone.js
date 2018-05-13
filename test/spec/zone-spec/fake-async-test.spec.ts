@@ -620,6 +620,27 @@ describe('FakeAsyncTestZoneSpec', () => {
       });
     });
 
+    it('can flush periodic and non-periodic timers if flushPeriodic is true', () => {
+      fakeAsyncTestZone.run(() => {
+        let x = 0;
+        let y = 0;
+
+        setInterval(() => {
+          x++;
+        }, 10);
+
+        setTimeout(() => {
+          y++;
+        }, 100);
+
+        let elapsed = testZoneSpec.flush(20, true);
+
+        expect(elapsed).toEqual(100);
+        expect(x).toEqual(10);
+        expect(y).toEqual(1);
+      });
+    });
+
     it('can flush till the last periodic task is processed', () => {
       fakeAsyncTestZone.run(() => {
         let x = 0;
@@ -1168,7 +1189,7 @@ class Log {
 const resolvedPromise = Promise.resolve(null);
 const ProxyZoneSpec: {assertPresent: () => void} = (Zone as any)['ProxyZoneSpec'];
 const fakeAsyncTestModule = (Zone as any)[Zone.__symbol__('fakeAsyncTest')];
-const {fakeAsync, tick, discardPeriodicTasks, flush, flushMicrotasks} = fakeAsyncTestModule;
+const {fakeAsync, tick, discardPeriodicTasks, flush, flushMicrotasks, clearAllMacrotasks} = fakeAsyncTestModule;
 
 {
   describe('fake async', () => {
@@ -1493,6 +1514,22 @@ const {fakeAsync, tick, discardPeriodicTasks, flush, flushMicrotasks} = fakeAsyn
 
            discardPeriodicTasks();
          }));
+
+
+      it('clearAllTimeout', fakeAsync(() => {
+        let timeoutCalledCount = 0;
+        let intervalCalledCount = 0;
+        setTimeout(() => {
+          timeoutCalledCount++;
+        }, 10);
+        setInterval(() => {
+          intervalCalledCount++;
+        }, 30);
+        clearAllMacrotasks();
+        tick(30);
+        expect(timeoutCalledCount).toBe(0);
+        expect(intervalCalledCount).toBe(0);
+      }));
     });
 
     describe('outside of the fakeAsync zone', () => {

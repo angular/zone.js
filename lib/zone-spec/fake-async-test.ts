@@ -416,6 +416,18 @@
       return elapsed;
     }
 
+    clearAllMacrotasks() {
+      while (this.pendingTimers.length > 0) {
+        const timerId = this.pendingTimers.shift();
+        this._clearTimeout(timerId);
+      }
+
+      while (this.pendingPeriodicTimers.length > 0) {
+        const intervalId = this.pendingPeriodicTimers.shift();
+        this._clearInterval(intervalId);
+      }
+    }
+
     // ZoneSpec implementation below.
 
     name: string;

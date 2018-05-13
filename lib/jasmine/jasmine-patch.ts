@@ -46,9 +46,6 @@ Zone.__load_patch('jasmine', (global: any) => {
 
   const symbol = Zone.__symbol__;
 
-  // whether patch jasmine clock when in fakeAsync
-  const enableClockPatch = global[symbol('fakeAsyncPatchLock')] === true;
-
   // Monkey patch all of the jasmine DSL so that each function runs in appropriate zone.
   const jasmineEnv: any = jasmine.getEnv();
   ['describe', 'xdescribe', 'fdescribe'].forEach(methodName => {
@@ -79,7 +76,7 @@ Zone.__load_patch('jasmine', (global: any) => {
     };
   });
 
-  patchJasmineClock(jasmine, enableClockPatch);
+  patchJasmineClock(jasmine, global);
   /**
    * Gets a function wrapping the body of a Jasmine `describe` block to execute in a
    * synchronous-only zone.
@@ -92,10 +89,10 @@ Zone.__load_patch('jasmine', (global: any) => {
   }
 
   function runInTestZone(testBody: Function, applyThis: any, queueRunner: any, done?: Function) {
-    const isClockInstalled = !!(jasmine as any)[symbol('clockInstalled')];
+    const isClockInstalled = (jasmine as any)[symbol('clockInstalled')] === true;
     const testProxyZoneSpec = queueRunner.testProxyZoneSpec;
     const testProxyZone = queueRunner.testProxyZone;
-    if (isClockInstalled && enableClockPatch) {
+    if (isClockInstalled) {
       // auto run a fakeAsync
       const fakeAsyncModule = (Zone as any)[Zone.__symbol__('fakeAsyncTest')];
       if (fakeAsyncModule && typeof fakeAsyncModule.fakeAsync === 'function') {

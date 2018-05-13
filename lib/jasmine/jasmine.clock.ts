@@ -7,7 +7,7 @@
  */
 // need to patch jasmine.clock().mockDate and jasmine.clock().tick() so
 // they can work properly in FakeAsyncTest
-export function patchJasmineClock(jasmine: any, enableClockPatch: boolean) {
+export function patchJasmineClock(jasmine: any, global: any) {
   const symbol = Zone.__symbol__;
   const originalClockFn: Function = ((jasmine as any)[symbol('clock')] = jasmine['clock']);
   (jasmine as any)['clock'] = function() {
@@ -35,19 +35,18 @@ export function patchJasmineClock(jasmine: any, enableClockPatch: boolean) {
         return originalMockDate.apply(this, arguments);
       };
       // for auto go into fakeAsync feature, we need the flag to enable it
-      if (enableClockPatch) {
-        ['install', 'uninstall'].forEach(methodName => {
-          const originalClockFn: Function = (clock[symbol(methodName)] = clock[methodName]);
-          clock[methodName] = function() {
-            const FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
-            if (FakeAsyncTestZoneSpec) {
-              (jasmine as any)[symbol('clockInstalled')] = 'install' === methodName;
-              return;
-            }
-            return originalClockFn.apply(this, arguments);
-          };
-        });
-      }
+      ['install', 'uninstall'].forEach(methodName => {
+        const originalClockFn: Function = (clock[symbol(methodName)] = clock[methodName]);
+        clock[methodName] = function () {
+          const enableClockPatch = global[symbol('fakeAsyncPatchLock')] === true;
+          const FakeAsyncTestZoneSpec = (Zone as any)['FakeAsyncTestZoneSpec'];
+          if (enableClockPatch && FakeAsyncTestZoneSpec) {
+            (jasmine as any)[symbol('clockInstalled')] = 'install' === methodName;
+            return;
+          }
+          return originalClockFn.apply(this, arguments);
+        };
+      });
     }
     return clock;
   };

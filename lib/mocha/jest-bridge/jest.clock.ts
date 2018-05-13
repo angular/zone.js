@@ -16,12 +16,7 @@ export function addJestTimer(jest: any, global: any) {
   }
 
   jest.clearAllTimers = function() {
-    const zs = getFakeAsyncTestZoneSpec();
-    if (!zs) {
-      return;
-    }
-    // TODO: @JiaLiPassion, add clear method in fakeAsyncZoneSpec
-    // flush();
+    clearAllMacrotasks();
   };
 
   jest.runAllTimers = function() {
@@ -29,18 +24,11 @@ export function addJestTimer(jest: any, global: any) {
     if (!zs) {
       return;
     }
-    // TODO: @JiaLiPassion, now flush can only flush
-    // non periodic timers, should flush periodic too.
-    flush();
-  };
-
-  jest.runAllImmediates = function() {
-    const zs = getFakeAsyncTestZoneSpec();
-    if (!zs) {
-      return;
+    if (zs.pendingPeriodicTimers.length > 0) {
+      throw new Error('Can not runAllTimers when having interval timers.');
     }
-    // TODO: @JiaLiPassion, should we support this one?
-    flush();
+    // flush non-perodic-tasks with 10000 maxTurns
+    flush(10000);
   };
 
   jest.runOnlyPendingTimers = function() {
@@ -48,18 +36,17 @@ export function addJestTimer(jest: any, global: any) {
     if (!zs) {
       return;
     }
-    // TODO: @JiaLiPassion, should we support this one?
-    flush();
+    // flush both periodic tasks and non-perodic-tasks
+    flush(10000, true);
   };
 
-  jest.advanceTimersByTime = function(msToRun: number) {
+  jest.advanceTimersByTime = function(msToRun: number, doTick?: (elapsed: number) => void) {
     const zs = getFakeAsyncTestZoneSpec();
     if (!zs) {
       return;
     }
-    tick(msToRun);
+    tick(msToRun, doTick);
   };
-
 
   jest.runAllTicks = function() {
     const zs = getFakeAsyncTestZoneSpec();
@@ -74,22 +61,16 @@ export function addJestTimer(jest: any, global: any) {
     if (zs) {
       return;
     }
-    const fakeAsyncTestZoneSpec = new FakeAsyncTestZoneSpec();
-    const proxyZoneSpec = ProxyZoneSpec.get();
-    jest.__zone_symbol__last_delegate_spec = proxyZoneSpec.getDelegate();
-    proxyZoneSpec.setDelegate(fakeAsyncTestZoneSpec);
-    fakeAsyncTestZoneSpec.lockDatePatch();
+    /**
+     * a wrapper of jasmine.clock().install()
+     */
+    global['__zone_symbol__originFakeAsyncPatchLock'] = global['__zone_symbol__fakeAsyncPatchLock'];
+    global['__zone_symbol__fakeAsyncPatchLock'] = true;
+    global.jasmine && global.jasmine.clock().install();
   };
 
   jest.useRealTimers = function () {
-    const zs = getFakeAsyncTestZoneSpec();
-    if (!zs) {
-      throw new Error('Must use real timers in the same block with useFakeTimers');
-    }
-    const proxyZoneSpec = ProxyZoneSpec.get();
-    const lastDelegate = jest.__zone_symbol__last_delegate_spec;
-    jest.__zone_symbol__last_delegate_spec = null;
-    proxyZoneSpec.setDelegate(lastDelegate);
-    zs.unlockDatePatch();
+    global['__zone_symbol__fakeAsyncPatchLock'] = global['__zone_symbol__originFakeAsyncPatchLock'];
+    global.jasmine && global.jasmine.clock().uninstall();
   };
 }
