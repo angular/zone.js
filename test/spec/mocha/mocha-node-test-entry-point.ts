@@ -11,3 +11,4 @@ import '../../../lib/mocha/mocha-node-checker';
 import '../../../lib/testing/zone-testing';
 import './jasmine-bridge.spec';
 import './jest-bridge.spec';
+import './mocha-patch.spec';

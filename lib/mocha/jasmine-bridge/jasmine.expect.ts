@@ -48,7 +48,7 @@ function buildCustomMatchers(jasmine: any, actual: any) {
       if (matcher.hasOwnProperty(key)) {
         const customMatcher = matcher[key](util, customEqualityTesters);
         matchers[key] = function(...expects: any[]) {
-          const args = expects ? [...expects] : [];
+          const args = expects ? expects.slice() : [];
           args.unshift(actual);
           const result = customMatcher.compare.apply(null, args);
           if (!result.pass) {

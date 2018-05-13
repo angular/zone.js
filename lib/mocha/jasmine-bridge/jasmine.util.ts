@@ -179,19 +179,18 @@ export function toMatch(actual: any, expected: any) {
 const Mocha: any = typeof window === 'undefined' ? (global as any).Mocha : (window as any).Mocha;
 
 export function formatObject(obj: any) {
-  const stringify = Mocha.utils && Mocha.utils.stringify;
-  return stringify(obj);
+  return Object.prototype.toString.call(obj);
 }
 
 export function buildFailureMessage(
-    matcherName: string, isNot: boolean, actual: any, ...expected: any[]) {
+    matcherName: string, isNot: boolean, actual: any, expected: any[]) {
   const englishyPredicate = matcherName.replace(/[A-Z]/g, function(s) {
     return ' ' + s.toLowerCase();
   });
 
   let message = 'Expected ' + formatObject(actual) + (isNot ? ' not ' : ' ') + englishyPredicate;
 
-  if (expected.length > 0) {
+  if (expected && expected.length > 0) {
     for (let i = 0; i < expected.length; i++) {
       if (i > 0) {
         message += ',';

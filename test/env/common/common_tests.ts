@@ -23,6 +23,5 @@ import '../../spec/zone-spec/proxy.spec';
 import '../../spec/zone-spec/task-tracking.spec';
 import '../../spec/rxjs/rxjs.spec';
 import '../../spec/jasmine/jasmine-patch.spec';
-import '../../spec/mocha/mocha-patch.spec';
 
 Error.stackTraceLimit = Number.POSITIVE_INFINITY;

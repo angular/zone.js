@@ -21,6 +21,10 @@ Zone.__load_patch('jest2mocha', (global: any) => {
   if (!global.Mocha || global.Mocha['__zone_symbol__isBridge']) {
     return;
   }
+  if (global.jasmine && !global.jasmine['__zone_symbol__isBridge']) {
+    // real jasmine is loaded
+    return;
+  }
   // create a jasmine global object
   jest = global['jest'] = {};
   jest['__zone_symbol__isBridge'] = true;

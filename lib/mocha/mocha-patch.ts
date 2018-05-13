@@ -10,12 +10,17 @@
 
 Zone.__load_patch('Mocha', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   const Mocha = global.Mocha;
+  const jasmine = global.jasmine;
 
   if (typeof Mocha === 'undefined') {
     return;
   }
 
   if (Mocha['__zone_symbol__isBridge']) {
+    return;
+  }
+
+  if (jasmine && !jasmine['__zone_symbol__isBridge']) {
     return;
   }
 
@@ -43,15 +48,6 @@ Zone.__load_patch('Mocha', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   let testZoneSpec: ZoneSpec = null;
   let suiteZoneSpec: ZoneSpec = new ProxyZoneSpec();
   const suiteZone = rootZone.fork(suiteZoneSpec);
-
-  const mochaOriginal = {
-    after: Mocha.after,
-    afterEach: Mocha.afterEach,
-    before: Mocha.before,
-    beforeEach: Mocha.beforeEach,
-    describe: Mocha.describe,
-    it: Mocha.it
-  };
 
   function modifyArguments(args: IArguments, syncTest: Function, asyncTest?: Function): any[] {
     for (let i = 0; i < args.length; i++) {
@@ -183,47 +179,87 @@ Zone.__load_patch('Mocha', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
 
   Mocha.clearSpies = function() {};
 
-  global.describe = global.suite = Mocha.describe = function() {
-    return mochaOriginal.describe.apply(this, wrapDescribeInZone(arguments));
-  };
+  function patchGlobal() {
+    const mochaOriginal = {
+      after: Mocha[api.symbol('after')] || Mocha.after,
+      afterEach: Mocha[api.symbol('afterEach')] || Mocha.afterEach,
+      before: Mocha[api.symbol('before')] || Mocha.before,
+      beforeEach: Mocha[api.symbol('beforeEach')] || Mocha.beforeEach,
+      describe: Mocha[api.symbol('describe')] || Mocha.describe,
+      it: Mocha[api.symbol('it')] || Mocha.it
+    };
+    /*if (!Mocha[api.symbol('describe')]) {
+      Mocha[api.symbol('describe')] = Mocha['describe'];
+    }
+    if (!Mocha[api.symbol('after')]) {
+      Mocha[api.symbol('after')] = Mocha['after'];
+    }
+    if (!Mocha[api.symbol('afterEach')]) {
+      Mocha[api.symbol('afterEach')] = Mocha['afterEach'];
+    }
+    if (!Mocha[api.symbol('before')]) {
+      Mocha[api.symbol('before')] = Mocha['before'];
+    }
+    if (!Mocha[api.symbol('beforeEach')]) {
+      Mocha[api.symbol('beforeEach')] = Mocha['beforeEach'];
+    }
+    if (!Mocha[api.symbol('it')]) {
+      Mocha[api.symbol('it')] = Mocha['it'];
+    }*/
 
-  global.xdescribe = global.suite.skip = Mocha.describe.skip = function() {
-    return mochaOriginal.describe.skip.apply(this, wrapDescribeInZone(arguments));
-  };
+    global.describe = global.suite = Mocha.describe = function () {
+      return mochaOriginal.describe.apply(this, wrapDescribeInZone(arguments));
+    };
 
-  global.describe.only = global.suite.only = Mocha.describe.only = function() {
-    return mochaOriginal.describe.only.apply(this, wrapDescribeInZone(arguments));
-  };
+    global.xdescribe = global.suite.skip = Mocha.describe.skip = function () {
+      return mochaOriginal.describe.skip.apply(this, wrapDescribeInZone(arguments));
+    };
 
-  global.it = global.specify = global.test = Mocha.it = function() {
-    return mochaOriginal.it.apply(this, wrapTestInZone(arguments));
-  };
+    global.describe.only = global.suite.only = Mocha.describe.only = function () {
+      return mochaOriginal.describe.only.apply(this, wrapDescribeInZone(arguments));
+    };
 
-  global.xit = global.xspecify = Mocha.it.skip = function() {
-    return mochaOriginal.it.skip.apply(this, wrapTestInZone(arguments));
-  };
+    global.it = global.specify = global.test = Mocha.it = function () {
+      return mochaOriginal.it.apply(this, wrapTestInZone(arguments));
+    };
 
-  global.it.only = global.test.only = Mocha.it.only = function() {
-    return mochaOriginal.it.only.apply(this, wrapTestInZone(arguments));
-  };
+    global.xit = global.xspecify = Mocha.it.skip = function () {
+      return mochaOriginal.it.skip.apply(this, wrapTestInZone(arguments));
+    };
 
-  global.after = global.suiteTeardown = Mocha.after = function() {
-    return mochaOriginal.after.apply(this, wrapSuiteInZone(arguments));
-  };
+    global.it.only = global.test.only = Mocha.it.only = function () {
+      return mochaOriginal.it.only.apply(this, wrapTestInZone(arguments));
+    };
 
-  global.afterEach = global.teardown = Mocha.afterEach = function() {
-    return mochaOriginal.afterEach.apply(this, wrapTestInZone(arguments));
-  };
+    global.after = global.suiteTeardown = Mocha.after = function () {
+      return mochaOriginal.after.apply(this, wrapSuiteInZone(arguments));
+    };
 
-  global.before = global.suiteSetup = Mocha.before = function() {
-    return mochaOriginal.before.apply(this, wrapSuiteInZone(arguments));
-  };
+    global.afterEach = global.teardown = Mocha.afterEach = function () {
+      return mochaOriginal.afterEach.apply(this, wrapTestInZone(arguments));
+    };
 
-  global.beforeEach = global.setup = Mocha.beforeEach = function() {
-    return mochaOriginal.beforeEach.apply(this, wrapTestInZone(arguments));
-  };
+    global.before = global.suiteSetup = Mocha.before = function () {
+      return mochaOriginal.before.apply(this, wrapSuiteInZone(arguments));
+    };
 
-  ((originalRunTest, originalRun) => {
+    global.beforeEach = global.setup = Mocha.beforeEach = function () {
+      return mochaOriginal.beforeEach.apply(this, wrapTestInZone(arguments));
+    };
+  }
+
+  if (typeof Mocha.describe === 'function') {
+    patchGlobal();
+  }
+  ((originalRunTest, originalRun, originalMochaRun) => {
+    Mocha.prototype.run = function () {
+      if (this.suite) {
+        this.suite.on('pre-require', () => {
+          patchGlobal();
+        });
+      }
+      return originalMochaRun.apply(this, arguments);
+    }
     Mocha.Runner.prototype.runTest = function(fn: Function) {
       Zone.current.scheduleMicroTask('mocha.forceTask', () => {
         originalRunTest.call(this, fn);
@@ -245,5 +281,5 @@ Zone.__load_patch('Mocha', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
 
       return originalRun.call(this, fn);
     };
-  })(Mocha.Runner.prototype.runTest, Mocha.Runner.prototype.run);
+  })(Mocha.Runner.prototype.runTest, Mocha.Runner.prototype.run, Mocha.prototype.run);
 });
