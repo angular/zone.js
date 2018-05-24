@@ -59,7 +59,7 @@
   "dependencies": {},
   "devDependencies": {
     "@types/jasmine": "2.2.33",
-    "@types/node": "^6.0.96",
+    "@types/node": "^8.10.17",
     "@types/systemjs": "^0.19.30",
     "assert": "^1.4.1",
     "bluebird": "^3.5.1",

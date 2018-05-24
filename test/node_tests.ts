@@ -13,3 +13,4 @@ import './node/Error.spec';
 import './node/crypto.spec';
 import './node/http.spec';
 import './node/console.spec';
+import './node/timer.spec';
