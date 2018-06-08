@@ -1272,7 +1272,17 @@ const Zone: ZoneType = (function(global: any) {
         }
       }
       if (nativeMicroTaskQueuePromise) {
-        nativeMicroTaskQueuePromise[symbolThen](drainMicroTaskQueue);
+        if (typeof nativeMicroTaskQueuePromise[symbolThen] === FUNCTION) {
+          nativeMicroTaskQueuePromise[symbolThen](drainMicroTaskQueue);
+        } else if (typeof nativeMicroTaskQueuePromise.then === FUNCTION) {
+          nativeMicroTaskQueuePromise.then(drainMicroTaskQueue);
+        } else {
+          console.error(`Cannot found Promise#then method. Please add polyfill to using \`Promise\`. If you already did that. Perhaps Promise#then is not writeable. If you want to use it. add following codes to your \`polyfill.ts\` after \`import 'zone.js/dist/zone'\`
+
+if (!(Promise.prototype as any)['__zone_symbol__then']) {
+  (Promise.prototype as any)['__zone_symbol__then'] = Promise.prototype.then;
+}`);
+        }
       } else {
         global[symbolSetTimeout](drainMicroTaskQueue, 0);
       }
