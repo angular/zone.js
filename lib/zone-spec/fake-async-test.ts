@@ -150,7 +150,11 @@ class Scheduler {
         }
       }
     }
+    lastCurrentTime = this._currentTime;
     this._currentTime = finalTime;
+    if (doTick) {
+      doTick(this._currentTime - lastCurrentTime);
+    }
   }
 
   flush(limit = 20, flushPeriodic = false, doTick?: (elapsed: number) => void): number {
