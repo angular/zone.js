@@ -144,7 +144,29 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
           // sometimes on some browsers XMLHttpRequest will fire onreadystatechange with
           // readyState=4 multiple times, so we need to check task state here
           if (!data.aborted && (XMLHttpRequest as any)[XHR_SCHEDULED] && task.state === SCHEDULED) {
-            task.invoke();
+            // check whether the xhr has registered onload listener
+            // if that is the case, the task should invoke after all
+            // onload listeners finish.
+            const loadTasks = target['__zone_symbol__loadfalse'];
+            if (loadTasks && loadTasks.length > 0) {
+              const oriInvoke = task.invoke;
+              task.invoke = function() {
+                // need to load the tasks again, because in other
+                // load listener, they may remove themselves
+                const loadTasks = target['__zone_symbol__loadfalse'];
+                for (let i = 0; i < loadTasks.length; i++) {
+                  if (loadTasks[i] === task) {
+                    loadTasks.splice(i, 1);
+                  }
+                }
+                if (!data.aborted && task.state === SCHEDULED) {
+                  oriInvoke.call(task);
+                }
+              };
+              loadTasks.push(task);
+            } else {
+              task.invoke();
+            }
           }
         }
       };
