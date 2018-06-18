@@ -47,8 +47,8 @@ try {
       supportsPassive = true;
     }
   });
-  window.addEventListener('test', null as any, opts);
-  window.removeEventListener('test', null as any, opts);
+  window.addEventListener('test', opts as any, opts);
+  window.removeEventListener('test', opts as any, opts);
 } catch (e) {
 }
 
@@ -74,6 +74,14 @@ function ieOrEdge() {
 }
 
 (ieOrEdge as any).message = 'IE/Edge Test';
+
+class TestEventListener {
+  logs: string[] = [];
+  addEventListener(eventName: string, listener: any, options: any) {
+    this.logs.push(options);
+  }
+  removeEventListener(eventName: string, listener: any, options: any) {}
+}
 
 describe('Zone', function() {
   const rootZone = Zone.current;
@@ -995,6 +1003,46 @@ describe('Zone', function() {
            expect(logs.length).toBe(1);
            expect(logs).toEqual(['click']);
          }));
+
+      it('should change options to boolean if not support passive', () => {
+        patchEventTarget(window, [TestEventListener.prototype]);
+        const testEventListener = new TestEventListener();
+
+        const listener = function() {};
+        testEventListener.addEventListener('test', listener, {passive: true});
+        testEventListener.addEventListener('test1', listener, {once: true});
+        testEventListener.addEventListener('test2', listener, {capture: true});
+        testEventListener.addEventListener('test3', listener, {passive: false});
+        testEventListener.addEventListener('test4', listener, {once: false});
+        testEventListener.addEventListener('test5', listener, {capture: false});
+        if (!supportsPassive) {
+          expect(testEventListener.logs).toEqual([false, false, true, false, false, false]);
+        } else {
+          expect(testEventListener.logs).toEqual([
+            {passive: true}, {once: true}, {capture: true}, {passive: false}, {once: false},
+            {capture: false}
+          ]);
+        }
+      });
+
+      it('should change options to boolean if not support passive on HTMLElement', () => {
+        const logs: string[] = [];
+        const listener = (e: Event) => {
+          logs.push('clicked');
+        };
+
+        (button as any).addEventListener('click', listener, {once: true});
+        button.dispatchEvent(clickEvent);
+        expect(logs).toEqual(['clicked']);
+        button.dispatchEvent(clickEvent);
+        if (supportsPassive) {
+          expect(logs).toEqual(['clicked']);
+        } else {
+          expect(logs).toEqual(['clicked', 'clicked']);
+        }
+
+        button.removeEventListener('click', listener);
+      });
 
       it('should support addEventListener with AddEventListenerOptions passive setting',
          ifEnvSupports(supportEventListenerOptions, function() {
