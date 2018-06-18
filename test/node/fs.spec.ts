@@ -6,7 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {exists, unlink, unwatchFile, watch, watchFile, writeFile} from 'fs';
+import {exists, read, unlink, unwatchFile, watch, write, watchFile, writeFile, openSync, fstatSync, closeSync, unlinkSync} from 'fs';
+import * as util from 'util';
 
 describe('nodejs file system', () => {
   describe('async method patch test', () => {
@@ -87,5 +88,61 @@ describe('nodejs file system', () => {
         });
       });
     });
+  });
+});
+
+describe('util.promisify', () => {
+  it('fs.exists should work with util.promisify', (done: DoneFn) => {
+    const promisifyExists = util.promisify(exists);
+    promisifyExists(__filename).then(r => {
+      expect(r).toBe(true);
+      done();
+    }, err => {
+      fail(`should not be here with error: ${err}`);
+    });
+  });
+
+  it('fs.read should work with util.promisify', (done: DoneFn) => {
+    const promisifyRead = util.promisify(read);
+    const fd = openSync(__filename, 'r');
+    const stats = fstatSync(fd);
+    const bufferSize = stats.size;
+    const chunkSize = 512;
+    const buffer = new Buffer(bufferSize);
+    let bytesRead = 0;
+    // fd, buffer, offset, length, position, callback
+    promisifyRead(fd, buffer, bytesRead, chunkSize, bytesRead).then(
+      (value) => {
+        expect(value.bytesRead).toBe(chunkSize);
+        closeSync(fd);
+        done();
+      }, err => {
+        closeSync(fd);
+        fail(`should not be here with error: ${error}.`);
+      });
+  });
+
+  it('fs.write should work with util.promisify', (done: DoneFn) => {
+    const promisifyWrite = util.promisify(write);
+    const dest = __filename + 'write';
+    const fd = openSync(dest, 'a');
+    const stats = fstatSync(fd);
+    const chunkSize = 512;
+    const buffer = new Buffer(chunkSize);
+    for (let i = 0; i < chunkSize; i++) {
+      buffer[i] = 0;
+    }
+    // fd, buffer, offset, length, position, callback
+    promisifyWrite(fd, buffer, 0, chunkSize, 0).then(
+      (value) => {
+        expect(value.bytesWritten).toBe(chunkSize);
+        closeSync(fd);
+        unlinkSync(dest);
+        done();
+      }, err => {
+        closeSync(fd);
+        unlinkSync(dest);
+        fail(`should not be here with error: ${error}.`);
+      });
   });
 });

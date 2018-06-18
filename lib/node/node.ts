@@ -6,21 +6,16 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import './node_util';
 import './events';
 import './fs';
 
 import {findEventTasks} from '../common/events';
 import {patchTimer} from '../common/timers';
-import {ArraySlice, bindArguments, isMix, patchMacroTask, patchMethod, patchMicroTask, patchOnProperties} from '../common/utils';
+import {ArraySlice, isMix, patchMacroTask, patchMicroTask} from '../common/utils';
 
 const set = 'set';
 const clear = 'clear';
-
-Zone.__load_patch('node_util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  api.patchOnProperties = patchOnProperties;
-  api.patchMethod = patchMethod;
-  api.bindArguments = bindArguments;
-});
 
 Zone.__load_patch('node_timers', (global: any, Zone: ZoneType) => {
   // Timers

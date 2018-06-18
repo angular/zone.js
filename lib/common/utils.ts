@@ -334,6 +334,36 @@ export function patchClass(className: string) {
   }
 }
 
+export function copySymbolProperties(src: any, dest: any) {
+  if (typeof (Object as any).getOwnPropertySymbols !== 'function') {
+    return;
+  }
+  const symbols: any = (Object as any).getOwnPropertySymbols(src);
+  symbols.forEach((symbol: any) => {
+    const desc = Object.getOwnPropertyDescriptor(src, symbol);
+    Object.defineProperty(dest, symbol, {
+      get: function () {
+        return src[symbol];
+      },
+      set: function (value: any) {
+        if (desc && (!desc.writable || typeof desc.set !== 'function')) {
+          // if src[symbol] is not writable or not have a setter, just return
+          return;
+        }
+        src[symbol] = value;
+      },
+      enumerable: desc ? desc.enumerable : true,
+      configurable: desc ? desc.configurable : true
+    });
+  });
+}
+
+let shouldCopySymbolProperties = false;
+
+export function setShouldCopySymbolProperties(flag: boolean) {
+  shouldCopySymbolProperties = flag;
+}
+
 export function patchMethod(
     target: any, name: string,
     patchFn: (delegate: Function, delegateName: string, name: string) => (self: any, args: any[]) =>
@@ -360,6 +390,9 @@ export function patchMethod(
         return patchDelegate(this, arguments as any);
       };
       attachOriginToPatched(proto[name], delegate);
+      if (shouldCopySymbolProperties) {
+        copySymbolProperties(delegate, proto[name]);
+      }
     }
   }
   return delegate;
