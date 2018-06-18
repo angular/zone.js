@@ -161,8 +161,8 @@ describe('element', function() {
         Zone.current.fork({name: 'eventListenerZone', onScheduleTask: onAddEventListenerSpy});
     expect(function() {
       eventListenerZone.run(function() {
-        button.addEventListener('click', null);
-        button.addEventListener('click', undefined);
+        button.addEventListener('click', null as any);
+        button.addEventListener('click', undefined as any);
       });
     }).not.toThrowError();
     expect(onAddEventListenerSpy).not.toHaveBeenCalledWith();
@@ -174,8 +174,8 @@ describe('element', function() {
         Zone.current.fork({name: 'eventListenerZone', onScheduleTask: onAddEventListenerSpy});
     expect(function() {
       eventListenerZone.run(function() {
-        button.removeEventListener('click', null);
-        button.removeEventListener('click', undefined);
+        button.removeEventListener('click', null as any);
+        button.removeEventListener('click', undefined as any);
       });
     }).not.toThrowError();
     expect(onAddEventListenerSpy).not.toHaveBeenCalledWith();
@@ -251,7 +251,6 @@ describe('element', function() {
   });
 
   describe('onclick', function() {
-
     function supportsOnClick() {
       const div = document.createElement('div');
       const clickPropDesc = Object.getOwnPropertyDescriptor(div, 'onclick');
@@ -294,7 +293,7 @@ describe('element', function() {
       button.onclick = function() {
         log += 'a';
       };
-      button.onclick = null;
+      button.onclick = null as any;
 
       button.click();
       expect(log).toEqual('');
@@ -336,5 +335,4 @@ describe('element', function() {
       expect(checkbox.checked).toBe(true);
     });
   });
-
 });

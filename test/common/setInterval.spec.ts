@@ -11,7 +11,6 @@ import {isNode, zoneSymbol} from '../../lib/common/utils';
 declare const global: any;
 
 describe('setInterval', function() {
-
   it('should work with setInterval', function(done) {
     let cancelId: any;
     const testZone = Zone.current.fork((Zone as any)['wtfZoneSpec']).fork({name: 'TestZone'});
@@ -57,7 +56,7 @@ describe('setInterval', function() {
       expect(wtfMock.log[1]).toEqual('> Zone:invoke:unit-test("<root>::ProxyZone::WTF::TestZone")');
       expect(wtfMock.log[2])
           .toContain('# Zone:schedule:macroTask:setInterval("<root>::ProxyZone::WTF::TestZone"');
-    }, null, null, 'unit-test');
+    }, null, undefined, 'unit-test');
   });
 
   it('should not cancel the task after invoke the setInterval callback', (done) => {
@@ -86,5 +85,4 @@ describe('setInterval', function() {
       }, 300);
     });
   });
-
 });

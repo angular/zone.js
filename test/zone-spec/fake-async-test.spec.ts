@@ -309,9 +309,9 @@ describe('FakeAsyncTestZoneSpec', () => {
         let id: number;
 
         id = setInterval(() => {
-          cycles++;
-          clearInterval(id);
-        }, 10) as any as number;
+               cycles++;
+               clearInterval(id);
+             }, 10) as any as number;
 
         testZoneSpec.tick(10);
         expect(cycles).toEqual(1);
@@ -774,7 +774,6 @@ describe('FakeAsyncTestZoneSpec', () => {
                  expect(tickRun).toEqual(true);
                  expect(cbArgRun).toEqual(true);
                });
-
              });
            }));
 
@@ -944,7 +943,6 @@ describe('FakeAsyncTestZoneSpec', () => {
         expect(unixTimeZero).toBe(0);
       });
     });
-
   });
 
   describe(
@@ -1272,7 +1270,6 @@ const {fakeAsync, tick, discardPeriodicTasks, flush, flushMicrotasks} = fakeAsyn
           })();
         }).toThrowError('sync');
       });
-
     });
 
     describe('timers', () => {

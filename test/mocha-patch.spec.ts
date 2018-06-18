@@ -9,33 +9,32 @@
 // Extra Mocha-specific typings to make sure typescript compiler is happy
 // Didn't want to add @types/mocha because of duplication in typings-file with @types/jasmine
 declare function suite(description: string, suiteFn: () => void): void;
-    declare function test(description: string, testFn: () => void): void;
-    declare function specify(description: string, testFn: () => void): void;
-    declare function setup(fn: () => void): void; declare function teardown(fn: () => void): void;
-    declare function suiteSetup(fn: () => void): void;
-    declare function suiteTeardown(fn: () => void): void;
-    declare function before(fn: () => void): void; declare function after(fn: () => void): void;
-    //
+declare function test(description: string, testFn: () => void): void;
+declare function specify(description: string, testFn: () => void): void;
+declare function setup(fn: () => void): void;
+declare function teardown(fn: () => void): void;
+declare function suiteSetup(fn: () => void): void;
+declare function suiteTeardown(fn: () => void): void;
+declare function before(fn: () => void): void;
+declare function after(fn: () => void): void;
+//
 
-    import {
-      ifEnvSupports
-    } from './test-util';
+import {ifEnvSupports} from './test-util';
 
 ifEnvSupports('Mocha', function() {
-
   describe('Mocha BDD-style', () => {
     let throwOnAsync = false;
-    let beforeEachZone: Zone = null;
-    let itZone: Zone = null;
+    let beforeEachZone: Zone|null = null;
+    let itZone: Zone|null = null;
     const syncZone = Zone.current;
-    let beforeZone: Zone = null;
+    let beforeZone: Zone|null = null;
 
     before(() => {
       beforeZone = Zone.current;
     });
 
     try {
-      Zone.current.scheduleMicroTask('dontallow', () => null as void);
+      Zone.current.scheduleMicroTask('dontallow', (): any => null);
     } catch (e) {
       throwOnAsync = true;
     }
@@ -62,9 +61,9 @@ ifEnvSupports('Mocha', function() {
   });
 
   suite('Mocha TDD-style', () => {
-    let testZone: Zone = null;
-    let beforeEachZone: Zone = null;
-    let suiteSetupZone: Zone = null;
+    let testZone: Zone|null = null;
+    let beforeEachZone: Zone|null = null;
+    let suiteSetupZone: Zone|null = null;
 
     suiteSetup(() => {
       suiteSetupZone = Zone.current;
@@ -95,7 +94,6 @@ ifEnvSupports('Mocha', function() {
     suiteTeardown(() => {
       expect(suiteSetupZone).toBe(Zone.current);
     });
-
   });
 
   describe('return promise', () => {

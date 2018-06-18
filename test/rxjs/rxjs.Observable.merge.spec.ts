@@ -174,7 +174,7 @@ describe('Observable.merge', () => {
           .map(function(x: any) {
             return Rx.Observable.range(x, 3);
           })
-          .switch ();
+          .switch();
     });
 
     subscriptionZone.run(() => {

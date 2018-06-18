@@ -10,7 +10,7 @@ import '../lib/mocha/mocha';
 declare const global: any;
 
 ((context: any) => {
-  context['jasmine'] = global['jasmine'] || {};
+  context['jasmine'] = context['jasmine'] || {};
   context['jasmine'].createSpy = function(spyName: string) {
     let spy: any = function(...params: any[]) {
       spy.countCall++;
@@ -131,8 +131,8 @@ declare const global: any;
       },
       toHaveBeenCalledWith: function(...params: any[]) {
         if (!eq(expected.callArgs, params)) {
-          throw new Error(`Expected ${expected} to been called with ${expected.callArgs
-                          }, called with: ${params}`);
+          throw new Error(`Expected ${expected} to been called with ${
+              expected.callArgs}, called with: ${params}`);
         }
       },
       toMatch: function(actual: any) {
@@ -183,4 +183,4 @@ declare const global: any;
       }
     };
   };
-})(window);
+})(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);

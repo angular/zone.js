@@ -34,7 +34,7 @@
 
   const rootZone = Zone.current;
   const syncZone = rootZone.fork(new SyncTestZoneSpec('Mocha.describe'));
-  let testZone: Zone = null;
+  let testZone: Zone|null = null;
   const suiteZone = rootZone.fork(new ProxyZoneSpec());
 
   const mochaOriginal = {
@@ -55,7 +55,7 @@
         // Note we have to make a function with correct number of arguments,
         // otherwise mocha will
         // think that all functions are sync or async.
-        args[i] = (arg.length === 0) ? syncTest(arg) : asyncTest(arg);
+        args[i] = (arg.length === 0) ? syncTest(arg) : asyncTest!(arg);
         // Mocha uses toString to view the test body in the result list, make sure we return the
         // correct function body
         args[i].toString = function() {
@@ -80,13 +80,13 @@
   function wrapTestInZone(args: IArguments): any[] {
     const asyncTest = function(fn: Function) {
       return function(done: Function) {
-        return testZone.run(fn, this, [done]);
+        return testZone!.run(fn, this, [done]);
       };
     };
 
     const syncTest: any = function(fn: Function) {
       return function() {
-        return testZone.run(fn, this);
+        return testZone!.run(fn, this);
       };
     };
 
@@ -161,7 +161,7 @@
         testZone = rootZone.fork(new ProxyZoneSpec());
       });
 
-      this.on('fail', (test:any, err: any) => {
+      this.on('fail', (test: any, err: any) => {
         const proxyZoneSpec = testZone && testZone.get('ProxyZoneSpec');
         if (proxyZoneSpec && err) {
           err.message += proxyZoneSpec.getAndClearPendingTasksInfo();
@@ -170,8 +170,5 @@
 
       return originalRun.call(this, fn);
     };
-
-
   })(Mocha.Runner.prototype.runTest, Mocha.Runner.prototype.run);
-
 })(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);

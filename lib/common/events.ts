@@ -318,7 +318,6 @@ export function patchEventTarget(
       const typeOfDelegate = typeof delegate;
       return (typeOfDelegate === 'function' && task.callback === delegate) ||
           (typeOfDelegate === 'object' && task.originalDelegate === delegate);
-
     };
 
     const compare =
@@ -431,7 +430,7 @@ export function patchEventTarget(
         taskData.eventName = eventName;
         taskData.isExisting = isExisting;
 
-        const data = useGlobalCallback ? OPTIMIZED_ZONE_EVENT_TASK_DATA : null;
+        const data = useGlobalCallback ? OPTIMIZED_ZONE_EVENT_TASK_DATA : undefined;
 
         // keep taskData into data to allow onScheduleEventTask to access the task information
         if (data) {

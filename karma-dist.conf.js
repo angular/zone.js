@@ -12,15 +12,12 @@ module.exports = function(config) {
   config.files.push('build/test/test_fake_polyfill.js');
   config.files.push('build/test/custom_error.js');
   config.files.push('dist/zone.js');
+  config.files.push('dist/webapis-media-query.js');
+  config.files.push('dist/webapis-notification.js');
   config.files.push('dist/zone-patch-user-media.js');
   config.files.push('dist/zone-patch-resize-observer.js');
-  config.files.push('dist/long-stack-trace-zone.js');
-  config.files.push('dist/proxy.js');
-  config.files.push('dist/sync-test.js');
-  config.files.push('dist/async-test.js');
-  config.files.push('dist/fake-async-test.js');
   config.files.push('dist/task-tracking.js');
-  config.files.push('dist/zone-patch-promise-test.js');
   config.files.push('dist/wtf.js');
+  config.files.push('dist/zone-testing.js');
   config.files.push('build/test/main.js');
 };

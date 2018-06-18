@@ -21,12 +21,13 @@ describe(
       beforeEach(function() {
         lstz = Zone.current.fork(longStackTraceZoneSpec).fork({
           name: 'long-stack-trace-zone-test',
-          onHandleError: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                          error: any): boolean => {
-            parentZoneDelegate.handleError(targetZone, error);
-            log.push(error);
-            return false;
-          }
+          onHandleError:
+              (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, error: any):
+                  boolean => {
+                    parentZoneDelegate.handleError(targetZone, error);
+                    log.push(error);
+                    return false;
+                  }
         });
 
         log = [];
@@ -54,7 +55,7 @@ describe(
           setTimeout(function() {
             setTimeout(function() {
               setTimeout(function() {
-                expectElapsed(log[0].stack, 3);
+                expectElapsed(log[0].stack!, 3);
                 done();
               }, 0);
               throw new Error('Hello');
@@ -72,7 +73,7 @@ describe(
              document.body.appendChild(button);
 
              button.addEventListener('click', function() {
-               expectElapsed(log[0].stack, 1);
+               expectElapsed(log[0].stack!, 1);
              });
 
              button.dispatchEvent(clickEvent);
@@ -116,7 +117,7 @@ describe(
                 fail('should not get here');
               });
               setTimeout(function() {
-                expectElapsed(log[0].stack, 5);
+                expectElapsed(log[0].stack!, 5);
                 done();
               }, 0);
             }, 0);
@@ -155,7 +156,7 @@ describe(
             setTimeout(function() {
               setTimeout(function() {
                 if (log[0].stack) {
-                  expectElapsed(log[0].stack, 1);
+                  expectElapsed(log[0].stack!, 1);
                 }
                 Error.stackTraceLimit = originalStackTraceLimit;
                 done();

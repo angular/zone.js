@@ -12,19 +12,21 @@ const testClosureFunction = () => {
   const testZoneSpec: ZoneSpec = {
     name: 'closure',
     properties: {},
-    onFork: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-             zoneSpec: ZoneSpec) => {
-      return parentZoneDelegate.fork(targetZone, zoneSpec);
-    },
+    onFork:
+        (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
+         zoneSpec: ZoneSpec) => {
+          return parentZoneDelegate.fork(targetZone, zoneSpec);
+        },
 
-    onIntercept: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                  delegate: Function, source?: string) => {
-      return parentZoneDelegate.intercept(targetZone, delegate, source);
-    },
+    onIntercept:
+        (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function,
+         source: string) => {
+          return parentZoneDelegate.intercept(targetZone, delegate, source);
+        },
 
     onInvoke: function(
         parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function,
-        applyThis: any, applyArgs: any[], source: string) {
+        applyThis?: any, applyArgs?: any[], source?: string) {
       return parentZoneDelegate.invoke(targetZone, delegate, applyThis, applyArgs, source);
     },
 
@@ -40,7 +42,7 @@ const testClosureFunction = () => {
 
     onInvokeTask: function(
         parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task,
-        applyThis: any, applyArgs: any[]) {
+        applyThis?: any, applyArgs?: any[]) {
       return parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
     },
 
@@ -59,13 +61,13 @@ const testClosureFunction = () => {
   testZone.runGuarded(() => {
     testZone.run(() => {
       const properties = testZoneSpec.properties;
-      properties['key'] = 'value';
+      properties!['key'] = 'value';
       const keyZone = Zone.current.getZoneWith('key');
 
       logs.push('current' + Zone.current.name);
-      logs.push('parent' + Zone.current.parent.name);
-      logs.push('getZoneWith' + keyZone.name);
-      logs.push('get' + keyZone.get('key'));
+      logs.push('parent' + Zone.current.parent!.name);
+      logs.push('getZoneWith' + keyZone!.name);
+      logs.push('get' + keyZone!.get('key'));
       logs.push('root' + Zone.root.name);
       Object.keys((Zone as any).prototype).forEach(key => {
         logs.push(key);
@@ -74,7 +76,7 @@ const testClosureFunction = () => {
         logs.push(key);
       });
 
-      const task = Zone.current.scheduleMicroTask('testTask', () => {}, null, () => {});
+      const task = Zone.current.scheduleMicroTask('testTask', () => {}, undefined, () => {});
       Object.keys(task).forEach(key => {
         logs.push(key);
       });

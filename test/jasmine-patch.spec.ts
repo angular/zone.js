@@ -22,11 +22,11 @@ ifEnvSupports(supportJasmineSpec, () => {
 
   describe('jasmine', () => {
     let throwOnAsync = false;
-    let beforeEachZone: Zone = null;
-    let itZone: Zone = null;
+    let beforeEachZone: Zone|null = null;
+    let itZone: Zone|null = null;
     const syncZone = Zone.current;
     try {
-      Zone.current.scheduleMicroTask('dontallow', () => null as void);
+      Zone.current.scheduleMicroTask('dontallow', (): any => null);
     } catch (e) {
       throwOnAsync = true;
     }
@@ -44,7 +44,7 @@ ifEnvSupports(supportJasmineSpec, () => {
     afterEach(() => {
       let zone = Zone.current;
       expect(zone.name).toEqual('ProxyZone');
-      expect(beforeEachZone.name).toEqual(zone.name);
+      expect(beforeEachZone!.name).toEqual(zone.name);
       expect(itZone).toBe(zone);
     });
   });

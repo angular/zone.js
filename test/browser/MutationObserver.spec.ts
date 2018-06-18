@@ -48,7 +48,7 @@ describe('MutationObserver', ifEnvSupports('MutationObserver', function() {
                ob = new MutationObserver(function() {});
              });
 
-             ob.disconnect();
+             ob!.disconnect();
              expect(flag).toBe(false);
            });
          }));
@@ -70,6 +70,6 @@ describe('WebKitMutationObserver', ifEnvSupports('WebKitMutationObserver', funct
                ob.observe(elt, {childList: true});
              });
 
-             elt.innerHTML = '<p>hey</p>';
+             elt!.innerHTML = '<p>hey</p>';
            });
          }));

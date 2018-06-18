@@ -39,16 +39,18 @@ describe('process related test', () => {
   it('process.nextTick should be treated as microTask', (done) => {
     let zoneTick = Zone.current.fork({
       name: 'zoneTick',
-      onScheduleTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                       task: Task): Task => {
-        result.push({callback: 'scheduleTask', targetZone: targetZone.name, task: task.source});
-        return parentZoneDelegate.scheduleTask(targetZone, task);
-      },
-      onInvokeTask: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone,
-                     task: Task, applyThis?: any, applyArgs?: any): any => {
-        result.push({callback: 'invokeTask', targetZone: targetZone.name, task: task.source});
-        return parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
-      }
+      onScheduleTask: (
+          parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+          Task => {
+            result.push({callback: 'scheduleTask', targetZone: targetZone.name, task: task.source});
+            return parentZoneDelegate.scheduleTask(targetZone, task);
+          },
+      onInvokeTask:
+          (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task,
+           applyThis?: any, applyArgs?: any): any => {
+            result.push({callback: 'invokeTask', targetZone: targetZone.name, task: task.source});
+            return parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
+          }
     });
     zoneTick.run(() => {
       process.nextTick(() => {

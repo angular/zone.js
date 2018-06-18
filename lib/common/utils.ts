@@ -43,8 +43,8 @@ export function wrapWithCurrentZone<T extends Function>(callback: T, source: str
 }
 
 export function scheduleMacroTaskWithCurrentZone(
-    source: string, callback: Function, data: TaskData, customSchedule: (task: Task) => void,
-    customCancel: (task: Task) => void): MacroTask {
+    source: string, callback: Function, data?: TaskData, customSchedule?: (task: Task) => void,
+    customCancel?: (task: Task) => void): MacroTask {
   return Zone.current.scheduleMacroTask(source, callback, data, customSchedule, customCancel);
 }
 
@@ -229,7 +229,7 @@ export function patchProperty(obj: any, prop: string, prototype?: any) {
       // so we should use original native get to retrieve the handler
       let value = originalDescGet && originalDescGet.call(this);
       if (value) {
-        desc.set.call(this, value);
+        desc!.set!.call(this, value);
         if (typeof target[REMOVE_ATTRIBUTE] === 'function') {
           target.removeAttribute(prop);
         }
@@ -242,7 +242,7 @@ export function patchProperty(obj: any, prop: string, prototype?: any) {
   ObjectDefineProperty(obj, prop, desc);
 }
 
-export function patchOnProperties(obj: any, properties: string[], prototype?: any) {
+export function patchOnProperties(obj: any, properties: string[]|null, prototype?: any) {
   if (properties) {
     for (let i = 0; i < properties.length; i++) {
       patchProperty(obj, 'on' + properties[i], prototype);
@@ -337,7 +337,7 @@ export function patchClass(className: string) {
 export function patchMethod(
     target: any, name: string,
     patchFn: (delegate: Function, delegateName: string, name: string) => (self: any, args: any[]) =>
-        any): Function {
+        any): Function|null {
   let proto = target;
   while (proto && !proto.hasOwnProperty(name)) {
     proto = ObjectGetPrototypeOf(proto);
@@ -348,14 +348,14 @@ export function patchMethod(
   }
 
   const delegateName = zoneSymbol(name);
-  let delegate: Function;
+  let delegate: Function|null = null;
   if (proto && !(delegate = proto[delegateName])) {
     delegate = proto[delegateName] = proto[name];
     // check whether proto[name] is writable
     // some property is readonly in safari, such as HtmlCanvasElement.prototype.toBlob
     const desc = proto && ObjectGetOwnPropertyDescriptor(proto, name);
     if (isPropertyWritable(desc)) {
-      const patchDelegate = patchFn(delegate, delegateName, name);
+      const patchDelegate = patchFn(delegate!, delegateName, name);
       proto[name] = function() {
         return patchDelegate(this, arguments as any);
       };
@@ -375,22 +375,21 @@ export interface MacroTaskMeta extends TaskData {
 // TODO: @JiaLiPassion, support cancel task later if necessary
 export function patchMacroTask(
     obj: any, funcName: string, metaCreator: (self: any, args: any[]) => MacroTaskMeta) {
-  let setNative: Function = null;
+  let setNative: Function|null = null;
 
   function scheduleTask(task: Task) {
     const data = <MacroTaskMeta>task.data;
     data.args[data.cbIdx] = function() {
       task.invoke.apply(this, arguments);
     };
-    setNative.apply(data.target, data.args);
+    setNative!.apply(data.target, data.args);
     return task;
   }
 
   setNative = patchMethod(obj, funcName, (delegate: Function) => function(self: any, args: any[]) {
     const meta = metaCreator(self, args);
     if (meta.cbIdx >= 0 && typeof args[meta.cbIdx] === 'function') {
-      return scheduleMacroTaskWithCurrentZone(
-          meta.name, args[meta.cbIdx], meta, scheduleTask, null);
+      return scheduleMacroTaskWithCurrentZone(meta.name, args[meta.cbIdx], meta, scheduleTask);
     } else {
       // cause an error by calling it directly.
       return delegate.apply(self, args);
@@ -407,14 +406,14 @@ export interface MicroTaskMeta extends TaskData {
 
 export function patchMicroTask(
     obj: any, funcName: string, metaCreator: (self: any, args: any[]) => MicroTaskMeta) {
-  let setNative: Function = null;
+  let setNative: Function|null = null;
 
   function scheduleTask(task: Task) {
     const data = <MacroTaskMeta>task.data;
     data.args[data.cbIdx] = function() {
       task.invoke.apply(this, arguments);
     };
-    setNative.apply(data.target, data.args);
+    setNative!.apply(data.target, data.args);
     return task;
   }
 

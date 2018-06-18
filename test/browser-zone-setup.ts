@@ -12,6 +12,7 @@ if (typeof window !== 'undefined') {
 import '../lib/common/to-string';
 import '../lib/browser/browser';
 import '../lib/browser/webapis-user-media';
+import '../lib/browser/webapis-media-query';
 import '../lib/testing/zone-testing';
 import '../lib/zone-spec/task-tracking';
 import '../lib/zone-spec/wtf';
@@ -20,3 +21,4 @@ import '../lib/testing/promise-testing';
 import '../lib/testing/async-testing';
 import '../lib/testing/fake-async';
 import '../lib/browser/webapis-resize-observer';
+import '../lib/rxjs/rxjs-fake-async';

@@ -9,7 +9,6 @@
 import {patchMethod, patchProperty, patchPrototype, zoneSymbol} from '../../lib/common/utils';
 
 describe('utils', function() {
-
   describe('patchMethod', () => {
     it('should patch target where the method is defined', () => {
       let args;
@@ -33,14 +32,14 @@ describe('utils', function() {
         return function(self, args) {
           return delegate.apply(self, ['patch', args[0]]);
         };
-      })).toBe(delegateMethod);
+      })).toBe(delegateMethod!);
 
       expect(instance.method('a0')).toEqual('OK');
       expect(args).toEqual(['patch', 'a0']);
       expect(self).toBe(instance);
-      expect(delegateMethod).toBe(method);
-      expect(delegateSymbol).toEqual(zoneSymbol('method'));
-      expect((Type.prototype as any)[delegateSymbol]).toBe(method);
+      expect(delegateMethod!).toBe(method);
+      expect(delegateSymbol!).toEqual(zoneSymbol('method'));
+      expect((Type.prototype as any)[delegateSymbol!]).toBe(method);
     });
 
     it('should not double patch', () => {
@@ -75,8 +74,8 @@ describe('utils', function() {
       }
       patchProperty(TestType.prototype, 'nonConfigurableProperty');
       const desc = Object.getOwnPropertyDescriptor(TestType.prototype, 'nonConfigurableProperty');
-      expect(desc.writable).toBeTruthy();
-      expect(!desc.get).toBeTruthy();
+      expect(desc!.writable).toBeTruthy();
+      expect(!desc!.get).toBeTruthy();
     });
   });
 
