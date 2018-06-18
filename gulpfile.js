@@ -43,7 +43,9 @@ function generateScript(inFile, outFile, minify, callback) {
               'rxjs/Observable': 'Rx',
               'rxjs/Subscriber': 'Rx',
               'rxjs/Subscription': 'Rx',
+              'rxjs/Scheduler': 'Rx.Scheduler',
               'rxjs/scheduler/asap': 'Rx.Scheduler',
+              'rxjs/scheduler/async': 'Rx.Scheduler',
               'rxjs/symbol/rxSubscriber': 'Rx.Symbol'
             }
           },
@@ -404,9 +406,9 @@ function nodeTest(specFiles, cb) {
   require('./build/lib/node/rollup-main');
   var args = process.argv;
   if (args.length > 3) {
-    require('./build/test/test-env-setup-jasmine' + args[3]); 
+    require('./build/test/test-env-setup-jasmine' + args[3]);
   }
-  var JasmineRunner = require('jasmine');	
+  var JasmineRunner = require('jasmine');
   var JasmineRunner = require('jasmine');
   var jrunner = new JasmineRunner();
 
