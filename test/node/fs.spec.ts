@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {exists, read, unlink, unwatchFile, watch, write, watchFile, writeFile, openSync, fstatSync, closeSync, unlinkSync} from 'fs';
+import {closeSync, exists, fstatSync, openSync, read, unlink, unlinkSync, unwatchFile, watch, watchFile, write, writeFile} from 'fs';
 import * as util from 'util';
 
 describe('nodejs file system', () => {
@@ -94,12 +94,15 @@ describe('nodejs file system', () => {
 describe('util.promisify', () => {
   it('fs.exists should work with util.promisify', (done: DoneFn) => {
     const promisifyExists = util.promisify(exists);
-    promisifyExists(__filename).then(r => {
-      expect(r).toBe(true);
-      done();
-    }, err => {
-      fail(`should not be here with error: ${err}`);
-    });
+    promisifyExists(__filename)
+        .then(
+            r => {
+              expect(r).toBe(true);
+              done();
+            },
+            err => {
+              fail(`should not be here with error: ${err}`);
+            });
   });
 
   it('fs.read should work with util.promisify', (done: DoneFn) => {
@@ -111,15 +114,17 @@ describe('util.promisify', () => {
     const buffer = new Buffer(bufferSize);
     let bytesRead = 0;
     // fd, buffer, offset, length, position, callback
-    promisifyRead(fd, buffer, bytesRead, chunkSize, bytesRead).then(
-      (value) => {
-        expect(value.bytesRead).toBe(chunkSize);
-        closeSync(fd);
-        done();
-      }, err => {
-        closeSync(fd);
-        fail(`should not be here with error: ${error}.`);
-      });
+    promisifyRead(fd, buffer, bytesRead, chunkSize, bytesRead)
+        .then(
+            (value) => {
+              expect(value.bytesRead).toBe(chunkSize);
+              closeSync(fd);
+              done();
+            },
+            err => {
+              closeSync(fd);
+              fail(`should not be here with error: ${error}.`);
+            });
   });
 
   it('fs.write should work with util.promisify', (done: DoneFn) => {
@@ -133,16 +138,18 @@ describe('util.promisify', () => {
       buffer[i] = 0;
     }
     // fd, buffer, offset, length, position, callback
-    promisifyWrite(fd, buffer, 0, chunkSize, 0).then(
-      (value) => {
-        expect(value.bytesWritten).toBe(chunkSize);
-        closeSync(fd);
-        unlinkSync(dest);
-        done();
-      }, err => {
-        closeSync(fd);
-        unlinkSync(dest);
-        fail(`should not be here with error: ${error}.`);
-      });
+    promisifyWrite(fd, buffer, 0, chunkSize, 0)
+        .then(
+            (value) => {
+              expect(value.bytesWritten).toBe(chunkSize);
+              closeSync(fd);
+              unlinkSync(dest);
+              done();
+            },
+            err => {
+              closeSync(fd);
+              unlinkSync(dest);
+              fail(`should not be here with error: ${error}.`);
+            });
   });
 });

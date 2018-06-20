@@ -13,6 +13,14 @@ declare const __karma__: {
 };
 
 __karma__.loaded = function() {};
+
+if (typeof __karma__ !== 'undefined') {
+  (window as any)['__Zone_Error_BlacklistedStackFrames_policy'] =
+      (__karma__ as any).config.errorpolicy;
+} else if (typeof process !== 'undefined') {
+  (window as any)['__Zone_Error_BlacklistedStackFrames_policy'] = process.env.errorpolicy;
+}
+
 (window as any).global = window;
 System.config({
   defaultJSExtensions: true,
@@ -29,7 +37,7 @@ if ((window as any)[(Zone as any).__symbol__('setTimeout')]) {
   // this means that Zone has not patched the browser yet, which means we must be running in
   // build mode and need to load the browser patch.
   browserPatchedPromise = System.import('/base/build/test/browser-zone-setup').then(() => {
-    let testFrameworkPatch = typeof(window as any).Mocha !== 'undefined' ?
+    let testFrameworkPatch = typeof (window as any).Mocha !== 'undefined' ?
         '/base/build/lib/mocha/mocha' :
         '/base/build/lib/jasmine/jasmine';
     return System.import(testFrameworkPatch);
@@ -42,13 +50,15 @@ browserPatchedPromise.then(() => {
       '/base/build/test/test-env-setup-jasmine';
   // Setup test environment
   System.import(testFrameworkPatch).then(() => {
-    System.import('/base/build/test/browser_entry_point')
-        .then(
-            () => {
-              __karma__.start();
-            },
-            (error) => {
-              console.error(error.stack || error);
-            });
+    System.import('/base/build/lib/common/error-rewrite').then(() => {
+      System.import('/base/build/test/browser_entry_point')
+          .then(
+              () => {
+                __karma__.start();
+              },
+              (error) => {
+                console.error(error.stack || error);
+              });
+    });
   });
 });

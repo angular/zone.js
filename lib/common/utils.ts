@@ -342,10 +342,10 @@ export function copySymbolProperties(src: any, dest: any) {
   symbols.forEach((symbol: any) => {
     const desc = Object.getOwnPropertyDescriptor(src, symbol);
     Object.defineProperty(dest, symbol, {
-      get: function () {
+      get: function() {
         return src[symbol];
       },
-      set: function (value: any) {
+      set: function(value: any) {
         if (desc && (!desc.writable || typeof desc.set !== 'function')) {
           // if src[symbol] is not writable or not have a setter, just return
           return;

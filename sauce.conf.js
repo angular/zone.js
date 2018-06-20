@@ -36,7 +36,7 @@ module.exports = function(config, ignoredLaunchers) {
       version: '8.4'
     },*/
     'SL_IOS9': {base: 'SauceLabs', browserName: 'iphone', platform: 'OS X 10.10', version: '9.3'},
-    'SL_IOS10': {base: 'SauceLabs', browserName: 'iphone', platform: 'OS X 10.10', version: '10.2'},
+    'SL_IOS10': {base: 'SauceLabs', browserName: 'iphone', platform: 'OS X 10.10', version: '10.3'},
     'SL_IE9': {
       base: 'SauceLabs',
       browserName: 'internet explorer',

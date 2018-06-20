@@ -78,7 +78,15 @@ class TestMessageError extends WrappedError {
 describe('ZoneAwareError', () => {
   // If the environment does not supports stack rewrites, then these tests will fail
   // and there is no point in running them.
-  if (!(Error as any)['stackRewrite']) return;
+  const _global: any = typeof window !== 'undefined' ? window : global;
+  let config: any;
+  if (typeof __karma__ !== 'undefined') {
+    config = __karma__ && (__karma__ as any).config;
+  } else if (typeof process !== 'undefined') {
+    config = process.env;
+  }
+  const policy = (config && config['errorpolicy']) || 'default';
+  if (!(Error as any)['stackRewrite'] && policy !== 'disable') return;
 
   it('should keep error prototype chain correctly', () => {
     class MyError extends Error {}
@@ -180,15 +188,18 @@ describe('ZoneAwareError', () => {
   });
 
   it('should show zone names in stack frames and remove extra frames', () => {
+    if (policy === 'disable' || !(Error as any)['stackRewrite']) {
+      return;
+    }
     const rootZone = Zone.root;
     const innerZone = rootZone.fork({name: 'InnerZone'});
 
     rootZone.run(testFn);
     function testFn() {
-      let outside: Error;
-      let inside: Error;
-      let outsideWithoutNew: Error;
-      let insideWithoutNew: Error;
+      let outside: any;
+      let inside: any;
+      let outsideWithoutNew: any;
+      let insideWithoutNew: any;
       try {
         throw new Error('Outside');
       } catch (e) {
@@ -211,6 +222,13 @@ describe('ZoneAwareError', () => {
           insideWithoutNew = e;
         }
       });
+
+      if (policy === 'lazy') {
+        outside.stack = outside.zoneAwareStack;
+        outsideWithoutNew.stack = outsideWithoutNew.zoneAwareStack;
+        inside.stack = inside.zoneAwareStack;
+        insideWithoutNew.stack = insideWithoutNew.zoneAwareStack;
+      }
 
       expect(outside.stack).toEqual(outside.zoneAwareStack);
       expect(outsideWithoutNew.stack).toEqual(outsideWithoutNew.zoneAwareStack);
@@ -251,7 +269,6 @@ describe('ZoneAwareError', () => {
       if (/Error /.test(insideWithoutNewFrames[0])) {
         insideWithoutNewFrames.shift();
       }
-
       expect(outsideFrames[0]).toMatch(/testFn.*[<root>]/);
 
       expect(insideFrames[0]).toMatch(/insideRun.*[InnerZone]]/);
@@ -267,13 +284,31 @@ describe('ZoneAwareError', () => {
   const zoneAwareFrames = [
     'Zone.run', 'Zone.runGuarded', 'Zone.scheduleEventTask', 'Zone.scheduleMicroTask',
     'Zone.scheduleMacroTask', 'Zone.runTask', 'ZoneDelegate.scheduleTask',
-    'ZoneDelegate.invokeTask', 'zoneAwareAddListener'
+    'ZoneDelegate.invokeTask', 'zoneAwareAddListener', 'Zone.prototype.run',
+    'Zone.prototype.runGuarded', 'Zone.prototype.scheduleEventTask',
+    'Zone.prototype.scheduleMicroTask', 'Zone.prototype.scheduleMacroTask',
+    'Zone.prototype.runTask', 'ZoneDelegate.prototype.scheduleTask',
+    'ZoneDelegate.prototype.invokeTask', 'ZoneTask.invokeTask'
   ];
 
-  function assertStackDoesNotContainZoneFrames(err: Error) {
-    const frames = err.stack!.split('\n');
-    for (let i = 0; i < frames.length; i++) {
-      expect(zoneAwareFrames.filter(f => frames[i].indexOf(f) !== -1)).toEqual([]);
+  function assertStackDoesNotContainZoneFrames(err: any) {
+    const frames = policy === 'lazy' ? err.zoneAwareStack.split('\n') : err.stack.split('\n');
+    if (policy === 'disable') {
+      let hasZoneStack = false;
+      for (let i = 0; i < frames.length; i++) {
+        if (hasZoneStack) {
+          break;
+        }
+        hasZoneStack = zoneAwareFrames.filter(f => frames[i].indexOf(f) !== -1).length > 0;
+      }
+      if (!hasZoneStack) {
+        console.log('stack', err.originalStack);
+      }
+      expect(hasZoneStack).toBe(true);
+    } else {
+      for (let i = 0; i < frames.length; i++) {
+        expect(zoneAwareFrames.filter(f => frames[i].indexOf(f) !== -1)).toEqual([]);
+      }
     }
   };
 
@@ -317,7 +352,9 @@ describe('ZoneAwareError', () => {
     it('Error with new which cause by promise rejection should not have zone frames visible',
        (done) => {
          const p = new Promise((resolve, reject) => {
-           reject(new Error('test error'));
+           setTimeout(() => {
+             reject(new Error('test error'));
+           });
          });
          p.catch(err => {
            assertStackDoesNotContainZoneFrames(err);
@@ -328,7 +365,9 @@ describe('ZoneAwareError', () => {
     it('Error without new which cause by promise rejection should not have zone frames visible',
        (done) => {
          const p = new Promise((resolve, reject) => {
-           reject(Error('test error'));
+           setTimeout(() => {
+             reject(Error('test error'));
+           });
          });
          p.catch(err => {
            assertStackDoesNotContainZoneFrames(err);

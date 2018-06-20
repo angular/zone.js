@@ -19,7 +19,7 @@ const _create = Object.create;
 const unconfigurablesKey = zoneSymbol('unconfigurables');
 
 export function propertyPatch() {
-  Object.defineProperty = function(obj, prop, desc) {
+  Object.defineProperty = function(obj: any, prop: string, desc: any) {
     if (isUnconfigurable(obj, prop)) {
       throw new TypeError('Cannot assign to read only property \'' + prop + '\' of ' + obj);
     }
