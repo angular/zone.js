@@ -8,7 +8,7 @@ module.exports = function(config) {
     'SL_CHROME60':
         {base: 'SauceLabs', browserName: 'Chrome', platform: 'Windows 10', version: '60.0'},
     'SL_SAFARI11':
-        {base: 'SauceLabs', browserName: 'safari', platform: 'macOS 10.13', version: '11.0'},
+        {base: 'SauceLabs', browserName: 'safari', platform: 'macOS 10.13', version: '11.1'},
   };
 
   config.set({

@@ -444,6 +444,18 @@ gulp.task('test/bluebird', ['compile-node'], function(cb) {
   nodeTest(specFiles, cb);
 });
 
+gulp.task('test/node/disableerror', ['compile-node'], function(cb) {
+  process.env.errorpolicy = 'disable';
+  var specFiles = ['build/test/node_error_entry_point.js'];
+  nodeTest(specFiles, cb);
+});
+
+gulp.task('test/node/lazyerror', ['compile-node'], function(cb) {
+  process.env.errorpolicy = 'lazy';
+  var specFiles = ['build/test/node_error_entry_point.js'];
+  nodeTest(specFiles, cb);
+});
+
 // Check the coding standards and programming errors
 gulp.task('lint', () => {
   const tslint = require('gulp-tslint');

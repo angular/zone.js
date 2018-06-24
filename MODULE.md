@@ -76,6 +76,57 @@ you can do like this.
   <script src="../dist/zone.js"></script>
 ```
 
+- Error
+
+By default, `zone.js/dist/zone-error` will not be loaded for performance concern.
+This package will provide following functionality.
+  
+  1. Error inherit: handle `extend Error` issue.
+     ```
+       class MyError extends Error {}
+       const myError = new MyError();
+       console.log('is MyError instanceof Error', (myError instanceof Error));
+     ```
+
+     without `zone-error` patch, the example above will output `false`, with the patch, the reuslt will be `true`.
+
+  2. BlacklistZoneStackFrames: remove zone.js stack from `stackTrace`, and add `zone`  information. Without this patch, a lot of `zone.js` invocation stack will be shown
+     in stack frames.
+
+    ```
+      at zone.run (polyfill.bundle.js: 3424)
+      at zoneDelegate.invokeTask (polyfill.bundle.js: 3424)
+      at zoneDelegate.runTask (polyfill.bundle.js: 3424)
+      at zone.drainMicroTaskQueue (polyfill.bundle.js: 3424)
+      at a.b.c (vendor.bundle.js: 12345 <angular>)
+      at d.e.f (main.bundle.js: 23456)
+    ```
+
+     with this patch, those zone frames will be removed,
+     and the zone information `<angular>/<root>` will be added
+     
+     ```
+       at a.b.c (vendor.bundle.js: 12345 <angular>)
+       at d.e.f (main.bundle.js: 23456 <root>)
+     ```
+
+  The second feature will slow down the `Error` performance, so `zone.js` provide a flag to let you be able to control the behavior.
+  The flag is `__Zone_Error_BlacklistedStackFrames_policy`. And the available options is:
+
+    1. default: this is the default one, if you load `zone.js/dist/zone-error` without
+     setting the flag, `default` will be used, and `BlackListStackFrames` will be available 
+     when `new Error()`, you can get a `error.stack`  which is `zone stack free`. But this 
+     will slow down `new Error()` a little bit.
+
+    2. disable: this will disable `BlackListZoneStackFrame` feature, and if you load
+     `zone.js/dist/zone-error`, you will only get a `wrapped Error` which can handle
+      `Error inherit` issue.
+
+    3. lazy: this is a feature to let you be able to get `BlackListZoneStackFrame` feature,
+     but not impact performance. But as a trade off, you can't get the `zone free stack 
+     frames` by access `error.stack`. You can only get it by access `error.zoneAwareStack`.
+    
+
 - Angular(2+)
 
 Angular uses zone.js to manage async operations and decide when to perform change detection. Thus, in Angular, 

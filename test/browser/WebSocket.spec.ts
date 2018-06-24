@@ -47,7 +47,7 @@ if (!window['saucelabs']) {
                  expect(e.data).toBe('pass');
                  done();
                };
-             });
+             }, 10000);
 
              it('should work with addEventListener', function(done) {
                testZone.run(function() {

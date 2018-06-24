@@ -9,6 +9,7 @@
 module.exports = function(config) {
   config.set({
     basePath: '',
+    client: {errorpolicy: config.errorpolicy},
     files: [
       'node_modules/systemjs/dist/system-polyfills.js', 'node_modules/systemjs/dist/system.src.js',
       'node_modules/whatwg-fetch/fetch.js',
@@ -41,6 +42,7 @@ module.exports = function(config) {
     browsers: ['Chrome'],
 
     captureTimeout: 60000,
+    retryLimit: 4,
 
     autoWatch: true,
     singleRun: false

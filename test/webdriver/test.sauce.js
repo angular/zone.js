@@ -16,10 +16,10 @@ const desiredCapabilities = {
   safari8: {browserName: 'safari', platform: 'OS X 10.10', version: '8.0'},
   safari9: {browserName: 'safari', platform: 'OS X 10.11', version: '9.0'},
   safari10: {browserName: 'safari', platform: 'OS X 10.11', version: '10.0'},
-  safari11: {browserName: 'safari', platform: 'macOS 10.13', version: '11.0'},
+  safari11: {browserName: 'safari', platform: 'macOS 10.13', version: '11.1'},
   /*ios84: {browserName: 'iphone', platform: 'OS X 10.10', version: '8.4'},*/
   ios93: {browserName: 'iphone', platform: 'OS X 10.10', version: '9.3'},
-  ios10: {browserName: 'iphone', platform: 'OS X 10.10', version: '10.2'},
+  ios10: {browserName: 'iphone', platform: 'OS X 10.10', version: '10.3'},
   ios11: {browserName: 'iphone', platform: 'OS X 10.12', version: '11.2'},
   /*
   ie9: {
