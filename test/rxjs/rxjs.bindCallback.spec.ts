@@ -6,7 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import * as Rx from 'rxjs/Rx';
+import {asapScheduler, bindCallback} from 'rxjs';
+
 import {asyncTest} from '../test-util';
 
 describe('Observable.bindCallback', () => {
@@ -27,7 +28,7 @@ describe('Observable.bindCallback', () => {
         expect(Zone.current.name).toEqual(constructorZone.name);
         callback(arg0);
       };
-      boundFunc = Rx.Observable.bindCallback(func);
+      boundFunc = bindCallback(func);
       observable = boundFunc('test');
     });
 
@@ -47,7 +48,7 @@ describe('Observable.bindCallback', () => {
         expect(Zone.current.name).toEqual(constructorZone.name);
         callback(arg0);
       };
-      boundFunc = Rx.Observable.bindCallback(func, (arg: any) => {
+      boundFunc = bindCallback(func, (arg: any) => {
         expect(Zone.current.name).toEqual(constructorZone.name);
         return 'selector' + arg;
       });
@@ -70,7 +71,7 @@ describe('Observable.bindCallback', () => {
            expect(Zone.current.name).toEqual(constructorZone.name);
            callback(arg0);
          };
-         boundFunc = Rx.Observable.bindCallback(func, undefined, Rx.Scheduler.asap);
+         boundFunc = bindCallback(func, () => true, asapScheduler);
          observable = boundFunc('test');
        });
 

@@ -6,7 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import * as Rx from 'rxjs/Rx';
+import {asapScheduler, concat, Observable, of, range} from 'rxjs';
+import {concatAll, concatMap, concatMapTo, map} from 'rxjs/operators';
+
 import {asyncTest} from '../test-util';
 
 describe('Observable instance method concat', () => {
@@ -15,7 +17,7 @@ describe('Observable instance method concat', () => {
   const constructorZone2: Zone = Zone.current.fork({name: 'Constructor Zone2'});
   const constructorZone3: Zone = Zone.current.fork({name: 'Constructor Zone3'});
   const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
-  let observable1: any;
+  let observable1: Observable<any>;
   let observable2: any;
 
   let concatObservable: any;
@@ -26,7 +28,7 @@ describe('Observable instance method concat', () => {
 
   it('concat func callback should run in the correct zone', () => {
     observable1 = constructorZone1.run(() => {
-      return new Rx.Observable(subscriber => {
+      return new Observable(subscriber => {
         expect(Zone.current.name).toEqual(constructorZone1.name);
         subscriber.next(1);
         subscriber.next(2);
@@ -35,11 +37,11 @@ describe('Observable instance method concat', () => {
     });
 
     observable2 = constructorZone2.run(() => {
-      return Rx.Observable.range(3, 4);
+      return range(3, 4);
     });
 
     constructorZone3.run(() => {
-      concatObservable = observable1.concat(observable2);
+      concatObservable = concat(observable1, observable2);
     });
 
     subscriptionZone.run(() => {
@@ -59,15 +61,15 @@ describe('Observable instance method concat', () => {
         const constructorZone3: Zone = Zone.current.fork({name: 'Constructor Zone3'});
         const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
         observable1 = constructorZone1.run(() => {
-          return Rx.Observable.of(1, 2);
+          return of(1, 2);
         });
 
         observable2 = constructorZone2.run(() => {
-          return Rx.Observable.range(3, 4);
+          return range(3, 4);
         });
 
         constructorZone3.run(() => {
-          concatObservable = observable1.concat(observable2, Rx.Scheduler.asap);
+          concatObservable = concat(observable1, observable2, asapScheduler);
         });
 
         subscriptionZone.run(() => {
@@ -94,15 +96,15 @@ describe('Observable instance method concat', () => {
        const constructorZone2: Zone = Zone.current.fork({name: 'Constructor Zone2'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.of(0, 1, 2);
+         return of(0, 1, 2);
        });
 
        constructorZone2.run(() => {
-         const highOrder = observable1.map((v: any) => {
+         const highOrder = observable1.pipe(map((v: any) => {
            expect(Zone.current.name).toEqual(constructorZone2.name);
-           return Rx.Observable.of(v + 1);
-         });
-         concatObservable = highOrder.concatAll();
+           return of(v + 1);
+         }));
+         concatObservable = highOrder.pipe(concatAll());
        });
 
        subscriptionZone.run(() => {
@@ -127,7 +129,7 @@ describe('Observable instance method concat', () => {
        const constructorZone2: Zone = Zone.current.fork({name: 'Constructor Zone2'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         return new Rx.Observable(subscriber => {
+         return new Observable(subscriber => {
            expect(Zone.current.name).toEqual(constructorZone1.name);
            subscriber.next(1);
            subscriber.next(2);
@@ -138,10 +140,10 @@ describe('Observable instance method concat', () => {
        });
 
        constructorZone2.run(() => {
-         concatObservable = observable1.concatMap((v: any) => {
+         concatObservable = observable1.pipe(concatMap((v: any) => {
            expect(Zone.current.name).toEqual(constructorZone2.name);
-           return Rx.Observable.of(0, 1);
-         });
+           return of(0, 1);
+         }));
        });
 
        subscriptionZone.run(() => {
@@ -166,7 +168,7 @@ describe('Observable instance method concat', () => {
        const constructorZone2: Zone = Zone.current.fork({name: 'Constructor Zone2'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         return new Rx.Observable(subscriber => {
+         return new Observable(subscriber => {
            expect(Zone.current.name).toEqual(constructorZone1.name);
            subscriber.next(1);
            subscriber.next(2);
@@ -177,7 +179,7 @@ describe('Observable instance method concat', () => {
        });
 
        constructorZone2.run(() => {
-         concatObservable = observable1.concatMapTo(Rx.Observable.of(0, 1));
+         concatObservable = observable1.pipe(concatMapTo(of(0, 1)));
        });
 
        subscriptionZone.run(() => {

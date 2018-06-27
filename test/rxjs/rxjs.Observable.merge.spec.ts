@@ -5,12 +5,16 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
-import {asyncTest} from '../test-util';
+import {interval, merge, Observable, of, range} from 'rxjs';
+import {expand, map, mergeAll, mergeMap, mergeMapTo, switchAll, switchMap, switchMapTo, take} from 'rxjs/operators';
+
+import {asyncTest, ifEnvSupports} from '../test-util';
+
+import {supportFeature} from './rxjs.util';
 
 describe('Observable.merge', () => {
   let log: string[];
-  let observable1: any;
+  let observable1: Observable<any>;
   let defaultTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
 
   beforeEach(() => {
@@ -28,16 +32,16 @@ describe('Observable.merge', () => {
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     const error = new Error('test');
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.of(2);
+      return of(2);
     });
 
     observable1 = expandZone1.run(() => {
-      return observable1
-          .expand((val: any) => {
+      return observable1.pipe(
+          expand((val: any) => {
             expect(Zone.current.name).toEqual(expandZone1.name);
-            return Rx.Observable.of(1 + val);
-          })
-          .take(2);
+            return of(1 + val);
+          }),
+          take(2));
     });
 
     subscriptionZone.run(() => {
@@ -62,8 +66,7 @@ describe('Observable.merge', () => {
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        const error = new Error('test');
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.merge(
-             Rx.Observable.interval(10).take(2), Rx.Observable.interval(15).take(1));
+         return merge(interval(10).pipe(take(2)), interval(15).pipe(take(1)));
        });
 
        subscriptionZone.run(() => {
@@ -89,11 +92,11 @@ describe('Observable.merge', () => {
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        const error = new Error('test');
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.of(1, 2)
-             .map((v: any) => {
-               return Rx.Observable.of(v + 1);
-             })
-             .mergeAll();
+         return of(1, 2).pipe(
+             map((v: any) => {
+               return of(v + 1);
+             }),
+             mergeAll());
        });
 
        subscriptionZone.run(() => {
@@ -119,9 +122,9 @@ describe('Observable.merge', () => {
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     const error = new Error('test');
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.of(1, 2).mergeMap((v: any) => {
-        return Rx.Observable.of(v + 1);
-      });
+      return of(1, 2).pipe(mergeMap((v: any) => {
+        return of(v + 1);
+      }));
     });
 
     subscriptionZone.run(() => {
@@ -146,7 +149,7 @@ describe('Observable.merge', () => {
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     const error = new Error('test');
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.of(1, 2).mergeMapTo(Rx.Observable.of(10));
+      return of(1, 2).pipe(mergeMapTo(of(10)));
     });
 
     subscriptionZone.run(() => {
@@ -170,11 +173,11 @@ describe('Observable.merge', () => {
     const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.range(0, 3)
-          .map(function(x: any) {
-            return Rx.Observable.range(x, 3);
-          })
-          .switch();
+      return range(0, 3).pipe(
+          map(function(x: any) {
+            return range(x, 3);
+          }),
+          switchAll());
     });
 
     subscriptionZone.run(() => {
@@ -198,9 +201,9 @@ describe('Observable.merge', () => {
     const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.range(0, 3).switchMap(function(x: any) {
-        return Rx.Observable.range(x, 3);
-      });
+      return range(0, 3).pipe(switchMap(function(x: any) {
+        return range(x, 3);
+      }));
     });
 
     subscriptionZone.run(() => {
@@ -224,7 +227,7 @@ describe('Observable.merge', () => {
     const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.range(0, 3).switchMapTo('a');
+      return range(0, 3).pipe(switchMapTo('a'));
     });
 
     subscriptionZone.run(() => {

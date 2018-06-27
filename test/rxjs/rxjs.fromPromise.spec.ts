@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import * as Rx from 'rxjs/Rx';
+import {from} from 'rxjs';
 import {asyncTest} from '../test-util';
 
 describe('Observable.fromPromise', () => {
@@ -28,7 +28,7 @@ describe('Observable.fromPromise', () => {
          });
        });
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.fromPromise(promise);
+         return from(promise);
        });
 
        subscriptionZone.run(() => {

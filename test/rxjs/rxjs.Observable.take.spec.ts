@@ -5,12 +5,14 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {interval, Observable, of} from 'rxjs';
+import {take, takeLast, takeUntil, takeWhile} from 'rxjs/operators';
+
 import {asyncTest} from '../test-util';
 
 describe('Observable.take', () => {
   let log: string[];
-  let observable1: any;
+  let observable1: Observable<any>;
   let defaultTimeout = jasmine.DEFAULT_TIMEOUT_INTERVAL;
 
   beforeEach(() => {
@@ -26,7 +28,7 @@ describe('Observable.take', () => {
     const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.of(1, 2, 3).take(1);
+      return of(1, 2, 3).pipe(take(1));
     });
 
     subscriptionZone.run(() => {
@@ -50,7 +52,7 @@ describe('Observable.take', () => {
     const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.of(1, 2, 3).takeLast(1);
+      return of(1, 2, 3).pipe(takeLast(1));
     });
 
     subscriptionZone.run(() => {
@@ -74,7 +76,7 @@ describe('Observable.take', () => {
         const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
         const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
         observable1 = constructorZone1.run(() => {
-          return Rx.Observable.interval(10).takeUntil(Rx.Observable.interval(25));
+          return interval(10).pipe(takeUntil(interval(25)));
         });
 
         subscriptionZone.run(() => {
@@ -100,14 +102,14 @@ describe('Observable.take', () => {
        const takeZone1: Zone = Zone.current.fork({name: 'Take Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.interval(10);
+         return interval(10);
        });
 
        observable1 = takeZone1.run(() => {
-         return observable1.takeWhile((val: any) => {
+         return observable1.pipe(takeWhile((val: any) => {
            expect(Zone.current.name).toEqual(takeZone1.name);
            return val < 2;
-         });
+         }));
        });
 
        subscriptionZone.run(() => {

@@ -21,6 +21,8 @@
  *
  *  ifEnvSupports(supportsOnClick, function() { ... });
  */
+import {isNode} from '../lib/common/utils';
+
 declare const global: any;
 export function ifEnvSupports(test: any, block: Function): () => void {
   return _ifEnvSupports(test, block);
@@ -131,4 +133,12 @@ export function getEdgeVersion() {
     return -1;
   }
   return parseInt(ua.substring(edge + 5, ua.indexOf('.', edge)), 10);
+}
+
+export function isPhantomJS() {
+  if (isNode) {
+    return false;
+  }
+  const ua = navigator.userAgent.toLowerCase();
+  return ua.indexOf('phantomjs') !== -1;
 }

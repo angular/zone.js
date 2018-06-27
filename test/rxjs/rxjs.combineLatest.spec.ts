@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import * as Rx from 'rxjs/Rx';
+import {combineLatest, Observable} from 'rxjs';
 
 describe('Observable.combineLatest', () => {
   let log: string[];
@@ -14,7 +14,7 @@ describe('Observable.combineLatest', () => {
   const constructorZone2: Zone = Zone.current.fork({name: 'Constructor Zone2'});
   const constructorZone3: Zone = Zone.current.fork({name: 'Constructor Zone3'});
   const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
-  let observable1: any;
+  let observable1: Observable<any>;
   let observable2: any;
   let subscriber1: any;
   let subscriber2: any;
@@ -26,19 +26,19 @@ describe('Observable.combineLatest', () => {
   });
 
   it('combineLatest func should run in the correct zone', () => {
-    observable1 = constructorZone1.run(() => new Rx.Observable((_subscriber) => {
-      subscriber1 = _subscriber;
-      expect(Zone.current.name).toEqual(constructorZone1.name);
-      log.push('setup1');
-    }));
-    observable2 = constructorZone2.run(() => new Rx.Observable((_subscriber) => {
-      subscriber2 = _subscriber;
-      expect(Zone.current.name).toEqual(constructorZone2.name);
-      log.push('setup2');
-    }));
+    observable1 = constructorZone1.run(() => new Observable((_subscriber) => {
+                                         subscriber1 = _subscriber;
+                                         expect(Zone.current.name).toEqual(constructorZone1.name);
+                                         log.push('setup1');
+                                       }));
+    observable2 = constructorZone2.run(() => new Observable((_subscriber) => {
+                                         subscriber2 = _subscriber;
+                                         expect(Zone.current.name).toEqual(constructorZone2.name);
+                                         log.push('setup2');
+                                       }));
 
     constructorZone3.run(() => {
-      combinedObservable = Rx.Observable.combineLatest(observable1, observable2);
+      combinedObservable = combineLatest(observable1, observable2);
     });
 
     subscriptionZone.run(() => {
@@ -56,23 +56,22 @@ describe('Observable.combineLatest', () => {
   });
 
   it('combineLatest func with project function should run in the correct zone', () => {
-    observable1 = constructorZone1.run(() => new Rx.Observable((_subscriber) => {
-      subscriber1 = _subscriber;
-      expect(Zone.current.name).toEqual(constructorZone1.name);
-      log.push('setup1');
-    }));
-    observable2 = constructorZone2.run(() => new Rx.Observable((_subscriber) => {
-      subscriber2 = _subscriber;
-      expect(Zone.current.name).toEqual(constructorZone2.name);
-      log.push('setup2');
-    }));
+    observable1 = constructorZone1.run(() => new Observable((_subscriber) => {
+                                         subscriber1 = _subscriber;
+                                         expect(Zone.current.name).toEqual(constructorZone1.name);
+                                         log.push('setup1');
+                                       }));
+    observable2 = constructorZone2.run(() => new Observable((_subscriber) => {
+                                         subscriber2 = _subscriber;
+                                         expect(Zone.current.name).toEqual(constructorZone2.name);
+                                         log.push('setup2');
+                                       }));
 
     constructorZone3.run(() => {
-      combinedObservable =
-          Rx.Observable.combineLatest(observable1, observable2, (x: number, y: number) => {
-            expect(Zone.current.name).toEqual(constructorZone3.name);
-            return x + y;
-          });
+      combinedObservable = combineLatest(observable1, observable2, (x: number, y: number) => {
+        expect(Zone.current.name).toEqual(constructorZone3.name);
+        return x + y;
+      });
     });
 
     subscriptionZone.run(() => {

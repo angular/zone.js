@@ -5,7 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+
+import {of, range, zip} from 'rxjs';
 
 describe('Observable.zip', () => {
   let log: string[];
@@ -18,14 +19,14 @@ describe('Observable.zip', () => {
 
   it('zip func callback should run in the correct zone', () => {
     const observable1: any = constructorZone1.run(() => {
-      return Rx.Observable.range(1, 3);
+      return range(1, 3);
     });
     const observable2: any = constructorZone1.run(() => {
-      return Rx.Observable.of('foo', 'bar', 'beer');
+      return of('foo', 'bar', 'beer');
     });
 
     const observable3: any = constructorZone1.run(() => {
-      return Rx.Observable.zip(observable1, observable2, function(n: number, str: string) {
+      return zip(observable1, observable2, function(n: number, str: string) {
         expect(Zone.current.name).toEqual(constructorZone1.name);
         return {n: n, str: str};
       });

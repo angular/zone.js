@@ -5,7 +5,9 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {interval, merge, Observable} from 'rxjs';
+import {map, take} from 'rxjs/operators';
+
 import {asyncTest} from '../test-util';
 
 describe('Observable.merge', () => {
@@ -21,15 +23,15 @@ describe('Observable.merge', () => {
        const constructorZone3: Zone = Zone.current.fork({name: 'Constructor Zone3'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        const observable1: any = constructorZone1.run(() => {
-         return Rx.Observable.interval(8).map(v => 'observable1' + v).take(1);
+         return interval(8).pipe(map(v => 'observable1' + v), take(1));
        });
 
        const observable2: any = constructorZone2.run(() => {
-         return Rx.Observable.interval(10).map(v => 'observable2' + v).take(1);
+         return interval(10).pipe(map(v => 'observable2' + v), take(1));
        });
 
        const observable3: any = constructorZone3.run(() => {
-         return Rx.Observable.merge(observable1, observable2);
+         return merge(observable1, observable2);
        });
 
        subscriptionZone.run(() => {

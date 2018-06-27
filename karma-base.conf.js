@@ -17,6 +17,7 @@ module.exports = function(config) {
       {pattern: 'node_modules/rxjs/**/**/*.js.map', included: false, watched: false},
       {pattern: 'node_modules/rxjs/**/*.js', included: false, watched: false},
       {pattern: 'node_modules/es6-promise/**/*.js', included: false, watched: false},
+      {pattern: 'node_modules/core-js/**/*.js', included: false, watched: false},
       {pattern: 'node_modules/rxjs/**/*.js.map', included: false, watched: false},
       {pattern: 'test/assets/**/*.*', watched: true, served: true, included: false},
       {pattern: 'build/**/*.js.map', watched: true, served: true, included: false},

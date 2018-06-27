@@ -6,18 +6,16 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {Scheduler} from 'rxjs/Scheduler';
-import {asap} from 'rxjs/scheduler/asap';
-import {async} from 'rxjs/scheduler/async';
+import {asapScheduler, asyncScheduler, Scheduler} from 'rxjs';
 
 Zone.__load_patch('rxjs.Scheduler.now', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   api.patchMethod(Scheduler, 'now', (delegate: Function) => (self: any, args: any[]) => {
     return Date.now.apply(self, args);
   });
-  api.patchMethod(async, 'now', (delegate: Function) => (self: any, args: any[]) => {
+  api.patchMethod(asyncScheduler, 'now', (delegate: Function) => (self: any, args: any[]) => {
     return Date.now.apply(self, args);
   });
-  api.patchMethod(asap, 'now', (delegate: Function) => (self: any, args: any[]) => {
+  api.patchMethod(asapScheduler, 'now', (delegate: Function) => (self: any, args: any[]) => {
     return Date.now.apply(self, args);
   });
 });

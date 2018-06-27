@@ -5,14 +5,16 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {interval, Observable, timer} from 'rxjs';
+import {mergeAll, take, window, windowCount, windowToggle, windowWhen} from 'rxjs/operators';
+
 import {asyncTest} from '../test-util';
 
 // @JiaLiPassion, in Safari 9(iOS 9), the case is not
 // stable because of the timer, try to fix it later
 xdescribe('Observable.window', () => {
   let log: string[];
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -23,9 +25,9 @@ xdescribe('Observable.window', () => {
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        const error = new Error('test');
        observable1 = constructorZone1.run(() => {
-         const source = Rx.Observable.timer(0, 10).take(6);
-         const window = source.window(Rx.Observable.interval(30));
-         return window.mergeAll();
+         const source = timer(0, 10).pipe(take(6));
+         const w = source.pipe(window(interval(30)));
+         return w.pipe(mergeAll());
        });
 
        subscriptionZone.run(() => {
@@ -51,9 +53,9 @@ xdescribe('Observable.window', () => {
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        const error = new Error('test');
        observable1 = constructorZone1.run(() => {
-         const source = Rx.Observable.timer(0, 10).take(10);
-         const window = source.windowCount(4);
-         return window.mergeAll();
+         const source = timer(0, 10).pipe(take(10));
+         const window = source.pipe(windowCount(4));
+         return window.pipe(mergeAll());
        });
 
        subscriptionZone.run(() => {
@@ -80,18 +82,14 @@ xdescribe('Observable.window', () => {
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        const error = new Error('test');
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.timer(0, 10).take(10);
+         return timer(0, 10).pipe(take(10));
        });
 
        windowZone1.run(() => {
-         return observable1
-             .windowToggle(
-                 Rx.Observable.interval(30),
-                 (val: any) => {
-                   expect(Zone.current.name).toEqual(windowZone1.name);
-                   return Rx.Observable.interval(15);
-                 })
-             .mergeAll();
+         return observable1.pipe(windowToggle(interval(30), (val: any) => {
+                                   expect(Zone.current.name).toEqual(windowZone1.name);
+                                   return interval(15);
+                                 }), mergeAll());
        });
 
        subscriptionZone.run(() => {
@@ -118,16 +116,16 @@ xdescribe('Observable.window', () => {
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        const error = new Error('test');
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.timer(0, 10).take(10);
+         return timer(0, 10).pipe(take(10));
        });
 
        windowZone1.run(() => {
-         return observable1
-             .windowWhen((val: any) => {
+         return observable1.pipe(
+             windowWhen(() => {
                expect(Zone.current.name).toEqual(windowZone1.name);
-               return Rx.Observable.interval(15);
-             })
-             .mergeAll();
+               return interval(15);
+             }),
+             mergeAll());
        });
 
        subscriptionZone.run(() => {

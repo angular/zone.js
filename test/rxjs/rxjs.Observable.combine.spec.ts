@@ -5,12 +5,14 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {combineLatest, Observable, of} from 'rxjs';
+import {combineAll, map} from 'rxjs/operators';
+
 import {asyncTest} from '../test-util';
 
 describe('Observable.combine', () => {
   let log: string[];
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -20,12 +22,12 @@ describe('Observable.combine', () => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         const source = Rx.Observable.of(1, 2);
-         const highOrder = source.map((src: any) => {
+         const source = of(1, 2);
+         const highOrder = source.pipe(map((src: any) => {
            expect(Zone.current.name).toEqual(constructorZone1.name);
-           return Rx.Observable.of(src);
-         });
-         return highOrder.combineAll();
+           return of(src);
+         }));
+         return highOrder.pipe(combineAll());
        });
 
        subscriptionZone.run(() => {
@@ -51,15 +53,15 @@ describe('Observable.combine', () => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         const source = Rx.Observable.of(1, 2, 3);
-         const highOrder = source.map((src: any) => {
+         const source = of(1, 2, 3);
+         const highOrder = source.pipe(map((src: any) => {
            expect(Zone.current.name).toEqual(constructorZone1.name);
-           return Rx.Observable.of(src);
-         });
-         return highOrder.combineAll((x: any, y: any) => {
+           return of(src);
+         }));
+         return highOrder.pipe(combineAll((x: any, y: any) => {
            expect(Zone.current.name).toEqual(constructorZone1.name);
            return {x: x, y: y};
-         });
+         }));
        });
 
        subscriptionZone.run(() => {
@@ -84,9 +86,9 @@ describe('Observable.combine', () => {
     const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     observable1 = constructorZone1.run(() => {
-      const source = Rx.Observable.of(1, 2, 3);
-      const input = Rx.Observable.of(4, 5, 6);
-      return source.combineLatest(input);
+      const source = of(1, 2, 3);
+      const input = of(4, 5, 6);
+      return combineLatest(source, input);
     });
 
     subscriptionZone.run(() => {
@@ -111,9 +113,9 @@ describe('Observable.combine', () => {
     const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     observable1 = constructorZone1.run(() => {
-      const source = Rx.Observable.of(1, 2, 3);
-      const input = Rx.Observable.of(4, 5, 6);
-      return source.combineLatest(input, function(x: any, y: any) {
+      const source = of(1, 2, 3);
+      const input = of(4, 5, 6);
+      return combineLatest(source, input, (x: number, y: number) => {
         return x + y;
       });
     });
