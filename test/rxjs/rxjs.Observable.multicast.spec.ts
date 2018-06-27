@@ -5,7 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {Observable, of, Subject} from 'rxjs';
 
 // TODO: @JiaLiPassion, Observable.prototype.multicast return a readonly _subscribe
 // should find another way to patch subscribe
@@ -16,7 +16,7 @@ describe('Observable.multicast', () => {
   const mapZone1: Zone = Zone.current.fork({name: 'Map Zone1'});
   const multicastZone1: Zone = Zone.current.fork({name: 'Multicast Zone1'});
   const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -24,7 +24,7 @@ describe('Observable.multicast', () => {
 
   it('multicast func callback should run in the correct zone', () => {
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.of(1, 2, 3);
+      return of(1, 2, 3);
     });
 
     observable1 = doZone1.run(() => {
@@ -41,7 +41,7 @@ describe('Observable.multicast', () => {
     const multi: any = multicastZone1.run(() => {
       return observable1.multicast(() => {
         expect(Zone.current.name).toEqual(multicastZone1.name);
-        return new Rx.Subject();
+        return new Subject();
       });
     });
 

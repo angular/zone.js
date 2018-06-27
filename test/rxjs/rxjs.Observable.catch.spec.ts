@@ -5,11 +5,12 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {Observable, of} from 'rxjs';
+import {catchError, map, retry} from 'rxjs/operators';
 
 describe('Observable.catch', () => {
   let log: string[];
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -20,17 +21,17 @@ describe('Observable.catch', () => {
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     observable1 = constructorZone1.run(() => {
       const error = new Error('test');
-      const source = Rx.Observable.of(1, 2, 3).map((n: number) => {
+      const source = of(1, 2, 3).pipe(map((n: number) => {
         expect(Zone.current.name).toEqual(constructorZone1.name);
         if (n === 2) {
           throw error;
         }
         return n;
-      });
-      return source.catch((err: any) => {
+      }));
+      return source.pipe(catchError((err: any) => {
         expect(Zone.current.name).toEqual(constructorZone1.name);
-        return Rx.Observable.of('error1', 'error2');
-      });
+        return of('error1', 'error2');
+      }));
     });
 
     subscriptionZone.run(() => {
@@ -55,15 +56,15 @@ describe('Observable.catch', () => {
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     const error = new Error('test');
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.of(1, 2, 3)
-          .map((n: number) => {
+      return of(1, 2, 3).pipe(
+          map((n: number) => {
             expect(Zone.current.name).toEqual(constructorZone1.name);
             if (n === 2) {
               throw error;
             }
             return n;
-          })
-          .retry(1);
+          }),
+          retry(1));
     });
 
     subscriptionZone.run(() => {

@@ -6,7 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import * as Rx from 'rxjs/Rx';
+import {asapScheduler, concat, Observable, range} from 'rxjs';
+
 import {asyncTest} from '../test-util';
 
 describe('Observable.concat', () => {
@@ -15,7 +16,7 @@ describe('Observable.concat', () => {
   const constructorZone2: Zone = Zone.current.fork({name: 'Constructor Zone2'});
   const constructorZone3: Zone = Zone.current.fork({name: 'Constructor Zone3'});
   const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
-  let observable1: any;
+  let observable1: Observable<any>;
   let observable2: any;
 
   let concatObservable: any;
@@ -26,7 +27,7 @@ describe('Observable.concat', () => {
 
   it('concat func callback should run in the correct zone', () => {
     observable1 = constructorZone1.run(() => {
-      return new Rx.Observable(subscriber => {
+      return new Observable(subscriber => {
         expect(Zone.current.name).toEqual(constructorZone1.name);
         subscriber.next(1);
         subscriber.next(2);
@@ -35,11 +36,11 @@ describe('Observable.concat', () => {
     });
 
     observable2 = constructorZone2.run(() => {
-      return Rx.Observable.range(3, 4);
+      return range(3, 4);
     });
 
     constructorZone3.run(() => {
-      concatObservable = Rx.Observable.concat(observable1, observable2);
+      concatObservable = concat(observable1, observable2);
     });
 
     subscriptionZone.run(() => {
@@ -59,7 +60,7 @@ describe('Observable.concat', () => {
        const constructorZone3: Zone = Zone.current.fork({name: 'Constructor Zone3'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         return new Rx.Observable(subscriber => {
+         return new Observable(subscriber => {
            expect(Zone.current.name).toEqual(constructorZone1.name);
            subscriber.next(1);
            subscriber.next(2);
@@ -68,11 +69,11 @@ describe('Observable.concat', () => {
        });
 
        observable2 = constructorZone2.run(() => {
-         return Rx.Observable.range(3, 4);
+         return range(3, 4);
        });
 
        constructorZone3.run(() => {
-         concatObservable = Rx.Observable.concat(observable1, observable2, Rx.Scheduler.asap);
+         concatObservable = concat(observable1, observable2, asapScheduler);
        });
 
        subscriptionZone.run(() => {

@@ -5,12 +5,14 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {interval, Observable} from 'rxjs';
+import {sample, take, throttle} from 'rxjs/operators';
+
 import {asyncTest} from '../test-util';
 
 describe('Observable.sample', () => {
   let log: string[];
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -20,7 +22,7 @@ describe('Observable.sample', () => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.interval(10).sample(Rx.Observable.interval(15));
+         return interval(10).pipe(sample(interval(15)));
        });
 
        subscriptionZone.run(() => {
@@ -46,10 +48,10 @@ describe('Observable.sample', () => {
         const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
         const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
         observable1 = constructorZone1.run(() => {
-          return Rx.Observable.interval(10).take(5).throttle((val: any) => {
-            expect(Zone.current.name).toEqual(constructorZone1.name);
-            return Rx.Observable.interval(20);
-          });
+          return interval(10).pipe(take(5), throttle((val: any) => {
+                                     expect(Zone.current.name).toEqual(constructorZone1.name);
+                                     return interval(20);
+                                   }));
         });
 
         subscriptionZone.run(() => {

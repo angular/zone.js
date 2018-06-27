@@ -195,7 +195,7 @@ interface Zone {
    * @param source A unique debug location of the API being invoked.
    * @returns {any} Value from the `callback` function.
    */
-  run<T>(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): T;
+  run<T>(callback: () => T, applyThis?: any, applyArgs?: any[], source?: string): T;
   /**
    * Invokes a function in a given zone and catches any exceptions.
    *

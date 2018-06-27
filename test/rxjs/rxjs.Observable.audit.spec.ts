@@ -5,12 +5,14 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {interval, Observable} from 'rxjs';
+import {audit, auditTime} from 'rxjs/operators';
+
 import {asyncTest} from '../test-util';
 
 xdescribe('Observable.audit', () => {
   let log: string[];
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -20,11 +22,11 @@ xdescribe('Observable.audit', () => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         const source = Rx.Observable.interval(100);
-         return source.audit(ev => {
+         const source = interval(100);
+         return source.pipe(audit(ev => {
            expect(Zone.current.name).toEqual(constructorZone1.name);
-           return Rx.Observable.interval(150);
-         });
+           return interval(150);
+         }));
        });
 
        subscriptionZone.run(() => {
@@ -33,7 +35,7 @@ xdescribe('Observable.audit', () => {
                expect(Zone.current.name).toEqual(subscriptionZone.name);
                log.push(result);
                if (result >= 3) {
-                 subscriber.complete();
+                 subscriber.unsubscribe();
                }
              },
              () => {
@@ -54,8 +56,8 @@ xdescribe('Observable.audit', () => {
         const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
         const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
         observable1 = constructorZone1.run(() => {
-          const source = Rx.Observable.interval(100);
-          return source.auditTime(360);
+          const source = interval(100);
+          return source.pipe(auditTime(360));
         });
 
         subscriptionZone.run(() => {
@@ -64,7 +66,7 @@ xdescribe('Observable.audit', () => {
                 expect(Zone.current.name).toEqual(subscriptionZone.name);
                 log.push(result);
                 if (result >= 7) {
-                  subscriber.complete();
+                  subscriber.unsubscribe();
                 }
               },
               () => {

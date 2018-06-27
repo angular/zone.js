@@ -5,11 +5,12 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {Observable, of} from 'rxjs';
+import {tap} from 'rxjs/operators';
 
-describe('Observable.do', () => {
+describe('Observable.tap', () => {
   let log: string[];
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -21,14 +22,14 @@ describe('Observable.do', () => {
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     const error = new Error('test');
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.of(1);
+      return of(1);
     });
 
     observable1 = doZone1.run(() => {
-      return observable1.do((v: any) => {
+      return observable1.pipe(tap((v: any) => {
         log.push(v);
         expect(Zone.current.name).toEqual(doZone1.name);
-      });
+      }));
     });
 
     subscriptionZone.run(() => {

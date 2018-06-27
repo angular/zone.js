@@ -6,7 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import * as Rx from 'rxjs/Rx';
+import {asapScheduler, Observable, of, pipe} from 'rxjs';
+import {observeOn} from 'rxjs/operators';
+
 import {asyncTest} from '../test-util';
 
 describe('Scheduler.asap', () => {
@@ -29,7 +31,7 @@ describe('Scheduler.asap', () => {
   it('scheduler asap error should run in correct zone', asyncTest((done: any) => {
        let observable: any;
        constructorZone.run(() => {
-         observable = Rx.Observable.of(1, 2, 3).observeOn(Rx.Scheduler.asap);
+         observable = of(1, 2, 3).pipe(observeOn(asapScheduler));
        });
 
        errorCallback = () => {

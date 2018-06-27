@@ -9,7 +9,8 @@
 import 'rxjs/add/operator/delay';
 import '../../lib/rxjs/rxjs-fake-async';
 
-import {Observable} from 'rxjs/Observable';
+import {Observable} from 'rxjs';
+import {delay} from 'rxjs/operators';
 
 import {isNode, patchMacroTask} from '../../lib/common/utils';
 import {ifEnvSupports} from '../test-util';
@@ -1127,7 +1128,7 @@ describe('FakeAsyncTestZoneSpec', () => {
                    subscribe.next('hello');
                    subscribe.complete();
                  });
-                 observable.delay(1000).subscribe(v => {
+                 observable.pipe(delay(1000)).subscribe(v => {
                    result = v;
                  });
                  expect(result).toBe(null);

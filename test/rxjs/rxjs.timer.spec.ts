@@ -5,12 +5,12 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {Observable, timer} from 'rxjs';
 import {asyncTest} from '../test-util';
 
 describe('Observable.timer', () => {
   let log: string[];
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -20,7 +20,7 @@ describe('Observable.timer', () => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.timer(10, 20);
+         return timer(10, 20);
        });
 
        subscriptionZone.run(() => {

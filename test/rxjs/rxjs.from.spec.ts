@@ -5,14 +5,15 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {from, Observable} from 'rxjs';
+
 import {asyncTest} from '../test-util';
 
 describe('Observable.from', () => {
   let log: string[];
   const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
   const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -20,7 +21,7 @@ describe('Observable.from', () => {
 
   it('from array should run in the correct zone', () => {
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.from([1, 2]);
+      return from([1, 2]);
     });
 
     subscriptionZone.run(() => {
@@ -43,7 +44,7 @@ describe('Observable.from', () => {
 
   it('from array like object should run in the correct zone', () => {
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.from('foo');
+      return from('foo');
     });
 
     subscriptionZone.run(() => {
@@ -68,7 +69,7 @@ describe('Observable.from', () => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.from(new Promise((resolve, reject) => {
+         return from(new Promise((resolve, reject) => {
            resolve(1);
          }));
        });

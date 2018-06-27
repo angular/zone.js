@@ -5,13 +5,13 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {Observable, of} from 'rxjs';
 
 describe('Observable.of', () => {
   let log: string[];
   const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
   const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -19,7 +19,7 @@ describe('Observable.of', () => {
 
   it('of func callback should run in the correct zone', () => {
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.of(1, 2, 3);
+      return of(1, 2, 3);
     });
 
     subscriptionZone.run(() => {

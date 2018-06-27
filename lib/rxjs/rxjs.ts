@@ -13,10 +13,7 @@ import 'rxjs/add/observable/forkJoin';
 import 'rxjs/add/observable/fromEventPattern';
 import 'rxjs/add/operator/multicast';
 
-import {Observable} from 'rxjs/Observable';
-import {asap} from 'rxjs/scheduler/asap';
-import {Subscriber} from 'rxjs/Subscriber';
-import {Subscription} from 'rxjs/Subscription';
+import {asapScheduler, Observable, Subscriber, Subscription} from 'rxjs';
 import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
 
 (Zone as any).__load_patch('rxjs', (global: any, Zone: ZoneType) => {
@@ -358,5 +355,5 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
   patchObservableFactory(Observable, 'forkJoin');
   patchObservableFactoryArgs(Observable, 'fromEventPattern');
   patchMulticast();
-  patchImmediate(asap);
+  patchImmediate(asapScheduler);
 });

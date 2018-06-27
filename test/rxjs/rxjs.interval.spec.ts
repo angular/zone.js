@@ -5,12 +5,13 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {interval, Observable} from 'rxjs';
+
 import {asyncTest} from '../test-util';
 
 describe('Observable.interval', () => {
   let log: string[];
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -20,7 +21,7 @@ describe('Observable.interval', () => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.interval(10);
+         return interval(10);
        });
 
        subscriptionZone.run(() => {
@@ -29,7 +30,7 @@ describe('Observable.interval', () => {
                log.push(result);
                expect(Zone.current.name).toEqual(subscriptionZone.name);
                if (result >= 3) {
-                 subscriber.complete();
+                 subscriber.unsubscribe();
                  expect(log).toEqual([0, 1, 2, 3]);
                  done();
                }
