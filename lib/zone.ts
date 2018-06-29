@@ -322,6 +322,7 @@ interface _ZonePrivate {
   showUncaughtError: () => boolean;
   patchEventTarget: (global: any, apis: any[], options?: any) => boolean[];
   patchOnProperties: (obj: any, properties: string[]|null) => void;
+  patchThen: (ctro: Function) => void;
   setNativePromise: (nativePromise: any) => void;
   patchMethod:
       (target: any, name: string,
@@ -1326,7 +1327,8 @@ const Zone: ZoneType = (function(global: any) {
     patchEventTarget: () => [],
     patchOnProperties: noop,
     patchMethod: () => noop,
-    bindArguments: () => (null as any),
+    bindArguments: () => [],
+    patchThen: () => noop,
     setNativePromise: (NativePromise: any) => {
       // sometimes NativePromise.resolve static function
       // is not ready yet, (such as core-js/es6.promise)

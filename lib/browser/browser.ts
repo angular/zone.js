@@ -199,8 +199,16 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
         });
 
     const XMLHTTPREQUEST_SOURCE = 'XMLHttpRequest.send';
-    const sendNative =
+    const fetchTaskAborting = zoneSymbol('fetchTaskAborting');
+    const fetchTaskScheduling = zoneSymbol('fetchTaskScheduling');
+    const sendNative: Function|null =
         patchMethod(XMLHttpRequestPrototype, 'send', () => function(self: any, args: any[]) {
+          if ((Zone.current as any)[fetchTaskScheduling] === true) {
+            // a fetch is scheduling, so we are using xhr to polyfill fetch
+            // and because we already schedule macroTask for fetch, we should
+            // not schedule a macroTask for xhr again
+            return sendNative!.apply(self, args);
+          }
           if (self[XHR_SYNC]) {
             // if the XHR is sync there is no task to schedule, just execute the code.
             return sendNative!.apply(self, args);
@@ -212,22 +220,26 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
           }
         });
 
-    const abortNative = patchMethod(XMLHttpRequestPrototype, 'abort', () => function(self: any) {
-      const task: Task = findPendingTask(self);
-      if (task && typeof task.type == 'string') {
-        // If the XHR has already completed, do nothing.
-        // If the XHR has already been aborted, do nothing.
-        // Fix #569, call abort multiple times before done will cause
-        // macroTask task count be negative number
-        if (task.cancelFn == null || (task.data && (<XHROptions>task.data).aborted)) {
-          return;
-        }
-        task.zone.cancelTask(task);
-      }
-      // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no
-      // task
-      // to cancel. Do nothing.
-    });
+    const abortNative =
+        patchMethod(XMLHttpRequestPrototype, 'abort', () => function(self: any, args: any[]) {
+          const task: Task = findPendingTask(self);
+          if (task && typeof task.type == 'string') {
+            // If the XHR has already completed, do nothing.
+            // If the XHR has already been aborted, do nothing.
+            // Fix #569, call abort multiple times before done will cause
+            // macroTask task count be negative number
+            if (task.cancelFn == null || (task.data && (<XHROptions>task.data).aborted)) {
+              return;
+            }
+            task.zone.cancelTask(task);
+          } else if ((Zone.current as any)[fetchTaskAborting] === true) {
+            // the abort is called from fetch polyfill, we need to call native abort of XHR.
+            return abortNative!.apply(self, args);
+          }
+          // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no
+          // task
+          // to cancel. Do nothing.
+        });
   }
 });
 
