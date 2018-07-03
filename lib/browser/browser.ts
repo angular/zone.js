@@ -96,6 +96,7 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
   const XHR_LISTENER = zoneSymbol('xhrListener');
   const XHR_SCHEDULED = zoneSymbol('xhrScheduled');
   const XHR_URL = zoneSymbol('xhrURL');
+  const XHR_ERROR_BEFORE_SCHEDULED = zoneSymbol('xhrErrorBeforeScheduled');
 
   interface XHROptions extends TaskData {
     target: any;
@@ -126,9 +127,10 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
     const SCHEDULED = 'scheduled';
 
     function scheduleTask(task: Task) {
-      (XMLHttpRequest as any)[XHR_SCHEDULED] = false;
       const data = <XHROptions>task.data;
       const target = data.target;
+      target[XHR_SCHEDULED] = false;
+      target[XHR_ERROR_BEFORE_SCHEDULED] = false;
       // remove existing event listener
       const listener = target[XHR_LISTENER];
       if (!oriAddListener) {
@@ -143,7 +145,7 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
         if (target.readyState === target.DONE) {
           // sometimes on some browsers XMLHttpRequest will fire onreadystatechange with
           // readyState=4 multiple times, so we need to check task state here
-          if (!data.aborted && (XMLHttpRequest as any)[XHR_SCHEDULED] && task.state === SCHEDULED) {
+          if (!data.aborted && target[XHR_SCHEDULED] && task.state === SCHEDULED) {
             // check whether the xhr has registered onload listener
             // if that is the case, the task should invoke after all
             // onload listeners finish.
@@ -167,6 +169,9 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
             } else {
               task.invoke();
             }
+          } else if (!data.aborted && target[XHR_SCHEDULED] === false) {
+            // error occurs when xhr.send()
+            target[XHR_ERROR_BEFORE_SCHEDULED] = true;
           }
         }
       };
@@ -177,7 +182,7 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
         target[XHR_TASK] = task;
       }
       sendNative!.apply(target, data.args);
-      (XMLHttpRequest as any)[XHR_SCHEDULED] = true;
+      target[XHR_SCHEDULED] = true;
       return task;
     }
 
@@ -215,8 +220,15 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
           } else {
             const options: XHROptions =
                 {target: self, url: self[XHR_URL], isPeriodic: false, args: args, aborted: false};
-            return scheduleMacroTaskWithCurrentZone(
+            const task = scheduleMacroTaskWithCurrentZone(
                 XMLHTTPREQUEST_SOURCE, placeholderCallback, options, scheduleTask, clearTask);
+            if (self && self[XHR_ERROR_BEFORE_SCHEDULED] === true && !options.aborted &&
+                task.state === SCHEDULED) {
+              // xhr request throw error when send
+              // we should invoke task instead of leaving a scheduled
+              // pending macroTask
+              task.invoke();
+            }
           }
         });
 
