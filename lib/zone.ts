@@ -644,7 +644,21 @@ const Zone: ZoneType = (function(global: any) {
   }
   mark('Zone');
   if (global['Zone']) {
-    throw new Error('Zone already loaded.');
+    // if global['Zone'] already exists (maybe zone.js was already loaded or
+    // some other lib also registered a global object named Zone), we may need
+    // to throw an error, but sometimes user may not want this error.
+    // For example,
+    // we have two web pages, page1 includes zone.js, page2 doesn't.
+    // and the 1st time user load page1 and page2, everything work fine,
+    // but when user load page2 again, error occurs because global['Zone'] already exists.
+    // so we add a flag to let user choose whether to throw this error or not.
+    // By default, if existing Zone is from zone.js, we will not throw the error.
+    if (global[('__zone_symbol__forceDuplicateZoneCheck')] === true ||
+        typeof global['Zone'].__symbol__ !== 'function') {
+      throw new Error('Zone already loaded.');
+    } else {
+      return global['Zone'];
+    }
   }
 
   class Zone implements AmbientZone {
