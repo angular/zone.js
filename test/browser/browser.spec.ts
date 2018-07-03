@@ -9,7 +9,7 @@
 import {patchFilteredProperties} from '../../lib/browser/property-descriptor';
 import {patchEventTarget} from '../../lib/common/events';
 import {isBrowser, isIEOrEdge, isMix, zoneSymbol} from '../../lib/common/utils';
-import {getIEVersion, ifEnvSupports, ifEnvSupportsWithDone, isEdge} from '../test-util';
+import {getEdgeVersion, getIEVersion, ifEnvSupports, ifEnvSupportsWithDone, isEdge} from '../test-util';
 
 import Spy = jasmine.Spy;
 declare const global: any;
@@ -190,7 +190,7 @@ describe('Zone', function() {
               'onvrdisplayactivate', 'onvrdisplayblur', 'onvrdisplayconnect',
               'onvrdisplaydeactivate', 'onvrdisplaydisconnect', 'onvrdisplayfocus',
               'onvrdisplaypointerrestricted', 'onvrdisplaypointerunrestricted',
-              'onorientationchange'
+              'onorientationchange', 'onerror'
             ]);
           });
 
@@ -389,6 +389,24 @@ describe('Zone', function() {
                  onerror = window.onerror;
                };
                expect(testFn).not.toThrow();
+             }));
+
+          it('window.onerror callback signiture should be (message, source, lineno, colno, error)',
+             ifEnvSupportsWithDone(canPatchOnProperty(window, 'onerror'), function(done: DoneFn) {
+               let testError = new Error('testError');
+               window.onerror = function(
+                   message: any, source?: string, lineno?: number, colno?: number, error?: any) {
+                 expect(message).toContain('testError');
+                 if (getEdgeVersion() !== 14) {
+                   // Edge 14, error will be undefined.
+                   expect(error).toBe(testError);
+                 }
+                 setTimeout(done);
+                 return true;
+               };
+               setTimeout(() => {
+                 throw testError;
+               }, 100);
              }));
         }));
 

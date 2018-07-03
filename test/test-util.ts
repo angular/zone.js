@@ -123,3 +123,12 @@ export function isEdge() {
   const userAgent = navigator.userAgent.toLowerCase();
   return userAgent.indexOf('edge') !== -1;
 }
+
+export function getEdgeVersion() {
+  const ua = navigator.userAgent.toLowerCase();
+  const edge = ua.indexOf('edge/');
+  if (edge === -1) {
+    return -1;
+  }
+  return parseInt(ua.substring(edge + 5, ua.indexOf('.', edge)), 10);
+}
