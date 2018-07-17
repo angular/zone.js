@@ -158,6 +158,11 @@ export function patchProperty(obj: any, prop: string, prototype?: any) {
     return;
   }
 
+  const onPropPatchedSymbol = zoneSymbol('on' + prop + 'patched');
+  if (obj.hasOwnProperty(onPropPatchedSymbol) && obj[onPropPatchedSymbol]) {
+    return;
+  }
+
   // A property descriptor cannot have getter/setter and be writable
   // deleting the writable and value properties avoids this error:
   //
@@ -240,6 +245,8 @@ export function patchProperty(obj: any, prop: string, prototype?: any) {
   };
 
   ObjectDefineProperty(obj, prop, desc);
+
+  obj[onPropPatchedSymbol] = true;
 }
 
 export function patchOnProperties(obj: any, properties: string[]|null, prototype?: any) {
