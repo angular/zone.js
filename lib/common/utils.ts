@@ -135,11 +135,26 @@ const wrapFn = function(event: Event) {
   }
   const target = this || event.target || _global;
   const listener = target[eventNameSymbol];
-  let result = listener && listener.apply(this, arguments);
-
-  if (result != undefined && !result) {
-    event.preventDefault();
+  let result;
+  if (isBrowser && target === internalWindow && event.type === 'error') {
+    // window.onerror have different signiture
+    // https://developer.mozilla.org/en-US/docs/Web/API/GlobalEventHandlers/onerror#window.onerror
+    // and onerror callback will prevent default when callback return true
+    const errorEvent: ErrorEvent = event as any;
+    result = listener &&
+        listener.call(
+            this, errorEvent.message, errorEvent.filename, errorEvent.lineno, errorEvent.colno,
+            errorEvent.error);
+    if (result === true) {
+      event.preventDefault();
+    }
+  } else {
+    result = listener && listener.apply(this, arguments);
+    if (result != undefined && !result) {
+      event.preventDefault();
+    }
   }
+
   return result;
 };
 
@@ -474,6 +489,17 @@ export function attachOriginToPatched(patched: Function, original: any) {
 
 let isDetectedIEOrEdge = false;
 let ieOrEdge = false;
+
+export function isIE() {
+  try {
+    const ua = internalWindow.navigator.userAgent;
+    if (ua.indexOf('MSIE ') !== -1 || ua.indexOf('Trident/') !== -1) {
+      return true;
+    }
+  } catch (error) {
+  }
+  return false;
+}
 
 export function isIEOrEdge() {
   if (isDetectedIEOrEdge) {

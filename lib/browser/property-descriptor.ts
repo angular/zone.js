@@ -10,7 +10,7 @@
  * @suppress {globalThis}
  */
 
-import {isBrowser, isMix, isNode, ObjectDefineProperty, ObjectGetOwnPropertyDescriptor, ObjectGetPrototypeOf, patchClass, patchOnProperties, wrapWithCurrentZone, zoneSymbol} from '../common/utils';
+import {isBrowser, isIE, isMix, isNode, ObjectDefineProperty, ObjectGetOwnPropertyDescriptor, ObjectGetPrototypeOf, patchClass, patchOnProperties, wrapWithCurrentZone, zoneSymbol} from '../common/utils';
 
 import * as webSocketPatch from './websocket';
 
@@ -241,7 +241,7 @@ export interface IgnoreProperty {
 
 function filterProperties(
     target: any, onProperties: string[], ignoreProperties: IgnoreProperty[]): string[] {
-  if (!ignoreProperties) {
+  if (!ignoreProperties || ignoreProperties.length === 0) {
     return onProperties;
   }
 
@@ -276,10 +276,13 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
     // for browsers that we can patch the descriptor:  Chrome & Firefox
     if (isBrowser) {
       const internalWindow: any = window;
+      const ignoreErrorProperties =
+          isIE ? [{target: internalWindow, ignoreProperties: ['error']}] : [];
       // in IE/Edge, onProp not exist in window object, but in WindowPrototype
       // so we need to pass WindowPrototype to check onProp exist or not
       patchFilteredProperties(
-          internalWindow, eventNames.concat(['messageerror']), ignoreProperties,
+          internalWindow, eventNames.concat(['messageerror']),
+          ignoreProperties ? ignoreProperties.concat(ignoreErrorProperties) : ignoreProperties,
           ObjectGetPrototypeOf(internalWindow));
       patchFilteredProperties(Document.prototype, eventNames, ignoreProperties);
 
