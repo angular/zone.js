@@ -22,6 +22,16 @@ Zone.__load_patch('EventEmitter', (global: any) => {
     return task.callback === delegate || task.callback.listener === delegate;
   };
 
+  const eventNameToString = function(eventName: string|Symbol) {
+    if (typeof eventName === 'string') {
+      return eventName as string;
+    }
+    if (!eventName) {
+      return '';
+    }
+    return eventName.toString().replace('(', '_').replace(')', '_');
+  };
+
   function patchEventEmitterMethods(obj: any) {
     const result = patchEventTarget(global, [obj], {
       useG: false,
@@ -32,7 +42,8 @@ Zone.__load_patch('EventEmitter', (global: any) => {
       listeners: EE_LISTENERS,
       chkDup: false,
       rt: true,
-      diff: compareTaskCallbackVsDelegate
+      diff: compareTaskCallbackVsDelegate,
+      eventNameToString: eventNameToString
     });
     if (result && result[0]) {
       obj[EE_ON] = obj[EE_ADD_LISTENER];

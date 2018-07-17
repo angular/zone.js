@@ -69,6 +69,8 @@ export interface PatchEventTargetOptions {
   diff?: (task: any, delegate: any) => boolean;
   // support passive or not
   supportPassive?: boolean;
+  // get string from eventName (in nodejs, eventName maybe Symbol)
+  eventNameToString?: (eventName: any) => string;
 }
 
 export function patchEventTarget(
@@ -211,6 +213,8 @@ export function patchEventTarget(
     if (proto[zoneSymbolAddEventListener]) {
       return false;
     }
+
+    const eventNameToString = patchOptions && patchOptions.eventNameToString;
 
     // a shared global taskData to pass data for scheduleEventTask
     // so we do not need to create a new object just for pass some data
@@ -384,8 +388,10 @@ export function patchEventTarget(
         let symbolEventName;
         if (!symbolEventNames) {
           // the code is duplicate, but I just want to get some better performance
-          const falseEventName = eventName + FALSE_STR;
-          const trueEventName = eventName + TRUE_STR;
+          const falseEventName =
+              (eventNameToString ? eventNameToString(eventName) : eventName) + FALSE_STR;
+          const trueEventName =
+              (eventNameToString ? eventNameToString(eventName) : eventName) + TRUE_STR;
           const symbol = ZONE_SYMBOL_PREFIX + falseEventName;
           const symbolCapture = ZONE_SYMBOL_PREFIX + trueEventName;
           zoneSymbolEventNames[eventName] = {};
@@ -418,7 +424,8 @@ export function patchEventTarget(
           source = targetSource[eventName];
         }
         if (!source) {
-          source = constructorName + addSource + eventName;
+          source = constructorName + addSource +
+              (eventNameToString ? eventNameToString(eventName) : eventName);
         }
         // do not create a new object as task.data to pass those things
         // just use the global shared one
@@ -556,7 +563,8 @@ export function patchEventTarget(
       const eventName = arguments[0];
 
       const listeners: any[] = [];
-      const tasks = findEventTasks(target, eventName);
+      const tasks =
+          findEventTasks(target, eventNameToString ? eventNameToString(eventName) : eventName);
 
       for (let i = 0; i < tasks.length; i++) {
         const task: any = tasks[i];
