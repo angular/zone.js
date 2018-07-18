@@ -476,11 +476,6 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
 
   if (NativePromise) {
     patchThen(NativePromise);
-
-    /*let fetch = global['fetch'];
-    if (typeof fetch == 'function') {
-      global['fetch'] = zoneify(fetch);
-    }*/
   }
 
   // This is not part of public API, but it is useful for tests, so we expose it.

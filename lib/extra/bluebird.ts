@@ -25,14 +25,30 @@ Zone.__load_patch('bluebird', (global: any, Zone: ZoneType, api: _ZonePrivate) =
                 args[i] = function() {
                   const argSelf: any = this;
                   const argArgs: any = arguments;
-                  zone.scheduleMicroTask('Promise.then', () => {
-                    return func.apply(argSelf, argArgs);
+                  return new Bluebird((res: any, rej: any) => {
+                    zone.scheduleMicroTask('Promise.then', () => {
+                      try {
+                        res(func.apply(argSelf, argArgs));
+                      } catch (error) {
+                        rej(error);
+                      }
+                    });
                   });
                 };
               }
             }
             return delegate.apply(self, args);
           });
+    });
+
+    Bluebird.onPossiblyUnhandledRejection(function(e: any, promise: any) {
+      try {
+        Zone.current.runGuarded(() => {
+          throw e;
+        });
+      } catch (err) {
+        api.onUnhandledError(err);
+      }
     });
 
     // override global promise

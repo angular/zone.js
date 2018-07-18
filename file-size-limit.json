@@ -3,7 +3,7 @@
     {
       "path": "dist/zone.min.js",
       "checkTarget": true,
-      "limit": 42000
+      "limit": 42050
     }
   ]
 }

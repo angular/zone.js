@@ -9,6 +9,10 @@
 // this spec will not be integrated with Travis CI, because I don't
 // want to add bluebird into devDependencies, you can run this spec
 // on your local environment
+process.on('unhandledRejection', (reason, p) => {
+  console.log('Unhandled Rejection at:', p, 'reason:', reason);
+  // application specific logging, throwing an error, or other logic here
+});
 
 describe('bluebird promise', () => {
   let BluebirdPromise: any;
@@ -633,6 +637,158 @@ describe('bluebird promise', () => {
       }).then((r: any) => {
         expect(Zone.current.name).toEqual('zone_B');
         done();
+      });
+    });
+  });
+
+  it('should be able to chain promise', (done: DoneFn) => {
+    Zone.current.fork({name: 'zone_A'}).run(() => {
+      new BluebirdPromise((resolve: any, reject: any) => {
+        expect(Zone.current.name).toEqual('zone_A');
+        resolve(1);
+      })
+          .then((r: any) => {
+            expect(r).toBe(1);
+            expect(Zone.current.name).toEqual('zone_A');
+            return Promise.resolve(2);
+          })
+          .then((r: any) => {
+            expect(r).toBe(2);
+            expect(Zone.current.name).toEqual('zone_A');
+          });
+    });
+    Zone.current.fork({name: 'zone_B'}).run(() => {
+      new BluebirdPromise((resolve: any, reject: any) => {
+        expect(Zone.current.name).toEqual('zone_B');
+        reject(1);
+      })
+          .then(
+              () => {
+                fail('should not be here.');
+              },
+              (r: any) => {
+                expect(r).toBe(1);
+                expect(Zone.current.name).toEqual('zone_B');
+                return Promise.resolve(2);
+              })
+          .then((r: any) => {
+            expect(r).toBe(2);
+            expect(Zone.current.name).toEqual('zone_B');
+            done();
+          });
+    });
+  });
+
+  it('should catch rejected chained bluebird promise', (done: DoneFn) => {
+    const logs: string[] = [];
+    const zone = Zone.current.fork({
+      name: 'testErrorHandling',
+      onHandleError: function() {
+        // should not get here
+        logs.push('onHandleError');
+        return true;
+      }
+    });
+
+    zone.runGuarded(() => {
+      return BluebirdPromise.resolve()
+          .then(() => {
+            throw new Error('test error');
+          })
+          .catch(() => {
+            expect(logs).toEqual([]);
+            done();
+          });
+    });
+  });
+
+  it('should catch rejected chained global promise', (done: DoneFn) => {
+    const logs: string[] = [];
+    const zone = Zone.current.fork({
+      name: 'testErrorHandling',
+      onHandleError: function() {
+        // should not get here
+        logs.push('onHandleError');
+        return true;
+      }
+    });
+
+    zone.runGuarded(() => {
+      return Promise.resolve()
+          .then(() => {
+            throw new Error('test error');
+          })
+          .catch(() => {
+            expect(logs).toEqual([]);
+            done();
+          });
+    });
+  });
+
+  it('should catch rejected bluebird promise', (done: DoneFn) => {
+    const logs: string[] = [];
+    const zone = Zone.current.fork({
+      name: 'testErrorHandling',
+      onHandleError: function() {
+        // should not get here
+        logs.push('onHandleError');
+        return true;
+      }
+    });
+
+    zone.runGuarded(() => {
+      return BluebirdPromise.reject().catch(() => {
+        expect(logs).toEqual([]);
+        done();
+      });
+    });
+  });
+
+  it('should catch rejected global promise', (done: DoneFn) => {
+    const logs: string[] = [];
+    const zone = Zone.current.fork({
+      name: 'testErrorHandling',
+      onHandleError: function() {
+        // should not get here
+        logs.push('onHandleError');
+        return true;
+      }
+    });
+
+    zone.runGuarded(() => {
+      return Promise.reject(new Error('reject')).catch(() => {
+        expect(logs).toEqual([]);
+        done();
+      });
+    });
+  });
+
+  it('should trigger onHandleError when unhandledRejection', (done: DoneFn) => {
+    const zone = Zone.current.fork({
+      name: 'testErrorHandling',
+      onHandleError: function() {
+        setTimeout(done, 100);
+        return true;
+      }
+    });
+
+    zone.runGuarded(() => {
+      return Promise.reject(new Error('reject'));
+    });
+  });
+
+  it('should trigger onHandleError when unhandledRejection in chained Promise', (done: DoneFn) => {
+    const zone = Zone.current.fork({
+      name: 'testErrorHandling',
+      onHandleError: function() {
+        setTimeout(done, 100);
+        return true;
+      }
+    });
+
+    zone.runGuarded(() => {
+      return Promise.resolve().then(() => {
+        throw new Error('test');
       });
     });
   });
