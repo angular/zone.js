@@ -172,6 +172,25 @@ describe('FakeAsyncTestZoneSpec', () => {
       });
     });
 
+    it('should run doTick callback even if no work ran', () => {
+      fakeAsyncTestZone.run(() => {
+        let totalElapsed = 0;
+        function doTick(elapsed: number) {
+          totalElapsed += elapsed;
+        }
+        setTimeout(() => {}, 10);
+
+        testZoneSpec.tick(6, doTick);
+        expect(totalElapsed).toEqual(6);
+
+        testZoneSpec.tick(6, doTick);
+        expect(totalElapsed).toEqual(12);
+
+        testZoneSpec.tick(6, doTick);
+        expect(totalElapsed).toEqual(18);
+      });
+    });
+
     it('should run queued timer created by timer callback', () => {
       fakeAsyncTestZone.run(() => {
         let counter = 0;
