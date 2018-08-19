@@ -21,6 +21,9 @@ Zone.__load_patch('fetch', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   if (supportAbort) {
     global['AbortController'] = function() {
       const abortController = new OriginalAbortController();
+      if (api.getMode() === 'native') {
+        return abortController;
+      }
       const signal = abortController.signal;
       signal.abortController = abortController;
       return abortController;
@@ -32,10 +35,13 @@ Zone.__load_patch('fetch', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
             return self.task.zone.cancelTask(self.task);
           }
           return delegate.apply(self, args);
-        });
+        }, api);
   }
   const placeholder = function() {};
   global['fetch'] = function() {
+    if (api.getMode() === 'native') {
+      return fetch.apply(this, arguments);
+    }
     const args = Array.prototype.slice.call(arguments);
     const options = args.length > 1 ? args[1] : null;
     const signal = options && options.signal;

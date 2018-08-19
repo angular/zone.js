@@ -320,15 +320,16 @@ interface _ZonePrivate {
   onUnhandledError: (error: Error) => void;
   microtaskDrainDone: () => void;
   showUncaughtError: () => boolean;
-  patchEventTarget: (global: any, apis: any[], options?: any) => boolean[];
-  patchOnProperties: (obj: any, properties: string[]|null) => void;
+  patchEventTarget: (global: any, apis: any[], api: _ZonePrivate, options?: any) => boolean[];
+  patchOnProperties: (obj: any, properties: string[]|null, api: _ZonePrivate) => void;
   patchThen: (ctro: Function) => void;
   setNativePromise: (nativePromise: any) => void;
   patchMethod:
       (target: any, name: string,
        patchFn: (delegate: Function, delegateName: string, name: string) =>
-           (self: any, args: any[]) => any) => Function | null;
+           (self: any, args: any[]) => any, api: _ZonePrivate) => Function | null;
   bindArguments: (args: any[], source: string) => any[];
+  getMode: () => _ZoneMode;
 }
 
 /** @internal */
@@ -632,6 +633,8 @@ interface EventTask extends Task {
 type AmbientZone = Zone;
 /** @internal */
 type AmbientZoneDelegate = ZoneDelegate;
+/** @internal */
+type _ZoneMode = 'default' | 'native';
 
 const Zone: ZoneType = (function(global: any) {
   const performance: {mark(name: string): void; measure(name: string, label: string): void;} =
@@ -702,6 +705,10 @@ const Zone: ZoneType = (function(global: any) {
       }
     }
 
+    static __set_mode(zoneMode: _ZoneMode) {
+      _mode = zoneMode;
+    }
+
     public get parent(): AmbientZone|null {
       return this._parent;
     }
@@ -760,9 +767,12 @@ const Zone: ZoneType = (function(global: any) {
     public run<T>(
         callback: (...args: any[]) => T, applyThis?: any, applyArgs?: any[], source?: string): T {
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
+      const _previous_mode = _mode;
       try {
+        _mode = 'default';
         return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
       } finally {
+        _mode = _previous_mode;
         _currentZoneFrame = _currentZoneFrame.parent!;
       }
     }
@@ -772,10 +782,13 @@ const Zone: ZoneType = (function(global: any) {
         callback: (...args: any[]) => T, applyThis: any = null, applyArgs?: any[],
         source?: string) {
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
+      const _previous_mode = _mode;
       try {
         try {
+          _mode = 'default';
           return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
         } catch (error) {
+          _mode = _previous_mode;
           if (this._zoneDelegate.handleError(this, error)) {
             throw error;
           }
@@ -806,7 +819,9 @@ const Zone: ZoneType = (function(global: any) {
       const previousTask = _currentTask;
       _currentTask = task;
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
+      const _previous_mode = _mode;
       try {
+        _mode = 'default';
         if (task.type == macroTask && task.data && !task.data.isPeriodic) {
           task.cancelFn = undefined;
         }
@@ -818,6 +833,7 @@ const Zone: ZoneType = (function(global: any) {
           }
         }
       } finally {
+        _mode = _previous_mode;
         // if the task's state is notScheduled or unknown, then it has already been cancelled
         // we should not reset the state to scheduled
         if (task.state !== notScheduled && task.state !== unknown) {
@@ -1351,10 +1367,12 @@ const Zone: ZoneType = (function(global: any) {
         nativeMicroTaskQueuePromise = NativePromise.resolve(0);
       }
     },
+    getMode: () => _mode
   };
   let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
   let _currentTask: Task|null = null;
   let _numberOfNestedTaskFrames = 0;
+  let _mode: _ZoneMode = 'default';
 
   function noop() {}
 

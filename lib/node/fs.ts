@@ -8,7 +8,7 @@
 
 import {patchMacroTask} from '../common/utils';
 
-Zone.__load_patch('fs', () => {
+Zone.__load_patch('fs', (globa: any, _: ZoneType, api: _ZonePrivate) => {
   let fs: any;
   try {
     fs = require('fs');
@@ -35,7 +35,7 @@ Zone.__load_patch('fs', () => {
               cbIdx: args.length > 0 ? args.length - 1 : -1,
               target: self
             };
-          });
+          }, api);
         });
   }
 });

@@ -16,7 +16,7 @@ Zone.__load_patch('mediaQuery', (global: any, Zone: ZoneType, api: _ZonePrivate)
       } else {
         return delegate.apply(self, args);
       }
-    });
+    }, api);
   }
 
   function patchRemoveListener(proto: any) {
@@ -32,7 +32,7 @@ Zone.__load_patch('mediaQuery', (global: any, Zone: ZoneType, api: _ZonePrivate)
       } else {
         return delegate.apply(self, args);
       }
-    });
+    }, api);
   }
 
   if (global['MediaQueryList']) {
@@ -60,6 +60,6 @@ Zone.__load_patch('mediaQuery', (global: any, Zone: ZoneType, api: _ZonePrivate)
         }
       }
       return mql;
-    });
+    }, api);
   }
 });

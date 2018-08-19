@@ -103,7 +103,7 @@ export function eventTargetPatch(_global: any, api: _ZonePrivate) {
   }
   // vh is validateHandler to check event handler
   // is valid or not(for security check)
-  patchEventTarget(_global, apiTypes, {vh: checkIEAndCrossContext});
+  patchEventTarget(_global, apiTypes, api, {vh: checkIEAndCrossContext});
   api.patchEventTarget = patchEventTarget;
 
   return true;

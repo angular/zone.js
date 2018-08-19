@@ -132,3 +132,21 @@ export function getEdgeVersion() {
   }
   return parseInt(ua.substring(edge + 5, ua.indexOf('.', edge)), 10);
 }
+
+const noop = function () { };
+
+export const testApi: _ZonePrivate = {
+  symbol: Zone.__symbol__,
+  currentZoneFrame: () => ({ parent: null, zone: Zone.current }),
+  onUnhandledError: noop,
+  microtaskDrainDone: noop,
+  scheduleMicroTask: noop,
+  showUncaughtError: () => !(Zone as any)[Zone.__symbol__('ignoreConsoleErrorUncaughtError')],
+  patchEventTarget: () => [],
+  patchOnProperties: noop,
+  patchMethod: () => noop,
+  bindArguments: () => [],
+  patchThen: () => noop,
+  setNativePromise: (NativePromise: any) => noop,
+  getMode: () => 'default'
+};

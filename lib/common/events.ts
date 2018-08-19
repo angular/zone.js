@@ -72,7 +72,7 @@ export interface PatchEventTargetOptions {
 }
 
 export function patchEventTarget(
-    _global: any, apis: any[], patchOptions?: PatchEventTargetOptions) {
+    _global: any, apis: any[], api: _ZonePrivate, patchOptions?: PatchEventTargetOptions) {
   const ADD_EVENT_LISTENER = (patchOptions && patchOptions.add) || ADD_EVENT_LISTENER_STR;
   const REMOVE_EVENT_LISTENER = (patchOptions && patchOptions.rm) || REMOVE_EVENT_LISTENER_STR;
 
@@ -329,6 +329,9 @@ export function patchEventTarget(
         nativeListener: any, addSource: string, customScheduleFn: any, customCancelFn: any,
         returnTarget = false, prepend = false) {
       return function() {
+        if (api.getMode() === 'native') {
+          return nativeListener.apply(this, arguments);
+        }
         const target = this || _global;
         let delegate = arguments[1];
         if (!delegate) {
@@ -488,6 +491,9 @@ export function patchEventTarget(
     }
 
     proto[REMOVE_EVENT_LISTENER] = function() {
+      if (api.getMode() === 'native') {
+        return nativeRemoveAllListeners.apply(this, arguments);
+      }
       const target = this || _global;
       const eventName = arguments[0];
       const options = arguments[2];
@@ -548,6 +554,9 @@ export function patchEventTarget(
     };
 
     proto[LISTENERS_EVENT_LISTENER] = function() {
+      if (api.getMode() === 'native') {
+        return nativeListeners && nativeListeners.apply(this, arguments);
+      }
       const target = this || _global;
       const eventName = arguments[0];
 
@@ -563,6 +572,9 @@ export function patchEventTarget(
     };
 
     proto[REMOVE_ALL_LISTENERS_EVENT_LISTENER] = function() {
+      if (api.getMode() === 'native') {
+        return nativeRemoveAllListeners && nativeRemoveAllListeners.apply(this, arguments);
+      }
       const target = this || _global;
 
       const eventName = arguments[0];
@@ -664,6 +676,6 @@ export function patchEventPrototype(global: any, api: _ZonePrivate) {
           // in case in some hybrid application, some part of
           // application will be controlled by zone, some are not
           delegate && delegate.apply(self, args);
-        });
+        }, api);
   }
 }

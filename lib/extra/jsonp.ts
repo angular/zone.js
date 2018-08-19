@@ -36,7 +36,7 @@ Zone.__load_patch('jsonp', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
           } else {
             return delegate.apply(self, args);
           }
-        });
+        }, api);
       } else {
         Object.defineProperty(global, methodName, {
           configurable: true,
@@ -74,6 +74,6 @@ Zone.__load_patch('jsonp', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
               Zone.current.scheduleMacroTask('jsonp', noop, {}, (task: Task) => {
                 return delegate.apply(self, args);
               }, noop);
-        });
+        }, api);
   };
 });

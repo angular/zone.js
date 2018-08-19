@@ -18,8 +18,11 @@ const _getOwnPropertyDescriptor = (Object as any)[zoneSymbol('getOwnPropertyDesc
 const _create = Object.create;
 const unconfigurablesKey = zoneSymbol('unconfigurables');
 
-export function propertyPatch() {
+export function propertyPatch(api: _ZonePrivate) {
   Object.defineProperty = function(obj: any, prop: string, desc: any) {
+    if (api.getMode() === 'native') {
+      return _defineProperty(obj, prop, desc);
+    }
     if (isUnconfigurable(obj, prop)) {
       throw new TypeError('Cannot assign to read only property \'' + prop + '\' of ' + obj);
     }
@@ -38,6 +41,9 @@ export function propertyPatch() {
   };
 
   Object.create = <any>function(obj: any, proto: any) {
+    if (api.getMode() === 'native') {
+      return _create(obj, proto);
+    }
     if (typeof proto === 'object' && !Object.isFrozen(proto)) {
       Object.keys(proto).forEach(function(prop) {
         proto[prop] = rewriteDescriptor(obj, prop, proto[prop]);
@@ -48,6 +54,9 @@ export function propertyPatch() {
 
   Object.getOwnPropertyDescriptor = function(obj, prop) {
     const desc = _getOwnPropertyDescriptor(obj, prop);
+    if (api.getMode() === 'native') {
+      return desc;
+    }
     if (desc && isUnconfigurable(obj, prop)) {
       desc.configurable = false;
     }

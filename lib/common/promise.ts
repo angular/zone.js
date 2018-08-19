@@ -403,6 +403,9 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       desc = {configurable: true, enumerable: true};
     }
     desc.get = function() {
+      if (api.getMode() === 'native') {
+        return NativePromise;
+      }
       // if we already set ZoneAwarePromise, use patched one
       // otherwise return native one.
       return global[ZONE_AWARE_PROMISE] ? global[ZONE_AWARE_PROMISE] : global[symbolPromise];
