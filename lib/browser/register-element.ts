@@ -20,7 +20,7 @@ export function registerElementPatch(_global: any, api: _ZonePrivate) {
       ['createdCallback', 'attachedCallback', 'detachedCallback', 'attributeChangedCallback'];
 
   (<any>document).registerElement = function(name: any, opts: any) {
-    if (api.getMode() === 'native') {
+    if (api.getCurrentScope() === 'outside') {
       return _registerElement.call(document, name, opts);
     }
     if (opts && opts.prototype) {

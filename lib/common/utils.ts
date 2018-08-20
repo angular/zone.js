@@ -80,7 +80,7 @@ export function patchPrototype(prototype: any, fnNames: string[], api: _ZonePriv
       }
       prototype[name] = ((delegate: Function) => {
         const patched: any = function() {
-          if (api.getMode() === 'native') {
+          if (api.getCurrentScope() === 'outside') {
             return delegate.apply(this, arguments);
           }
           return delegate.apply(this, bindArguments(<any>arguments, source + '.' + name));
@@ -200,7 +200,7 @@ export function patchProperty(obj: any, prop: string, api: _ZonePrivate, prototy
   }
 
   desc.set = function(newValue) {
-    if (api.getMode() === 'native' && originalDescSet) {
+    if (api.getCurrentScope() === 'outside' && originalDescSet) {
       return originalDescSet.call(this, newValue);
     }
     // in some of windows's onproperty callback, this is undefined
@@ -234,7 +234,7 @@ export function patchProperty(obj: any, prop: string, api: _ZonePrivate, prototy
   // The getter would return undefined for unassigned properties but the default value of an
   // unassigned property is null
   desc.get = function() {
-    if (api.getMode() === 'native' && originalDescGet) {
+    if (api.getCurrentScope() === 'outside' && originalDescGet) {
       return originalDescGet.call(this);
     }
     // in some of windows's onproperty callback, this is undefined
@@ -273,7 +273,8 @@ export function patchProperty(obj: any, prop: string, api: _ZonePrivate, prototy
   obj[onPropPatchedSymbol] = true;
 }
 
-export function patchOnProperties(obj: any, properties: string[]|null, api: _ZonePrivate, prototype?: any) {
+export function patchOnProperties(
+    obj: any, properties: string[]|null, api: _ZonePrivate, prototype?: any) {
   if (properties) {
     for (let i = 0; i < properties.length; i++) {
       patchProperty(obj, 'on' + properties[i], api, prototype);
@@ -301,7 +302,8 @@ export function patchClass(className: string, api: _ZonePrivate) {
   _global[zoneSymbol(className)] = OriginalClass;
 
   _global[className] = function() {
-    const a = api.getMode() === 'native' ? arguments : bindArguments(<any>arguments, className);
+    const a =
+        api.getCurrentScope() === 'outside' ? arguments : bindArguments(<any>arguments, className);
     switch (a.length) {
       case 0:
         this[originalInstanceKey] = new OriginalClass();
@@ -340,7 +342,7 @@ export function patchClass(className: string, api: _ZonePrivate) {
       } else {
         ObjectDefineProperty(_global[className].prototype, prop, {
           set: function(fn) {
-            if (typeof fn === 'function' && api.getMode() === 'default') {
+            if (typeof fn === 'function' && api.getCurrentScope() === 'inside') {
               this[originalInstanceKey][prop] = wrapWithCurrentZone(fn, className + '.' + prop);
               // keep callback in wrapped function so we can
               // use it in Function.prototype.toString to return
@@ -397,8 +399,9 @@ export function setShouldCopySymbolProperties(flag: boolean) {
 
 export function patchMethod(
     target: any, name: string,
-    patchFnFactory: (delegate: Function, delegateName: string, name: string) => (self: any, args: any[]) =>
-        any, api: _ZonePrivate): Function|null {
+    patchFnFactory: (delegate: Function, delegateName: string, name: string) =>
+        (self: any, args: any[]) => any,
+    api: _ZonePrivate): Function|null {
   let proto = target;
   while (proto && !proto.hasOwnProperty(name)) {
     proto = ObjectGetPrototypeOf(proto);
@@ -419,7 +422,7 @@ export function patchMethod(
       const patchDelegate = patchFnFactory(delegate!, delegateName, name);
       proto[name] = function() {
         // if current mode is `native`, just use `native` delegate.
-        if (api.getMode() === 'native') {
+        if (api.getCurrentScope() === 'outside') {
           return delegate && delegate.apply(this, arguments);
         }
         return patchDelegate(this, arguments as any);
@@ -442,7 +445,8 @@ export interface MacroTaskMeta extends TaskData {
 
 // TODO: @JiaLiPassion, support cancel task later if necessary
 export function patchMacroTask(
-    obj: any, funcName: string, metaCreator: (self: any, args: any[]) => MacroTaskMeta, api: _ZonePrivate) {
+    obj: any, funcName: string, metaCreator: (self: any, args: any[]) => MacroTaskMeta,
+    api: _ZonePrivate) {
   let setNative: Function|null = null;
 
   function scheduleTask(task: Task) {
@@ -473,7 +477,8 @@ export interface MicroTaskMeta extends TaskData {
 }
 
 export function patchMicroTask(
-    obj: any, funcName: string, metaCreator: (self: any, args: any[]) => MicroTaskMeta, api: _ZonePrivate) {
+    obj: any, funcName: string, metaCreator: (self: any, args: any[]) => MicroTaskMeta,
+    api: _ZonePrivate) {
   let setNative: Function|null = null;
 
   function scheduleTask(task: Task) {

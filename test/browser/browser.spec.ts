@@ -201,7 +201,8 @@ describe('Zone', function() {
           it('should not patch ignored on properties', function() {
             const TestTarget: any = (window as any)['TestTarget'];
             patchFilteredProperties(
-              TestTarget.prototype, ['prop1', 'prop2'], global['__Zone_ignore_on_properties'], testApi);
+                TestTarget.prototype, ['prop1', 'prop2'], global['__Zone_ignore_on_properties'],
+                testApi);
             const testTarget = new TestTarget();
             Zone.current.fork({name: 'test'}).run(() => {
               testTarget.onprop1 = function() {

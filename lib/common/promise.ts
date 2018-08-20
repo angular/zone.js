@@ -403,7 +403,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       desc = {configurable: true, enumerable: true};
     }
     desc.get = function() {
-      if (api.getMode() === 'native') {
+      if (api.getCurrentScope() === 'outside') {
         return NativePromise;
       }
       // if we already set ZoneAwarePromise, use patched one

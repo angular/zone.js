@@ -126,8 +126,8 @@ Zone.__load_patch('crypto', (global: any, _: ZoneType, api: _ZonePrivate) => {
           name: 'crypto.' + name,
           args: args,
           cbIdx: (args.length > 0 && typeof args[args.length - 1] === 'function') ?
-            args.length - 1 :
-            -1,
+              args.length - 1 :
+              -1,
           target: crypto
         };
       }, api);
@@ -142,7 +142,7 @@ Zone.__load_patch('console', (global: any, Zone: ZoneType, api: _ZonePrivate) =>
     const originalMethod = (console as any)[Zone.__symbol__(m)] = (console as any)[m];
     if (originalMethod) {
       (console as any)[m] = function() {
-        if (api.getMode() === 'native') {
+        if (api.getCurrentScope() === 'outside') {
           return originalMethod.apply(this, arguments);
         }
         const args = ArraySlice.call(arguments);

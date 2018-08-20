@@ -9,7 +9,7 @@
 module.exports = function(config) {
   config.set({
     basePath: '',
-    client: {errorpolicy: config.errorpolicy},
+    client: {errorpolicy: config.errorpolicy, entryPoint: config.entryPoint},
     files: [
       'node_modules/systemjs/dist/system-polyfills.js', 'node_modules/systemjs/dist/system.src.js',
       'node_modules/whatwg-fetch/fetch.js',

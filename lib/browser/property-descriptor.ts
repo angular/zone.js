@@ -255,7 +255,8 @@ function filterProperties(
 }
 
 export function patchFilteredProperties(
-    target: any, onProperties: string[], ignoreProperties: IgnoreProperty[], api: _ZonePrivate, prototype?: any) {
+    target: any, onProperties: string[], ignoreProperties: IgnoreProperty[], api: _ZonePrivate,
+    prototype?: any) {
   // check whether target is available, sometimes target will be undefined
   // because different browser or some 3rd party plugin.
   if (!target) {
@@ -292,25 +293,29 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
       }
       patchFilteredProperties(Element.prototype, eventNames, ignoreProperties, api);
       patchFilteredProperties(HTMLElement.prototype, eventNames, ignoreProperties, api);
-      patchFilteredProperties(HTMLMediaElement.prototype, mediaElementEventNames, ignoreProperties, api);
+      patchFilteredProperties(
+          HTMLMediaElement.prototype, mediaElementEventNames, ignoreProperties, api);
       patchFilteredProperties(
           HTMLFrameSetElement.prototype, windowEventNames.concat(frameSetEventNames),
           ignoreProperties, api);
       patchFilteredProperties(
-          HTMLBodyElement.prototype, windowEventNames.concat(frameSetEventNames), ignoreProperties, api);
+          HTMLBodyElement.prototype, windowEventNames.concat(frameSetEventNames), ignoreProperties,
+          api);
       patchFilteredProperties(HTMLFrameElement.prototype, frameEventNames, ignoreProperties, api);
       patchFilteredProperties(HTMLIFrameElement.prototype, frameEventNames, ignoreProperties, api);
 
       const HTMLMarqueeElement = internalWindow['HTMLMarqueeElement'];
       if (HTMLMarqueeElement) {
-        patchFilteredProperties(HTMLMarqueeElement.prototype, marqueeEventNames, ignoreProperties, api);
+        patchFilteredProperties(
+            HTMLMarqueeElement.prototype, marqueeEventNames, ignoreProperties, api);
       }
       const Worker = internalWindow['Worker'];
       if (Worker) {
         patchFilteredProperties(Worker.prototype, workerEventNames, ignoreProperties, api);
       }
     }
-    patchFilteredProperties(XMLHttpRequest.prototype, XMLHttpRequestEventNames, ignoreProperties, api);
+    patchFilteredProperties(
+        XMLHttpRequest.prototype, XMLHttpRequestEventNames, ignoreProperties, api);
     const XMLHttpRequestEventTarget = _global['XMLHttpRequestEventTarget'];
     if (XMLHttpRequestEventTarget) {
       patchFilteredProperties(
@@ -320,7 +325,8 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
     if (typeof IDBIndex !== 'undefined') {
       patchFilteredProperties(IDBIndex.prototype, IDBIndexEventNames, ignoreProperties, api);
       patchFilteredProperties(IDBRequest.prototype, IDBIndexEventNames, ignoreProperties, api);
-      patchFilteredProperties(IDBOpenDBRequest.prototype, IDBIndexEventNames, ignoreProperties, api);
+      patchFilteredProperties(
+          IDBOpenDBRequest.prototype, IDBIndexEventNames, ignoreProperties, api);
       patchFilteredProperties(IDBDatabase.prototype, IDBIndexEventNames, ignoreProperties, api);
       patchFilteredProperties(IDBTransaction.prototype, IDBIndexEventNames, ignoreProperties, api);
       patchFilteredProperties(IDBCursor.prototype, IDBIndexEventNames, ignoreProperties, api);

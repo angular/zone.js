@@ -327,15 +327,17 @@ interface _ZonePrivate {
   patchMethod:
       (target: any, name: string,
        patchFn: (delegate: Function, delegateName: string, name: string) =>
-           (self: any, args: any[]) => any, api: _ZonePrivate) => Function | null;
+           (self: any, args: any[]) => any,
+       api: _ZonePrivate) => Function | null;
   bindArguments: (args: any[], source: string) => any[];
-  getMode: () => _ZoneMode;
+  getCurrentScope: () => _ZoneScope;
 }
 
 /** @internal */
 interface _ZoneFrame {
   parent: _ZoneFrame|null;
   zone: Zone;
+  scope: _ZoneScope;
 }
 
 interface UncaughtPromiseError extends Error {
@@ -634,7 +636,7 @@ type AmbientZone = Zone;
 /** @internal */
 type AmbientZoneDelegate = ZoneDelegate;
 /** @internal */
-type _ZoneMode = 'default' | 'native';
+type _ZoneScope = 'outside'|'inside';
 
 const Zone: ZoneType = (function(global: any) {
   const performance: {mark(name: string): void; measure(name: string, label: string): void;} =
@@ -705,8 +707,12 @@ const Zone: ZoneType = (function(global: any) {
       }
     }
 
-    static __set_mode(zoneMode: _ZoneMode) {
-      _mode = zoneMode;
+    static __set_scope_mode(workingScope: 'global'|'scoped') {
+      if (workingScope === 'global') {
+        _currentZoneFrame.scope = 'inside';
+      } else if (workingScope === 'scoped') {
+        _currentZoneFrame.scope = 'outside';
+      }
     }
 
     public get parent(): AmbientZone|null {
@@ -766,13 +772,14 @@ const Zone: ZoneType = (function(global: any) {
     public run(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): any;
     public run<T>(
         callback: (...args: any[]) => T, applyThis?: any, applyArgs?: any[], source?: string): T {
-      _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
-      const _previous_mode = _mode;
+      _currentZoneFrame = {
+        parent: _currentZoneFrame,
+        zone: this,
+        scope: this.name !== '<root>' ? 'inside' : _currentZoneFrame.scope
+      };
       try {
-        _mode = 'default';
         return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
       } finally {
-        _mode = _previous_mode;
         _currentZoneFrame = _currentZoneFrame.parent!;
       }
     }
@@ -781,14 +788,15 @@ const Zone: ZoneType = (function(global: any) {
     public runGuarded<T>(
         callback: (...args: any[]) => T, applyThis: any = null, applyArgs?: any[],
         source?: string) {
-      _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
-      const _previous_mode = _mode;
+      _currentZoneFrame = {
+        parent: _currentZoneFrame,
+        zone: this,
+        scope: this.name !== '<root>' ? 'inside' : _currentZoneFrame.scope
+      };
       try {
         try {
-          _mode = 'default';
           return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
         } catch (error) {
-          _mode = _previous_mode;
           if (this._zoneDelegate.handleError(this, error)) {
             throw error;
           }
@@ -818,10 +826,12 @@ const Zone: ZoneType = (function(global: any) {
       task.runCount++;
       const previousTask = _currentTask;
       _currentTask = task;
-      _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
-      const _previous_mode = _mode;
+      _currentZoneFrame = {
+        parent: _currentZoneFrame,
+        zone: this,
+        scope: this.name !== '<root>' ? 'inside' : _currentZoneFrame.scope
+      };
       try {
-        _mode = 'default';
         if (task.type == macroTask && task.data && !task.data.isPeriodic) {
           task.cancelFn = undefined;
         }
@@ -833,7 +843,6 @@ const Zone: ZoneType = (function(global: any) {
           }
         }
       } finally {
-        _mode = _previous_mode;
         // if the task's state is notScheduled or unknown, then it has already been cancelled
         // we should not reset the state to scheduled
         if (task.state !== notScheduled && task.state !== unknown) {
@@ -1367,12 +1376,11 @@ const Zone: ZoneType = (function(global: any) {
         nativeMicroTaskQueuePromise = NativePromise.resolve(0);
       }
     },
-    getMode: () => _mode
+    getCurrentScope: () => _currentZoneFrame.scope
   };
-  let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
+  let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null), scope: 'inside'};
   let _currentTask: Task|null = null;
   let _numberOfNestedTaskFrames = 0;
-  let _mode: _ZoneMode = 'default';
 
   function noop() {}
 

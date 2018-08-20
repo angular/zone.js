@@ -20,7 +20,7 @@ const unconfigurablesKey = zoneSymbol('unconfigurables');
 
 export function propertyPatch(api: _ZonePrivate) {
   Object.defineProperty = function(obj: any, prop: string, desc: any) {
-    if (api.getMode() === 'native') {
+    if (api.getCurrentScope() === 'outside') {
       return _defineProperty(obj, prop, desc);
     }
     if (isUnconfigurable(obj, prop)) {
@@ -41,7 +41,7 @@ export function propertyPatch(api: _ZonePrivate) {
   };
 
   Object.create = <any>function(obj: any, proto: any) {
-    if (api.getMode() === 'native') {
+    if (api.getCurrentScope() === 'outside') {
       return _create(obj, proto);
     }
     if (typeof proto === 'object' && !Object.isFrozen(proto)) {
@@ -54,7 +54,7 @@ export function propertyPatch(api: _ZonePrivate) {
 
   Object.getOwnPropertyDescriptor = function(obj, prop) {
     const desc = _getOwnPropertyDescriptor(obj, prop);
-    if (api.getMode() === 'native') {
+    if (api.getCurrentScope() === 'outside') {
       return desc;
     }
     if (desc && isUnconfigurable(obj, prop)) {

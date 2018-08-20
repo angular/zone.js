@@ -812,7 +812,8 @@ describe('FakeAsyncTestZoneSpec', () => {
         patchMacroTask(
             TestClass.prototype, 'myTimeout',
             (self: any, args: any[]) =>
-                ({name: 'TestClass.myTimeout', target: self, cbIdx: 0, args: args}), testApi);
+                ({name: 'TestClass.myTimeout', target: self, cbIdx: 0, args: args}),
+            testApi);
 
         const testClass = new TestClass();
         testClass.myTimeout(function(callbackArgs: any) {
@@ -838,7 +839,8 @@ describe('FakeAsyncTestZoneSpec', () => {
         patchMacroTask(
             TestClass.prototype, 'myTimeout',
             (self: any, args: any[]) =>
-                ({name: 'TestClass.myTimeout', target: self, cbIdx: 0, args: args}), testApi);
+                ({name: 'TestClass.myTimeout', target: self, cbIdx: 0, args: args}),
+            testApi);
 
         const testClass = new TestClass();
         testClass.myTimeout(() => {
@@ -867,7 +869,8 @@ describe('FakeAsyncTestZoneSpec', () => {
         patchMacroTask(
             TestClass.prototype, 'myInterval',
             (self: any, args: any[]) =>
-                ({name: 'TestClass.myInterval', target: self, cbIdx: 0, args: args}), testApi);
+                ({name: 'TestClass.myInterval', target: self, cbIdx: 0, args: args}),
+            testApi);
 
         const testClass = new TestClass();
         const id = testClass.myInterval(() => {

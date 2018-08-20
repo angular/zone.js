@@ -133,11 +133,11 @@ export function getEdgeVersion() {
   return parseInt(ua.substring(edge + 5, ua.indexOf('.', edge)), 10);
 }
 
-const noop = function () { };
+const noop = function() {};
 
 export const testApi: _ZonePrivate = {
   symbol: Zone.__symbol__,
-  currentZoneFrame: () => ({ parent: null, zone: Zone.current }),
+  currentZoneFrame: () => ({parent: null, zone: Zone.current, scope: 'inside'}),
   onUnhandledError: noop,
   microtaskDrainDone: noop,
   scheduleMicroTask: noop,
@@ -148,5 +148,5 @@ export const testApi: _ZonePrivate = {
   bindArguments: () => [],
   patchThen: () => noop,
   setNativePromise: (NativePromise: any) => noop,
-  getMode: () => 'default'
+  getCurrentScope: () => 'inside'
 };

@@ -19,7 +19,8 @@ interface TimerOptions extends TaskData {
   args: any[];
 }
 
-export function patchTimer(window: any, setName: string, cancelName: string, nameSuffix: string, api: _ZonePrivate) {
+export function patchTimer(
+    window: any, setName: string, cancelName: string, nameSuffix: string, api: _ZonePrivate) {
   let setNative: Function|null = null;
   let clearNative: Function|null = null;
   setName += nameSuffix;

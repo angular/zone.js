@@ -329,7 +329,7 @@ export function patchEventTarget(
         nativeListener: any, addSource: string, customScheduleFn: any, customCancelFn: any,
         returnTarget = false, prepend = false) {
       return function() {
-        if (api.getMode() === 'native') {
+        if (api.getCurrentScope() === 'outside') {
           return nativeListener.apply(this, arguments);
         }
         const target = this || _global;
@@ -491,7 +491,7 @@ export function patchEventTarget(
     }
 
     proto[REMOVE_EVENT_LISTENER] = function() {
-      if (api.getMode() === 'native') {
+      if (api.getCurrentScope() === 'outside') {
         return nativeRemoveAllListeners.apply(this, arguments);
       }
       const target = this || _global;
@@ -554,7 +554,7 @@ export function patchEventTarget(
     };
 
     proto[LISTENERS_EVENT_LISTENER] = function() {
-      if (api.getMode() === 'native') {
+      if (api.getCurrentScope() === 'outside') {
         return nativeListeners && nativeListeners.apply(this, arguments);
       }
       const target = this || _global;
@@ -572,7 +572,7 @@ export function patchEventTarget(
     };
 
     proto[REMOVE_ALL_LISTENERS_EVENT_LISTENER] = function() {
-      if (api.getMode() === 'native') {
+      if (api.getCurrentScope() === 'outside') {
         return nativeRemoveAllListeners && nativeRemoveAllListeners.apply(this, arguments);
       }
       const target = this || _global;
@@ -669,8 +669,8 @@ export function patchEventPrototype(global: any, api: _ZonePrivate) {
   const Event = global['Event'];
   if (Event && Event.prototype) {
     api.patchMethod(
-        Event.prototype, 'stopImmediatePropagation',
-        (delegate: Function) => function(self: any, args: any[]) {
+        Event.prototype,
+        'stopImmediatePropagation', (delegate: Function) => function(self: any, args: any[]) {
           self[IMMEDIATE_PROPAGATION_SYMBOL] = true;
           // we need to call the native stopImmediatePropagation
           // in case in some hybrid application, some part of

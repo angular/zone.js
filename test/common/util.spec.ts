@@ -7,7 +7,7 @@
  */
 
 import {patchMethod, patchProperty, patchPrototype, zoneSymbol} from '../../lib/common/utils';
-import { testApi } from '../test-util';
+import {testApi} from '../test-util';
 
 describe('utils', function() {
   describe('patchMethod', () => {
@@ -269,8 +269,8 @@ describe('utils', function() {
       log.length = 0;
 
       patchMethod(
-          TestFunction.prototype, 'property2',
-          function(delegate: Function, delegateName: string, name: string) {
+          TestFunction.prototype,
+          'property2', function(delegate: Function, delegateName: string, name: string) {
             return function(self: any, args: any) {
               log.push('patched property2');
             };
@@ -313,8 +313,8 @@ describe('utils', function() {
       log.length = 0;
 
       patchMethod(
-          TestFunction.prototype, 'property2',
-          function(delegate: Function, delegateName: string, name: string) {
+          TestFunction.prototype,
+          'property2', function(delegate: Function, delegateName: string, name: string) {
             return function(self: any, args: any) {
               log.push('patched property2');
             };
