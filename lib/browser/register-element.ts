@@ -10,7 +10,7 @@ import {attachOriginToPatched, isBrowser, isMix, ObjectGetOwnPropertyDescriptor,
 
 import {_redefineProperty} from './define-property';
 
-export function registerElementPatch(_global: any) {
+export function registerElementPatch(_global: any, api: _ZonePrivate) {
   if ((!isBrowser && !isMix) || !('registerElement' in (<any>_global).document)) {
     return;
   }
@@ -20,6 +20,9 @@ export function registerElementPatch(_global: any) {
       ['createdCallback', 'attachedCallback', 'detachedCallback', 'attributeChangedCallback'];
 
   (<any>document).registerElement = function(name: any, opts: any) {
+    if (api.getCurrentScope() === 'outside') {
+      return _registerElement.call(document, name, opts);
+    }
     if (opts && opts.prototype) {
       callbacks.forEach(function(callback) {
         const source = 'Document.registerElement::' + callback;

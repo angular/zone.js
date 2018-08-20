@@ -38,7 +38,7 @@ Zone.__load_patch('bluebird', (global: any, Zone: ZoneType, api: _ZonePrivate) =
               }
             }
             return delegate.apply(self, args);
-          });
+          }, api);
     });
 
     Bluebird.onPossiblyUnhandledRejection(function(e: any, promise: any) {

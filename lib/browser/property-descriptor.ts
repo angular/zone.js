@@ -116,7 +116,7 @@ const documentEventNames = [
   'afterscriptexecute', 'beforescriptexecute', 'DOMContentLoaded', 'fullscreenchange',
   'mozfullscreenchange', 'webkitfullscreenchange', 'msfullscreenchange', 'fullscreenerror',
   'mozfullscreenerror', 'webkitfullscreenerror', 'msfullscreenerror', 'readystatechange',
-  'visibilitychange'
+  'visibilitychange', 'freeze', 'resume'
 ];
 const windowEventNames = [
   'absolutedeviceorientation',
@@ -255,14 +255,15 @@ function filterProperties(
 }
 
 export function patchFilteredProperties(
-    target: any, onProperties: string[], ignoreProperties: IgnoreProperty[], prototype?: any) {
+    target: any, onProperties: string[], ignoreProperties: IgnoreProperty[], api: _ZonePrivate,
+    prototype?: any) {
   // check whether target is available, sometimes target will be undefined
   // because different browser or some 3rd party plugin.
   if (!target) {
     return;
   }
   const filteredProperties: string[] = filterProperties(target, onProperties, ignoreProperties);
-  patchOnProperties(target, filteredProperties, prototype);
+  patchOnProperties(target, filteredProperties, api, prototype);
 }
 
 export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
@@ -282,56 +283,61 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
       // so we need to pass WindowPrototype to check onProp exist or not
       patchFilteredProperties(
           internalWindow, eventNames.concat(['messageerror']),
-          ignoreProperties ? ignoreProperties.concat(ignoreErrorProperties) : ignoreProperties,
+          ignoreProperties ? ignoreProperties.concat(ignoreErrorProperties) : ignoreProperties, api,
           ObjectGetPrototypeOf(internalWindow));
-      patchFilteredProperties(Document.prototype, eventNames, ignoreProperties);
+      patchFilteredProperties(Document.prototype, eventNames, ignoreProperties, api);
 
       if (typeof internalWindow['SVGElement'] !== 'undefined') {
         patchFilteredProperties(
-            internalWindow['SVGElement'].prototype, eventNames, ignoreProperties);
+            internalWindow['SVGElement'].prototype, eventNames, ignoreProperties, api);
       }
-      patchFilteredProperties(Element.prototype, eventNames, ignoreProperties);
-      patchFilteredProperties(HTMLElement.prototype, eventNames, ignoreProperties);
-      patchFilteredProperties(HTMLMediaElement.prototype, mediaElementEventNames, ignoreProperties);
+      patchFilteredProperties(Element.prototype, eventNames, ignoreProperties, api);
+      patchFilteredProperties(HTMLElement.prototype, eventNames, ignoreProperties, api);
+      patchFilteredProperties(
+          HTMLMediaElement.prototype, mediaElementEventNames, ignoreProperties, api);
       patchFilteredProperties(
           HTMLFrameSetElement.prototype, windowEventNames.concat(frameSetEventNames),
-          ignoreProperties);
+          ignoreProperties, api);
       patchFilteredProperties(
-          HTMLBodyElement.prototype, windowEventNames.concat(frameSetEventNames), ignoreProperties);
-      patchFilteredProperties(HTMLFrameElement.prototype, frameEventNames, ignoreProperties);
-      patchFilteredProperties(HTMLIFrameElement.prototype, frameEventNames, ignoreProperties);
+          HTMLBodyElement.prototype, windowEventNames.concat(frameSetEventNames), ignoreProperties,
+          api);
+      patchFilteredProperties(HTMLFrameElement.prototype, frameEventNames, ignoreProperties, api);
+      patchFilteredProperties(HTMLIFrameElement.prototype, frameEventNames, ignoreProperties, api);
 
       const HTMLMarqueeElement = internalWindow['HTMLMarqueeElement'];
       if (HTMLMarqueeElement) {
-        patchFilteredProperties(HTMLMarqueeElement.prototype, marqueeEventNames, ignoreProperties);
+        patchFilteredProperties(
+            HTMLMarqueeElement.prototype, marqueeEventNames, ignoreProperties, api);
       }
       const Worker = internalWindow['Worker'];
       if (Worker) {
-        patchFilteredProperties(Worker.prototype, workerEventNames, ignoreProperties);
+        patchFilteredProperties(Worker.prototype, workerEventNames, ignoreProperties, api);
       }
     }
-    patchFilteredProperties(XMLHttpRequest.prototype, XMLHttpRequestEventNames, ignoreProperties);
+    patchFilteredProperties(
+        XMLHttpRequest.prototype, XMLHttpRequestEventNames, ignoreProperties, api);
     const XMLHttpRequestEventTarget = _global['XMLHttpRequestEventTarget'];
     if (XMLHttpRequestEventTarget) {
       patchFilteredProperties(
           XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype,
-          XMLHttpRequestEventNames, ignoreProperties);
+          XMLHttpRequestEventNames, ignoreProperties, api);
     }
     if (typeof IDBIndex !== 'undefined') {
-      patchFilteredProperties(IDBIndex.prototype, IDBIndexEventNames, ignoreProperties);
-      patchFilteredProperties(IDBRequest.prototype, IDBIndexEventNames, ignoreProperties);
-      patchFilteredProperties(IDBOpenDBRequest.prototype, IDBIndexEventNames, ignoreProperties);
-      patchFilteredProperties(IDBDatabase.prototype, IDBIndexEventNames, ignoreProperties);
-      patchFilteredProperties(IDBTransaction.prototype, IDBIndexEventNames, ignoreProperties);
-      patchFilteredProperties(IDBCursor.prototype, IDBIndexEventNames, ignoreProperties);
+      patchFilteredProperties(IDBIndex.prototype, IDBIndexEventNames, ignoreProperties, api);
+      patchFilteredProperties(IDBRequest.prototype, IDBIndexEventNames, ignoreProperties, api);
+      patchFilteredProperties(
+          IDBOpenDBRequest.prototype, IDBIndexEventNames, ignoreProperties, api);
+      patchFilteredProperties(IDBDatabase.prototype, IDBIndexEventNames, ignoreProperties, api);
+      patchFilteredProperties(IDBTransaction.prototype, IDBIndexEventNames, ignoreProperties, api);
+      patchFilteredProperties(IDBCursor.prototype, IDBIndexEventNames, ignoreProperties, api);
     }
     if (supportsWebSocket) {
-      patchFilteredProperties(WebSocket.prototype, websocketEventNames, ignoreProperties);
+      patchFilteredProperties(WebSocket.prototype, websocketEventNames, ignoreProperties, api);
     }
   } else {
     // Safari, Android browsers (Jelly Bean)
     patchViaCapturingAllTheEvents();
-    patchClass('XMLHttpRequest');
+    patchClass('XMLHttpRequest', api);
     if (supportsWebSocket) {
       webSocketPatch.apply(api, _global);
     }

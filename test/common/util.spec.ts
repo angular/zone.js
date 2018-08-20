@@ -7,6 +7,7 @@
  */
 
 import {patchMethod, patchProperty, patchPrototype, zoneSymbol} from '../../lib/common/utils';
+import {testApi} from '../test-util';
 
 describe('utils', function() {
   describe('patchMethod', () => {
@@ -32,7 +33,7 @@ describe('utils', function() {
         return function(self, args) {
           return delegate.apply(self, ['patch', args[0]]);
         };
-      })).toBe(delegateMethod!);
+      }, testApi)).toBe(delegateMethod!);
 
       expect(instance.method('a0')).toEqual('OK');
       expect(args).toEqual(['patch', 'a0']);
@@ -49,14 +50,14 @@ describe('utils', function() {
         return function(self, args: any[]) {
           return delegate.apply(self, ['patch', ...args]);
         };
-      });
+      }, testApi);
       const pMethod = Type.prototype.method;
       expect(pMethod).not.toBe(method);
       patchMethod(Type.prototype, 'method', (delegate) => {
         return function(self, args) {
           return delegate.apply(self, ['patch', ...args]);
         };
-      });
+      }, testApi);
       expect(pMethod).toBe(Type.prototype.method);
     });
 
@@ -72,7 +73,7 @@ describe('utils', function() {
             TestType.prototype, 'nonConfigurableProperty',
             {configurable: false, writable: true, value: 'test'});
       }
-      patchProperty(TestType.prototype, 'nonConfigurableProperty');
+      patchProperty(TestType.prototype, 'nonConfigurableProperty', testApi);
       const desc = Object.getOwnPropertyDescriptor(TestType.prototype, 'nonConfigurableProperty');
       expect(desc!.writable).toBeTruthy();
       expect(!desc!.get).toBeTruthy();
@@ -117,7 +118,7 @@ describe('utils', function() {
       expect(log).toEqual(['property1<root>', 'property2<root>']);
       log.length = 0;
 
-      patchPrototype(TestFunction.prototype, ['property1', 'property2']);
+      patchPrototype(TestFunction.prototype, ['property1', 'property2'], testApi);
 
       zone.run(() => {
         const instance = new TestFunction();
@@ -168,7 +169,7 @@ describe('utils', function() {
       expect(log).toEqual(['property1<root>', 'property2<root>']);
       log.length = 0;
 
-      patchPrototype(TestFunction.prototype, ['property1', 'property2']);
+      patchPrototype(TestFunction.prototype, ['property1', 'property2'], testApi);
 
       zone.run(() => {
         const instance = new TestFunction();
@@ -227,7 +228,7 @@ describe('utils', function() {
       expect(log).toEqual(['property1<root>', 'property2<root>']);
       log.length = 0;
 
-      patchPrototype(TestFunction.prototype, ['property1', 'property2']);
+      patchPrototype(TestFunction.prototype, ['property1', 'property2'], testApi);
 
       zone.run(() => {
         const instance = new TestFunction();
@@ -268,12 +269,12 @@ describe('utils', function() {
       log.length = 0;
 
       patchMethod(
-          TestFunction.prototype, 'property2',
-          function(delegate: Function, delegateName: string, name: string) {
+          TestFunction.prototype,
+          'property2', function(delegate: Function, delegateName: string, name: string) {
             return function(self: any, args: any) {
               log.push('patched property2');
             };
-          });
+          }, testApi);
 
       zone.run(() => {
         const instance = new TestFunction();
@@ -312,12 +313,12 @@ describe('utils', function() {
       log.length = 0;
 
       patchMethod(
-          TestFunction.prototype, 'property2',
-          function(delegate: Function, delegateName: string, name: string) {
+          TestFunction.prototype,
+          'property2', function(delegate: Function, delegateName: string, name: string) {
             return function(self: any, args: any) {
               log.push('patched property2');
             };
-          });
+          }, testApi);
 
       zone.run(() => {
         const instance = new TestFunction();

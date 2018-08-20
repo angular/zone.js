@@ -9,7 +9,7 @@ import {zoneSymbol} from './utils';
 
 // override Function.prototype.toString to make zone.js patched function
 // look like native function
-Zone.__load_patch('toString', (global: any) => {
+Zone.__load_patch('toString', (global: any, _: ZoneType, api: _ZonePrivate) => {
   // patch Func.prototype.toString to let them look like native
   const originalFunctionToString = Function.prototype.toString;
 

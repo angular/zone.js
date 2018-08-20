@@ -19,7 +19,7 @@ Zone.__load_patch('cordova', (global: any, Zone: ZoneType, api: _ZonePrivate) =>
             args[1] = Zone.current.wrap(args[1], ERROR_SOURCE);
           }
           return nativeExec!.apply(self, args);
-        });
+        }, api);
   }
 });
 

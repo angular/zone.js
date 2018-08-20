@@ -320,21 +320,24 @@ interface _ZonePrivate {
   onUnhandledError: (error: Error) => void;
   microtaskDrainDone: () => void;
   showUncaughtError: () => boolean;
-  patchEventTarget: (global: any, apis: any[], options?: any) => boolean[];
-  patchOnProperties: (obj: any, properties: string[]|null) => void;
+  patchEventTarget: (global: any, apis: any[], api: _ZonePrivate, options?: any) => boolean[];
+  patchOnProperties: (obj: any, properties: string[]|null, api: _ZonePrivate) => void;
   patchThen: (ctro: Function) => void;
   setNativePromise: (nativePromise: any) => void;
   patchMethod:
       (target: any, name: string,
        patchFn: (delegate: Function, delegateName: string, name: string) =>
-           (self: any, args: any[]) => any) => Function | null;
+           (self: any, args: any[]) => any,
+       api: _ZonePrivate) => Function | null;
   bindArguments: (args: any[], source: string) => any[];
+  getCurrentScope: () => _ZoneScope;
 }
 
 /** @internal */
 interface _ZoneFrame {
   parent: _ZoneFrame|null;
   zone: Zone;
+  scope: _ZoneScope;
 }
 
 interface UncaughtPromiseError extends Error {
@@ -632,6 +635,8 @@ interface EventTask extends Task {
 type AmbientZone = Zone;
 /** @internal */
 type AmbientZoneDelegate = ZoneDelegate;
+/** @internal */
+type _ZoneScope = 'outside'|'inside';
 
 const Zone: ZoneType = (function(global: any) {
   const performance: {mark(name: string): void; measure(name: string, label: string): void;} =
@@ -702,6 +707,14 @@ const Zone: ZoneType = (function(global: any) {
       }
     }
 
+    static __set_scope_mode(workingScope: 'global'|'scoped') {
+      if (workingScope === 'global') {
+        _currentZoneFrame.scope = 'inside';
+      } else if (workingScope === 'scoped') {
+        _currentZoneFrame.scope = 'outside';
+      }
+    }
+
     public get parent(): AmbientZone|null {
       return this._parent;
     }
@@ -759,7 +772,11 @@ const Zone: ZoneType = (function(global: any) {
     public run(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): any;
     public run<T>(
         callback: (...args: any[]) => T, applyThis?: any, applyArgs?: any[], source?: string): T {
-      _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
+      _currentZoneFrame = {
+        parent: _currentZoneFrame,
+        zone: this,
+        scope: this.name !== '<root>' ? 'inside' : _currentZoneFrame.scope
+      };
       try {
         return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
       } finally {
@@ -771,7 +788,11 @@ const Zone: ZoneType = (function(global: any) {
     public runGuarded<T>(
         callback: (...args: any[]) => T, applyThis: any = null, applyArgs?: any[],
         source?: string) {
-      _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
+      _currentZoneFrame = {
+        parent: _currentZoneFrame,
+        zone: this,
+        scope: this.name !== '<root>' ? 'inside' : _currentZoneFrame.scope
+      };
       try {
         try {
           return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
@@ -805,7 +826,11 @@ const Zone: ZoneType = (function(global: any) {
       task.runCount++;
       const previousTask = _currentTask;
       _currentTask = task;
-      _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
+      _currentZoneFrame = {
+        parent: _currentZoneFrame,
+        zone: this,
+        scope: this.name !== '<root>' ? 'inside' : _currentZoneFrame.scope
+      };
       try {
         if (task.type == macroTask && task.data && !task.data.isPeriodic) {
           task.cancelFn = undefined;
@@ -1351,8 +1376,9 @@ const Zone: ZoneType = (function(global: any) {
         nativeMicroTaskQueuePromise = NativePromise.resolve(0);
       }
     },
+    getCurrentScope: () => _currentZoneFrame.scope
   };
-  let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
+  let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null), scope: 'inside'};
   let _currentTask: Task|null = null;
   let _numberOfNestedTaskFrames = 0;
 

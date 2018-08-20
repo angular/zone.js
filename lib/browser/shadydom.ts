@@ -14,11 +14,11 @@ Zone.__load_patch('shadydom', (global: any, Zone: ZoneType, api: _ZonePrivate) =
   if (windowPrototype && windowPrototype.hasOwnProperty('addEventListener')) {
     (windowPrototype as any)[Zone.__symbol__('addEventListener')] = null;
     (windowPrototype as any)[Zone.__symbol__('removeEventListener')] = null;
-    api.patchEventTarget(global, [windowPrototype]);
+    api.patchEventTarget(global, [windowPrototype], api);
   }
   if (Node.prototype.hasOwnProperty('addEventListener')) {
     (Node.prototype as any)[Zone.__symbol__('addEventListener')] = null;
     (Node.prototype as any)[Zone.__symbol__('removeEventListener')] = null;
-    api.patchEventTarget(global, [Node.prototype]);
+    api.patchEventTarget(global, [Node.prototype], api);
   }
 });

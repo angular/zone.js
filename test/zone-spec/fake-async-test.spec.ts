@@ -12,7 +12,7 @@ import '../../lib/rxjs/rxjs-fake-async';
 import {Observable} from 'rxjs/Observable';
 
 import {isNode, patchMacroTask} from '../../lib/common/utils';
-import {ifEnvSupports} from '../test-util';
+import {ifEnvSupports, testApi} from '../test-util';
 
 function supportNode() {
   return isNode;
@@ -812,7 +812,8 @@ describe('FakeAsyncTestZoneSpec', () => {
         patchMacroTask(
             TestClass.prototype, 'myTimeout',
             (self: any, args: any[]) =>
-                ({name: 'TestClass.myTimeout', target: self, cbIdx: 0, args: args}));
+                ({name: 'TestClass.myTimeout', target: self, cbIdx: 0, args: args}),
+            testApi);
 
         const testClass = new TestClass();
         testClass.myTimeout(function(callbackArgs: any) {
@@ -838,7 +839,8 @@ describe('FakeAsyncTestZoneSpec', () => {
         patchMacroTask(
             TestClass.prototype, 'myTimeout',
             (self: any, args: any[]) =>
-                ({name: 'TestClass.myTimeout', target: self, cbIdx: 0, args: args}));
+                ({name: 'TestClass.myTimeout', target: self, cbIdx: 0, args: args}),
+            testApi);
 
         const testClass = new TestClass();
         testClass.myTimeout(() => {
@@ -867,7 +869,8 @@ describe('FakeAsyncTestZoneSpec', () => {
         patchMacroTask(
             TestClass.prototype, 'myInterval',
             (self: any, args: any[]) =>
-                ({name: 'TestClass.myInterval', target: self, cbIdx: 0, args: args}));
+                ({name: 'TestClass.myInterval', target: self, cbIdx: 0, args: args}),
+            testApi);
 
         const testClass = new TestClass();
         const id = testClass.myInterval(() => {

@@ -9,7 +9,7 @@
 import {patchFilteredProperties} from '../../lib/browser/property-descriptor';
 import {patchEventTarget} from '../../lib/common/events';
 import {isBrowser, isIEOrEdge, isMix, zoneSymbol} from '../../lib/common/utils';
-import {getEdgeVersion, getIEVersion, ifEnvSupports, ifEnvSupportsWithDone, isEdge} from '../test-util';
+import {getEdgeVersion, getIEVersion, ifEnvSupports, ifEnvSupportsWithDone, isEdge, testApi} from '../test-util';
 
 import Spy = jasmine.Spy;
 declare const global: any;
@@ -201,7 +201,8 @@ describe('Zone', function() {
           it('should not patch ignored on properties', function() {
             const TestTarget: any = (window as any)['TestTarget'];
             patchFilteredProperties(
-                TestTarget.prototype, ['prop1', 'prop2'], global['__Zone_ignore_on_properties']);
+                TestTarget.prototype, ['prop1', 'prop2'], global['__Zone_ignore_on_properties'],
+                testApi);
             const testTarget = new TestTarget();
             Zone.current.fork({name: 'test'}).run(() => {
               testTarget.onprop1 = function() {
@@ -240,7 +241,7 @@ describe('Zone', function() {
           it('should be able to clear on handler added before load zone.js', function() {
             const TestTarget: any = (window as any)['TestTarget'];
             patchFilteredProperties(
-                TestTarget.prototype, ['prop3'], global['__Zone_ignore_on_properties']);
+                TestTarget.prototype, ['prop3'], global['__Zone_ignore_on_properties'], testApi);
             const testTarget = new TestTarget();
             Zone.current.fork({name: 'test'}).run(() => {
               expect(testTarget.onprop3).toBeTruthy();
@@ -336,7 +337,7 @@ describe('Zone', function() {
 
                (HTMLSpanElement.prototype as any)['__zone_symbol__addEventListener'] = null;
 
-               patchEventTarget(window, [HTMLSpanElement.prototype]);
+               patchEventTarget(window, [HTMLSpanElement.prototype], testApi);
 
                const span = document.createElement('span');
                document.body.appendChild(span);
@@ -1023,7 +1024,7 @@ describe('Zone', function() {
          }));
 
       it('should change options to boolean if not support passive', () => {
-        patchEventTarget(window, [TestEventListener.prototype]);
+        patchEventTarget(window, [TestEventListener.prototype], testApi);
         const testEventListener = new TestEventListener();
 
         const listener = function() {};

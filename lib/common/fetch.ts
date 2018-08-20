@@ -21,21 +21,27 @@ Zone.__load_patch('fetch', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   if (supportAbort) {
     global['AbortController'] = function() {
       const abortController = new OriginalAbortController();
+      if (api.getCurrentScope() === 'outside') {
+        return abortController;
+      }
       const signal = abortController.signal;
       signal.abortController = abortController;
       return abortController;
     };
     abortNative = api.patchMethod(
-        OriginalAbortController.prototype, 'abort',
-        (delegate: Function) => (self: any, args: any) => {
+        OriginalAbortController.prototype,
+        'abort', (delegate: Function) => (self: any, args: any) => {
           if (self.task) {
             return self.task.zone.cancelTask(self.task);
           }
           return delegate.apply(self, args);
-        });
+        }, api);
   }
   const placeholder = function() {};
   global['fetch'] = function() {
+    if (api.getCurrentScope() === 'outside') {
+      return fetch.apply(this, arguments);
+    }
     const args = Array.prototype.slice.call(arguments);
     const options = args.length > 1 ? args[1] : null;
     const signal = options && options.signal;

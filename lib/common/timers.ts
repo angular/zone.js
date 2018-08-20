@@ -19,7 +19,8 @@ interface TimerOptions extends TaskData {
   args: any[];
 }
 
-export function patchTimer(window: any, setName: string, cancelName: string, nameSuffix: string) {
+export function patchTimer(
+    window: any, setName: string, cancelName: string, nameSuffix: string, api: _ZonePrivate) {
   let setNative: Function|null = null;
   let clearNative: Function|null = null;
   setName += nameSuffix;
@@ -99,7 +100,7 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
           // cause an error by calling it directly.
           return delegate.apply(window, args);
         }
-      });
+      }, api);
 
   clearNative =
       patchMethod(window, cancelName, (delegate: Function) => function(self: any, args: any[]) {
@@ -131,5 +132,5 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
           // cause an error by calling it directly.
           delegate.apply(window, args);
         }
-      });
+      }, api);
 }

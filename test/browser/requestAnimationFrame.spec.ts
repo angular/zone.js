@@ -43,7 +43,7 @@ describe('requestAnimationFrame', function() {
                      expect(previousTimeStamp).not.toBeGreaterThan(timestamp);
                      previousTimeStamp = timestamp;
 
-                     if (frames++ > 15) {
+                     if (frames++ > 2) {
                        (<any>jasmine).DEFAULT_TIMEOUT_INTERVAL = originalTimeout;
                        return done();
                      }

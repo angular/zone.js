@@ -43,7 +43,7 @@ Zone.__load_patch('ResizeObserver', (global: any, Zone: any, api: _ZonePrivate) 
       };
     }
     return args.length > 0 ? new ResizeObserver(args[0]) : new ResizeObserver();
-  });
+  }, api);
 
   api.patchMethod(
       ResizeObserver.prototype, 'observe', (delegate: Function) => (self: any, args: any[]) => {
@@ -58,7 +58,7 @@ Zone.__load_patch('ResizeObserver', (global: any, Zone: any, api: _ZonePrivate) 
         targets.push(target);
         target[resizeObserverSymbol] = Zone.current;
         return delegate.apply(self, args);
-      });
+      }, api);
 
   api.patchMethod(
       ResizeObserver.prototype, 'unobserve', (delegate: Function) => (self: any, args: any[]) => {
@@ -77,7 +77,7 @@ Zone.__load_patch('ResizeObserver', (global: any, Zone: any, api: _ZonePrivate) 
         }
         target[resizeObserverSymbol] = undefined;
         return delegate.apply(self, args);
-      });
+      }, api);
 
   api.patchMethod(
       ResizeObserver.prototype, 'disconnect', (delegate: Function) => (self: any, args: any[]) => {
@@ -89,5 +89,5 @@ Zone.__load_patch('ResizeObserver', (global: any, Zone: any, api: _ZonePrivate) 
           self[resizeObserverSymbol] = undefined;
         }
         return delegate.apply(self, args);
-      });
+      }, api);
 });
