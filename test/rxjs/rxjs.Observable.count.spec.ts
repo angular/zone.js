@@ -5,13 +5,14 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {Observable, range} from 'rxjs';
+import {count} from 'rxjs/operators';
 
 describe('Observable.count', () => {
   let log: string[];
   const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
   const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -19,10 +20,10 @@ describe('Observable.count', () => {
 
   it('count func callback should run in the correct zone', () => {
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.range(1, 3).count((i: number) => {
+      return range(1, 3).pipe(count((i: number) => {
         expect(Zone.current.name).toEqual(constructorZone1.name);
         return i % 2 === 0;
-      });
+      }));
     });
 
     subscriptionZone.run(() => {

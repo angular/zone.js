@@ -6,6 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
+import 'core-js/features/set';
+import 'core-js/features/map';
 // List all tests here:
 import './common_tests';
 import './browser/browser.spec';

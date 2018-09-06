@@ -5,12 +5,14 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {Observable, of, timer} from 'rxjs';
+import {debounce, debounceTime} from 'rxjs/operators';
+
 import {asyncTest} from '../test-util';
 
 describe('Observable.debounce', () => {
   let log: string[];
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -20,10 +22,10 @@ describe('Observable.debounce', () => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.of(1, 2, 3).debounce(() => {
+         return of(1, 2, 3).pipe(debounce(() => {
            expect(Zone.current.name).toEqual(constructorZone1.name);
-           return Rx.Observable.timer(100);
-         });
+           return timer(100);
+         }));
        });
 
        subscriptionZone.run(() => {
@@ -48,7 +50,7 @@ describe('Observable.debounce', () => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.of(1, 2, 3).debounceTime(100);
+         return of(1, 2, 3).pipe(debounceTime(100));
        });
 
        subscriptionZone.run(() => {

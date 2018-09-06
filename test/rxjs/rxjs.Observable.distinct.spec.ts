@@ -5,11 +5,13 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+
+import {Observable, of} from 'rxjs';
+import {distinct, distinctUntilChanged, distinctUntilKeyChanged} from 'rxjs/operators';
 
 describe('Observable.distinct', () => {
   let log: string[];
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -20,7 +22,7 @@ describe('Observable.distinct', () => {
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     const error = new Error('test');
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.of(1, 1, 2, 2, 2, 1, 2, 3, 4, 3, 2, 1).distinct();
+      return of(1, 1, 2, 2, 2, 1, 2, 3, 4, 3, 2, 1).pipe(distinct());
     });
 
     subscriptionZone.run(() => {
@@ -45,7 +47,7 @@ describe('Observable.distinct', () => {
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     const error = new Error('test');
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.of(1, 1, 2, 2, 2, 1, 1, 2, 3, 3, 4).distinctUntilChanged();
+      return of(1, 1, 2, 2, 2, 1, 1, 2, 3, 3, 4).pipe(distinctUntilChanged());
     });
 
     subscriptionZone.run(() => {
@@ -70,10 +72,9 @@ describe('Observable.distinct', () => {
     const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
     const error = new Error('test');
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable
-          .of({age: 4, name: 'Foo'}, {age: 7, name: 'Bar'}, {age: 5, name: 'Foo'},
-              {age: 6, name: 'Foo'})
-          .distinctUntilKeyChanged('name');
+      return of({age: 4, name: 'Foo'}, {age: 7, name: 'Bar'}, {age: 5, name: 'Foo'},
+                {age: 6, name: 'Foo'})
+          .pipe(distinctUntilKeyChanged('name'));
     });
 
     subscriptionZone.run(() => {

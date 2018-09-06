@@ -5,18 +5,20 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {Notification, Observable, of} from 'rxjs';
+import {dematerialize} from 'rxjs/operators';
+
 import {asyncTest, ifEnvSupports} from '../test-util';
 
 const supportNotification = function() {
-  return typeof Rx.Notification !== 'undefined';
+  return typeof Notification !== 'undefined';
 };
 
 (supportNotification as any).message = 'RxNotification';
 
 describe('Observable.notification', ifEnvSupports(supportNotification, () => {
            let log: string[];
-           let observable1: any;
+           let observable1: Observable<any>;
 
            beforeEach(() => {
              log = [];
@@ -27,11 +29,11 @@ describe('Observable.notification', ifEnvSupports(supportNotification, () => {
              const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
              const error = new Error('test');
              observable1 = constructorZone1.run(() => {
-               const notifA = new Rx.Notification('N', 'A');
-               const notifB = new Rx.Notification('N', 'B');
-               const notifE = new Rx.Notification('E', void 0, error);
-               const materialized = Rx.Observable.of(notifA, notifB, notifE as any);
-               return materialized.dematerialize();
+               const notifA = new Notification('N', 'A');
+               const notifB = new Notification('N', 'B');
+               const notifE = new Notification('E', void 0, error);
+               const materialized = of(notifA, notifB, notifE as any);
+               return materialized.pipe(dematerialize());
              });
 
              subscriptionZone.run(() => {

@@ -5,6 +5,10 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+(Object as any).setPrototypeOf = (Object as any).setPrototypeOf || function(obj: any, proto: any) {
+  obj.__proto__ = proto;
+  return obj;
+};
 import '../../lib/rxjs/rxjs';
 import './rxjs.common.spec';
 import './rxjs.asap.spec';
@@ -39,7 +43,7 @@ import './rxjs.Observable.notification.spec';
 import './rxjs.Observable.distinct.spec';
 import './rxjs.Observable.do.spec';
 import './rxjs.Observable.collection.spec';
-// TODO: @JiaLiPassion, add exhaust test
+// // TODO: @JiaLiPassion, add exhaust test
 import './rxjs.Observable.merge.spec';
 import './rxjs.Observable.multicast.spec';
 import './rxjs.Observable.map.spec';

@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import * as Rx from 'rxjs/Rx';
+import {fromEvent, fromEventPattern, Observable} from 'rxjs';
 
 import {isBrowser} from '../../lib/common/utils';
 import {ifEnvSupports} from '../test-util';
@@ -22,7 +22,7 @@ describe('Observable.fromEvent', () => {
   const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
   const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
   const triggerZone: Zone = Zone.current.fork({name: 'Trigger Zone'});
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -31,7 +31,7 @@ describe('Observable.fromEvent', () => {
   it('fromEvent EventTarget func callback should run in the correct zone',
      ifEnvSupports(isEventTarget, () => {
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.fromEvent(document, 'click');
+         return fromEvent(document, 'click');
        });
 
        const clickEvent = document.createEvent('Event');
@@ -64,7 +64,7 @@ describe('Observable.fromEvent', () => {
        const button = document.createElement('button');
        document.body.appendChild(button);
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.fromEventPattern(
+         return fromEventPattern(
              (handler: any) => {
                expect(Zone.current.name).toEqual(constructorZone1.name);
                button.addEventListener('click', handler);

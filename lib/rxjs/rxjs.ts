@@ -6,20 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import 'rxjs/add/observable/bindCallback';
-import 'rxjs/add/observable/bindNodeCallback';
-import 'rxjs/add/observable/defer';
-import 'rxjs/add/observable/forkJoin';
-import 'rxjs/add/observable/fromEventPattern';
-import 'rxjs/add/operator/multicast';
+import {Observable, Subscriber, Subscription} from 'rxjs';
 
-import {Observable} from 'rxjs/Observable';
-import {asap} from 'rxjs/scheduler/asap';
-import {Subscriber} from 'rxjs/Subscriber';
-import {Subscription} from 'rxjs/Subscription';
-import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
-
-(Zone as any).__load_patch('rxjs', (global: any, Zone: ZoneType) => {
+(Zone as any).__load_patch('rxjs', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   const symbol: (symbolString: string) => string = (Zone as any).__symbol__;
   const nextSource = 'rxjs.Subscriber.next';
   const errorSource = 'rxjs.Subscriber.error';
@@ -27,40 +16,10 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
 
   const ObjectDefineProperties = Object.defineProperties;
 
-  const empty = {
-    closed: true,
-    next(value: any): void{},
-    error(err: any): void {
-      throw err;
-    },
-    complete(): void {}
-  };
-
-  function toSubscriber<T>(
-      nextOrObserver?: any, error?: (error: any) => void, complete?: () => void): Subscriber<T> {
-    if (nextOrObserver) {
-      if (nextOrObserver instanceof Subscriber) {
-        return (<Subscriber<T>>nextOrObserver);
-      }
-
-      if (nextOrObserver[rxSubscriber]) {
-        return nextOrObserver[rxSubscriber]();
-      }
-    }
-
-    if (!nextOrObserver && !error && !complete) {
-      return new Subscriber(empty);
-    }
-
-    return new Subscriber(nextOrObserver, error, complete);
-  }
-
   const patchObservable = function() {
     const ObservablePrototype: any = Observable.prototype;
-    const symbolSubscribe = symbol('subscribe');
     const _symbolSubscribe = symbol('_subscribe');
     const _subscribe = ObservablePrototype[_symbolSubscribe] = ObservablePrototype._subscribe;
-    const subscribe = ObservablePrototype[symbolSubscribe] = ObservablePrototype.subscribe;
 
     ObjectDefineProperties(Observable.prototype, {
       _zone: {value: null, writable: true, configurable: true},
@@ -89,30 +48,58 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
         },
         set: function(this: Observable<any>, subscribe: any) {
           (this as any)._zone = Zone.current;
-          (this as any)._zoneSubscribe = subscribe;
+          (this as any)._zoneSubscribe = function() {
+            if (this._zone && this._zone !== Zone.current) {
+              const tearDown = this._zone.run(subscribe, this, arguments);
+              if (tearDown && typeof tearDown === 'function') {
+                const zone = this._zone;
+                return function() {
+                  if (zone !== Zone.current) {
+                    return zone.run(tearDown, this, arguments);
+                  }
+                  return tearDown.apply(this, arguments);
+                };
+              }
+              return tearDown;
+            }
+            return subscribe.apply(this, arguments);
+          };
         }
       },
-      subscribe: {
-        writable: true,
-        configurable: true,
-        value: function(this: Observable<any>, observerOrNext: any, error: any, complete: any) {
-          // Only grab a zone if we Zone exists and it is different from the current zone.
-          const _zone = (this as any)._zone;
-          if (_zone && _zone !== Zone.current) {
-            // Current Zone is different from the intended zone.
-            // Restore the zone before invoking the subscribe callback.
-            return _zone.run(subscribe, this, [toSubscriber(observerOrNext, error, complete)]);
-          }
-          return subscribe.call(this, observerOrNext, error, complete);
+      subjectFactory: {
+        get: function() {
+          return (this as any)._zoneSubjectFactory;
+        },
+        set: function(factory: any) {
+          const zone = this._zone;
+          this._zoneSubjectFactory = function() {
+            if (zone && zone !== Zone.current) {
+              return zone.run(factory, this, arguments);
+            }
+            return factory.apply(this, arguments);
+          };
         }
       }
     });
   };
 
+  api.patchMethod(Observable.prototype, 'lift', (delegate: any) => (self: any, args: any[]) => {
+    const observable: any = delegate.apply(self, args);
+    if (observable.operator) {
+      observable.operator._zone = Zone.current;
+      api.patchMethod(
+          observable.operator, 'call',
+          (operatorDelegate: any) => (operatorSelf: any, operatorArgs: any[]) => {
+            if (operatorSelf._zone && operatorSelf._zone !== Zone.current) {
+              return operatorSelf._zone.run(operatorDelegate, operatorSelf, operatorArgs);
+            }
+            return operatorDelegate.apply(operatorSelf, operatorArgs);
+          });
+    }
+    return observable;
+  });
+
   const patchSubscription = function() {
-    const unsubscribeSymbol = symbol('unsubscribe');
-    const unsubscribe = (Subscription.prototype as any)[unsubscribeSymbol] =
-        Subscription.prototype.unsubscribe;
     ObjectDefineProperties(Subscription.prototype, {
       _zone: {value: null, writable: true, configurable: true},
       _zoneUnsubscribe: {value: null, writable: true, configurable: true},
@@ -126,22 +113,12 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
         },
         set: function(this: Subscription, unsubscribe: any) {
           (this as any)._zone = Zone.current;
-          (this as any)._zoneUnsubscribe = unsubscribe;
-        }
-      },
-      unsubscribe: {
-        writable: true,
-        configurable: true,
-        value: function(this: Subscription) {
-          // Only grab a zone if we Zone exists and it is different from the current zone.
-          const _zone: Zone = (this as any)._zone;
-          if (_zone && _zone !== Zone.current) {
-            // Current Zone is different from the intended zone.
-            // Restore the zone before invoking the subscribe callback.
-            _zone.run(unsubscribe, this);
-          } else {
-            unsubscribe.apply(this);
-          }
+          (this as any)._zoneUnsubscribe = function() {
+            if (this._zone && this._zone !== Zone.current) {
+              return this._zone.run(unsubscribe, this, arguments);
+            }
+            return unsubscribe.apply(this, arguments);
+          };
         }
       }
     });
@@ -205,158 +182,7 @@ import {rxSubscriber} from 'rxjs/symbol/rxSubscriber';
     };
   };
 
-  const patchObservableInstance = function(observable: any) {
-    observable._zone = Zone.current;
-  };
-
-  const patchObservableFactoryCreator = function(obj: any, factoryName: string) {
-    const symbolFactory: string = symbol(factoryName);
-    if (obj[symbolFactory]) {
-      return;
-    }
-    const factoryCreator: any = obj[symbolFactory] = obj[factoryName];
-    if (!factoryCreator) {
-      return;
-    }
-    obj[factoryName] = function() {
-      const factory: any = factoryCreator.apply(this, arguments);
-      return function() {
-        const observable = factory.apply(this, arguments);
-        patchObservableInstance(observable);
-        return observable;
-      };
-    };
-  };
-
-  const patchObservableFactory = function(obj: any, factoryName: string) {
-    const symbolFactory: string = symbol(factoryName);
-    if (obj[symbolFactory]) {
-      return;
-    }
-    const factory: any = obj[symbolFactory] = obj[factoryName];
-    if (!factory) {
-      return;
-    }
-    obj[factoryName] = function() {
-      const observable = factory.apply(this, arguments);
-      patchObservableInstance(observable);
-      return observable;
-    };
-  };
-
-  const patchObservableFactoryArgs = function(obj: any, factoryName: string) {
-    const symbolFactory: string = symbol(factoryName);
-    if (obj[symbolFactory]) {
-      return;
-    }
-    const factory: any = obj[symbolFactory] = obj[factoryName];
-    if (!factory) {
-      return;
-    }
-    obj[factoryName] = function() {
-      const initZone = Zone.current;
-      const args = Array.prototype.slice.call(arguments);
-      for (let i = 0; i < args.length; i++) {
-        const arg = args[i];
-        if (typeof arg === 'function') {
-          args[i] = function() {
-            const argArgs = Array.prototype.slice.call(arguments);
-            const runningZone = Zone.current;
-            if (initZone && runningZone && initZone !== runningZone) {
-              return initZone.run(arg, this, argArgs);
-            } else {
-              return arg.apply(this, argArgs);
-            }
-          };
-        }
-      }
-
-      const observable = factory.apply(this, args);
-      patchObservableInstance(observable);
-      return observable;
-    };
-  };
-
-  const patchMulticast = function() {
-    const obj: any = Observable.prototype;
-    const factoryName: string = 'multicast';
-    const symbolFactory: string = symbol(factoryName);
-    if (obj[symbolFactory]) {
-      return;
-    }
-    const factory: any = obj[symbolFactory] = obj[factoryName];
-    if (!factory) {
-      return;
-    }
-    obj[factoryName] = function() {
-      const _zone: any = Zone.current;
-      const args = Array.prototype.slice.call(arguments);
-      let subjectOrSubjectFactory: any = args.length > 0 ? args[0] : undefined;
-      if (typeof subjectOrSubjectFactory !== 'function') {
-        const originalFactory: any = subjectOrSubjectFactory;
-        subjectOrSubjectFactory = function() {
-          return originalFactory;
-        };
-      }
-      args[0] = function() {
-        let subject: any;
-        if (_zone && _zone !== Zone.current) {
-          subject = _zone.run(subjectOrSubjectFactory, this, arguments);
-        } else {
-          subject = subjectOrSubjectFactory.apply(this, arguments);
-        }
-        if (subject && _zone) {
-          subject._zone = _zone;
-        }
-        return subject;
-      };
-      const observable = factory.apply(this, args);
-      patchObservableInstance(observable);
-      return observable;
-    };
-  };
-
-  const patchImmediate = function(asap: any) {
-    if (!asap) {
-      return;
-    }
-
-    const scheduleSymbol = symbol('scheduleSymbol');
-    const zoneSymbol = symbol('zone');
-    if (asap[scheduleSymbol]) {
-      return;
-    }
-
-    const schedule = asap[scheduleSymbol] = asap.schedule;
-    asap.schedule = function() {
-      const args = Array.prototype.slice.call(arguments);
-      const work = args.length > 0 ? args[0] : undefined;
-      const delay = args.length > 1 ? args[1] : 0;
-      const state = (args.length > 2 ? args[2] : undefined) || {};
-      state[zoneSymbol] = Zone.current;
-
-      const patchedWork = function() {
-        const workArgs = Array.prototype.slice.call(arguments);
-        const action = workArgs.length > 0 ? workArgs[0] : undefined;
-        const scheduleZone = action && action[zoneSymbol];
-        if (scheduleZone && scheduleZone !== Zone.current) {
-          return scheduleZone.runGuarded(work, this, arguments);
-        } else {
-          return work.apply(this, arguments);
-        }
-      };
-      return schedule.call(this, patchedWork, delay, state);
-    };
-  };
-
   patchObservable();
   patchSubscription();
   patchSubscriber();
-  patchObservableFactoryCreator(Observable, 'bindCallback');
-  patchObservableFactoryCreator(Observable, 'bindNodeCallback');
-  patchObservableFactory(Observable, 'defer');
-  patchObservableFactory(Observable, 'forkJoin');
-  patchObservableFactoryArgs(Observable, 'fromEventPattern');
-  patchMulticast();
-  patchImmediate(asap);
 });

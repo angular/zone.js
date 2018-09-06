@@ -5,14 +5,15 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
+import {asapScheduler, Observable, range} from 'rxjs';
+
 import {asyncTest} from '../test-util';
 
 describe('Observable.range', () => {
   let log: string[];
   const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
   const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
@@ -20,7 +21,7 @@ describe('Observable.range', () => {
 
   it('range func callback should run in the correct zone', () => {
     observable1 = constructorZone1.run(() => {
-      return Rx.Observable.range(1, 3);
+      return range(1, 3);
     });
 
     subscriptionZone.run(() => {
@@ -45,7 +46,7 @@ describe('Observable.range', () => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.range(1, 3, Rx.Scheduler.asap);
+         return range(1, 3, asapScheduler);
        });
 
        subscriptionZone.run(() => {

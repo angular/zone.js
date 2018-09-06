@@ -5,22 +5,28 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-import * as Rx from 'rxjs/Rx';
-import {asyncTest} from '../test-util';
+import {Observable, of} from 'rxjs';
+import {timeout} from 'rxjs/operators';
+
+import {asyncTest, isPhantomJS} from '../test-util';
 
 describe('Observable.timeout', () => {
   let log: string[];
-  let observable1: any;
+  let observable1: Observable<any>;
 
   beforeEach(() => {
     log = [];
   });
 
   it('timeout func callback should run in the correct zone', asyncTest((done: any) => {
+       if (isPhantomJS()) {
+         done();
+         return;
+       }
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        observable1 = constructorZone1.run(() => {
-         return Rx.Observable.of(1).timeout(10);
+         return of(1).pipe(timeout(10));
        });
 
        subscriptionZone.run(() => {
@@ -45,7 +51,7 @@ describe('Observable.timeout', () => {
        const constructorZone1: Zone = Zone.current.fork({name: 'Constructor Zone1'});
        const subscriptionZone: Zone = Zone.current.fork({name: 'Subscription Zone'});
        const promise: any = constructorZone1.run(() => {
-         return Rx.Observable.of(1).toPromise();
+         return of(1).toPromise();
        });
 
        subscriptionZone.run(() => {

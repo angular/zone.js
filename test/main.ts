@@ -25,7 +25,10 @@ if (typeof __karma__ !== 'undefined') {
 System.config({
   defaultJSExtensions: true,
   map: {
-    'rxjs': 'base/node_modules/rxjs',
+    'rxjs': 'base/node_modules/rxjs/index',
+    'rxjs/operators': 'base/node_modules/rxjs/operators/index',
+    'core-js/features/set': 'base/node_modules/core-js/es6/set',
+    'core-js/features/map': 'base/node_modules/core-js/es6/map',
     'es6-promise': 'base/node_modules/es6-promise/dist/es6-promise'
   },
 });
