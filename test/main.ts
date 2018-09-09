@@ -14,11 +14,19 @@ declare const __karma__: {
 
 __karma__.loaded = function() {};
 
+let entryPoint = 'browser_entry_point';
+
 if (typeof __karma__ !== 'undefined') {
   (window as any)['__Zone_Error_BlacklistedStackFrames_policy'] =
       (__karma__ as any).config.errorpolicy;
+  if ((__karma__ as any).config.entrypoint) {
+    entryPoint = (__karma__ as any).config.entrypoint;
+  }
 } else if (typeof process !== 'undefined') {
   (window as any)['__Zone_Error_BlacklistedStackFrames_policy'] = process.env.errorpolicy;
+  if (process.env.entrypoint) {
+    entryPoint = process.env.entrypoint;
+  }
 }
 
 (window as any).global = window;
@@ -54,7 +62,7 @@ browserPatchedPromise.then(() => {
   // Setup test environment
   System.import(testFrameworkPatch).then(() => {
     System.import('/base/build/lib/common/error-rewrite').then(() => {
-      System.import('/base/build/test/browser_entry_point')
+      System.import(`/base/build/test/${entryPoint}`)
           .then(
               () => {
                 __karma__.start();

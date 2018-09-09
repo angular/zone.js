@@ -10,19 +10,16 @@ import {attachOriginToPatched, isBrowser, isMix, ObjectGetOwnPropertyDescriptor,
 
 import {_redefineProperty} from './define-property';
 
-export function registerElementPatch(_global: any) {
-  if ((!isBrowser && !isMix) || !('registerElement' in (<any>_global).document)) {
+function patchCallbacks(target: any, targetName: string, method: string, callbacks: string[]) {
+  const symbol = Zone.__symbol__(method);
+  if (target[symbol]) {
     return;
   }
-
-  const _registerElement = (<any>document).registerElement;
-  const callbacks =
-      ['createdCallback', 'attachedCallback', 'detachedCallback', 'attributeChangedCallback'];
-
-  (<any>document).registerElement = function(name: any, opts: any) {
+  const nativeDelegate = target[symbol] = target[method];
+  target[method] = function(name: any, opts: any, options?: any) {
     if (opts && opts.prototype) {
       callbacks.forEach(function(callback) {
-        const source = 'Document.registerElement::' + callback;
+        const source = `${targetName}.${method}::` + callback;
         const prototype = opts.prototype;
         if (prototype.hasOwnProperty(callback)) {
           const descriptor = ObjectGetOwnPropertyDescriptor(prototype, callback);
@@ -38,8 +35,30 @@ export function registerElementPatch(_global: any) {
       });
     }
 
-    return _registerElement.call(document, name, opts);
+    return nativeDelegate.call(target, name, opts, options);
   };
 
-  attachOriginToPatched((<any>document).registerElement, _registerElement);
+  attachOriginToPatched(target[method], nativeDelegate);
+}
+
+export function registerElementPatch(_global: any) {
+  if ((!isBrowser && !isMix) || !('registerElement' in (<any>_global).document)) {
+    return;
+  }
+
+  const callbacks =
+      ['createdCallback', 'attachedCallback', 'detachedCallback', 'attributeChangedCallback'];
+
+  patchCallbacks(document, 'Document', 'registerElement', callbacks);
+}
+
+export function patchCustomElements(_global: any) {
+  if ((!isBrowser && !isMix) || !('customElements' in _global)) {
+    return;
+  }
+
+  const callbacks =
+      ['connectedCallback', 'disconnectedCallback', 'adoptedCallback', 'attributeChangedCallback'];
+
+  patchCallbacks(_global.customElements, 'customElements', 'define', callbacks);
 }

@@ -17,7 +17,7 @@ import {bindArguments, patchClass, patchMacroTask, patchMethod, patchOnPropertie
 import {propertyPatch} from './define-property';
 import {eventTargetPatch, patchEvent} from './event-target';
 import {propertyDescriptorPatch} from './property-descriptor';
-import {registerElementPatch} from './register-element';
+import {patchCustomElements, registerElementPatch} from './register-element';
 
 Zone.__load_patch('util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   api.patchOnProperties = patchOnProperties;
@@ -74,7 +74,11 @@ Zone.__load_patch('EventTarget', (global: any, Zone: ZoneType, api: _ZonePrivate
 Zone.__load_patch('on_property', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   propertyDescriptorPatch(api, global);
   propertyPatch();
+});
+
+Zone.__load_patch('customElements', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   registerElementPatch(global);
+  patchCustomElements(global);
 });
 
 Zone.__load_patch('canvas', (global: any) => {
