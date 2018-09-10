@@ -113,10 +113,10 @@ const globalEventHandlersEventNames = [
   'wheel'
 ];
 const documentEventNames = [
-  'afterscriptexecute', 'beforescriptexecute', 'DOMContentLoaded', 'fullscreenchange',
+  'afterscriptexecute', 'beforescriptexecute', 'DOMContentLoaded', 'freeze', 'fullscreenchange',
   'mozfullscreenchange', 'webkitfullscreenchange', 'msfullscreenchange', 'fullscreenerror',
   'mozfullscreenerror', 'webkitfullscreenerror', 'msfullscreenerror', 'readystatechange',
-  'visibilitychange'
+  'visibilitychange', 'resume'
 ];
 const windowEventNames = [
   'absolutedeviceorientation',
