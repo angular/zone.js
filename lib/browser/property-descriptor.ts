@@ -272,7 +272,7 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
 
   const supportsWebSocket = typeof WebSocket !== 'undefined';
   if (canPatchViaPropertyDescriptor()) {
-    const ignoreProperties: IgnoreProperty[] = _global.__Zone_ignore_on_properties;
+    const ignoreProperties: IgnoreProperty[] = _global['__Zone_ignore_on_properties'];
     // for browsers that we can patch the descriptor:  Chrome & Firefox
     if (isBrowser) {
       const internalWindow: any = window;
