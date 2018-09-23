@@ -230,7 +230,7 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
               task.invoke();
             }
           }
-        });
+        }, true);
 
     const abortNative =
         patchMethod(XMLHttpRequestPrototype, 'abort', () => function(self: any, args: any[]) {
@@ -244,13 +244,12 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
               return;
             }
             task.zone.cancelTask(task);
-          } else if ((Zone.current as any)[fetchTaskAborting] === true) {
-            // the abort is called from fetch polyfill, we need to call native abort of XHR.
-            return abortNative!.apply(self, args);
+            return;
           }
           // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no
-          // task
-          // to cancel. Do nothing.
+          // task to cancel. But we need to use abortNative to abort the XHR in case the send
+          // is called outside of Zone.
+          return abortNative!.apply(self, args);
         });
   }
 });

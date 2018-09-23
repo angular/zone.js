@@ -327,7 +327,8 @@ interface _ZonePrivate {
   patchMethod:
       (target: any, name: string,
        patchFn: (delegate: Function, delegateName: string, name: string) =>
-           (self: any, args: any[]) => any) => Function | null;
+           (self: any, args: any[]) => any,
+       checkInZone?: boolean) => Function | null;
   bindArguments: (args: any[], source: string) => any[];
 }
 
@@ -710,7 +711,6 @@ const Zone: ZoneType = (function(global: any) {
       return this._name;
     }
 
-
     private _parent: Zone|null;
     private _name: string;
     private _properties: {[key: string]: any};
@@ -752,6 +752,9 @@ const Zone: ZoneType = (function(global: any) {
       const _callback = this._zoneDelegate.intercept(this, callback, source);
       const zone: Zone = this;
       return function() {
+        if (zone === rootZone) {
+          return _callback.apply(this, arguments);
+        }
         return zone.runGuarded(_callback, (this as any), <any>arguments, source);
       } as any as T;
     }
@@ -1352,7 +1355,8 @@ const Zone: ZoneType = (function(global: any) {
       }
     },
   };
-  let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
+  const rootZone = new Zone(null, null);
+  let _currentZoneFrame: _ZoneFrame = {parent: null, zone: rootZone};
   let _currentTask: Task|null = null;
   let _numberOfNestedTaskFrames = 0;
 

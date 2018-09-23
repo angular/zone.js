@@ -36,6 +36,10 @@ Zone.__load_patch('fetch', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   }
   const placeholder = function() {};
   global['fetch'] = function() {
+    // if in root zone, just use native fetch directly.
+    if (Zone.current === Zone.root) {
+      return fetch.apply(this, arguments);
+    }
     const args = Array.prototype.slice.call(arguments);
     const options = args.length > 1 ? args[1] : null;
     const signal = options && options.signal;

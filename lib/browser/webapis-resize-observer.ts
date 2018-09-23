@@ -58,7 +58,7 @@ Zone.__load_patch('ResizeObserver', (global: any, Zone: any, api: _ZonePrivate) 
         targets.push(target);
         target[resizeObserverSymbol] = Zone.current;
         return delegate.apply(self, args);
-      });
+      }, true);
 
   api.patchMethod(
       ResizeObserver.prototype, 'unobserve', (delegate: Function) => (self: any, args: any[]) => {

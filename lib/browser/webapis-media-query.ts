@@ -16,7 +16,7 @@ Zone.__load_patch('mediaQuery', (global: any, Zone: ZoneType, api: _ZonePrivate)
       } else {
         return delegate.apply(self, args);
       }
-    });
+    }, true);
   }
 
   function patchRemoveListener(proto: any) {

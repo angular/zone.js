@@ -389,7 +389,8 @@ export function setShouldCopySymbolProperties(flag: boolean) {
 export function patchMethod(
     target: any, name: string,
     patchFn: (delegate: Function, delegateName: string, name: string) => (self: any, args: any[]) =>
-        any): Function|null {
+        any,
+    checkInZone = false): Function|null {
   let proto = target;
   while (proto && !proto.hasOwnProperty(name)) {
     proto = ObjectGetPrototypeOf(proto);
@@ -409,6 +410,10 @@ export function patchMethod(
     if (isPropertyWritable(desc)) {
       const patchDelegate = patchFn(delegate!, delegateName, name);
       proto[name] = function() {
+        // if we are in root zone, just use native delegate.
+        if (checkInZone && Zone.current === Zone.root && delegate) {
+          return delegate.apply(this, arguments);
+        }
         return patchDelegate(this, arguments as any);
       };
       attachOriginToPatched(proto[name], delegate);
@@ -449,7 +454,7 @@ export function patchMacroTask(
       // cause an error by calling it directly.
       return delegate.apply(self, args);
     }
-  });
+  }, true);
 }
 
 export interface MicroTaskMeta extends TaskData {
@@ -480,7 +485,7 @@ export function patchMicroTask(
       // cause an error by calling it directly.
       return delegate.apply(self, args);
     }
-  });
+  }, true);
 }
 
 export function attachOriginToPatched(patched: Function, original: any) {
