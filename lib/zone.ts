@@ -665,7 +665,7 @@ const Zone: ZoneType = (function(global: any) {
   }
 
   const detectAsyncFunction = async function() {};
-  const AsyncFunction = detectAsyncFunction.constructor;
+  const AsyncFunction = (detectAsyncFunction.constructor as any).name === 'AsyncFunction' ? detectAsyncFunction.constructor : null;
 
   class Zone implements AmbientZone {
     static __symbol__: (name: string) => string = __symbol__;
