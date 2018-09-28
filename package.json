@@ -102,7 +102,7 @@
     "ts-loader": "^0.6.0",
     "tslint": "^4.1.1",
     "tslint-eslint-rules": "^3.1.0",
-    "typescript": "^3.0.3",
+    "typescript": "^3.1.0",
     "vrsource-tslint-rules": "^4.0.0",
     "webdriver-manager": "^12.0.6",
     "webdriverio": "^4.8.0",

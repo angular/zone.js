@@ -25,12 +25,12 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function() {
                link.href = 'someUrl';
                link.addEventListener('error', function() {
                  expect(Zone.current).toBe(testZone);
-                 document.head.removeChild(link);
+                 document.head!.removeChild(link);
                  done();
                });
              });
 
-             document.head.appendChild(link!);
+             document.head!.appendChild(link!);
            });
 
            function supportsOnEvents() {
@@ -51,12 +51,12 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function() {
                  link.href = 'anotherUrl';
                  link.onerror = function() {
                    expect(Zone.current).toBe(testZone);
-                   document.head.removeChild(link);
+                   document.head!.removeChild(link);
                    done();
                  };
                });
 
-               document.head.appendChild(link!);
+               document.head!.appendChild(link!);
              });
 
              it('should work with onload', function(done) {
@@ -68,12 +68,12 @@ describe('HTML Imports', ifEnvSupports(supportsImports, function() {
                  link.href = '/base/test/assets/import.html';
                  link.onload = function() {
                    expect(Zone.current).toBe(testZone);
-                   document.head.removeChild(link);
+                   document.head!.removeChild(link);
                    done();
                  };
                });
 
-               document.head.appendChild(link!);
+               document.head!.appendChild(link!);
              });
            });
          }));
