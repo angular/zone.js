@@ -776,6 +776,7 @@ const Zone: ZoneType = (function(global: any) {
         if (callback && callback.constructor === AsyncFunction) {
           const r = this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
           if (r && typeof r.then === 'function') {
+            r['__zone_symbol__outsideAsync'] = true;
             _asyncZoneFrame = _currentZoneFrame;
             return r.then((result: any) => {
               _currentZoneFrame = _asyncZoneFrame!.parent!;

@@ -207,7 +207,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
             api.scheduleMicroTask();  // to make sure that it is running
           }
         }
-        if ((promise as any)['__zone_symbol__isAsync'] === true) {
+        if ((promise as any)['__zone_symbol__isAsync'] === true && (promise as any)['__zone_symbol__outsideAsync'] !== true) {
           Zone.setAsyncFrame();
         }
       }
