@@ -315,24 +315,37 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
         resolve = res;
         reject = rej;
       });
-      let count = 0;
+
+      // Start at 2 to prevent prematurely resolving if .then is called immediately.
+      let unresolvedCount = 2;
+      let valueIndex = 0;
+
       const resolvedValues: any[] = [];
       for (let value of values) {
         if (!isThenable(value)) {
           value = this.resolve(value);
         }
-        value.then(
-            ((index) => (value: any) => {
-              resolvedValues[index] = value;
-              count--;
-              if (!count) {
-                resolve(resolvedValues);
-              }
-            })(count),
-            reject!);
-        count++;
+
+        const curValueIndex = valueIndex;
+        value.then((value: any) => {
+          resolvedValues[curValueIndex] = value;
+          unresolvedCount--;
+          if (unresolvedCount === 0) {
+            resolve!(resolvedValues);
+          }
+        }, reject!);
+
+        unresolvedCount++;
+        valueIndex++;
       }
-      if (!count) resolve!(resolvedValues);
+
+      // Make the unresolvedCount zero-based again.
+      unresolvedCount -= 2;
+
+      if (unresolvedCount === 0) {
+        resolve!(resolvedValues);
+      }
+
       return promise;
     }
 
