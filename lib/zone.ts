@@ -95,9 +95,9 @@
  * yielding.
  *
  *
- * ### [TimerTask]
+ * ### [MacroTask]
  *
- * [TimerTask]s represent work which will be done after some delay. (Sometimes the delay is
+ * [MacroTask]s represent work which will be done after some delay. (Sometimes the delay is
  * approximate such as on next available animation frame). Typically these methods include:
  * `setTimeout`, `setImmediate`, `setInterval`, `requestAnimationFrame`, and all browser specific
  * variants.
