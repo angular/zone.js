@@ -8,10 +8,9 @@ We handle several kinds of tasks in zone.js,
 
 For details, please refer to [here](../dist/zone.js.d.ts)
 
-And in this documentation, it will explain the task lifecycle about which callback
-of zoneSpec will be triggered when.
+This document will explain the lifecycle (state-transition) of different types of tasks and also the triggering of various zonespec's callback during that cycle.
 
-The motivation to write this because of this [PR](https://github.com/angular/zone.js/pull/629) of @mhevery. That task's state become more clear and can be rescheduled and override.
+The motivation to write this document has come from this [PR](https://github.com/angular/zone.js/pull/629) of @mhevery. This has made the task's state more clear. Also, tasks can now be cancelled and rescheduled in different zone.
 
 ### MicroTask
 Such as Promise.then, process.nextTick, they are microTasks, the lifecycle(state transition)
