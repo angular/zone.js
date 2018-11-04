@@ -697,7 +697,13 @@ const Zone: ZoneType = (function(global: any) {
       } else if (!global['__Zone_disable_' + name]) {
         const perfName = 'Zone:' + name;
         mark(perfName);
-        patches[name] = fn(global, Zone, _api);
+        if (_mode === 'normal') {
+          patches[name] = fn(global, Zone, _api);
+        } else {
+          patches[name] = function () {
+            fn(global, Zone, _api);
+          };
+        }
         performanceMeasure(perfName, perfName);
       }
     }
@@ -1355,6 +1361,7 @@ const Zone: ZoneType = (function(global: any) {
   let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
   let _currentTask: Task|null = null;
   let _numberOfNestedTaskFrames = 0;
+  let _mode: 'lazy' | 'normal' = 'normal';
 
   function noop() {}
 
