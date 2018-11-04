@@ -463,6 +463,26 @@ describe(
             });
           });
 
+          it('should resolve with the sync then operation', () => {
+            queueZone.run(() => {
+              let value = null;
+              const p1 = {
+                then: function(thenCallback: Function) {
+                  return thenCallback('p1');
+                }
+              };
+              const p2 = {
+                then: function(thenCallback: Function) {
+                  return thenCallback('p2');
+                }
+              };
+              Promise.all([p1, 'v1', p2]).then((v: any) => value = v);
+              // expect(Zone.current.get('queue').length).toEqual(2);
+              flushMicrotasks();
+              expect(value).toEqual(['p1', 'v1', 'p2']);
+            });
+          });
+
           it('should resolve generators',
              ifEnvSupports(
                  () => {
