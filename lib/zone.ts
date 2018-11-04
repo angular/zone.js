@@ -796,7 +796,7 @@ const Zone: ZoneType = (function(global: any) {
       // will run in notScheduled(canceled) state, we should not try to
       // run such kind of task but just return
 
-      if (task.state === notScheduled && task.type === eventTask) {
+      if (task.state === notScheduled && (task.type === eventTask || task.type === macroTask)) {
         return;
       }
 
