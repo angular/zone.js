@@ -224,7 +224,11 @@
           const proxyZoneSpec: any = this && this.testProxyZoneSpec;
           if (proxyZoneSpec) {
             const pendingTasksInfo = proxyZoneSpec.getAndClearPendingTasksInfo();
-            error.message += pendingTasksInfo;
+            try {
+              // try catch here in case error.message is not writable
+              error.message += pendingTasksInfo;
+            } catch (err) {
+            }
           }
         }
         if (onException) {
