@@ -700,12 +700,35 @@ const Zone: ZoneType = (function(global: any) {
         if (_mode === 'normal') {
           patches[name] = fn(global, Zone, _api);
         } else {
-          patches[name] = function () {
+          patches[name] = function() {
             fn(global, Zone, _api);
           };
         }
         performanceMeasure(perfName, perfName);
       }
+    }
+
+    static __load() {
+      Object.keys(patches).forEach(key => patches[key]());
+      patchLoaded = true;
+    }
+
+    static __register_patched_delegate(proto: any, property: string, origin: any) {
+      delegates.push({proto: proto, property: property, patched: proto[property], origin: origin});
+    }
+
+    static __reloadAll() {
+      delegates.forEach(delegate => {
+        delegate.proto[delegate.property] = delegate.patched;
+      });
+      patchLoaded = true;
+    }
+
+    static __unloadAll() {
+      delegates.forEach(delegate => {
+        delegate.proto[delegate.property] = delegate.origin;
+      });
+      patchLoaded = false;
     }
 
     public get parent(): AmbientZone|null {
@@ -765,11 +788,18 @@ const Zone: ZoneType = (function(global: any) {
     public run(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): any;
     public run<T>(
         callback: (...args: any[]) => T, applyThis?: any, applyArgs?: any[], source?: string): T {
+      if (!patchLoaded && _mode === 'lazy') {
+        Zone.__reloadAll();
+      }
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
       try {
         return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
       } finally {
         _currentZoneFrame = _currentZoneFrame.parent!;
+        if (_mode === 'lazy' && _currentZoneFrame.zone &&
+            _currentZoneFrame.zone.name === '<root>') {
+          Zone.__unloadAll();
+        }
       }
     }
 
@@ -777,6 +807,9 @@ const Zone: ZoneType = (function(global: any) {
     public runGuarded<T>(
         callback: (...args: any[]) => T, applyThis: any = null, applyArgs?: any[],
         source?: string) {
+      if (!patchLoaded && _mode === 'lazy') {
+        Zone.__reloadAll();
+      }
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
       try {
         try {
@@ -788,6 +821,10 @@ const Zone: ZoneType = (function(global: any) {
         }
       } finally {
         _currentZoneFrame = _currentZoneFrame.parent!;
+        if (_mode === 'lazy' && _currentZoneFrame.zone &&
+            _currentZoneFrame.zone.name === '<root>') {
+          Zone.__unloadAll();
+        }
       }
     }
 
@@ -811,6 +848,9 @@ const Zone: ZoneType = (function(global: any) {
       task.runCount++;
       const previousTask = _currentTask;
       _currentTask = task;
+      if (!patchLoaded && _mode === 'lazy') {
+        Zone.__reloadAll();
+      }
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
       try {
         if (task.type == macroTask && task.data && !task.data.isPeriodic) {
@@ -838,6 +878,10 @@ const Zone: ZoneType = (function(global: any) {
         }
         _currentZoneFrame = _currentZoneFrame.parent!;
         _currentTask = previousTask;
+        if (_mode === 'lazy' && _currentZoneFrame.zone &&
+            _currentZoneFrame.zone.name === '<root>') {
+          Zone.__unloadAll();
+        }
       }
     }
 
@@ -1337,6 +1381,8 @@ const Zone: ZoneType = (function(global: any) {
                    eventTask: 'eventTask' = 'eventTask';
 
   const patches: {[key: string]: any} = {};
+  const delegates: {proto: any, property: string, patched: any, origin: any}[] = [];
+  let patchLoaded = false;
   const _api: _ZonePrivate = {
     symbol: __symbol__,
     currentZoneFrame: () => _currentZoneFrame,
@@ -1361,7 +1407,7 @@ const Zone: ZoneType = (function(global: any) {
   let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
   let _currentTask: Task|null = null;
   let _numberOfNestedTaskFrames = 0;
-  let _mode: 'lazy' | 'normal' = 'normal';
+  let _mode: 'lazy'|'normal' = 'normal';
 
   function noop() {}
 

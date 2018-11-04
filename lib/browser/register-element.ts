@@ -38,7 +38,7 @@ function patchCallbacks(target: any, targetName: string, method: string, callbac
     return nativeDelegate.call(target, name, opts, options);
   };
 
-  attachOriginToPatched(target[method], nativeDelegate);
+  attachOriginToPatched(target, method, nativeDelegate);
 }
 
 export function registerElementPatch(_global: any) {

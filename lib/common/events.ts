@@ -621,13 +621,13 @@ export function patchEventTarget(
     };
 
     // for native toString patch
-    attachOriginToPatched(proto[ADD_EVENT_LISTENER], nativeAddEventListener);
-    attachOriginToPatched(proto[REMOVE_EVENT_LISTENER], nativeRemoveEventListener);
+    attachOriginToPatched(proto, ADD_EVENT_LISTENER, nativeAddEventListener);
+    attachOriginToPatched(proto, REMOVE_EVENT_LISTENER, nativeRemoveEventListener);
     if (nativeRemoveAllListeners) {
-      attachOriginToPatched(proto[REMOVE_ALL_LISTENERS_EVENT_LISTENER], nativeRemoveAllListeners);
+      attachOriginToPatched(proto, REMOVE_ALL_LISTENERS_EVENT_LISTENER, nativeRemoveAllListeners);
     }
     if (nativeListeners) {
-      attachOriginToPatched(proto[LISTENERS_EVENT_LISTENER], nativeListeners);
+      attachOriginToPatched(proto, LISTENERS_EVENT_LISTENER, nativeListeners);
     }
     return true;
   }
