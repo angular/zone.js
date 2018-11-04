@@ -329,6 +329,7 @@ interface _ZonePrivate {
        patchFn: (delegate: Function, delegateName: string, name: string) =>
            (self: any, args: any[]) => any) => Function | null;
   bindArguments: (args: any[], source: string) => any[];
+  attachOriginToPatched: (patchedTarget: any, prop: string, original: any) => void;
 }
 
 /** @internal */
@@ -1403,6 +1404,7 @@ const Zone: ZoneType = (function(global: any) {
         nativeMicroTaskQueuePromise = NativePromise.resolve(0);
       }
     },
+    attachOriginToPatched: (patchedTarget: any, prop: string, original: any) => noop
   };
   let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
   let _currentTask: Task|null = null;

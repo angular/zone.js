@@ -445,6 +445,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
   }
 
   global['Promise'] = ZoneAwarePromise;
+  api.attachOriginToPatched(global, 'Promise', NativePromise);
 
   const symbolThenPatched = __symbol__('thenPatched');
 
