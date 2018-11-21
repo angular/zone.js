@@ -1240,7 +1240,7 @@ const Zone: ZoneType = (function(global: any) {
 
     public toString() {
       if (this.data && typeof this.data.handleId !== 'undefined') {
-        return this.data.handleId;
+        return this.data.handleId.toString();
       } else {
         return Object.prototype.toString.call(this);
       }
