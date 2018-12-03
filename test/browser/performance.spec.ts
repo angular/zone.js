@@ -17,7 +17,7 @@ describe('Performance', () => {
     return performance && performance['getEntriesByName'] &&
         performance['getEntriesByName'](name).filter(m => m.entryType === 'measure');
   }
-  describe('Lazy mode', () => {
+  fdescribe('Lazy mode', () => {
     const rootZone = Zone.root;
     const noop = function() {};
     const normal = function() {
@@ -25,7 +25,7 @@ describe('Performance', () => {
         let j = i * i;
       }
     };
-    const times = 100000;
+    const times = 10000;
     describe('root zone performance benchmark', () => {
       it('noop function', () => {
         const normal = 'rootZone normal noop';
@@ -40,8 +40,8 @@ describe('Performance', () => {
         console.log(`${normal} ${times} times cost: ${normalDuration}, ${normalAverage} average`);
         const lazy = 'rootZone lazy noop';
         mark(lazy);
-        (Zone as any)._mode = 'lazy';
-        for (let i = 0; i < 100000; i++) {
+        (Zone as any).mode = 'lazy';
+        for (let i = 0; i < times; i++) {
           rootZone.run(noop);
         }
         performanceMeasure(lazy, lazy);
@@ -49,7 +49,7 @@ describe('Performance', () => {
         const lazyDuration = lazyEntries[0].duration;
         const lazyAverage = lazyDuration / times;
         console.log(`${lazy} ${times} times cost: ${lazyDuration}, ${lazyAverage}`);
-        (Zone as any)._mode = 'normal';
+        (Zone as any).mode = 'normal';
         const diff = lazyDuration - normalDuration;
         const diffAverage = diff / times;
         console.log(`diff running ${times} times is: ${diff}, average is ${diffAverage}`);

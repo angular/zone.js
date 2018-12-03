@@ -445,7 +445,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
   }
 
   global['Promise'] = ZoneAwarePromise;
-  api.attachOriginToPatched(global, 'Promise', NativePromise);
+  api.attachOriginToPatched(global, ZONE_AWARE_PROMISE, NativePromise);
 
   const symbolThenPatched = __symbol__('thenPatched');
 
@@ -470,6 +470,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       return wrapped.then(onResolve, onReject);
     };
     (Ctor as any)[symbolThenPatched] = true;
+    api.attachOriginToPatched(Ctor.prototype, 'then', originalThen);
   }
 
   api.patchThen = patchThen;

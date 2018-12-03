@@ -154,6 +154,7 @@ interface Zone {
    * @returns {any} The value for the key, or `undefined` if not found.
    */
   get(key: string): any;
+
   /**
    * Returns a Zone which defines a `key`.
    *
@@ -163,6 +164,7 @@ interface Zone {
    * @returns {Zone} The Zone which defines the `key`, `null` if not found.
    */
   getZoneWith(key: string): Zone|null;
+
   /**
    * Used to create a child zone.
    *
@@ -170,6 +172,7 @@ interface Zone {
    * @returns {Zone} A new child zone.
    */
   fork(zoneSpec: ZoneSpec): Zone;
+
   /**
    * Wraps a callback function in a new function which will properly restore the current zone upon
    * invocation.
@@ -184,6 +187,7 @@ interface Zone {
    * @returns {function(): *} A function which will invoke the `callback` through [Zone.runGuarded].
    */
   wrap<F extends Function>(callback: F, source: string): F;
+
   /**
    * Invokes a function in a given zone.
    *
@@ -196,6 +200,7 @@ interface Zone {
    * @returns {any} Value from the `callback` function.
    */
   run<T>(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): T;
+
   /**
    * Invokes a function in a given zone and catches any exceptions.
    *
@@ -211,6 +216,7 @@ interface Zone {
    * @returns {any} Value from the `callback` function.
    */
   runGuarded<T>(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): T;
+
   /**
    * Execute the Task by restoring the [Zone.currentTask] in the Task's zone.
    *
@@ -303,7 +309,7 @@ interface ZoneType {
   root: Zone;
 
   /** @internal */
-  __load_patch(name: string, fn: _PatchFn): void;
+  __load_patch(name: string, fn: _PatchFn, preload?: boolean): void;
 
   /** @internal */
   __symbol__(name: string): string;
@@ -488,14 +494,22 @@ interface ZoneSpec {
  */
 interface ZoneDelegate {
   zone: Zone;
+
   fork(targetZone: Zone, zoneSpec: ZoneSpec): Zone;
+
   intercept(targetZone: Zone, callback: Function, source: string): Function;
+
   invoke(targetZone: Zone, callback: Function, applyThis?: any, applyArgs?: any[], source?: string):
       any;
+
   handleError(targetZone: Zone, error: any): boolean;
+
   scheduleTask(targetZone: Zone, task: Task): Task;
+
   invokeTask(targetZone: Zone, task: Task, applyThis?: any, applyArgs?: any[]): any;
+
   cancelTask(targetZone: Zone, task: Task): any;
+
   hasTask(targetZone: Zone, isEmpty: HasTaskState): void;
 }
 
@@ -637,12 +651,15 @@ type AmbientZoneDelegate = ZoneDelegate;
 const Zone: ZoneType = (function(global: any) {
   const performance: {mark(name: string): void; measure(name: string, label: string): void;} =
       global['performance'];
+
   function mark(name: string) {
     performance && performance['mark'] && performance['mark'](name);
   }
+
   function performanceMeasure(name: string, label: string) {
     performance && performance['measure'] && performance['measure'](name, label);
   }
+
   mark('Zone');
   if (global['Zone']) {
     // if global['Zone'] already exists (maybe zone.js was already loaded or
@@ -666,7 +683,7 @@ const Zone: ZoneType = (function(global: any) {
     static __symbol__: (name: string) => string = __symbol__;
 
     static assertZonePatched() {
-      if (global['Promise'] !== patches['ZoneAwarePromise']) {
+      if (patchLoaded && global['Promise'] !== patchedPromise) {
         throw new Error(
             'Zone.js has detected that ZoneAwarePromise `(window|global).Promise` ' +
             'has been overwritten.\n' +
@@ -692,17 +709,25 @@ const Zone: ZoneType = (function(global: any) {
       return _currentTask;
     }
 
-    static __load_patch(name: string, fn: _PatchFn): void {
+    static get mode(): 'lazy'|'normal' {
+      return _mode;
+    }
+
+    static set mode(newMode: 'lazy'|'normal') {
+      _mode = newMode;
+    }
+
+    static __load_patch(name: string, fn: _PatchFn, preload = false): void {
       if (patches.hasOwnProperty(name)) {
         throw Error('Already loaded patch: ' + name);
       } else if (!global['__Zone_disable_' + name]) {
         const perfName = 'Zone:' + name;
         mark(perfName);
-        if (_mode === 'normal') {
+        if (_mode === 'normal' || preload) {
           patches[name] = fn(global, Zone, _api);
         } else {
           patches[name] = function() {
-            fn(global, Zone, _api);
+            return fn(global, Zone, _api);
           };
         }
         performanceMeasure(perfName, perfName);
@@ -710,24 +735,66 @@ const Zone: ZoneType = (function(global: any) {
     }
 
     static __load() {
-      Object.keys(patches).forEach(key => patches[key]());
+      if (patchLoaded) {
+        return;
+      }
+      Object.keys(patches).forEach(key => {
+        const loadPatchFn = patches[key];
+        if (typeof loadPatchFn === 'function') {
+          const r = loadPatchFn();
+          if (key === 'ZoneAwarePromise') {
+            patchedPromise = r;
+          }
+        }
+      });
       patchLoaded = true;
     }
 
-    static __register_patched_delegate(proto: any, property: string, origin: any) {
-      delegates.push({proto: proto, property: property, patched: proto[property], origin: origin});
+    static __register_patched_delegate(
+        proto: any, property: string, origin: any, isPropertyDesc = false) {
+      if (!isPropertyDesc) {
+        delegates.push({
+          proto: proto,
+          property: property,
+          patched: proto[property],
+          origin: origin,
+          isPropertyDesc: isPropertyDesc
+        });
+      } else {
+        delegates.push({
+          proto: proto,
+          property: property,
+          patched: Object.getOwnPropertyDescriptor(proto, property),
+          origin: origin,
+          isPropertyDesc: isPropertyDesc
+        });
+      }
     }
 
     static __reloadAll() {
+      if (patchLoaded) {
+        return;
+      }
       delegates.forEach(delegate => {
-        delegate.proto[delegate.property] = delegate.patched;
+        if (delegate.isPropertyDesc) {
+          Object.defineProperty(delegate.proto, delegate.property, delegate.patched);
+        } else {
+          delegate.proto[delegate.property] = delegate.patched;
+        }
       });
       patchLoaded = true;
     }
 
     static __unloadAll() {
+      if (!patchLoaded) {
+        return;
+      }
       delegates.forEach(delegate => {
-        delegate.proto[delegate.property] = delegate.origin;
+        if (delegate.isPropertyDesc) {
+          Object.defineProperty(delegate.proto, delegate.property, delegate.origin);
+        } else {
+          delegate.proto[delegate.property] = delegate.origin;
+        }
       });
       patchLoaded = false;
     }
@@ -797,8 +864,7 @@ const Zone: ZoneType = (function(global: any) {
         return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
       } finally {
         _currentZoneFrame = _currentZoneFrame.parent!;
-        if (_mode === 'lazy' && _currentZoneFrame.zone &&
-            _currentZoneFrame.zone.name === '<root>') {
+        if (_mode === 'lazy' && _currentZoneFrame.zone && !_currentZoneFrame.zone.parent) {
           Zone.__unloadAll();
         }
       }
@@ -822,8 +888,7 @@ const Zone: ZoneType = (function(global: any) {
         }
       } finally {
         _currentZoneFrame = _currentZoneFrame.parent!;
-        if (_mode === 'lazy' && _currentZoneFrame.zone &&
-            _currentZoneFrame.zone.name === '<root>') {
+        if (_mode === 'lazy' && _currentZoneFrame.zone && !_currentZoneFrame.zone.parent) {
           Zone.__unloadAll();
         }
       }
@@ -879,8 +944,7 @@ const Zone: ZoneType = (function(global: any) {
         }
         _currentZoneFrame = _currentZoneFrame.parent!;
         _currentTask = previousTask;
-        if (_mode === 'lazy' && _currentZoneFrame.zone &&
-            _currentZoneFrame.zone.name === '<root>') {
+        if (_mode === 'lazy' && _currentZoneFrame.zone && !_currentZoneFrame.zone.parent) {
           Zone.__unloadAll();
         }
       }
@@ -1330,6 +1394,8 @@ const Zone: ZoneType = (function(global: any) {
       if (!nativeMicroTaskQueuePromise) {
         if (global[symbolPromise]) {
           nativeMicroTaskQueuePromise = global[symbolPromise].resolve(0);
+        } else if (_mode === 'lazy' && patchedPromise !== global['Promise']) {
+          nativeMicroTaskQueuePromise = global['Promise'].resolve(0);
         }
       }
       if (nativeMicroTaskQueuePromise) {
@@ -1382,7 +1448,9 @@ const Zone: ZoneType = (function(global: any) {
                    eventTask: 'eventTask' = 'eventTask';
 
   const patches: {[key: string]: any} = {};
-  const delegates: {proto: any, property: string, patched: any, origin: any}[] = [];
+  let patchedPromise: any;
+  const delegates:
+      {proto: any, property: string, patched: any, origin: any, isPropertyDesc: boolean}[] = [];
   let patchLoaded = false;
   const _api: _ZonePrivate = {
     symbol: __symbol__,
@@ -1409,7 +1477,7 @@ const Zone: ZoneType = (function(global: any) {
   let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
   let _currentTask: Task|null = null;
   let _numberOfNestedTaskFrames = 0;
-  let _mode: 'lazy'|'normal' = 'normal';
+  let _mode: 'lazy'|'normal' = global['__zone_symbol__load_mode'] || 'normal';
 
   function noop() {}
 

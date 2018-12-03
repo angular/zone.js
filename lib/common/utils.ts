@@ -159,13 +159,23 @@ const wrapFn = function(event: Event) {
 };
 
 export function patchProperty(obj: any, prop: string, prototype?: any) {
-  let desc = ObjectGetOwnPropertyDescriptor(obj, prop);
-  if (!desc && prototype) {
+  let desc: PropertyDescriptor | null = null;
+  const originalDesc = ObjectGetOwnPropertyDescriptor(obj, prop);
+  if (!originalDesc && prototype) {
     // when patch window object, use prototype to check prop exist or not
     const prototypeDesc = ObjectGetOwnPropertyDescriptor(prototype, prop);
     if (prototypeDesc) {
       desc = {enumerable: true, configurable: true};
     }
+  } else if (originalDesc) {
+    desc = {
+      configurable: originalDesc.configurable,
+      enumerable: originalDesc.enumerable,
+      value: originalDesc.value,
+      writable: originalDesc.writable,
+      get: originalDesc.get,
+      set: originalDesc.set
+    };
   }
   // if the descriptor not exists or is not configurable
   // just return
@@ -262,6 +272,8 @@ export function patchProperty(obj: any, prop: string, prototype?: any) {
   ObjectDefineProperty(obj, prop, desc);
 
   obj[onPropPatchedSymbol] = true;
+
+  (Zone as any).__register_patched_delegate(obj, prop, originalDesc, true);
 }
 
 export function patchOnProperties(obj: any, properties: string[]|null, prototype?: any) {
@@ -485,6 +497,7 @@ export function patchMicroTask(
 
 export function attachOriginToPatched(patchedTarget: any, prop: string, original: any) {
   patchedTarget[prop][zoneSymbol('OriginalDelegate')] = original;
+  (Zone as any).__register_patched_delegate(patchedTarget, prop, original);
 }
 
 let isDetectedIEOrEdge = false;

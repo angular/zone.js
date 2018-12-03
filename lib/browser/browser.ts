@@ -24,7 +24,7 @@ Zone.__load_patch('util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   api.patchMethod = patchMethod;
   api.bindArguments = bindArguments;
   api.attachOriginToPatched = attachOriginToPatched;
-});
+}, true);
 
 Zone.__load_patch('timers', (global: any) => {
   const set = 'set';
