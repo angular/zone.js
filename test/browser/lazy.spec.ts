@@ -8,7 +8,7 @@
 
 describe('lazy', function() {
   const targets = [
-    {proto: 'Window', property: '__zone_symbol__ZoneAwarePromise'},
+    {proto: 'Window', property: 'Promise'},
     {proto: 'Promise', property: 'then'},
     {proto: 'AbortController', property: 'abort'},
     {proto: 'Window', property: 'setTimeout'},
@@ -29,7 +29,7 @@ describe('lazy', function() {
     {proto: 'Window', property: 'WebKitMutationObserver'},
     {proto: 'Window', property: 'IntersectionObserver'},
     {proto: 'Window', property: 'FileReader'},
-    {proto: 'HTMLDocument', property: 'registerElement'},
+    {proto: 'Document', property: 'registerElement'},
     {proto: 'CustomElementRegistry', property: 'define'},
     {proto: 'HTMLCanvasElement', property: 'toBlob'},
     {proto: 'XMLHttpRequest', property: 'open'},
@@ -39,38 +39,41 @@ describe('lazy', function() {
     {proto: 'Geolocation', property: 'watchPosition'}
   ];
 
-  it('before patch should use native delegate', (done: DoneFn) => {
-    const zone = Zone.current.fork({name: 'zone'});
-    zone.run(() => {
-      Promise.resolve().then(() => {
-        expect(Zone.current.name).not.toEqual(zone.name);
-      });
-      setTimeout(() => {
-        expect(Zone.current.name).not.toEqual(zone.name);
-      });
-      const interval = setInterval(() => {
-        expect(Zone.current.name).not.toEqual(zone.name);
-        clearInterval(interval);
-      }, 100);
-      requestAnimationFrame(() => {
-        expect(Zone.current.name).not.toEqual(zone.name);
-      });
-      const btn = document.createElement('button');
-      document.body.appendChild(btn);
-      btn.addEventListener('click', () => {
-        expect(Zone.current.name).not.toEqual(zone.name);
-      });
-      const evt = document.createEvent('MouseEvent');
-      evt.initEvent('click', true, true);
-      Zone.root.run(() => {
-        btn.dispatchEvent(evt);
-      });
-      setTimeout(done, 500);
+  function checkDelegates(isNative: boolean) {
+    targets.forEach(t => {
+      const protoName = t.proto;
+      const property = t.property;
+      let proto = null;
+      if (protoName === 'Window') {
+        proto = window;
+      } else if (protoName === 'Document') {
+        proto = document;
+      } else if (protoName === 'CustomElementRegistry') {
+        proto = window['customElements'];
+      } else {
+        proto = (window as any)[protoName] && (window as any)[protoName].prototype;
+      }
+      if (proto) {
+        const native = proto[Zone.__symbol__(property)];
+        console.log('check target', protoName, property);
+        if (isNative) {
+          expect(proto[property]).toBe(native);
+        } else {
+          expect(proto[property]).not.toBe(native);
+        }
+      }
     });
+  }
+
+  it('before patch should use native delegate', (done: DoneFn) => {
+    (Zone as any).__unloadAll();
+    checkDelegates(true);
+    done();
   });
 
-  it('after load should use patched delegate',
-     (done: DoneFn) => {
-
-     });
+  it('after load should use patched delegate', (done: DoneFn) => {
+    (Zone as any).__reloadAll();
+    checkDelegates(false);
+    done();
+  });
 });

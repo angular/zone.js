@@ -25,6 +25,7 @@ Zone.__load_patch('fetch', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
       signal.abortController = abortController;
       return abortController;
     };
+    global['AbortController'].prototype = OriginalAbortController.prototype;
     abortNative = api.patchMethod(
         OriginalAbortController.prototype, 'abort',
         (delegate: Function) => (self: any, args: any) => {

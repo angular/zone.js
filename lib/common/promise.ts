@@ -408,12 +408,18 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
   const NativePromise = global[symbolPromise] = global['Promise'];
   const ZONE_AWARE_PROMISE = Zone.__symbol__('ZoneAwarePromise');
 
-  let desc = ObjectGetOwnPropertyDescriptor(global, 'Promise');
-  if (!desc || desc.configurable) {
-    desc && delete desc.writable;
-    desc && delete desc.value;
-    if (!desc) {
+  let desc = null;
+  const originalDesc = ObjectGetOwnPropertyDescriptor(global, 'Promise');
+  if (!originalDesc || originalDesc.configurable) {
+    if (!originalDesc) {
       desc = {configurable: true, enumerable: true};
+    } else {
+      desc = {
+        configurable: originalDesc.configurable,
+        enumerable: originalDesc.enumerable,
+        get: originalDesc.get,
+        set: originalDesc.set
+      };
     }
     desc.get = function() {
       // if we already set ZoneAwarePromise, use patched one
@@ -442,10 +448,11 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
     };
 
     ObjectDefineProperty(global, 'Promise', desc);
+    (Zone as any).__register_patched_delegate(global, 'Promise', originalDesc, true);
   }
 
   global['Promise'] = ZoneAwarePromise;
-  api.attachOriginToPatched(global, ZONE_AWARE_PROMISE, NativePromise);
+  api.attachOriginToPatched(global, 'Promise', NativePromise);
 
   const symbolThenPatched = __symbol__('thenPatched');
 

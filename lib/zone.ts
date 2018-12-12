@@ -683,7 +683,7 @@ const Zone: ZoneType = (function(global: any) {
     static __symbol__: (name: string) => string = __symbol__;
 
     static assertZonePatched() {
-      if (patchLoaded && global['Promise'] !== patchedPromise) {
+      if (global['Promise'] !== patchedPromise) {
         throw new Error(
             'Zone.js has detected that ZoneAwarePromise `(window|global).Promise` ' +
             'has been overwritten.\n' +
@@ -717,37 +717,15 @@ const Zone: ZoneType = (function(global: any) {
       _mode = newMode;
     }
 
-    static __load_patch(name: string, fn: _PatchFn, preload = false): void {
+    static __load_patch(name: string, fn: _PatchFn): void {
       if (patches.hasOwnProperty(name)) {
         throw Error('Already loaded patch: ' + name);
       } else if (!global['__Zone_disable_' + name]) {
         const perfName = 'Zone:' + name;
         mark(perfName);
-        if (_mode === 'normal' || preload) {
-          patches[name] = fn(global, Zone, _api);
-        } else {
-          patches[name] = function() {
-            return fn(global, Zone, _api);
-          };
-        }
+        patches[name] = fn(global, Zone, _api);
         performanceMeasure(perfName, perfName);
       }
-    }
-
-    static __load() {
-      if (patchLoaded) {
-        return;
-      }
-      Object.keys(patches).forEach(key => {
-        const loadPatchFn = patches[key];
-        if (typeof loadPatchFn === 'function') {
-          const r = loadPatchFn();
-          if (key === 'ZoneAwarePromise') {
-            patchedPromise = r;
-          }
-        }
-      });
-      patchLoaded = true;
     }
 
     static __register_patched_delegate(
@@ -772,7 +750,7 @@ const Zone: ZoneType = (function(global: any) {
     }
 
     static __reloadAll() {
-      if (patchLoaded) {
+      if (monkeyPatched) {
         return;
       }
       delegates.forEach(delegate => {
@@ -782,11 +760,11 @@ const Zone: ZoneType = (function(global: any) {
           delegate.proto[delegate.property] = delegate.patched;
         }
       });
-      patchLoaded = true;
+      monkeyPatched = true;
     }
 
     static __unloadAll() {
-      if (!patchLoaded) {
+      if (!monkeyPatched) {
         return;
       }
       delegates.forEach(delegate => {
@@ -796,7 +774,7 @@ const Zone: ZoneType = (function(global: any) {
           delegate.proto[delegate.property] = delegate.origin;
         }
       });
-      patchLoaded = false;
+      monkeyPatched = false;
     }
 
     public get parent(): AmbientZone|null {
@@ -856,7 +834,7 @@ const Zone: ZoneType = (function(global: any) {
     public run(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): any;
     public run<T>(
         callback: (...args: any[]) => T, applyThis?: any, applyArgs?: any[], source?: string): T {
-      if (!patchLoaded && _mode === 'lazy') {
+      if (!monkeyPatched && _mode === 'lazy') {
         Zone.__reloadAll();
       }
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
@@ -874,7 +852,7 @@ const Zone: ZoneType = (function(global: any) {
     public runGuarded<T>(
         callback: (...args: any[]) => T, applyThis: any = null, applyArgs?: any[],
         source?: string) {
-      if (!patchLoaded && _mode === 'lazy') {
+      if (!monkeyPatched && _mode === 'lazy') {
         Zone.__reloadAll();
       }
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
@@ -914,7 +892,7 @@ const Zone: ZoneType = (function(global: any) {
       task.runCount++;
       const previousTask = _currentTask;
       _currentTask = task;
-      if (!patchLoaded && _mode === 'lazy') {
+      if (!monkeyPatched && _mode === 'lazy') {
         Zone.__reloadAll();
       }
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
@@ -1451,7 +1429,7 @@ const Zone: ZoneType = (function(global: any) {
   let patchedPromise: any;
   const delegates:
       {proto: any, property: string, patched: any, origin: any, isPropertyDesc: boolean}[] = [];
-  let patchLoaded = false;
+  let monkeyPatched = true;
   const _api: _ZonePrivate = {
     symbol: __symbol__,
     currentZoneFrame: () => _currentZoneFrame,
@@ -1472,7 +1450,8 @@ const Zone: ZoneType = (function(global: any) {
         nativeMicroTaskQueuePromise = NativePromise.resolve(0);
       }
     },
-    attachOriginToPatched: (patchedTarget: any, prop: string, original: any) => noop
+    attachOriginToPatched: (patchedTarget: any, prop: string, original: any) =>
+        Zone.__register_patched_delegate(patchedTarget, prop, original)
   };
   let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
   let _currentTask: Task|null = null;
