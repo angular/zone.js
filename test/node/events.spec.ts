@@ -183,4 +183,10 @@ describe('nodejs EventEmitter', () => {
       expect(emitter.listeners('removeListener').length).toBe(0);
     });
   });
+  it('should not enter endless loop when register uncaughtException to process', () => {
+    require('domain');
+    zoneA.run(() => {
+      process.on('uncaughtException', function() {});
+    });
+  });
 });

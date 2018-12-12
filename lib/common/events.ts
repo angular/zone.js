@@ -10,7 +10,7 @@
  * @suppress {missingRequire}
  */
 
-import {ADD_EVENT_LISTENER_STR, attachOriginToPatched, FALSE_STR, ObjectGetPrototypeOf, REMOVE_EVENT_LISTENER_STR, TRUE_STR, ZONE_SYMBOL_PREFIX, zoneSymbol} from './utils';
+import {ADD_EVENT_LISTENER_STR, attachOriginToPatched, FALSE_STR, isNode, ObjectGetPrototypeOf, REMOVE_EVENT_LISTENER_STR, TRUE_STR, ZONE_SYMBOL_PREFIX, zoneSymbol} from './utils';
 
 /** @internal **/
 interface EventTaskData extends TaskData {
@@ -330,8 +330,13 @@ export function patchEventTarget(
         returnTarget = false, prepend = false) {
       return function() {
         const target = this || _global;
+        const eventName = arguments[0];
         let delegate = arguments[1];
         if (!delegate) {
+          return nativeListener.apply(this, arguments);
+        }
+        if (isNode && eventName === 'uncaughtException') {
+          // don't patch uncaughtException of nodejs to prevent endless loop
           return nativeListener.apply(this, arguments);
         }
 
@@ -350,7 +355,6 @@ export function patchEventTarget(
           return;
         }
 
-        const eventName = arguments[0];
         const options = arguments[2];
 
         if (blackListedEvents) {
