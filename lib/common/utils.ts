@@ -159,7 +159,7 @@ const wrapFn = function(event: Event) {
 };
 
 export function patchProperty(obj: any, prop: string, prototype?: any) {
-  let desc: PropertyDescriptor | null = null;
+  let desc: PropertyDescriptor|null = null;
   const originalDesc = ObjectGetOwnPropertyDescriptor(obj, prop);
   if (!originalDesc && prototype) {
     // when patch window object, use prototype to check prop exist or not

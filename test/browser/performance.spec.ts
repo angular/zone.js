@@ -17,7 +17,7 @@ describe('Performance', () => {
     return performance && performance['getEntriesByName'] &&
         performance['getEntriesByName'](name).filter(m => m.entryType === 'measure');
   }
-  fdescribe('Lazy mode', () => {
+  describe('Lazy mode', () => {
     const rootZone = Zone.root;
     const noop = function() {};
     const normal = function() {
