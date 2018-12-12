@@ -7,7 +7,7 @@
  */
 
 module.exports = function(config) {
-  require('./karma-base-jasmine.conf.js')(config);
-  config.client.setup = 'browser-lazy-zone-setup';
+  config.client.preload = 'build/test/browser-lazy-zone-setup.js';
+  require('./karma-build-jasmine.conf.js')(config);
   config.client.entrypoint = 'browser_lazy_zone_entry_point';
 };
