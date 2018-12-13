@@ -6,10 +6,10 @@
 * found in the LICENSE file at https://angular.io/license
 */
 (function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('rxjs/add/observable/bindCallback'), require('rxjs/add/observable/bindNodeCallback'), require('rxjs/add/observable/defer'), require('rxjs/add/observable/forkJoin'), require('rxjs/add/observable/fromEventPattern'), require('rxjs/add/operator/multicast'), require('rxjs/Observable'), require('rxjs/scheduler/asap'), require('rxjs/Subscriber'), require('rxjs/Subscription'), require('rxjs/symbol/rxSubscriber')) :
-	typeof define === 'function' && define.amd ? define(['rxjs/add/observable/bindCallback', 'rxjs/add/observable/bindNodeCallback', 'rxjs/add/observable/defer', 'rxjs/add/observable/forkJoin', 'rxjs/add/observable/fromEventPattern', 'rxjs/add/operator/multicast', 'rxjs/Observable', 'rxjs/scheduler/asap', 'rxjs/Subscriber', 'rxjs/Subscription', 'rxjs/symbol/rxSubscriber'], factory) :
-	(factory(null,null,null,null,null,null,global.Rx,global.Rx.Scheduler,global.Rx,global.Rx,global.Rx.Symbol));
-}(this, (function (bindCallback,bindNodeCallback,defer,forkJoin,fromEventPattern,multicast,Observable,asap,Subscriber,Subscription,rxSubscriber) { 'use strict';
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory(require('rxjs')) :
+	typeof define === 'function' && define.amd ? define(['rxjs'], factory) :
+	(factory(global.rxjs));
+}(this, (function (rxjs) { 'use strict';
 
 /**
  * @license
@@ -18,39 +18,17 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-Zone.__load_patch('rxjs', function (global, Zone) {
+Zone.__load_patch('rxjs', function (global, Zone, api) {
     var symbol = Zone.__symbol__;
     var nextSource = 'rxjs.Subscriber.next';
     var errorSource = 'rxjs.Subscriber.error';
     var completeSource = 'rxjs.Subscriber.complete';
     var ObjectDefineProperties = Object.defineProperties;
-    var empty = {
-        closed: true,
-        next: function (value) { },
-        error: function (err) { throw err; },
-        complete: function () { }
-    };
-    function toSubscriber(nextOrObserver, error, complete) {
-        if (nextOrObserver) {
-            if (nextOrObserver instanceof Subscriber.Subscriber) {
-                return nextOrObserver;
-            }
-            if (nextOrObserver[rxSubscriber.rxSubscriber]) {
-                return nextOrObserver[rxSubscriber.rxSubscriber]();
-            }
-        }
-        if (!nextOrObserver && !error && !complete) {
-            return new Subscriber.Subscriber(empty);
-        }
-        return new Subscriber.Subscriber(nextOrObserver, error, complete);
-    }
     var patchObservable = function () {
-        var ObservablePrototype = Observable.Observable.prototype;
-        var symbolSubscribe = symbol('subscribe');
+        var ObservablePrototype = rxjs.Observable.prototype;
         var _symbolSubscribe = symbol('_subscribe');
         var _subscribe = ObservablePrototype[_symbolSubscribe] = ObservablePrototype._subscribe;
-        var subscribe = ObservablePrototype[symbolSubscribe] = ObservablePrototype.subscribe;
-        ObjectDefineProperties(Observable.Observable.prototype, {
+        ObjectDefineProperties(rxjs.Observable.prototype, {
             _zone: { value: null, writable: true, configurable: true },
             _zoneSource: { value: null, writable: true, configurable: true },
             _zoneSubscribe: { value: null, writable: true, configurable: true },
@@ -70,7 +48,7 @@ Zone.__load_patch('rxjs', function (global, Zone) {
                     if (this._zoneSubscribe) {
                         return this._zoneSubscribe;
                     }
-                    else if (this.constructor === Observable.Observable) {
+                    else if (this.constructor === rxjs.Observable) {
                         return _subscribe;
                     }
                     var proto = Object.getPrototypeOf(this);
@@ -78,30 +56,55 @@ Zone.__load_patch('rxjs', function (global, Zone) {
                 },
                 set: function (subscribe) {
                     this._zone = Zone.current;
-                    this._zoneSubscribe = subscribe;
+                    this._zoneSubscribe = function () {
+                        if (this._zone && this._zone !== Zone.current) {
+                            var tearDown_1 = this._zone.run(subscribe, this, arguments);
+                            if (tearDown_1 && typeof tearDown_1 === 'function') {
+                                var zone_1 = this._zone;
+                                return function () {
+                                    if (zone_1 !== Zone.current) {
+                                        return zone_1.run(tearDown_1, this, arguments);
+                                    }
+                                    return tearDown_1.apply(this, arguments);
+                                };
+                            }
+                            return tearDown_1;
+                        }
+                        return subscribe.apply(this, arguments);
+                    };
                 }
             },
-            subscribe: {
-                writable: true,
-                configurable: true,
-                value: function (observerOrNext, error, complete) {
-                    // Only grab a zone if we Zone exists and it is different from the current zone.
-                    var _zone = this._zone;
-                    if (_zone && _zone !== Zone.current) {
-                        // Current Zone is different from the intended zone.
-                        // Restore the zone before invoking the subscribe callback.
-                        return _zone.run(subscribe, this, [toSubscriber(observerOrNext, error, complete)]);
-                    }
-                    return subscribe.call(this, observerOrNext, error, complete);
+            subjectFactory: {
+                get: function () {
+                    return this._zoneSubjectFactory;
+                },
+                set: function (factory) {
+                    var zone = this._zone;
+                    this._zoneSubjectFactory = function () {
+                        if (zone && zone !== Zone.current) {
+                            return zone.run(factory, this, arguments);
+                        }
+                        return factory.apply(this, arguments);
+                    };
                 }
             }
         });
     };
+    api.patchMethod(rxjs.Observable.prototype, 'lift', function (delegate) { return function (self, args) {
+        var observable = delegate.apply(self, args);
+        if (observable.operator) {
+            observable.operator._zone = Zone.current;
+            api.patchMethod(observable.operator, 'call', function (operatorDelegate) { return function (operatorSelf, operatorArgs) {
+                if (operatorSelf._zone && operatorSelf._zone !== Zone.current) {
+                    return operatorSelf._zone.run(operatorDelegate, operatorSelf, operatorArgs);
+                }
+                return operatorDelegate.apply(operatorSelf, operatorArgs);
+            }; });
+        }
+        return observable;
+    }; });
     var patchSubscription = function () {
-        var unsubscribeSymbol = symbol('unsubscribe');
-        var unsubscribe = Subscription.Subscription.prototype[unsubscribeSymbol] =
-            Subscription.Subscription.prototype.unsubscribe;
-        ObjectDefineProperties(Subscription.Subscription.prototype, {
+        ObjectDefineProperties(rxjs.Subscription.prototype, {
             _zone: { value: null, writable: true, configurable: true },
             _zoneUnsubscribe: { value: null, writable: true, configurable: true },
             _unsubscribe: {
@@ -114,32 +117,21 @@ Zone.__load_patch('rxjs', function (global, Zone) {
                 },
                 set: function (unsubscribe) {
                     this._zone = Zone.current;
-                    this._zoneUnsubscribe = unsubscribe;
-                }
-            },
-            unsubscribe: {
-                writable: true,
-                configurable: true,
-                value: function () {
-                    // Only grab a zone if we Zone exists and it is different from the current zone.
-                    var _zone = this._zone;
-                    if (_zone && _zone !== Zone.current) {
-                        // Current Zone is different from the intended zone.
-                        // Restore the zone before invoking the subscribe callback.
-                        _zone.run(unsubscribe, this);
-                    }
-                    else {
-                        unsubscribe.apply(this);
-                    }
+                    this._zoneUnsubscribe = function () {
+                        if (this._zone && this._zone !== Zone.current) {
+                            return this._zone.run(unsubscribe, this, arguments);
+                        }
+                        return unsubscribe.apply(this, arguments);
+                    };
                 }
             }
         });
     };
     var patchSubscriber = function () {
-        var next = Subscriber.Subscriber.prototype.next;
-        var error = Subscriber.Subscriber.prototype.error;
-        var complete = Subscriber.Subscriber.prototype.complete;
-        Object.defineProperty(Subscriber.Subscriber.prototype, 'destination', {
+        var next = rxjs.Subscriber.prototype.next;
+        var error = rxjs.Subscriber.prototype.error;
+        var complete = rxjs.Subscriber.prototype.complete;
+        Object.defineProperty(rxjs.Subscriber.prototype, 'destination', {
             configurable: true,
             get: function () {
                 return this._zoneDestination;
@@ -151,7 +143,7 @@ Zone.__load_patch('rxjs', function (global, Zone) {
         });
         // patch Subscriber.next to make sure it run
         // into SubscriptionZone
-        Subscriber.Subscriber.prototype.next = function () {
+        rxjs.Subscriber.prototype.next = function () {
             var currentZone = Zone.current;
             var subscriptionZone = this._zone;
             // for performance concern, check Zone.current
@@ -163,7 +155,7 @@ Zone.__load_patch('rxjs', function (global, Zone) {
                 return next.apply(this, arguments);
             }
         };
-        Subscriber.Subscriber.prototype.error = function () {
+        rxjs.Subscriber.prototype.error = function () {
             var currentZone = Zone.current;
             var subscriptionZone = this._zone;
             // for performance concern, check Zone.current
@@ -175,7 +167,7 @@ Zone.__load_patch('rxjs', function (global, Zone) {
                 return error.apply(this, arguments);
             }
         };
-        Subscriber.Subscriber.prototype.complete = function () {
+        rxjs.Subscriber.prototype.complete = function () {
             var currentZone = Zone.current;
             var subscriptionZone = this._zone;
             // for performance concern, check Zone.current
@@ -188,156 +180,9 @@ Zone.__load_patch('rxjs', function (global, Zone) {
             }
         };
     };
-    var patchObservableInstance = function (observable) {
-        observable._zone = Zone.current;
-    };
-    var patchObservableFactoryCreator = function (obj, factoryName) {
-        var symbolFactory = symbol(factoryName);
-        if (obj[symbolFactory]) {
-            return;
-        }
-        var factoryCreator = obj[symbolFactory] = obj[factoryName];
-        if (!factoryCreator) {
-            return;
-        }
-        obj[factoryName] = function () {
-            var factory = factoryCreator.apply(this, arguments);
-            return function () {
-                var observable = factory.apply(this, arguments);
-                patchObservableInstance(observable);
-                return observable;
-            };
-        };
-    };
-    var patchObservableFactory = function (obj, factoryName) {
-        var symbolFactory = symbol(factoryName);
-        if (obj[symbolFactory]) {
-            return;
-        }
-        var factory = obj[symbolFactory] = obj[factoryName];
-        if (!factory) {
-            return;
-        }
-        obj[factoryName] = function () {
-            var observable = factory.apply(this, arguments);
-            patchObservableInstance(observable);
-            return observable;
-        };
-    };
-    var patchObservableFactoryArgs = function (obj, factoryName) {
-        var symbolFactory = symbol(factoryName);
-        if (obj[symbolFactory]) {
-            return;
-        }
-        var factory = obj[symbolFactory] = obj[factoryName];
-        if (!factory) {
-            return;
-        }
-        obj[factoryName] = function () {
-            var initZone = Zone.current;
-            var args = Array.prototype.slice.call(arguments);
-            var _loop_1 = function (i) {
-                var arg = args[i];
-                if (typeof arg === 'function') {
-                    args[i] = function () {
-                        var argArgs = Array.prototype.slice.call(arguments);
-                        var runningZone = Zone.current;
-                        if (initZone && runningZone && initZone !== runningZone) {
-                            return initZone.run(arg, this, argArgs);
-                        }
-                        else {
-                            return arg.apply(this, argArgs);
-                        }
-                    };
-                }
-            };
-            for (var i = 0; i < args.length; i++) {
-                _loop_1(i);
-            }
-            var observable = factory.apply(this, args);
-            patchObservableInstance(observable);
-            return observable;
-        };
-    };
-    var patchMulticast = function () {
-        var obj = Observable.Observable.prototype;
-        var factoryName = 'multicast';
-        var symbolFactory = symbol(factoryName);
-        if (obj[symbolFactory]) {
-            return;
-        }
-        var factory = obj[symbolFactory] = obj[factoryName];
-        if (!factory) {
-            return;
-        }
-        obj[factoryName] = function () {
-            var _zone = Zone.current;
-            var args = Array.prototype.slice.call(arguments);
-            var subjectOrSubjectFactory = args.length > 0 ? args[0] : undefined;
-            if (typeof subjectOrSubjectFactory !== 'function') {
-                var originalFactory_1 = subjectOrSubjectFactory;
-                subjectOrSubjectFactory = function () {
-                    return originalFactory_1;
-                };
-            }
-            args[0] = function () {
-                var subject;
-                if (_zone && _zone !== Zone.current) {
-                    subject = _zone.run(subjectOrSubjectFactory, this, arguments);
-                }
-                else {
-                    subject = subjectOrSubjectFactory.apply(this, arguments);
-                }
-                if (subject && _zone) {
-                    subject._zone = _zone;
-                }
-                return subject;
-            };
-            var observable = factory.apply(this, args);
-            patchObservableInstance(observable);
-            return observable;
-        };
-    };
-    var patchImmediate = function (asap$$1) {
-        if (!asap$$1) {
-            return;
-        }
-        var scheduleSymbol = symbol('scheduleSymbol');
-        var zoneSymbol = symbol('zone');
-        if (asap$$1[scheduleSymbol]) {
-            return;
-        }
-        var schedule = asap$$1[scheduleSymbol] = asap$$1.schedule;
-        asap$$1.schedule = function () {
-            var args = Array.prototype.slice.call(arguments);
-            var work = args.length > 0 ? args[0] : undefined;
-            var delay = args.length > 1 ? args[1] : 0;
-            var state = (args.length > 2 ? args[2] : undefined) || {};
-            state[zoneSymbol] = Zone.current;
-            var patchedWork = function () {
-                var workArgs = Array.prototype.slice.call(arguments);
-                var action = workArgs.length > 0 ? workArgs[0] : undefined;
-                var scheduleZone = action && action[zoneSymbol];
-                if (scheduleZone && scheduleZone !== Zone.current) {
-                    return scheduleZone.runGuarded(work, this, arguments);
-                }
-                else {
-                    return work.apply(this, arguments);
-                }
-            };
-            return schedule.call(this, patchedWork, delay, state);
-        };
-    };
     patchObservable();
     patchSubscription();
     patchSubscriber();
-    patchObservableFactoryCreator(Observable.Observable, 'bindCallback');
-    patchObservableFactoryCreator(Observable.Observable, 'bindNodeCallback');
-    patchObservableFactory(Observable.Observable, 'defer');
-    patchObservableFactory(Observable.Observable, 'forkJoin');
-    patchObservableFactoryArgs(Observable.Observable, 'fromEventPattern');
-    patchMulticast();
-    patchImmediate(asap.asap);
 });
 
 })));

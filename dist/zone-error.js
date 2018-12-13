@@ -35,8 +35,61 @@ Zone.__load_patch('Error', function (global, Zone, api) {
     // We must find the frame where Error was created, otherwise we assume we don't understand stack
     var zoneAwareFrame1;
     var zoneAwareFrame2;
+    var zoneAwareFrame1WithoutNew;
+    var zoneAwareFrame2WithoutNew;
+    var zoneAwareFrame3WithoutNew;
     global['Error'] = ZoneAwareError;
     var stackRewrite = 'stackRewrite';
+    var blackListedStackFramesPolicy = global['__Zone_Error_BlacklistedStackFrames_policy'] || 'default';
+    function buildZoneFrameNames(zoneFrame) {
+        var zoneFrameName = { zoneName: zoneFrame.zone.name };
+        var result = zoneFrameName;
+        while (zoneFrame.parent) {
+            zoneFrame = zoneFrame.parent;
+            var parentZoneFrameName = { zoneName: zoneFrame.zone.name };
+            zoneFrameName.parent = parentZoneFrameName;
+            zoneFrameName = parentZoneFrameName;
+        }
+        return result;
+    }
+    function buildZoneAwareStackFrames(originalStack, zoneFrame, isZoneFrame) {
+        if (isZoneFrame === void 0) { isZoneFrame = true; }
+        var frames = originalStack.split('\n');
+        var i = 0;
+        // Find the first frame
+        while (!(frames[i] === zoneAwareFrame1 || frames[i] === zoneAwareFrame2 ||
+            frames[i] === zoneAwareFrame1WithoutNew || frames[i] === zoneAwareFrame2WithoutNew ||
+            frames[i] === zoneAwareFrame3WithoutNew) &&
+            i < frames.length) {
+            i++;
+        }
+        for (; i < frames.length && zoneFrame; i++) {
+            var frame = frames[i];
+            if (frame.trim()) {
+                switch (blackListedStackFrames[frame]) {
+                    case 0 /* blackList */:
+                        frames.splice(i, 1);
+                        i--;
+                        break;
+                    case 1 /* transition */:
+                        if (zoneFrame.parent) {
+                            // This is the special frame where zone changed. Print and process it accordingly
+                            zoneFrame = zoneFrame.parent;
+                        }
+                        else {
+                            zoneFrame = null;
+                        }
+                        frames.splice(i, 1);
+                        i--;
+                        break;
+                    default:
+                        frames[i] += isZoneFrame ? " [" + zoneFrame.zone.name + "]" :
+                            " [" + zoneFrame.zoneName + "]";
+                }
+            }
+        }
+        return frames.join('\n');
+    }
     /**
      * This is ZoneAwareError which processes the stack frame and cleans up extra frames as well as
      * adds zone information to it.
@@ -49,43 +102,18 @@ Zone.__load_patch('Error', function (global, Zone, api) {
         var originalStack = error['originalStack'] = error.stack;
         // Process the stack trace and rewrite the frames.
         if (ZoneAwareError[stackRewrite] && originalStack) {
-            var frames_1 = originalStack.split('\n');
             var zoneFrame = api.currentZoneFrame();
-            var i = 0;
-            // Find the first frame
-            while (!(frames_1[i] === zoneAwareFrame1 || frames_1[i] === zoneAwareFrame2) &&
-                i < frames_1.length) {
-                i++;
+            if (blackListedStackFramesPolicy === 'lazy') {
+                // don't handle stack trace now
+                error[api.symbol('zoneFrameNames')] = buildZoneFrameNames(zoneFrame);
             }
-            for (; i < frames_1.length && zoneFrame; i++) {
-                var frame = frames_1[i];
-                if (frame.trim()) {
-                    switch (blackListedStackFrames[frame]) {
-                        case 0 /* blackList */:
-                            frames_1.splice(i, 1);
-                            i--;
-                            break;
-                        case 1 /* transition */:
-                            if (zoneFrame.parent) {
-                                // This is the special frame where zone changed. Print and process it accordingly
-                                zoneFrame = zoneFrame.parent;
-                            }
-                            else {
-                                zoneFrame = null;
-                            }
-                            frames_1.splice(i, 1);
-                            i--;
-                            break;
-                        default:
-                            frames_1[i] += " [" + zoneFrame.zone.name + "]";
-                    }
+            else if (blackListedStackFramesPolicy === 'default') {
+                try {
+                    error.stack = error.zoneAwareStack = buildZoneAwareStackFrames(originalStack, zoneFrame);
                 }
-            }
-            try {
-                error.stack = error.zoneAwareStack = frames_1.join('\n');
-            }
-            catch (e) {
-                // ignore as some browsers don't allow overriding of stack
+                catch (e) {
+                    // ignore as some browsers don't allow overriding of stack
+                }
             }
         }
         if (this instanceof NativeError && this.constructor != NativeError) {
@@ -110,6 +138,25 @@ Zone.__load_patch('Error', function (global, Zone, api) {
     ZoneAwareError.prototype = NativeError.prototype;
     ZoneAwareError[blacklistedStackFramesSymbol] = blackListedStackFrames;
     ZoneAwareError[stackRewrite] = false;
+    var zoneAwareStackSymbol = api.symbol('zoneAwareStack');
+    // try to define zoneAwareStack property when blackListed
+    // policy is delay
+    if (blackListedStackFramesPolicy === 'lazy') {
+        Object.defineProperty(ZoneAwareError.prototype, 'zoneAwareStack', {
+            configurable: true,
+            enumerable: true,
+            get: function () {
+                if (!this[zoneAwareStackSymbol]) {
+                    this[zoneAwareStackSymbol] = buildZoneAwareStackFrames(this.originalStack, this[api.symbol('zoneFrameNames')], false);
+                }
+                return this[zoneAwareStackSymbol];
+            },
+            set: function (newStack) {
+                this.originalStack = newStack;
+                this[zoneAwareStackSymbol] = buildZoneAwareStackFrames(this.originalStack, this[api.symbol('zoneFrameNames')], false);
+            }
+        });
+    }
     // those properties need special handling
     var specialPropertyNames = ['stackTraceLimit', 'captureStackTrace', 'prepareStackTrace'];
     // those properties of NativeError should be set to ZoneAwareError
@@ -175,50 +222,57 @@ Zone.__load_patch('Error', function (global, Zone, api) {
             };
         }
     });
+    if (blackListedStackFramesPolicy === 'disable') {
+        // don't need to run detectZone to populate
+        // blacklisted stack frames
+        return;
+    }
     // Now we need to populate the `blacklistedStackFrames` as well as find the
     // run/runGuarded/runTask frames. This is done by creating a detect zone and then threading
     // the execution through all of the above methods so that we can look at the stack trace and
     // find the frames of interest.
-    var ZONE_AWARE_ERROR = 'ZoneAwareError';
-    var ERROR_DOT = 'Error.';
-    var EMPTY = '';
-    var RUN_GUARDED = 'runGuarded';
-    var RUN_TASK = 'runTask';
-    var RUN = 'run';
-    var BRACKETS = '(';
-    var AT = '@';
     var detectZone = Zone.current.fork({
         name: 'detect',
         onHandleError: function (parentZD, current, target, error) {
             if (error.originalStack && Error === ZoneAwareError) {
-                var frames_2 = error.originalStack.split(/\n/);
+                var frames_1 = error.originalStack.split(/\n/);
                 var runFrame = false, runGuardedFrame = false, runTaskFrame = false;
-                while (frames_2.length) {
-                    var frame = frames_2.shift();
+                while (frames_1.length) {
+                    var frame = frames_1.shift();
                     // On safari it is possible to have stack frame with no line number.
                     // This check makes sure that we don't filter frames on name only (must have
-                    // line number)
-                    if (/:\d+:\d+/.test(frame)) {
+                    // line number or exact equals to `ZoneAwareError`)
+                    if (/:\d+:\d+/.test(frame) || frame === 'ZoneAwareError') {
                         // Get rid of the path so that we don't accidentally find function name in path.
                         // In chrome the separator is `(` and `@` in FF and safari
                         // Chrome: at Zone.run (zone.js:100)
                         // Chrome: at Zone.run (http://localhost:9876/base/build/lib/zone.js:100:24)
                         // FireFox: Zone.prototype.run@http://localhost:9876/base/build/lib/zone.js:101:24
                         // Safari: run@http://localhost:9876/base/build/lib/zone.js:101:24
-                        var fnName = frame.split(BRACKETS)[0].split(AT)[0];
+                        var fnName = frame.split('(')[0].split('@')[0];
                         var frameType = 1;
-                        if (fnName.indexOf(ZONE_AWARE_ERROR) !== -1) {
-                            zoneAwareFrame1 = frame;
-                            zoneAwareFrame2 = frame.replace(ERROR_DOT, EMPTY);
+                        if (fnName.indexOf('ZoneAwareError') !== -1) {
+                            if (fnName.indexOf('new ZoneAwareError') !== -1) {
+                                zoneAwareFrame1 = frame;
+                                zoneAwareFrame2 = frame.replace('new ZoneAwareError', 'new Error.ZoneAwareError');
+                            }
+                            else {
+                                zoneAwareFrame1WithoutNew = frame;
+                                zoneAwareFrame2WithoutNew = frame.replace('Error.', '');
+                                if (frame.indexOf('Error.ZoneAwareError') === -1) {
+                                    zoneAwareFrame3WithoutNew =
+                                        frame.replace('ZoneAwareError', 'Error.ZoneAwareError');
+                                }
+                            }
                             blackListedStackFrames[zoneAwareFrame2] = 0 /* blackList */;
                         }
-                        if (fnName.indexOf(RUN_GUARDED) !== -1) {
+                        if (fnName.indexOf('runGuarded') !== -1) {
                             runGuardedFrame = true;
                         }
-                        else if (fnName.indexOf(RUN_TASK) !== -1) {
+                        else if (fnName.indexOf('runTask') !== -1) {
                             runTaskFrame = true;
                         }
-                        else if (fnName.indexOf(RUN) !== -1) {
+                        else if (fnName.indexOf('run') !== -1) {
                             runFrame = true;
                         }
                         else {
@@ -267,16 +321,22 @@ Zone.__load_patch('Error', function (global, Zone, api) {
             childDetectZone.scheduleEventTask(blacklistedStackFramesSymbol, function () {
                 childDetectZone.scheduleMacroTask(blacklistedStackFramesSymbol, function () {
                     childDetectZone.scheduleMicroTask(blacklistedStackFramesSymbol, function () {
-                        throw new ZoneAwareError(ZoneAwareError, NativeError);
-                    }, null, function (t) {
+                        throw new Error();
+                    }, undefined, function (t) {
                         t._transitionTo = fakeTransitionTo;
                         t.invoke();
                     });
-                }, null, function (t) {
+                    childDetectZone.scheduleMicroTask(blacklistedStackFramesSymbol, function () {
+                        throw Error();
+                    }, undefined, function (t) {
+                        t._transitionTo = fakeTransitionTo;
+                        t.invoke();
+                    });
+                }, undefined, function (t) {
                     t._transitionTo = fakeTransitionTo;
                     t.invoke();
                 }, function () { });
-            }, null, function (t) {
+            }, undefined, function (t) {
                 t._transitionTo = fakeTransitionTo;
                 t.invoke();
             }, function () { });

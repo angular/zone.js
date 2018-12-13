@@ -23,6 +23,7 @@ var ProxyZoneSpec = /** @class */ (function () {
         if (defaultSpecDelegate === void 0) { defaultSpecDelegate = null; }
         this.defaultSpecDelegate = defaultSpecDelegate;
         this.name = 'ProxyZone';
+        this._delegateSpec = null;
         this.properties = { 'ProxyZoneSpec': this };
         this.propertyKeys = null;
         this.lastTaskState = null;

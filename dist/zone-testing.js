@@ -183,6 +183,7 @@ var ProxyZoneSpec = /** @class */ (function () {
         if (defaultSpecDelegate === void 0) { defaultSpecDelegate = null; }
         this.defaultSpecDelegate = defaultSpecDelegate;
         this.name = 'ProxyZone';
+        this._delegateSpec = null;
         this.properties = { 'ProxyZoneSpec': this };
         this.propertyKeys = null;
         this.lastTaskState = null;
@@ -985,7 +986,11 @@ var __spread = (undefined && undefined.__spread) || function () {
                     }
                 }
             }
+            lastCurrentTime = this._currentTime;
             this._currentTime = finalTime;
+            if (doTick) {
+                doTick(this._currentTime - lastCurrentTime);
+            }
         };
         Scheduler.prototype.flush = function (limit, flushPeriodic, doTick) {
             if (limit === void 0) { limit = 20; }
@@ -1074,14 +1079,14 @@ var __spread = (undefined && undefined.__spread) || function () {
                     args[_i] = arguments[_i];
                 }
                 fn.apply(global, args);
-                if (_this._lastError === null) {
+                if (_this._lastError === null) { // Success
                     if (completers.onSuccess != null) {
                         completers.onSuccess.apply(global);
                     }
                     // Flush microtasks only on success.
                     _this.flushMicrotasks();
                 }
-                else {
+                else { // Failure
                     if (completers.onError != null) {
                         completers.onError.apply(global);
                     }
@@ -1380,23 +1385,23 @@ Zone.__load_patch('fakeasync', function (global, Zone, api) {
         ProxyZoneSpec && ProxyZoneSpec.assertPresent().resetDelegate();
     }
     /**
-    * Wraps a function to be executed in the fakeAsync zone:
-    * - microtasks are manually executed by calling `flushMicrotasks()`,
-    * - timers are synchronous, `tick()` simulates the asynchronous passage of time.
-    *
-    * If there are any pending timers at the end of the function, an exception will be thrown.
-    *
-    * Can be used to wrap inject() calls.
-    *
-    * ## Example
-    *
-    * {@example core/testing/ts/fake_async.ts region='basic'}
-    *
-    * @param fn
-    * @returns The function wrapped to be executed in the fakeAsync zone
-    *
-    * @experimental
-    */
+     * Wraps a function to be executed in the fakeAsync zone:
+     * - microtasks are manually executed by calling `flushMicrotasks()`,
+     * - timers are synchronous, `tick()` simulates the asynchronous passage of time.
+     *
+     * If there are any pending timers at the end of the function, an exception will be thrown.
+     *
+     * Can be used to wrap inject() calls.
+     *
+     * ## Example
+     *
+     * {@example core/testing/ts/fake_async.ts region='basic'}
+     *
+     * @param fn
+     * @returns The function wrapped to be executed in the fakeAsync zone
+     *
+     * @experimental
+     */
     function fakeAsync(fn) {
         // Not using an arrow function to preserve context passed from call site
         return function () {
