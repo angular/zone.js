@@ -683,7 +683,7 @@ const Zone: ZoneType = (function(global: any) {
     static __symbol__: (name: string) => string = __symbol__;
 
     static assertZonePatched() {
-      if (global['Promise'] !== patchedPromise) {
+      if (global['Promise'] !== patches['ZoneAwarePromise']) {
         throw new Error(
             'Zone.js has detected that ZoneAwarePromise `(window|global).Promise` ' +
             'has been overwritten.\n' +
@@ -1372,7 +1372,7 @@ const Zone: ZoneType = (function(global: any) {
       if (!nativeMicroTaskQueuePromise) {
         if (global[symbolPromise]) {
           nativeMicroTaskQueuePromise = global[symbolPromise].resolve(0);
-        } else if (_mode === 'lazy' && patchedPromise !== global['Promise']) {
+        } else if (_mode === 'lazy' && !monkeyPatched) {
           nativeMicroTaskQueuePromise = global['Promise'].resolve(0);
         }
       }
@@ -1426,7 +1426,6 @@ const Zone: ZoneType = (function(global: any) {
                    eventTask: 'eventTask' = 'eventTask';
 
   const patches: {[key: string]: any} = {};
-  let patchedPromise: any;
   const delegates:
       {proto: any, property: string, patched: any, origin: any, isPropertyDesc: boolean}[] = [];
   let monkeyPatched = true;
