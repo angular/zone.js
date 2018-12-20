@@ -99,7 +99,7 @@ export function patchTimer(window: any, setName: string, cancelName: string, nam
           // cause an error by calling it directly.
           return delegate.apply(window, args);
         }
-      });
+      }, true);
 
   clearNative =
       patchMethod(window, cancelName, (delegate: Function) => function(self: any, args: any[]) {

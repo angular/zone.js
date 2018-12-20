@@ -332,7 +332,9 @@ export function patchEventTarget(
         const target = this || _global;
         const eventName = arguments[0];
         let delegate = arguments[1];
-        if (!delegate) {
+        // if handler is not available or we are in root zone
+        // use nativeListener
+        if (!delegate || Zone.current === Zone.root) {
           return nativeListener.apply(this, arguments);
         }
         if (isNode && eventName === 'uncaughtException') {
@@ -492,6 +494,10 @@ export function patchEventTarget(
     }
 
     proto[REMOVE_EVENT_LISTENER] = function() {
+      const delegate = arguments[1];
+      if (!delegate) {
+        return nativeRemoveEventListener.apply(this, arguments);
+      }
       const target = this || _global;
       const eventName = arguments[0];
       const options = arguments[2];
@@ -505,11 +511,6 @@ export function patchEventTarget(
         capture = false;
       } else {
         capture = options ? !!options.capture : false;
-      }
-
-      const delegate = arguments[1];
-      if (!delegate) {
-        return nativeRemoveEventListener.apply(this, arguments);
       }
 
       if (validateHandler &&
@@ -557,11 +558,32 @@ export function patchEventTarget(
 
       const listeners: any[] = [];
       const tasks = findEventTasks(target, eventName);
+      const invokes: any[]|null = nativeListeners ? [] : null;
 
       for (let i = 0; i < tasks.length; i++) {
         const task: any = tasks[i];
         let delegate = task.originalDelegate ? task.originalDelegate : task.callback;
         listeners.push(delegate);
+        if (invokes) {
+          invokes.push(task.invoke);
+        }
+      }
+      if (nativeListeners) {
+        const natives = nativeListeners.apply(this, arguments);
+        if (natives && invokes) {
+          natives.forEach((n: any) => {
+            let found = false;
+            for (let i = 0; i < invokes.length; i++) {
+              if (invokes[i] === n) {
+                found = true;
+                break;
+              }
+            }
+            if (!found) {
+              listeners.push(n);
+            }
+          });
+        }
       }
       return listeners;
     };
@@ -584,8 +606,12 @@ export function patchEventTarget(
             this[REMOVE_ALL_LISTENERS_EVENT_LISTENER].call(this, evtName);
           }
         }
-        // remove removeListener listener finally
+        // call native again in case some event handler was not
+        // use patched version of addListener
         this[REMOVE_ALL_LISTENERS_EVENT_LISTENER].call(this, 'removeListener');
+        if (nativeRemoveAllListeners) {
+          nativeRemoveAllListeners.call(this);
+        }
       } else {
         const symbolEventNames = zoneSymbolEventNames[eventName];
         if (symbolEventNames) {
@@ -612,6 +638,10 @@ export function patchEventTarget(
               this[REMOVE_EVENT_LISTENER].call(this, eventName, delegate, task.options);
             }
           }
+        }
+
+        if (nativeRemoveAllListeners) {
+          nativeRemoveAllListeners.call(this, eventName);
         }
       }
 
