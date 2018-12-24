@@ -527,6 +527,11 @@ type TaskType = 'microTask'|'macroTask'|'eventTask';
  */
 type TaskState = 'notScheduled'|'scheduling'|'scheduled'|'running'|'canceling'|'unknown';
 
+/**
+ * Zone Load Mode: `normal`, `scope`
+ */
+type ZoneLoadMode = 'normal'|'scope';
+
 
 /**
  */
@@ -709,11 +714,11 @@ const Zone: ZoneType = (function(global: any) {
       return _currentTask;
     }
 
-    static get mode(): 'lazy'|'normal' {
+    static get mode(): ZoneLoadMode {
       return _mode;
     }
 
-    static set mode(newMode: 'lazy'|'normal') {
+    static set mode(newMode: ZoneLoadMode) {
       _mode = newMode;
     }
 
@@ -834,7 +839,7 @@ const Zone: ZoneType = (function(global: any) {
     public run(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): any;
     public run<T>(
         callback: (...args: any[]) => T, applyThis?: any, applyArgs?: any[], source?: string): T {
-      if (!monkeyPatched && _mode === 'lazy') {
+      if (!monkeyPatched && _mode === 'scope') {
         Zone.__reloadAll();
       }
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
@@ -842,7 +847,7 @@ const Zone: ZoneType = (function(global: any) {
         return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
       } finally {
         _currentZoneFrame = _currentZoneFrame.parent!;
-        if (_mode === 'lazy' && _currentZoneFrame.zone && !_currentZoneFrame.zone.parent) {
+        if (_mode === 'scope' && _currentZoneFrame.zone && !_currentZoneFrame.zone.parent) {
           Zone.__unloadAll();
         }
       }
@@ -852,7 +857,7 @@ const Zone: ZoneType = (function(global: any) {
     public runGuarded<T>(
         callback: (...args: any[]) => T, applyThis: any = null, applyArgs?: any[],
         source?: string) {
-      if (!monkeyPatched && _mode === 'lazy') {
+      if (!monkeyPatched && _mode === 'scope') {
         Zone.__reloadAll();
       }
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
@@ -866,7 +871,7 @@ const Zone: ZoneType = (function(global: any) {
         }
       } finally {
         _currentZoneFrame = _currentZoneFrame.parent!;
-        if (_mode === 'lazy' && _currentZoneFrame.zone && !_currentZoneFrame.zone.parent) {
+        if (_mode === 'scope' && _currentZoneFrame.zone && !_currentZoneFrame.zone.parent) {
           Zone.__unloadAll();
         }
       }
@@ -892,7 +897,7 @@ const Zone: ZoneType = (function(global: any) {
       task.runCount++;
       const previousTask = _currentTask;
       _currentTask = task;
-      if (!monkeyPatched && _mode === 'lazy') {
+      if (!monkeyPatched && _mode === 'scope') {
         Zone.__reloadAll();
       }
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
@@ -922,7 +927,7 @@ const Zone: ZoneType = (function(global: any) {
         }
         _currentZoneFrame = _currentZoneFrame.parent!;
         _currentTask = previousTask;
-        if (_mode === 'lazy' && _currentZoneFrame.zone && !_currentZoneFrame.zone.parent) {
+        if (_mode === 'scope' && _currentZoneFrame.zone && !_currentZoneFrame.zone.parent) {
           Zone.__unloadAll();
         }
       }
@@ -1372,7 +1377,7 @@ const Zone: ZoneType = (function(global: any) {
       if (!nativeMicroTaskQueuePromise) {
         if (global[symbolPromise]) {
           nativeMicroTaskQueuePromise = global[symbolPromise].resolve(0);
-        } else if (_mode === 'lazy' && !monkeyPatched) {
+        } else if (_mode === 'scope' && !monkeyPatched) {
           nativeMicroTaskQueuePromise = global['Promise'].resolve(0);
         }
       }
@@ -1455,7 +1460,7 @@ const Zone: ZoneType = (function(global: any) {
   let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
   let _currentTask: Task|null = null;
   let _numberOfNestedTaskFrames = 0;
-  let _mode: 'lazy'|'normal' = global['__zone_symbol__load_mode'] || 'normal';
+  let _mode: ZoneLoadMode = global['__zone_symbol__load_mode'] || 'normal';
 
   function noop() {}
 

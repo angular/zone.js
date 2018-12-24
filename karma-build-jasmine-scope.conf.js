@@ -7,8 +7,9 @@
  */
 
 module.exports = function(config) {
-  config.client.preload = 'build/test/browser-lazy-zone-setup.js';
+  config.client.preload = 'build/test/browser-scope-zone-preload.js';
   require('./karma-build-jasmine.conf.js')(config);
-  config.client.entrypoint = 'browser_lazy_zone_entry_point';
+  config.client.entrypoint = 'browser_scope_zone_entry_point';
+  config.client.setup = 'browser-scope-zone-setup';
   config.client.notPatchTestFramework = true;
 };

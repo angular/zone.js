@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-describe('lazy', function() {
+describe('scope', function() {
   const targets = [
     {proto: 'Window', property: 'Promise'},
     {proto: 'Promise', property: 'then'},
@@ -55,7 +55,6 @@ describe('lazy', function() {
       }
       if (proto) {
         const native = proto[Zone.__symbol__(property)];
-        console.log('check target', protoName, property);
         if (isNative) {
           expect(proto[property]).toBe(native);
         } else {
@@ -65,15 +64,59 @@ describe('lazy', function() {
     });
   }
 
-  it('before patch should use native delegate', (done: DoneFn) => {
+  it('after unloadAll patches should use native delegate', () => {
     (Zone as any).__unloadAll();
     checkDelegates(true);
-    done();
   });
 
-  it('after load should use patched delegate', (done: DoneFn) => {
+  it('after reloadAll patches should use patched delegate', () => {
     (Zone as any).__reloadAll();
     checkDelegates(false);
-    done();
   });
+
+  it('after unload, function inside zone.run should still use patched delegates', () => {
+    (Zone as any).__unloadAll();
+    Zone.current.fork({name: 'zone'}).run(() => {
+      checkDelegates(false);
+    });
+  });
+
+  it('after unload, async function inside zone.run should still use patched delegates',
+     (done: DoneFn) => {
+       (Zone as any).__unloadAll();
+       Zone.current.fork({name: 'zone'}).run(() => {
+         checkDelegates(false);
+         setTimeout(() => {
+           checkDelegates(false);
+           expect(Zone.current.name).toEqual('zone');
+           done();
+         });
+       });
+       checkDelegates(true);
+     });
+
+  it('after unload, async function inside nested zone.run should still use patched delegates',
+     (done: DoneFn) => {
+       (Zone as any).__unloadAll();
+       const zone = Zone.current.fork({name: 'zone'});
+       const childZone = Zone.current.fork({name: 'childZone'});
+       zone.run(() => {
+         setTimeout(() => {
+           checkDelegates(false);
+           expect(Zone.current.name).toEqual(zone.name);
+           childZone.run(() => {
+             expect(Zone.current.name).toEqual(childZone.name);
+             checkDelegates(false);
+             setTimeout(() => {
+               expect(Zone.current.name).toEqual(childZone.name);
+               checkDelegates(false);
+               done();
+             });
+           });
+           expect(Zone.current.name).toEqual(zone.name);
+           checkDelegates(false);
+         });
+       });
+       checkDelegates(true);
+     });
 });
