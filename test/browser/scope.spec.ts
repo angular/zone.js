@@ -86,6 +86,16 @@ describe('scope', function() {
        (Zone as any).__unloadAll();
        Zone.current.fork({name: 'zone'}).run(() => {
          checkDelegates(false);
+         new Promise(res => {
+           setTimeout(() => {
+             expect(Zone.current.name).toEqual('zone');
+             checkDelegates(false);
+             res();
+           });
+         }).then(() => {
+           expect(Zone.current.name).toEqual('zone');
+           checkDelegates(false);
+         });
          setTimeout(() => {
            checkDelegates(false);
            expect(Zone.current.name).toEqual('zone');
@@ -107,6 +117,16 @@ describe('scope', function() {
            childZone.run(() => {
              expect(Zone.current.name).toEqual(childZone.name);
              checkDelegates(false);
+             new Promise(res => {
+               setTimeout(() => {
+                 expect(Zone.current.name).toEqual(childZone.name);
+                 checkDelegates(false);
+                 res();
+               });
+             }).then(() => {
+               expect(Zone.current.name).toEqual(childZone.name);
+               checkDelegates(false);
+             });
              setTimeout(() => {
                expect(Zone.current.name).toEqual(childZone.name);
                checkDelegates(false);
