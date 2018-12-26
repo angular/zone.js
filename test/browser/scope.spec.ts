@@ -139,4 +139,42 @@ describe('scope', function() {
        });
        checkDelegates(true);
      });
+
+  it('after unload, nested async function inside zone.run should still use patched delegates',
+     (done: DoneFn) => {
+       (Zone as any).__unloadAll();
+       Zone.current.fork({name: 'zone'}).run(() => {
+         checkDelegates(false);
+         new Promise(res => {
+           setTimeout(() => {
+             expect(Zone.current.name).toEqual('zone');
+             checkDelegates(false);
+             res(new Promise(res1 => {
+               setTimeout(() => {
+                 expect(Zone.current.name).toEqual('zone');
+                 checkDelegates(false);
+                 setTimeout(() => {
+                   expect(Zone.current.name).toEqual('zone');
+                   checkDelegates(false);
+                   res1();
+                 });
+               });
+             }));
+           });
+         }).then(() => {
+           expect(Zone.current.name).toEqual('zone');
+           checkDelegates(false);
+         });
+         setTimeout(() => {
+           checkDelegates(false);
+           expect(Zone.current.name).toEqual('zone');
+           setTimeout(() => {
+             checkDelegates(false);
+             expect(Zone.current.name).toEqual('zone');
+           });
+         });
+       });
+       checkDelegates(true);
+       setTimeout(done, 500);
+     });
 });
