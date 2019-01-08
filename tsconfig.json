@@ -23,6 +23,13 @@
     "build",
     "build-esm",
     "dist",
-    "lib/closure"
+    "lib/closure",
+    "lib/node/**",
+    "lib/mix/**",
+    "test/node/**",
+    "test/node_bluebird_entry_point.ts",
+    "test/node_entry_point.ts",
+    "test/node_error_entry_point.ts",
+    "test/node_tests.ts"
   ]
 }

@@ -189,4 +189,16 @@ describe('nodejs EventEmitter', () => {
       process.on('uncaughtException', function() {});
     });
   });
+  it('should be able to addEventListener with symbol eventName', () => {
+    zoneA.run(() => {
+      const testSymbol = Symbol('test');
+      const test1Symbol = Symbol('test1');
+      emitter.on(testSymbol, expectZoneA);
+      emitter.on(test1Symbol, shouldNotRun);
+      emitter.removeListener(test1Symbol, shouldNotRun);
+      expect(emitter.listeners(testSymbol).length).toBe(1);
+      expect(emitter.listeners(test1Symbol).length).toBe(0);
+      emitter.emit(testSymbol, 'test value');
+    });
+  });
 });
