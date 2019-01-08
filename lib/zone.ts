@@ -643,6 +643,7 @@ const Zone: ZoneType = (function(global: any) {
     performance && performance['measure'] && performance['measure'](name, label);
   }
   mark('Zone');
+  const checkDuplicate = global[('__zone_symbol__forceDuplicateZoneCheck')] === true;
   if (global['Zone']) {
     // if global['Zone'] already exists (maybe zone.js was already loaded or
     // some other lib also registered a global object named Zone), we may need
@@ -653,8 +654,7 @@ const Zone: ZoneType = (function(global: any) {
     // but when user load page2 again, error occurs because global['Zone'] already exists.
     // so we add a flag to let user choose whether to throw this error or not.
     // By default, if existing Zone is from zone.js, we will not throw the error.
-    if (global[('__zone_symbol__forceDuplicateZoneCheck')] === true ||
-        typeof global['Zone'].__symbol__ !== 'function') {
+    if (checkDuplicate || typeof global['Zone'].__symbol__ !== 'function') {
       throw new Error('Zone already loaded.');
     } else {
       return global['Zone'];
@@ -693,7 +693,9 @@ const Zone: ZoneType = (function(global: any) {
 
     static __load_patch(name: string, fn: _PatchFn): void {
       if (patches.hasOwnProperty(name)) {
-        throw Error('Already loaded patch: ' + name);
+        if (checkDuplicate) {
+          throw Error('Already loaded patch: ' + name);
+        }
       } else if (!global['__Zone_disable_' + name]) {
         const perfName = 'Zone:' + name;
         mark(perfName);
