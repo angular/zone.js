@@ -136,7 +136,7 @@ interface Zone {
      *
      * @returns {Zone} The parent Zone.
      */
-    parent: Zone;
+    parent: Zone | null;
     /**
      * @returns {string} The Zone name (useful for debugging)
      */
@@ -159,7 +159,7 @@ interface Zone {
      * @param key The key to use for identification of the returned zone.
      * @returns {Zone} The Zone which defines the `key`, `null` if not found.
      */
-    getZoneWith(key: string): Zone;
+    getZoneWith(key: string): Zone | null;
     /**
      * Used to create a child zone.
      *
@@ -235,7 +235,7 @@ interface Zone {
      * @param customSchedule
      * @param customCancel
      */
-    scheduleMacroTask(source: string, callback: Function, data: TaskData, customSchedule: (task: Task) => void, customCancel: (task: Task) => void): MacroTask;
+    scheduleMacroTask(source: string, callback: Function, data?: TaskData, customSchedule?: (task: Task) => void, customCancel?: (task: Task) => void): MacroTask;
     /**
      * Schedule an EventTask.
      *
@@ -245,7 +245,7 @@ interface Zone {
      * @param customSchedule
      * @param customCancel
      */
-    scheduleEventTask(source: string, callback: Function, data: TaskData, customSchedule: (task: Task) => void, customCancel: (task: Task) => void): EventTask;
+    scheduleEventTask(source: string, callback: Function, data?: TaskData, customSchedule?: (task: Task) => void, customCancel?: (task: Task) => void): EventTask;
     /**
      * Schedule an existing Task.
      *
@@ -275,7 +275,7 @@ interface ZoneType {
     /**
      * @returns {Task} The task associated with the current execution.
      */
-    currentTask: Task;
+    currentTask: Task | null;
     /**
      * Verify that Zone has been correctly patched. Specifically that Promise is zone aware.
      */
@@ -339,7 +339,7 @@ interface ZoneSpec {
      * @param applyArgs The argument passed into the `run` method.
      * @param source The argument passed into the `run` method.
      */
-    onInvoke?: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function, applyThis: any, applyArgs: any[], source: string) => any;
+    onInvoke?: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, delegate: Function, applyThis: any, applyArgs?: any[], source?: string) => any;
     /**
      * Allows interception of the error handling.
      *
@@ -358,7 +358,7 @@ interface ZoneSpec {
      * @param task The argument passed into the `scheduleTask` method.
      */
     onScheduleTask?: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task) => Task;
-    onInvokeTask?: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task, applyThis: any, applyArgs: any) => any;
+    onInvokeTask?: (parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task, applyThis: any, applyArgs?: any[]) => any;
     /**
      * Allows interception of task cancellation.
      *
@@ -413,10 +413,10 @@ interface ZoneDelegate {
     zone: Zone;
     fork(targetZone: Zone, zoneSpec: ZoneSpec): Zone;
     intercept(targetZone: Zone, callback: Function, source: string): Function;
-    invoke(targetZone: Zone, callback: Function, applyThis: any, applyArgs: any[], source: string): any;
+    invoke(targetZone: Zone, callback: Function, applyThis?: any, applyArgs?: any[], source?: string): any;
     handleError(targetZone: Zone, error: any): boolean;
     scheduleTask(targetZone: Zone, task: Task): Task;
-    invokeTask(targetZone: Zone, task: Task, applyThis: any, applyArgs: any): any;
+    invokeTask(targetZone: Zone, task: Task, applyThis?: any, applyArgs?: any[]): any;
     cancelTask(targetZone: Zone, task: Task): any;
     hasTask(targetZone: Zone, isEmpty: HasTaskState): void;
 }
@@ -493,20 +493,20 @@ interface Task {
     /**
      * Task specific options associated with the current task. This is passed to the `scheduleFn`.
      */
-    data: TaskData;
+    data?: TaskData;
     /**
      * Represents the default work which needs to be done to schedule the Task by the VM.
      *
      * A zone may choose to intercept this function and perform its own scheduling.
      */
-    scheduleFn: (task: Task) => void;
+    scheduleFn?: (task: Task) => void;
     /**
      * Represents the default work which needs to be done to un-schedule the Task from the VM. Not all
      * Tasks are cancelable, and therefore this method is optional.
      *
      * A zone may chose to intercept this function and perform its own un-scheduling.
      */
-    cancelFn: (task: Task) => void;
+    cancelFn?: (task: Task) => void;
     /**
      * @type {Zone} The zone which will be used to invoke the `callback`. The Zone is captured
      * at the time of Task creation.

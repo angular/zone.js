@@ -39,6 +39,7 @@ Zone.__load_patch('ResizeObserver', function (global, Zone, api) {
         if (callback) {
             args[0] = function (entries, observer) {
                 var _this = this;
+                var e_1, _a;
                 var zones = {};
                 var currZone = Zone.current;
                 try {
@@ -71,7 +72,6 @@ Zone.__load_patch('ResizeObserver', function (global, Zone, api) {
                         callback.call(_this, zoneEntriesInfo.entries, observer);
                     }
                 });
-                var e_1, _a;
             };
         }
         return args.length > 0 ? new ResizeObserver(args[0]) : new ResizeObserver();
@@ -109,7 +109,9 @@ Zone.__load_patch('ResizeObserver', function (global, Zone, api) {
     api.patchMethod(ResizeObserver.prototype, 'disconnect', function (delegate) { return function (self, args) {
         var targets = self[resizeObserverSymbol];
         if (targets) {
-            targets.forEach(function (target) { target[resizeObserverSymbol] = undefined; });
+            targets.forEach(function (target) {
+                target[resizeObserverSymbol] = undefined;
+            });
             self[resizeObserverSymbol] = undefined;
         }
         return delegate.apply(self, args);

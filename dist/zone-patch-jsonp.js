@@ -71,9 +71,10 @@ Zone.__load_patch('jsonp', function (global, Zone, api) {
             }
         });
         api.patchMethod(options.jsonp, options.sendFuncName, function (delegate) { return function (self, args) {
-            global[api.symbol('jsonpTask')] = Zone.current.scheduleMacroTask('jsonp', noop, {}, function (task) {
-                return delegate.apply(self, args);
-            }, noop);
+            global[api.symbol('jsonpTask')] =
+                Zone.current.scheduleMacroTask('jsonp', noop, {}, function (task) {
+                    return delegate.apply(self, args);
+                }, noop);
         }; });
     };
 });

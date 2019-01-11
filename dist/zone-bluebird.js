@@ -37,8 +37,15 @@ Zone.__load_patch('bluebird', function (global, Zone, api) {
                         args[i] = function () {
                             var argSelf = this;
                             var argArgs = arguments;
-                            zone.scheduleMicroTask('Promise.then', function () {
-                                return func.apply(argSelf, argArgs);
+                            return new Bluebird(function (res, rej) {
+                                zone.scheduleMicroTask('Promise.then', function () {
+                                    try {
+                                        res(func.apply(argSelf, argArgs));
+                                    }
+                                    catch (error) {
+                                        rej(error);
+                                    }
+                                });
                             });
                         };
                     }
@@ -48,6 +55,16 @@ Zone.__load_patch('bluebird', function (global, Zone, api) {
                 }
                 return delegate.apply(self, args);
             }; });
+        });
+        Bluebird.onPossiblyUnhandledRejection(function (e, promise) {
+            try {
+                Zone.current.runGuarded(function () {
+                    throw e;
+                });
+            }
+            catch (err) {
+                api.onUnhandledError(err);
+            }
         });
         // override global promise
         global[api.symbol('ZoneAwarePromise')] = Bluebird;

@@ -1,3 +1,39 @@
+<a name="0.8.27"></a>
+## [0.8.27](https://github.com/angular/zone.js/compare/v0.8.26...0.8.27) (2019-01-08)
+
+
+### Bug Fixes
+
+* **bluebird:** fix [#1112](https://github.com/angular/zone.js/issues/1112), bluebird chained callback should return a Bluebird Promise ([#1114](https://github.com/angular/zone.js/issues/1114)) ([6ba3169](https://github.com/angular/zone.js/commit/6ba3169))
+* **core:** fix [#1108](https://github.com/angular/zone.js/issues/1108), window.onerror should have (message, source, lineno, colno, error) signiture ([#1109](https://github.com/angular/zone.js/issues/1109)) ([49e0548](https://github.com/angular/zone.js/commit/49e0548))
+* **core:** fix [#1153](https://github.com/angular/zone.js/issues/1153), ZoneTask.toString should always be a string ([#1166](https://github.com/angular/zone.js/issues/1166)) ([afa1363](https://github.com/angular/zone.js/commit/afa1363))
+* **core:** fix interval will still run after cancelled error ([#1156](https://github.com/angular/zone.js/issues/1156)) ([eb72ff4](https://github.com/angular/zone.js/commit/eb72ff4))
+* **core:** use then directly when promise is not patchable ([#1079](https://github.com/angular/zone.js/issues/1079)) ([d7e0a31](https://github.com/angular/zone.js/commit/d7e0a31))
+* **duplicate:** fix [#1081](https://github.com/angular/zone.js/issues/1081), load patch should also check the duplicate flag ([#1121](https://github.com/angular/zone.js/issues/1121)) ([8ce5e33](https://github.com/angular/zone.js/commit/8ce5e33))
+* **event:** fix [#1110](https://github.com/angular/zone.js/issues/1110), nodejs EventEmitter should support Symbol eventName ([#1113](https://github.com/angular/zone.js/issues/1113)) ([96420d6](https://github.com/angular/zone.js/commit/96420d6))
+* **event:** should pass boolean to addEventListener if not support passive ([#1053](https://github.com/angular/zone.js/issues/1053)) ([e9536ec](https://github.com/angular/zone.js/commit/e9536ec))
+* **format:** update clang-format to 1.2.3 ([f238908](https://github.com/angular/zone.js/commit/f238908))
+* **memory:** Add protection against excessive on prop patching ([#1106](https://github.com/angular/zone.js/issues/1106)) ([875086f](https://github.com/angular/zone.js/commit/875086f))
+* **node:** fix [#1164](https://github.com/angular/zone.js/issues/1164), don't patch uncaughtException to prevent endless loop ([#1170](https://github.com/angular/zone.js/issues/1170)) ([33a0ad6](https://github.com/angular/zone.js/commit/33a0ad6))
+* **node:** node patched method should copy original delegate's symbol properties ([#1095](https://github.com/angular/zone.js/issues/1095)) ([0a2f6ff](https://github.com/angular/zone.js/commit/0a2f6ff))
+* **onProperty:** user quoted access for __Zone_ignore_on_properties ([#1134](https://github.com/angular/zone.js/issues/1134)) ([7201d44](https://github.com/angular/zone.js/commit/7201d44))
+* **test:** karma-dist should test bundle under dist ([#1049](https://github.com/angular/zone.js/issues/1049)) ([0720d79](https://github.com/angular/zone.js/commit/0720d79))
+* **tsc:** tsconfig.json strict:true ([915042d](https://github.com/angular/zone.js/commit/915042d))
+* **xhr:** fix [#1072](https://github.com/angular/zone.js/issues/1072), should set scheduled flag to target ([#1074](https://github.com/angular/zone.js/issues/1074)) ([34c12e5](https://github.com/angular/zone.js/commit/34c12e5))
+* **xhr:** should invoke xhr task after onload is triggered ([#1055](https://github.com/angular/zone.js/issues/1055)) ([2aab9c8](https://github.com/angular/zone.js/commit/2aab9c8))
+
+
+### Features
+
+* **build:** Upgrade to TypeScript 2.9 and rxjs6 ([#1122](https://github.com/angular/zone.js/issues/1122)) ([31fc127](https://github.com/angular/zone.js/commit/31fc127))
+* **core:** upgrade to typescript 3.0.3 ([#1132](https://github.com/angular/zone.js/issues/1132)) ([60adc9c](https://github.com/angular/zone.js/commit/60adc9c))
+* **Core:** fix [#910](https://github.com/angular/zone.js/issues/910), add a flag to allow user to ignore duplicate Zone error ([#1093](https://github.com/angular/zone.js/issues/1093)) ([a86c6d5](https://github.com/angular/zone.js/commit/a86c6d5))
+* **custom-element:** patch customElement v1 APIs ([#1133](https://github.com/angular/zone.js/issues/1133)) ([427705f](https://github.com/angular/zone.js/commit/427705f))
+* **error:** fix [#975](https://github.com/angular/zone.js/issues/975), can config how to load blacklist zone stack frames ([#1045](https://github.com/angular/zone.js/issues/1045)) ([ff3d545](https://github.com/angular/zone.js/commit/ff3d545))
+* **fetch:** schedule macroTask when fetch ([#1075](https://github.com/angular/zone.js/issues/1075)) ([bf88c34](https://github.com/angular/zone.js/commit/bf88c34))
+
+
+
 <a name="0.8.26"></a>
 ## [0.8.26](https://github.com/angular/zone.js/compare/v0.8.25...0.8.26) (2018-04-08)
 
