@@ -59,7 +59,7 @@
       return originalJasmineFn.apply(this, arguments);
     };
   });
-  ['beforeEach', 'afterEach'].forEach(methodName => {
+  ['beforeEach', 'afterEach', 'beforeAll', 'afterAll'].forEach(methodName => {
     let originalJasmineFn: Function = jasmineEnv[methodName];
     jasmineEnv[symbol(methodName)] = originalJasmineFn;
     jasmineEnv[methodName] = function(specDefinitions: Function, timeout: number) {
