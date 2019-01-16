@@ -433,7 +433,7 @@ Zone['SyncTestZoneSpec'] = SyncTestZoneSpec;
             return originalJasmineFn.apply(this, arguments);
         };
     });
-    ['beforeEach', 'afterEach'].forEach(function (methodName) {
+    ['beforeEach', 'afterEach', 'beforeAll', 'afterAll'].forEach(function (methodName) {
         var originalJasmineFn = jasmineEnv[methodName];
         jasmineEnv[symbol(methodName)] = originalJasmineFn;
         jasmineEnv[methodName] = function (specDefinitions, timeout) {

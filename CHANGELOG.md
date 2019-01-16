@@ -1,3 +1,12 @@
+<a name="0.8.28"></a>
+## [0.8.28](https://github.com/angular/zone.js/compare/v0.8.27...0.8.28) (2019-01-16)
+
+
+### Bug Fixes
+
+* **jasmine:** patch jasmine beforeAll/afterAll ([9d27abc4](https://github.com/angular/zone.js/commit/9d27abc4))
+
+
 <a name="0.8.27"></a>
 ## [0.8.27](https://github.com/angular/zone.js/compare/v0.8.26...0.8.27) (2019-01-08)
 
