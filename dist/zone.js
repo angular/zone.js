@@ -3057,7 +3057,7 @@ function patchCallbacks(target, targetName, method, callbacks) {
                         descriptor.value = wrapWithCurrentZone(descriptor.value, source);
                         _redefineProperty(opts.prototype, callback, descriptor);
                     }
-                    else {
+                    else if (prototype[callback]) {
                         prototype[callback] = wrapWithCurrentZone(prototype[callback], source);
                     }
                 }

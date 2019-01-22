@@ -1,3 +1,12 @@
+<a name="0.8.29"></a>
+## [0.8.29](https://github.com/angular/zone.js/compare/v0.8.28...0.8.29) (2019-01-22)
+
+
+### Bug Fixes
+
+* **core:** fix for tests in angular repo ([fd069db](https://github.com/angular/zone.js/commit/fd069db))
+
+
 <a name="0.8.28"></a>
 ## [0.8.28](https://github.com/angular/zone.js/compare/v0.8.27...0.8.28) (2019-01-16)
 
