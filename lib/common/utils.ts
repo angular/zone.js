@@ -82,9 +82,9 @@ export function patchPrototype(prototype: any, fnNames: string[]) {
         const patched: any = function() {
           return delegate.apply(this, bindArguments(<any>arguments, source + '.' + name));
         };
-        attachOriginToPatched(patched, delegate);
         return patched;
       })(delegate);
+      attachOriginToPatched(prototype, name, delegate);
     }
   }
 }
@@ -159,13 +159,23 @@ const wrapFn = function(event: Event) {
 };
 
 export function patchProperty(obj: any, prop: string, prototype?: any) {
-  let desc = ObjectGetOwnPropertyDescriptor(obj, prop);
-  if (!desc && prototype) {
+  let desc: PropertyDescriptor|null = null;
+  const originalDesc = ObjectGetOwnPropertyDescriptor(obj, prop);
+  if (!originalDesc && prototype) {
     // when patch window object, use prototype to check prop exist or not
     const prototypeDesc = ObjectGetOwnPropertyDescriptor(prototype, prop);
     if (prototypeDesc) {
       desc = {enumerable: true, configurable: true};
     }
+  } else if (originalDesc) {
+    desc = {
+      configurable: originalDesc.configurable,
+      enumerable: originalDesc.enumerable,
+      value: originalDesc.value,
+      writable: originalDesc.writable,
+      get: originalDesc.get,
+      set: originalDesc.set
+    };
   }
   // if the descriptor not exists or is not configurable
   // just return
@@ -262,6 +272,8 @@ export function patchProperty(obj: any, prop: string, prototype?: any) {
   ObjectDefineProperty(obj, prop, desc);
 
   obj[onPropPatchedSymbol] = true;
+
+  (Zone as any).__register_patched_delegate(obj, prop, originalDesc, true);
 }
 
 export function patchOnProperties(obj: any, properties: string[]|null, prototype?: any) {
@@ -315,7 +327,7 @@ export function patchClass(className: string) {
   };
 
   // attach original delegate to patched function
-  attachOriginToPatched(_global[className], OriginalClass);
+  attachOriginToPatched(_global, className, OriginalClass);
 
   const instance = new OriginalClass(function() {});
 
@@ -336,7 +348,7 @@ export function patchClass(className: string) {
               // keep callback in wrapped function so we can
               // use it in Function.prototype.toString to return
               // the native one.
-              attachOriginToPatched(this[originalInstanceKey][prop], fn);
+              attachOriginToPatched(this[originalInstanceKey], prop, fn);
             } else {
               this[originalInstanceKey][prop] = fn;
             }
@@ -411,7 +423,7 @@ export function patchMethod(
       proto[name] = function() {
         return patchDelegate(this, arguments as any);
       };
-      attachOriginToPatched(proto[name], delegate);
+      attachOriginToPatched(proto, name, delegate);
       if (shouldCopySymbolProperties) {
         copySymbolProperties(delegate, proto[name]);
       }
@@ -483,8 +495,9 @@ export function patchMicroTask(
   });
 }
 
-export function attachOriginToPatched(patched: Function, original: any) {
-  (patched as any)[zoneSymbol('OriginalDelegate')] = original;
+export function attachOriginToPatched(patchedTarget: any, prop: string, original: any) {
+  patchedTarget[prop][zoneSymbol('OriginalDelegate')] = original;
+  (Zone as any).__register_patched_delegate(patchedTarget, prop, original);
 }
 
 let isDetectedIEOrEdge = false;

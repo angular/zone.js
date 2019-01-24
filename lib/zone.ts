@@ -154,6 +154,7 @@ interface Zone {
    * @returns {any} The value for the key, or `undefined` if not found.
    */
   get(key: string): any;
+
   /**
    * Returns a Zone which defines a `key`.
    *
@@ -163,6 +164,7 @@ interface Zone {
    * @returns {Zone} The Zone which defines the `key`, `null` if not found.
    */
   getZoneWith(key: string): Zone|null;
+
   /**
    * Used to create a child zone.
    *
@@ -170,6 +172,7 @@ interface Zone {
    * @returns {Zone} A new child zone.
    */
   fork(zoneSpec: ZoneSpec): Zone;
+
   /**
    * Wraps a callback function in a new function which will properly restore the current zone upon
    * invocation.
@@ -184,6 +187,7 @@ interface Zone {
    * @returns {function(): *} A function which will invoke the `callback` through [Zone.runGuarded].
    */
   wrap<F extends Function>(callback: F, source: string): F;
+
   /**
    * Invokes a function in a given zone.
    *
@@ -196,6 +200,7 @@ interface Zone {
    * @returns {any} Value from the `callback` function.
    */
   run<T>(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): T;
+
   /**
    * Invokes a function in a given zone and catches any exceptions.
    *
@@ -211,6 +216,7 @@ interface Zone {
    * @returns {any} Value from the `callback` function.
    */
   runGuarded<T>(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): T;
+
   /**
    * Execute the Task by restoring the [Zone.currentTask] in the Task's zone.
    *
@@ -303,7 +309,7 @@ interface ZoneType {
   root: Zone;
 
   /** @internal */
-  __load_patch(name: string, fn: _PatchFn): void;
+  __load_patch(name: string, fn: _PatchFn, preload?: boolean): void;
 
   /** @internal */
   __symbol__(name: string): string;
@@ -329,6 +335,7 @@ interface _ZonePrivate {
        patchFn: (delegate: Function, delegateName: string, name: string) =>
            (self: any, args: any[]) => any) => Function | null;
   bindArguments: (args: any[], source: string) => any[];
+  attachOriginToPatched: (patchedTarget: any, prop: string, original: any) => void;
 }
 
 /** @internal */
@@ -487,14 +494,22 @@ interface ZoneSpec {
  */
 interface ZoneDelegate {
   zone: Zone;
+
   fork(targetZone: Zone, zoneSpec: ZoneSpec): Zone;
+
   intercept(targetZone: Zone, callback: Function, source: string): Function;
+
   invoke(targetZone: Zone, callback: Function, applyThis?: any, applyArgs?: any[], source?: string):
       any;
+
   handleError(targetZone: Zone, error: any): boolean;
+
   scheduleTask(targetZone: Zone, task: Task): Task;
+
   invokeTask(targetZone: Zone, task: Task, applyThis?: any, applyArgs?: any[]): any;
+
   cancelTask(targetZone: Zone, task: Task): any;
+
   hasTask(targetZone: Zone, isEmpty: HasTaskState): void;
 }
 
@@ -511,6 +526,11 @@ type TaskType = 'microTask'|'macroTask'|'eventTask';
  * Task type: `notScheduled`, `scheduling`, `scheduled`, `running`, `canceling`, 'unknown'.
  */
 type TaskState = 'notScheduled'|'scheduling'|'scheduled'|'running'|'canceling'|'unknown';
+
+/**
+ * Zone Load Mode: `normal`, `scope`
+ */
+type ZoneLoadMode = 'normal'|'scope';
 
 
 /**
@@ -636,12 +656,15 @@ type AmbientZoneDelegate = ZoneDelegate;
 const Zone: ZoneType = (function(global: any) {
   const performance: {mark(name: string): void; measure(name: string, label: string): void;} =
       global['performance'];
+
   function mark(name: string) {
     performance && performance['mark'] && performance['mark'](name);
   }
+
   function performanceMeasure(name: string, label: string) {
     performance && performance['measure'] && performance['measure'](name, label);
   }
+
   mark('Zone');
   const checkDuplicate = global[('__zone_symbol__forceDuplicateZoneCheck')] === true;
   if (global['Zone']) {
@@ -691,6 +714,14 @@ const Zone: ZoneType = (function(global: any) {
       return _currentTask;
     }
 
+    static get mode(): ZoneLoadMode {
+      return _mode;
+    }
+
+    static set mode(newMode: ZoneLoadMode) {
+      _mode = newMode;
+    }
+
     static __load_patch(name: string, fn: _PatchFn): void {
       if (patches.hasOwnProperty(name)) {
         if (checkDuplicate) {
@@ -702,6 +733,55 @@ const Zone: ZoneType = (function(global: any) {
         patches[name] = fn(global, Zone, _api);
         performanceMeasure(perfName, perfName);
       }
+    }
+
+    static __register_patched_delegate(
+        proto: any, property: string, origin: any, isPropertyDesc = false) {
+      if (!isPropertyDesc) {
+        delegates.push({
+          proto: proto,
+          property: property,
+          patched: proto[property],
+          origin: origin,
+          isPropertyDesc: isPropertyDesc
+        });
+      } else {
+        delegates.push({
+          proto: proto,
+          property: property,
+          patched: Object.getOwnPropertyDescriptor(proto, property),
+          origin: origin,
+          isPropertyDesc: isPropertyDesc
+        });
+      }
+    }
+
+    static __reloadAll() {
+      if (monkeyPatched) {
+        return;
+      }
+      delegates.forEach(delegate => {
+        if (delegate.isPropertyDesc) {
+          Object.defineProperty(delegate.proto, delegate.property, delegate.patched);
+        } else {
+          delegate.proto[delegate.property] = delegate.patched;
+        }
+      });
+      monkeyPatched = true;
+    }
+
+    static __unloadAll() {
+      if (!monkeyPatched) {
+        return;
+      }
+      delegates.forEach(delegate => {
+        if (delegate.isPropertyDesc) {
+          Object.defineProperty(delegate.proto, delegate.property, delegate.origin);
+        } else {
+          delegate.proto[delegate.property] = delegate.origin;
+        }
+      });
+      monkeyPatched = false;
     }
 
     public get parent(): AmbientZone|null {
@@ -761,11 +841,17 @@ const Zone: ZoneType = (function(global: any) {
     public run(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): any;
     public run<T>(
         callback: (...args: any[]) => T, applyThis?: any, applyArgs?: any[], source?: string): T {
+      if (!monkeyPatched && _mode === 'scope') {
+        Zone.__reloadAll();
+      }
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
       try {
         return this._zoneDelegate.invoke(this, callback, applyThis, applyArgs, source);
       } finally {
         _currentZoneFrame = _currentZoneFrame.parent!;
+        if (_mode === 'scope' && _currentZoneFrame.zone && !_currentZoneFrame.zone.parent) {
+          Zone.__unloadAll();
+        }
       }
     }
 
@@ -773,6 +859,9 @@ const Zone: ZoneType = (function(global: any) {
     public runGuarded<T>(
         callback: (...args: any[]) => T, applyThis: any = null, applyArgs?: any[],
         source?: string) {
+      if (!monkeyPatched && _mode === 'scope') {
+        Zone.__reloadAll();
+      }
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
       try {
         try {
@@ -784,6 +873,9 @@ const Zone: ZoneType = (function(global: any) {
         }
       } finally {
         _currentZoneFrame = _currentZoneFrame.parent!;
+        if (_mode === 'scope' && _currentZoneFrame.zone && !_currentZoneFrame.zone.parent) {
+          Zone.__unloadAll();
+        }
       }
     }
 
@@ -807,6 +899,9 @@ const Zone: ZoneType = (function(global: any) {
       task.runCount++;
       const previousTask = _currentTask;
       _currentTask = task;
+      if (!monkeyPatched && _mode === 'scope') {
+        Zone.__reloadAll();
+      }
       _currentZoneFrame = {parent: _currentZoneFrame, zone: this};
       try {
         if (task.type == macroTask && task.data && !task.data.isPeriodic) {
@@ -834,6 +929,9 @@ const Zone: ZoneType = (function(global: any) {
         }
         _currentZoneFrame = _currentZoneFrame.parent!;
         _currentTask = previousTask;
+        if (_mode === 'scope' && _currentZoneFrame.zone && !_currentZoneFrame.zone.parent) {
+          Zone.__unloadAll();
+        }
       }
     }
 
@@ -1281,6 +1379,8 @@ const Zone: ZoneType = (function(global: any) {
       if (!nativeMicroTaskQueuePromise) {
         if (global[symbolPromise]) {
           nativeMicroTaskQueuePromise = global[symbolPromise].resolve(0);
+        } else if (_mode === 'scope' && !monkeyPatched) {
+          nativeMicroTaskQueuePromise = global['Promise'].resolve(0);
         }
       }
       if (nativeMicroTaskQueuePromise) {
@@ -1333,6 +1433,9 @@ const Zone: ZoneType = (function(global: any) {
                    eventTask: 'eventTask' = 'eventTask';
 
   const patches: {[key: string]: any} = {};
+  const delegates:
+      {proto: any, property: string, patched: any, origin: any, isPropertyDesc: boolean}[] = [];
+  let monkeyPatched = true;
   const _api: _ZonePrivate = {
     symbol: __symbol__,
     currentZoneFrame: () => _currentZoneFrame,
@@ -1353,10 +1456,13 @@ const Zone: ZoneType = (function(global: any) {
         nativeMicroTaskQueuePromise = NativePromise.resolve(0);
       }
     },
+    attachOriginToPatched: (patchedTarget: any, prop: string, original: any) =>
+        Zone.__register_patched_delegate(patchedTarget, prop, original)
   };
   let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
   let _currentTask: Task|null = null;
   let _numberOfNestedTaskFrames = 0;
+  let _mode: ZoneLoadMode = global['__zone_symbol__load_mode'] || 'normal';
 
   function noop() {}
 

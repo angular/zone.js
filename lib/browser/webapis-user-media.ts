@@ -15,6 +15,8 @@ Zone.__load_patch('getUserMedia', (global: any, Zone: any, api: _ZonePrivate) =>
   }
   let navigator = global['navigator'];
   if (navigator && navigator.getUserMedia) {
+    const native = navigator.getUserMedia;
     navigator.getUserMedia = wrapFunctionArgs(navigator.getUserMedia);
+    api.attachOriginToPatched(navigator, 'getUserMedia', native);
   }
 });

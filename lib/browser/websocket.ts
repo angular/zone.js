@@ -55,6 +55,7 @@ export function apply(api: _ZonePrivate, _global: any) {
   };
 
   const globalWebSocket = _global['WebSocket'];
+  api.attachOriginToPatched(_global, 'WebSocket', WS);
   for (const prop in WS) {
     globalWebSocket[prop] = WS[prop];
   }
