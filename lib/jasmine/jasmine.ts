@@ -42,6 +42,32 @@
   // whether patch jasmine clock when in fakeAsync
   const enableClockPatch = _global[symbol('fakeAsyncPatchLock')] === true;
 
+  const ignoreUnhandledRejection = _global[symbol('ignoreUnhandledRejection')] === true;
+
+  if (!ignoreUnhandledRejection) {
+    const globalErrors = (jasmine as any).GlobalErrors;
+    if (globalErrors && !(jasmine as any)[symbol('GlobalErrors')]) {
+      (jasmine as any)[symbol('GlobalErrors')] = globalErrors;
+      (jasmine as any).GlobalErrors = function() {
+        const instance = new globalErrors();
+        const originalInstall = instance.install;
+        if (originalInstall && !instance[symbol('install')]) {
+          instance[symbol('install')] = originalInstall;
+          instance.install = function() {
+            const originalHandlers = process.listeners('unhandledRejection');
+            const r = originalInstall.apply(this, arguments);
+            process.removeAllListeners('unhandledRejection');
+            if (originalHandlers) {
+              originalHandlers.forEach(h => process.on('unhandledRejection', h));
+            }
+            return r;
+          };
+        }
+        return instance;
+      };
+    }
+  }
+
   // Monkey patch all of the jasmine DSL so that each function runs in appropriate zone.
   const jasmineEnv: any = jasmine.getEnv();
   ['describe', 'xdescribe', 'fdescribe'].forEach(methodName => {
