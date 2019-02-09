@@ -54,6 +54,38 @@ Starting from zone.js v0.8.9, you can choose which web API module you want to pa
 For more details, please
 see [MODULE.md](MODULE.md).
 
+## Bundles
+There are several bundles under `dist` folder.
+
+|Bundle|Summary|
+|---|---|
+|zone.js|the default bundle, contains the most used APIs such as `setTimeout/Promise/EventTarget...`, also this bundle supports all evergreen and legacy (IE/Legacy Firefox/Legacy Safari) Browsers|
+|zone-evergreen.js|the bundle for evergreen browsers, doesn't include the `patch` for `legacy` browsers such as `IE` or old versions of `Firefox/Safari`|
+|zone-legacy.js|the patch bundle for legacy browsers, only includes the `patch` for `legacy` browsers such as `IE` or old versions of `Firefox/Safari`. This bundle must be loaded after `zone-evergreen.js`, **`zone.js`=`zone-evergreen.js` + `zone-legacy.js`**|
+|zone-testing.js|the bundle for zone testing support, including `jasmine/mocha` support and `async/fakeAsync/sync` test utilities|
+|zone-externs.js|the API definitions for `closure compiler`|
+
+And here are the additional optional patches not included in the main zone.js bundles
+
+|Patch|Summary|
+|---|---|
+|webapis-media-query.js|patch for `MediaQuery APIs`|
+|webapis-notification.js|patch for `Notification APIs`|
+|webapis-rtc-peer-connection.js|patch for `RTCPeerConnection APIs`|
+|webapis-shadydom.js|patch for `Shady DOM APIs`|
+|zone-bluebird.js|patch for `Bluebird APIs`|
+|zone-error.js|patch for `Error Global Object`, supports remove `Zone StackTrace`|
+|zone-patch-canvas.js|patch for `Canvas API`|
+|zone-patch-cordova.js|patch for `Cordova API`|
+|zone-patch-electron.js|patch for `Electron API`|
+|zone-patch-fetch.js|patch for `Fetch API`|
+|zone-patch-jsonp.js|utility for `jsonp API`|
+|zone-patch-resize-observer.js|patch for `ResizeObserver API`|
+|zone-patch-rxjs.js|patch for `rxjs API`|
+|zone-patch-rxjs-fake-async.js|patch for `rxjs fakeasync test`|
+|zone-patch-socket-io.js|patch for `socket-io`|
+|zone-patch-user-media.js|patch for `UserMedia API`|
+
 ## Promise A+ test passed
 [![Promises/A+ 1.1 compliant](https://promisesaplus.com/assets/logo-small.png)](https://promisesaplus.com/)
 

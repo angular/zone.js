@@ -14,7 +14,7 @@
 import {ifEnvSupports} from '../test-util';
 
 function registerElement() {
-  return ('registerElement' in document);
+  return ('registerElement' in document) && (typeof customElements === 'undefined');
 }
 (<any>registerElement).message = 'document.registerElement';
 

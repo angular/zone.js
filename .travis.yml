@@ -56,3 +56,4 @@ script:
   - node_modules/.bin/gulp test/node -no-patch-clock
   - cp ./test/browser/custom-element.spec.js ./build/test/browser
   - node_modules/.bin/karma start karma-dist-sauce-jasmine.es6.conf.js --single-run
+  - node_modules/.bin/karma start karma-evergreen-dist-sauce-jasmine.conf.js --single-run

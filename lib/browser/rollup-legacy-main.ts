@@ -7,4 +7,5 @@
  */
 
 import './rollup-common';
+import './browser-legacy';
 import './browser';

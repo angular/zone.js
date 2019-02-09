@@ -11,9 +11,9 @@ module.exports = function(config) {
   config.files.push('build/test/wtf_mock.js');
   config.files.push('build/test/test_fake_polyfill.js');
   config.files.push('build/test/custom_error.js');
-  config.files.push('dist/zone.js');
-  config.files.push('dist/zone-patch-fetch.js');
+  config.files.push('dist/zone-evergreen.js');
   config.files.push('dist/zone-patch-canvas.js');
+  config.files.push('dist/zone-patch-fetch.js');
   config.files.push('dist/webapis-media-query.js');
   config.files.push('dist/webapis-notification.js');
   config.files.push('dist/zone-patch-user-media.js');
