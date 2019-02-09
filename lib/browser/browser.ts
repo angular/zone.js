@@ -12,18 +12,13 @@
 
 import {findEventTasks} from '../common/events';
 import {patchTimer} from '../common/timers';
-import {bindArguments, patchClass, patchMacroTask, patchMethod, patchOnProperties, patchPrototype, scheduleMacroTaskWithCurrentZone, ZONE_SYMBOL_ADD_EVENT_LISTENER, ZONE_SYMBOL_REMOVE_EVENT_LISTENER, zoneSymbol} from '../common/utils';
+import {patchClass, patchMethod, patchPrototype, scheduleMacroTaskWithCurrentZone, ZONE_SYMBOL_ADD_EVENT_LISTENER, ZONE_SYMBOL_REMOVE_EVENT_LISTENER, zoneSymbol} from '../common/utils';
 
+import {patchCustomElements} from './custom-elements';
 import {propertyPatch} from './define-property';
 import {eventTargetPatch, patchEvent} from './event-target';
 import {propertyDescriptorPatch} from './property-descriptor';
-import {patchCustomElements, registerElementPatch} from './register-element';
-
-Zone.__load_patch('util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  api.patchOnProperties = patchOnProperties;
-  api.patchMethod = patchMethod;
-  api.bindArguments = bindArguments;
-});
+import {registerElementPatch} from './register-element';
 
 Zone.__load_patch('timers', (global: any) => {
   const set = 'set';
@@ -77,18 +72,7 @@ Zone.__load_patch('on_property', (global: any, Zone: ZoneType, api: _ZonePrivate
 });
 
 Zone.__load_patch('customElements', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  registerElementPatch(global);
   patchCustomElements(global);
-});
-
-Zone.__load_patch('canvas', (global: any) => {
-  const HTMLCanvasElement = global['HTMLCanvasElement'];
-  if (typeof HTMLCanvasElement !== 'undefined' && HTMLCanvasElement.prototype &&
-      HTMLCanvasElement.prototype.toBlob) {
-    patchMacroTask(HTMLCanvasElement.prototype, 'toBlob', (self: any, args: any[]) => {
-      return {name: 'HTMLCanvasElement.toBlob', target: self, cbIdx: 0, args: args};
-    });
-  }
 });
 
 Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {

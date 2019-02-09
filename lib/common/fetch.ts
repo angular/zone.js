@@ -7,14 +7,19 @@
  */
 
 Zone.__load_patch('fetch', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  const fetch = global['fetch'];
+  let fetch = global['fetch'];
+  if (typeof fetch !== 'function') {
+    return;
+  }
+  const originalFetch = global[api.symbol('fetch')];
+  if (originalFetch) {
+    // restore unpatched fetch first
+    fetch = originalFetch;
+  }
   const ZoneAwarePromise = global.Promise;
   const symbolThenPatched = api.symbol('thenPatched');
   const fetchTaskScheduling = api.symbol('fetchTaskScheduling');
   const fetchTaskAborting = api.symbol('fetchTaskAborting');
-  if (typeof fetch !== 'function') {
-    return;
-  }
   const OriginalAbortController = global['AbortController'];
   const supportAbort = typeof OriginalAbortController === 'function';
   let abortNative: Function|null = null;

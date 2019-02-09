@@ -6,5 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import './rollup-common';
-import './browser';
+module.exports = function (config) {
+  require('./karma-evergreen-dist-jasmine.conf.js')(config);
+  require('./sauce-evergreen.conf')(config);
+};

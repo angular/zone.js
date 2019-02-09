@@ -10,7 +10,10 @@ if (typeof window !== 'undefined') {
   (window as any)['__zone_symbol__fakeAsyncPatchLock'] = true;
 }
 import '../lib/common/to-string';
+import '../lib/browser/api-util';
+import '../lib/browser/browser-legacy';
 import '../lib/browser/browser';
+import '../lib/browser/canvas';
 import '../lib/common/fetch';
 import '../lib/browser/webapis-user-media';
 import '../lib/browser/webapis-media-query';

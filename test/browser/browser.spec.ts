@@ -149,10 +149,10 @@ describe('Zone', function() {
                 target[prop] = noop;
                 if (!target[Zone.__symbol__('ON_PROPERTY' + prop.substr(2))]) {
                   console.log('onProp is null:', prop);
+                } else {
+                  target[prop] = null;
+                  expect(!target[Zone.__symbol__('ON_PROPERTY' + prop.substr(2))]).toBeTruthy();
                 }
-                expect(target[Zone.__symbol__('ON_PROPERTY' + prop.substr(2))]).toBeTruthy();
-                target[prop] = null;
-                expect(!target[Zone.__symbol__('ON_PROPERTY' + prop.substr(2))]).toBeTruthy();
               }
             }
           }

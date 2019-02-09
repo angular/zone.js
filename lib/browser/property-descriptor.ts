@@ -239,7 +239,7 @@ export interface IgnoreProperty {
   ignoreProperties: string[];
 }
 
-function filterProperties(
+export function filterProperties(
     target: any, onProperties: string[], ignoreProperties: IgnoreProperty[]): string[] {
   if (!ignoreProperties || ignoreProperties.length === 0) {
     return onProperties;
@@ -269,153 +269,65 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
   if (isNode && !isMix) {
     return;
   }
+  if ((Zone as any)[api.symbol('patchEvents')]) {
+    // events are already been patched by legacy patch.
+    return;
+  }
 
   const supportsWebSocket = typeof WebSocket !== 'undefined';
-  if (canPatchViaPropertyDescriptor()) {
-    const ignoreProperties: IgnoreProperty[] = _global['__Zone_ignore_on_properties'];
-    // for browsers that we can patch the descriptor:  Chrome & Firefox
-    if (isBrowser) {
-      const internalWindow: any = window;
-      const ignoreErrorProperties =
-          isIE ? [{target: internalWindow, ignoreProperties: ['error']}] : [];
-      // in IE/Edge, onProp not exist in window object, but in WindowPrototype
-      // so we need to pass WindowPrototype to check onProp exist or not
-      patchFilteredProperties(
-          internalWindow, eventNames.concat(['messageerror']),
-          ignoreProperties ? ignoreProperties.concat(ignoreErrorProperties) : ignoreProperties,
-          ObjectGetPrototypeOf(internalWindow));
-      patchFilteredProperties(Document.prototype, eventNames, ignoreProperties);
+  const ignoreProperties: IgnoreProperty[] = _global['__Zone_ignore_on_properties'];
+  // for browsers that we can patch the descriptor:  Chrome & Firefox
+  if (isBrowser) {
+    const internalWindow: any = window;
+    const ignoreErrorProperties =
+        isIE ? [{target: internalWindow, ignoreProperties: ['error']}] : [];
+    // in IE/Edge, onProp not exist in window object, but in WindowPrototype
+    // so we need to pass WindowPrototype to check onProp exist or not
+    patchFilteredProperties(
+        internalWindow, eventNames.concat(['messageerror']),
+        ignoreProperties ? ignoreProperties.concat(ignoreErrorProperties) : ignoreProperties,
+        ObjectGetPrototypeOf(internalWindow));
+    patchFilteredProperties(Document.prototype, eventNames, ignoreProperties);
 
-      if (typeof internalWindow['SVGElement'] !== 'undefined') {
-        patchFilteredProperties(
-            internalWindow['SVGElement'].prototype, eventNames, ignoreProperties);
-      }
-      patchFilteredProperties(Element.prototype, eventNames, ignoreProperties);
-      patchFilteredProperties(HTMLElement.prototype, eventNames, ignoreProperties);
-      patchFilteredProperties(HTMLMediaElement.prototype, mediaElementEventNames, ignoreProperties);
-      patchFilteredProperties(
-          HTMLFrameSetElement.prototype, windowEventNames.concat(frameSetEventNames),
-          ignoreProperties);
-      patchFilteredProperties(
-          HTMLBodyElement.prototype, windowEventNames.concat(frameSetEventNames), ignoreProperties);
-      patchFilteredProperties(HTMLFrameElement.prototype, frameEventNames, ignoreProperties);
-      patchFilteredProperties(HTMLIFrameElement.prototype, frameEventNames, ignoreProperties);
+    if (typeof internalWindow['SVGElement'] !== 'undefined') {
+      patchFilteredProperties(internalWindow['SVGElement'].prototype, eventNames, ignoreProperties);
+    }
+    patchFilteredProperties(Element.prototype, eventNames, ignoreProperties);
+    patchFilteredProperties(HTMLElement.prototype, eventNames, ignoreProperties);
+    patchFilteredProperties(HTMLMediaElement.prototype, mediaElementEventNames, ignoreProperties);
+    patchFilteredProperties(
+        HTMLFrameSetElement.prototype, windowEventNames.concat(frameSetEventNames),
+        ignoreProperties);
+    patchFilteredProperties(
+        HTMLBodyElement.prototype, windowEventNames.concat(frameSetEventNames), ignoreProperties);
+    patchFilteredProperties(HTMLFrameElement.prototype, frameEventNames, ignoreProperties);
+    patchFilteredProperties(HTMLIFrameElement.prototype, frameEventNames, ignoreProperties);
 
-      const HTMLMarqueeElement = internalWindow['HTMLMarqueeElement'];
-      if (HTMLMarqueeElement) {
-        patchFilteredProperties(HTMLMarqueeElement.prototype, marqueeEventNames, ignoreProperties);
-      }
-      const Worker = internalWindow['Worker'];
-      if (Worker) {
-        patchFilteredProperties(Worker.prototype, workerEventNames, ignoreProperties);
-      }
+    const HTMLMarqueeElement = internalWindow['HTMLMarqueeElement'];
+    if (HTMLMarqueeElement) {
+      patchFilteredProperties(HTMLMarqueeElement.prototype, marqueeEventNames, ignoreProperties);
     }
-    patchFilteredProperties(XMLHttpRequest.prototype, XMLHttpRequestEventNames, ignoreProperties);
-    const XMLHttpRequestEventTarget = _global['XMLHttpRequestEventTarget'];
-    if (XMLHttpRequestEventTarget) {
-      patchFilteredProperties(
-          XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype,
-          XMLHttpRequestEventNames, ignoreProperties);
-    }
-    if (typeof IDBIndex !== 'undefined') {
-      patchFilteredProperties(IDBIndex.prototype, IDBIndexEventNames, ignoreProperties);
-      patchFilteredProperties(IDBRequest.prototype, IDBIndexEventNames, ignoreProperties);
-      patchFilteredProperties(IDBOpenDBRequest.prototype, IDBIndexEventNames, ignoreProperties);
-      patchFilteredProperties(IDBDatabase.prototype, IDBIndexEventNames, ignoreProperties);
-      patchFilteredProperties(IDBTransaction.prototype, IDBIndexEventNames, ignoreProperties);
-      patchFilteredProperties(IDBCursor.prototype, IDBIndexEventNames, ignoreProperties);
-    }
-    if (supportsWebSocket) {
-      patchFilteredProperties(WebSocket.prototype, websocketEventNames, ignoreProperties);
-    }
-  } else {
-    // Safari, Android browsers (Jelly Bean)
-    patchViaCapturingAllTheEvents();
-    patchClass('XMLHttpRequest');
-    if (supportsWebSocket) {
-      webSocketPatch.apply(api, _global);
+    const Worker = internalWindow['Worker'];
+    if (Worker) {
+      patchFilteredProperties(Worker.prototype, workerEventNames, ignoreProperties);
     }
   }
-}
-
-function canPatchViaPropertyDescriptor() {
-  if ((isBrowser || isMix) && !ObjectGetOwnPropertyDescriptor(HTMLElement.prototype, 'onclick') &&
-      typeof Element !== 'undefined') {
-    // WebKit https://bugs.webkit.org/show_bug.cgi?id=134364
-    // IDL interface attributes are not configurable
-    const desc = ObjectGetOwnPropertyDescriptor(Element.prototype, 'onclick');
-    if (desc && !desc.configurable) return false;
+  patchFilteredProperties(XMLHttpRequest.prototype, XMLHttpRequestEventNames, ignoreProperties);
+  const XMLHttpRequestEventTarget = _global['XMLHttpRequestEventTarget'];
+  if (XMLHttpRequestEventTarget) {
+    patchFilteredProperties(
+        XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype, XMLHttpRequestEventNames,
+        ignoreProperties);
   }
-
-  const ON_READY_STATE_CHANGE = 'onreadystatechange';
-  const XMLHttpRequestPrototype = XMLHttpRequest.prototype;
-
-  const xhrDesc = ObjectGetOwnPropertyDescriptor(XMLHttpRequestPrototype, ON_READY_STATE_CHANGE);
-
-  // add enumerable and configurable here because in opera
-  // by default XMLHttpRequest.prototype.onreadystatechange is undefined
-  // without adding enumerable and configurable will cause onreadystatechange
-  // non-configurable
-  // and if XMLHttpRequest.prototype.onreadystatechange is undefined,
-  // we should set a real desc instead a fake one
-  if (xhrDesc) {
-    ObjectDefineProperty(XMLHttpRequestPrototype, ON_READY_STATE_CHANGE, {
-      enumerable: true,
-      configurable: true,
-      get: function() {
-        return true;
-      }
-    });
-    const req = new XMLHttpRequest();
-    const result = !!req.onreadystatechange;
-    // restore original desc
-    ObjectDefineProperty(XMLHttpRequestPrototype, ON_READY_STATE_CHANGE, xhrDesc || {});
-    return result;
-  } else {
-    const SYMBOL_FAKE_ONREADYSTATECHANGE = zoneSymbol('fake');
-    ObjectDefineProperty(XMLHttpRequestPrototype, ON_READY_STATE_CHANGE, {
-      enumerable: true,
-      configurable: true,
-      get: function() {
-        return this[SYMBOL_FAKE_ONREADYSTATECHANGE];
-      },
-      set: function(value) {
-        this[SYMBOL_FAKE_ONREADYSTATECHANGE] = value;
-      }
-    });
-    const req = new XMLHttpRequest();
-    const detectFunc = () => {};
-    req.onreadystatechange = detectFunc;
-    const result = (req as any)[SYMBOL_FAKE_ONREADYSTATECHANGE] === detectFunc;
-    req.onreadystatechange = null as any;
-    return result;
+  if (typeof IDBIndex !== 'undefined') {
+    patchFilteredProperties(IDBIndex.prototype, IDBIndexEventNames, ignoreProperties);
+    patchFilteredProperties(IDBRequest.prototype, IDBIndexEventNames, ignoreProperties);
+    patchFilteredProperties(IDBOpenDBRequest.prototype, IDBIndexEventNames, ignoreProperties);
+    patchFilteredProperties(IDBDatabase.prototype, IDBIndexEventNames, ignoreProperties);
+    patchFilteredProperties(IDBTransaction.prototype, IDBIndexEventNames, ignoreProperties);
+    patchFilteredProperties(IDBCursor.prototype, IDBIndexEventNames, ignoreProperties);
   }
-}
-
-const unboundKey = zoneSymbol('unbound');
-
-// Whenever any eventListener fires, we check the eventListener target and all parents
-// for `onwhatever` properties and replace them with zone-bound functions
-// - Chrome (for now)
-function patchViaCapturingAllTheEvents() {
-  for (let i = 0; i < eventNames.length; i++) {
-    const property = eventNames[i];
-    const onproperty = 'on' + property;
-    self.addEventListener(property, function(event) {
-      let elt: any = <Node>event.target, bound, source;
-      if (elt) {
-        source = elt.constructor['name'] + '.' + onproperty;
-      } else {
-        source = 'unknown.' + onproperty;
-      }
-      while (elt) {
-        if (elt[onproperty] && !elt[onproperty][unboundKey]) {
-          bound = wrapWithCurrentZone(elt[onproperty], source);
-          bound[unboundKey] = elt[onproperty];
-          elt[onproperty] = bound;
-        }
-        elt = elt.parentElement;
-      }
-    }, true);
+  if (supportsWebSocket) {
+    patchFilteredProperties(WebSocket.prototype, websocketEventNames, ignoreProperties);
   }
 }
