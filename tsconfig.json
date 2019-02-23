@@ -15,6 +15,7 @@
     "lib": [
       "es5",
       "dom",
+      "es2015.iterable",
       "es2015.promise",
       "es2015.symbol",
       "es2015.symbol.wellknown"
@@ -22,6 +23,7 @@
   },
   "exclude": [
     "node_modules",
+    "bazel-out",
     "build",
     "build-esm",
     "build-esm-2015",

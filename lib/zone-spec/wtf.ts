@@ -156,4 +156,4 @@ function zonePathName(zone: Zone) {
 }
 
 (Zone as any)['wtfZoneSpec'] = !wtfEnabled ? null : new WtfZoneSpec();
-})(typeof window === 'object' && window || typeof self === 'object' && self || global);
+})(global);

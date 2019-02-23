@@ -312,7 +312,7 @@ interface ZoneType {
   /** @internal */
   __load_patch(name: string, fn: _PatchFn): void;
 
-  /** @internal */
+  /** Was @ internal but this prevents compiling tests as separate unit */
   __symbol__(name: string): string;
 }
 
@@ -1417,4 +1417,4 @@ const Zone: ZoneType = (function(global: any) {
 
   performanceMeasure('Zone', 'Zone');
   return global['Zone'] = Zone;
-})(typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global);
+})(global);

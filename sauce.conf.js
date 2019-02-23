@@ -35,7 +35,8 @@ module.exports = function(config, ignoredLaunchers) {
       platform: 'OS X 10.10',
       version: '8.4'
     },*/
-    'SL_IOS9': {base: 'SauceLabs', browserName: 'iphone', platform: 'OS X 10.10', version: '9.3'},
+    // 'SL_IOS9': {base: 'SauceLabs', browserName: 'iphone', platform: 'OS X 10.10', version:
+    // '9.3'},
     'SL_IOS10': {base: 'SauceLabs', browserName: 'iphone', platform: 'OS X 10.10', version: '10.3'},
     'SL_IE9': {
       base: 'SauceLabs',
@@ -87,16 +88,17 @@ module.exports = function(config, ignoredLaunchers) {
       platform: 'Linux',
       version: '4.3'
     },*/
-    'SL_ANDROID4.4': {base: 'SauceLabs', browserName: 'android', platform: 'Linux', version: '4.4'},
+    // 'SL_ANDROID4.4': {base: 'SauceLabs', browserName: 'android', platform: 'Linux', version:
+    // '4.4'},
     'SL_ANDROID5.1': {base: 'SauceLabs', browserName: 'android', platform: 'Linux', version: '5.1'},
     'SL_ANDROID6.0': {base: 'SauceLabs', browserName: 'android', platform: 'Linux', version: '6.0'},
-    'SL_ANDROID7.1': {
+    'SL_ANDROID8.0': {
       base: 'SauceLabs',
       browserName: 'Chrome',
-      appiumVersion: '1.6.4',
+      appiumVersion: '1.12.1',
       platformName: 'Android',
       deviceName: 'Android GoogleAPI Emulator',
-      platformVersion: '7.1'
+      platformVersion: '8.0'
     }
   };
 

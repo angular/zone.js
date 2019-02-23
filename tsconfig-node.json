@@ -23,6 +23,7 @@
   },
   "exclude": [
     "node_modules",
+    "bazel-out",
     "build",
     "build-esm",
     "build-esm-2015",

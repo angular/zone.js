@@ -5,8 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-const _global: any =
-    typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global;
+(function(_global: any) {
 class AsyncTestZoneSpec implements ZoneSpec {
   static symbolParentUnresolved = Zone.__symbol__('parentUnresolved');
 
@@ -147,3 +146,4 @@ class AsyncTestZoneSpec implements ZoneSpec {
 // Export the class so that new instances can be created with proper
 // constructor params.
 (Zone as any)['AsyncTestZoneSpec'] = AsyncTestZoneSpec;
+})(global);

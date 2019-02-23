@@ -246,7 +246,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       try {
         const parentPromiseValue = (promise as any)[symbolValue];
         const isFinallyPromise =
-            chainPromise && symbolFinally === (chainPromise as any)[symbolFinally];
+            !!chainPromise && symbolFinally === (chainPromise as any)[symbolFinally];
         if (isFinallyPromise) {
           // if the promise is generated from finally call, keep parent promise's state and value
           (chainPromise as any)[symbolParentPromiseValue] = parentPromiseValue;

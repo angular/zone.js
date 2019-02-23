@@ -5,6 +5,7 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+/// <amd-module name="__main__/lib/zone" />
 /**
  * Suppress closure compiler errors about unknown 'global' variable
  * @fileoverview
@@ -284,6 +285,8 @@ interface ZoneType {
      *  Return the root zone.
      */
     root: Zone;
+    /** Was @ internal but this prevents compiling tests as separate unit */
+    __symbol__(name: string): string;
 }
 interface UncaughtPromiseError extends Error {
     zone: Zone;

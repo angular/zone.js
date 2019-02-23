@@ -14,7 +14,7 @@ const desiredCapabilities = {
     platformName: 'Android',
     platformVersion: '6.0',
     deviceOrientation: 'portrait',
-    appiumVersion: '1.7.2'
+    appiumVersion: '1.12.1'
   },
   android71: {
     deviceName: 'Android GoogleAPI Emulator',
@@ -22,7 +22,7 @@ const desiredCapabilities = {
     platformName: 'Android',
     platformVersion: '7.1',
     deviceOrientation: 'portrait',
-    appiumVersion: '1.7.2'
+    appiumVersion: '1.12.1'
   }
 };
 

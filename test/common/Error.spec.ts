@@ -82,6 +82,7 @@ describe('ZoneAwareError', () => {
   // and there is no point in running them.
   const _global: any = typeof window !== 'undefined' ? window : global;
   let config: any;
+  const __karma__ = _global.__karma__;
   if (typeof __karma__ !== 'undefined') {
     config = __karma__ && (__karma__ as any).config;
   } else if (typeof process !== 'undefined') {
