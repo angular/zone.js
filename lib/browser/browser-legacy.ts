@@ -19,10 +19,6 @@ Zone.__load_patch('registerElement', (global: any, Zone: ZoneType, api: _ZonePri
 });
 
 Zone.__load_patch('EventTargetLegacy', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  const SYMBOL_BLACK_LISTED_EVENTS = Zone.__symbol__('BLACK_LISTED_EVENTS');
-  if (global[SYMBOL_BLACK_LISTED_EVENTS]) {
-    (Zone as any)[SYMBOL_BLACK_LISTED_EVENTS] = global[SYMBOL_BLACK_LISTED_EVENTS];
-  }
   eventTargetLegacyPatch(global, api);
   propertyDescriptorLegacyPatch(api, global);
 });

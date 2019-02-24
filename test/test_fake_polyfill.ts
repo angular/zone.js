@@ -75,5 +75,5 @@ Object.defineProperties(TestTarget.prototype, {
 global['__Zone_ignore_on_properties'] =
     [{target: TestTarget.prototype, ignoreProperties: ['prop1']}];
 global['__zone_symbol__FakeAsyncTestMacroTask'] = [{source: 'TestClass.myTimeout'}];
-global['__zone_symbol__BLACK_LISTED_EVENTS'] = ['scroll'];
+global['__zone_symbol__UNPATCHED_EVENTS'] = ['scroll'];
 })(typeof window === 'object' && window || typeof self === 'object' && self || global);

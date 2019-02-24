@@ -47,12 +47,6 @@ Zone.__load_patch('blocking', (global: any, Zone: ZoneType) => {
 });
 
 Zone.__load_patch('EventTarget', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  // load blackListEvents from global
-  const SYMBOL_BLACK_LISTED_EVENTS = Zone.__symbol__('BLACK_LISTED_EVENTS');
-  if (global[SYMBOL_BLACK_LISTED_EVENTS]) {
-    (Zone as any)[SYMBOL_BLACK_LISTED_EVENTS] = global[SYMBOL_BLACK_LISTED_EVENTS];
-  }
-
   patchEvent(global, api);
   eventTargetPatch(global, api);
   // patch XMLHttpRequestEventTarget's addEventListener/removeEventListener
