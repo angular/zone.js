@@ -17,13 +17,15 @@
       "es5",
       "dom",
       "es2015.promise",
-      "es2015.symbol"
+      "es2015.symbol",
+      "es2015.symbol.wellknown"
     ]
   },
   "exclude": [
     "node_modules",
     "build",
     "build-esm",
+    "build-esm-2015",
     "dist",
     "lib/closure"
   ]

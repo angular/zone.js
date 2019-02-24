@@ -5,6 +5,8 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
+import {isBrowser} from '../../lib/common/utils';
+import {isSafari} from '../test-util';
 
 // simulate @angular/facade/src/error.ts
 class BaseError extends Error {
@@ -189,6 +191,9 @@ describe('ZoneAwareError', () => {
 
   it('should show zone names in stack frames and remove extra frames', () => {
     if (policy === 'disable' || !(Error as any)['stackRewrite']) {
+      return;
+    }
+    if (isBrowser && isSafari()) {
       return;
     }
     const rootZone = Zone.root;

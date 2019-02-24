@@ -365,6 +365,10 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       }
     }
 
+    get[Symbol.toStringTag]() {
+      return 'Promise' as any;
+    }
+
     then<TResult1 = R, TResult2 = never>(
         onFulfilled?: ((value: R) => TResult1 | PromiseLike<TResult1>)|undefined|null,
         onRejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>)|undefined|

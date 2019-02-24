@@ -7,9 +7,6 @@ module.exports = function(config, ignoredLaunchers) {
   var basicLaunchers = {
     'SL_CHROME': {base: 'SauceLabs', browserName: 'chrome', version: '72'},
     'SL_CHROME_60': {base: 'SauceLabs', browserName: 'chrome', version: '60'},
-    'SL_FIREFOX_59': {base: 'SauceLabs', browserName: 'firefox', platform: 'Windows 10', version: '65'},
-    'SL_SAFARI':
-      {base: 'SauceLabs', browserName: 'safari', platform: 'macOS 10.13', version: '11.1'},
     'SL_ANDROID8.0': {
       base: 'SauceLabs',
       browserName: 'Chrome',
@@ -45,7 +42,7 @@ module.exports = function(config, ignoredLaunchers) {
       recordVideo: false,
       recordScreenshots: false,
       options: {
-        'selenium-version': '3.5.0',
+        'selenium-version': '3.4.0',
         'command-timeout': 600,
         'idle-timeout': 600,
         'max-duration': 5400
