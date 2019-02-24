@@ -8,34 +8,22 @@
 
 const webdriverio = require('webdriverio');
 const desiredCapabilities = {
-  firefox52Win7: {browserName: 'firefox', platform: 'Windows 7', version: '52'},
-  firefox53Win7: {browserName: 'firefox', platform: 'Windows 7', version: '53'},
-  edge14: {browserName: 'MicrosoftEdge', platform: 'Windows 10', version: '14.14393'},
-  edge15: {browserName: 'MicrosoftEdge', platform: 'Windows 10', version: '15.15063'},
-  chrome48: {browserName: 'chrome', version: '48'},
-  safari8: {browserName: 'safari', platform: 'OS X 10.10', version: '8.0'},
-  safari9: {browserName: 'safari', platform: 'OS X 10.11', version: '9.0'},
-  safari10: {browserName: 'safari', platform: 'OS X 10.11', version: '10.0'},
-  safari11: {browserName: 'safari', platform: 'macOS 10.13', version: '11.1'},
-  /*ios84: {browserName: 'iphone', platform: 'OS X 10.10', version: '8.4'},*/
-  ios93: {browserName: 'iphone', platform: 'OS X 10.10', version: '9.3'},
-  ios10: {browserName: 'iphone', platform: 'OS X 10.10', version: '10.3'},
-  ios11: {browserName: 'iphone', platform: 'OS X 10.12', version: '11.2'},
-  /*
-  ie9: {
-    browserName: 'internet explorer',
-    platform: 'Windows 2008',
-    version: '9'
-  },*/
-  /*
-  ie10: {
-    browserName: 'internet explorer',
-    platform: 'Windows 2012',
-    version: '10'
-  },*/
-  ie11: {browserName: 'internet explorer', platform: 'Windows 10', version: '11'},
-  andriod44: {browserName: 'android', platform: 'Linux', version: '4.4'},
-  android51: {browserName: 'android', platform: 'Linux', version: '5.1'},
+  android60: {
+    deviceName: 'Android GoogleAPI Emulator',
+    browserName: 'Chrome',
+    platformName: 'Android',
+    platformVersion: '6.0',
+    deviceOrientation: 'portrait',
+    appiumVersion: '1.7.2'
+  },
+  android71: {
+    deviceName: 'Android GoogleAPI Emulator',
+    browserName: 'Chrome',
+    platformName: 'Android',
+    platformVersion: '7.1',
+    deviceOrientation: 'portrait',
+    appiumVersion: '1.7.2'
+  }
 };
 
 const errors = [];
@@ -60,7 +48,7 @@ Object.keys(desiredCapabilities).forEach(key => {
 
   const p = client.init()
                 .timeouts('script', 60000)
-                .url('http://localhost:8080/test/webdriver/test.html')
+                .url('http://localhost:8080/test/webdriver/test-es2015.html')
                 .executeAsync(function(done) {
                   window.setTimeout(done, 1000)
                 })

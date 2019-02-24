@@ -15,8 +15,8 @@ module.exports = function(config, ignoredLaunchers) {
         platform: 'OS X 10.9',
         version: '7.0'
     },*/
-    'SL_SAFARI8':
-        {base: 'SauceLabs', browserName: 'safari', platform: 'OS X 10.10', version: '8.0'},
+    //'SL_SAFARI8':
+    //    {base: 'SauceLabs', browserName: 'safari', platform: 'OS X 10.10', version: '8.0'},
     'SL_SAFARI9':
         {base: 'SauceLabs', browserName: 'safari', platform: 'OS X 10.11', version: '9.0'},
     'SL_SAFARI10':

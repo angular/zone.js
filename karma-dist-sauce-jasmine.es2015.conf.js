@@ -1,21 +1,14 @@
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
 
-module.exports = function(config) {
-  require('./karma-base.conf.js')(config);
+module.exports = function (config) {
+  require('./karma-dist-jasmine.conf.js')(config);
+  require('./sauce.es2015.conf')(config);
   const files = config.files;
   config.files = [];
   for (let i = 0; i < files.length; i ++) {
-    if (files[i] !== 'node_modules/core-js-bundle/index.js') {
+    if (files[i] !== 'node_modules/core-js-bundle/index.js' || files[i] === 'build/test/main.js') {
       config.files.push(files[i]);
     }
   }
-
   config.files.push('build/test/wtf_mock.js');
   config.files.push('build/test/test_fake_polyfill.js');
   config.files.push('build/test/custom_error.js');
@@ -29,6 +22,7 @@ module.exports = function(config) {
   config.files.push('dist/task-tracking.js');
   config.files.push('dist/wtf.js');
   config.files.push('dist/zone-testing.js');
-  config.files.push({pattern: 'build/test/browser/custom-element.spec.js', type: 'module'});
-  config.files.push('build/test/main.js');
+  config.files.push('build/test/test-env-setup-jasmine.js');
+  config.files.push('build/lib/common/error-rewrite.js');
+  config.files.push('build/test/browser/custom-element.spec.js');
 };

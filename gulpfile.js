@@ -10,19 +10,22 @@
 var gulp = require('gulp');
 var rollup = require('gulp-rollup');
 var rename = require('gulp-rename');
-var uglify = require('gulp-uglify');
+var terser = require('gulp-terser');
 var pump = require('pump');
 var path = require('path');
 var spawn = require('child_process').spawn;
 const os = require('os');
 
-function generateScript(inFile, outFile, minify, callback, format) {
+function generateScript(inFile, outFile, minify, callback, format, inDir) {
   if (!format) {
     format = 'umd';
   }
-  inFile = path.join('./build-esm/', inFile).replace(/\.ts$/, '.js');
+  if (!inDir) {
+    inDir = './build-esm/'
+  }
+  inFile = path.join(inDir, inFile).replace(/\.ts$/, '.js');
   var parts = [
-    gulp.src('./build-esm/lib/**/*.js')
+    gulp.src(inDir + 'lib/**/*.js')
         .pipe(rollup({
           input: inFile,
           onwarn: function(warning) {
@@ -62,7 +65,9 @@ function generateScript(inFile, outFile, minify, callback, format) {
         .pipe(rename(outFile)),
   ];
   if (minify) {
-    parts.push(uglify());
+    parts.push(terser({
+      ecma: format === 'es' ? 6 : 5, // specify one of: 5, 6, 7 or 8
+    }));
   }
   parts.push(gulp.dest('./dist'));
   pump(parts, callback);
@@ -101,6 +106,10 @@ gulp.task('compile-esm', function(cb) {
   tsc('tsconfig-esm.json', cb);
 });
 
+gulp.task('compile-esm-2015', function(cb) {
+  tsc('tsconfig-esm-2015.json', cb);
+});
+
 gulp.task('compile-esm-node', function(cb) {
   tsc('tsconfig-esm-node.json', cb);
 });
@@ -126,12 +135,12 @@ gulp.task('build/zone.min.js', ['compile-esm'], function(cb) {
 });
 
 // Zone for the evergreen browser.
-gulp.task('build/zone-evergreen.js', ['compile-esm'], function(cb) {
-  return generateScript('./lib/browser/rollup-main.ts', 'zone-evergreen.js', false, cb);
+gulp.task('build/zone-evergreen.js', ['compile-esm-2015'], function(cb) {
+  return generateScript('./lib/browser/rollup-main.ts', 'zone-evergreen.js', false, cb, 'es', './build-esm-2015/');
 });
 
-gulp.task('build/zone-evergreen.min.js', ['compile-esm'], function(cb) {
-  return generateScript('./lib/browser/rollup-main.ts', 'zone-evergreen.min.js', true, cb);
+gulp.task('build/zone-evergreen.min.js', ['compile-esm-2015'], function(cb) {
+  return generateScript('./lib/browser/rollup-main.ts', 'zone-evergreen.min.js', true, cb, 'es', './build-esm-2015/');
 });
 
 // Zone legacy patch for the legacy browser.
