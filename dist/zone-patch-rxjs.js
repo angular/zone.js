@@ -176,7 +176,7 @@ Zone.__load_patch('rxjs', function (global, Zone, api) {
                 return subscriptionZone.run(complete, this, arguments, completeSource);
             }
             else {
-                return complete.apply(this, arguments);
+                return complete.call(this);
             }
         };
     };

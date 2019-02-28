@@ -20,13 +20,13 @@
  */
 Zone.__load_patch('rxjs.Scheduler.now', function (global, Zone, api) {
     api.patchMethod(rxjs.Scheduler, 'now', function (delegate) { return function (self, args) {
-        return Date.now.apply(self, args);
+        return Date.now.call(self);
     }; });
     api.patchMethod(rxjs.asyncScheduler, 'now', function (delegate) { return function (self, args) {
-        return Date.now.apply(self, args);
+        return Date.now.call(self);
     }; });
     api.patchMethod(rxjs.asapScheduler, 'now', function (delegate) { return function (self, args) {
-        return Date.now.apply(self, args);
+        return Date.now.call(self);
     }; });
 });
 

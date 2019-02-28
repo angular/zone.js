@@ -1170,7 +1170,7 @@ var ObjectDefineProperty = Object.defineProperty;
 /** Object.getPrototypeOf */
 var ObjectGetPrototypeOf = Object.getPrototypeOf;
 /** Object.create */
-
+var ObjectCreate = Object.create;
 /** Array.prototype.slice */
 var ArraySlice = Array.prototype.slice;
 /** addEventListener string const */
@@ -1207,7 +1207,29 @@ function bindArguments(args, source) {
     }
     return args;
 }
-
+function patchPrototype(prototype, fnNames) {
+    var source = prototype.constructor['name'];
+    var _loop_1 = function (i) {
+        var name_1 = fnNames[i];
+        var delegate = prototype[name_1];
+        if (delegate) {
+            var prototypeDesc = ObjectGetOwnPropertyDescriptor(prototype, name_1);
+            if (!isPropertyWritable(prototypeDesc)) {
+                return "continue";
+            }
+            prototype[name_1] = (function (delegate) {
+                var patched = function () {
+                    return delegate.apply(this, bindArguments(arguments, source + '.' + name_1));
+                };
+                attachOriginToPatched(patched, delegate);
+                return patched;
+            })(delegate);
+        }
+    };
+    for (var i = 0; i < fnNames.length; i++) {
+        _loop_1(i);
+    }
+}
 function isPropertyWritable(propertyDesc) {
     if (!propertyDesc) {
         return true;
@@ -1380,7 +1402,75 @@ function patchOnProperties(obj, properties, prototype) {
 }
 var originalInstanceKey = zoneSymbol('originalInstance');
 // wrap some native API on `window`
-
+function patchClass(className) {
+    var OriginalClass = _global[className];
+    if (!OriginalClass)
+        return;
+    // keep original class in global
+    _global[zoneSymbol(className)] = OriginalClass;
+    _global[className] = function () {
+        var a = bindArguments(arguments, className);
+        switch (a.length) {
+            case 0:
+                this[originalInstanceKey] = new OriginalClass();
+                break;
+            case 1:
+                this[originalInstanceKey] = new OriginalClass(a[0]);
+                break;
+            case 2:
+                this[originalInstanceKey] = new OriginalClass(a[0], a[1]);
+                break;
+            case 3:
+                this[originalInstanceKey] = new OriginalClass(a[0], a[1], a[2]);
+                break;
+            case 4:
+                this[originalInstanceKey] = new OriginalClass(a[0], a[1], a[2], a[3]);
+                break;
+            default:
+                throw new Error('Arg list too long.');
+        }
+    };
+    // attach original delegate to patched function
+    attachOriginToPatched(_global[className], OriginalClass);
+    var instance = new OriginalClass(function () { });
+    var prop;
+    for (prop in instance) {
+        // https://bugs.webkit.org/show_bug.cgi?id=44721
+        if (className === 'XMLHttpRequest' && prop === 'responseBlob')
+            continue;
+        (function (prop) {
+            if (typeof instance[prop] === 'function') {
+                _global[className].prototype[prop] = function () {
+                    return this[originalInstanceKey][prop].apply(this[originalInstanceKey], arguments);
+                };
+            }
+            else {
+                ObjectDefineProperty(_global[className].prototype, prop, {
+                    set: function (fn) {
+                        if (typeof fn === 'function') {
+                            this[originalInstanceKey][prop] = wrapWithCurrentZone(fn, className + '.' + prop);
+                            // keep callback in wrapped function so we can
+                            // use it in Function.prototype.toString to return
+                            // the native one.
+                            attachOriginToPatched(this[originalInstanceKey][prop], fn);
+                        }
+                        else {
+                            this[originalInstanceKey][prop] = fn;
+                        }
+                    },
+                    get: function () {
+                        return this[originalInstanceKey][prop];
+                    }
+                });
+            }
+        }(prop));
+    }
+    for (prop in OriginalClass) {
+        if (prop !== 'prototype' && OriginalClass.hasOwnProperty(prop)) {
+            _global[className][prop] = OriginalClass[prop];
+        }
+    }
+}
 function copySymbolProperties(src, dest) {
     if (typeof Object.getOwnPropertySymbols !== 'function') {
         return;
@@ -1405,9 +1495,7 @@ function copySymbolProperties(src, dest) {
     });
 }
 var shouldCopySymbolProperties = false;
-function setShouldCopySymbolProperties(flag) {
-    shouldCopySymbolProperties = flag;
-}
+
 function patchMethod(target, name, patchFn) {
     var proto = target;
     while (proto && !proto.hasOwnProperty(name)) {
@@ -1459,29 +1547,37 @@ function patchMacroTask(obj, funcName, metaCreator) {
         }
     }; });
 }
-function patchMicroTask(obj, funcName, metaCreator) {
-    var setNative = null;
-    function scheduleTask(task) {
-        var data = task.data;
-        data.args[data.cbIdx] = function () {
-            task.invoke.apply(this, arguments);
-        };
-        setNative.apply(data.target, data.args);
-        return task;
-    }
-    setNative = patchMethod(obj, funcName, function (delegate) { return function (self, args) {
-        var meta = metaCreator(self, args);
-        if (meta.cbIdx >= 0 && typeof args[meta.cbIdx] === 'function') {
-            return Zone.current.scheduleMicroTask(meta.name, args[meta.cbIdx], meta, scheduleTask);
-        }
-        else {
-            // cause an error by calling it directly.
-            return delegate.apply(self, args);
-        }
-    }; });
-}
+
 function attachOriginToPatched(patched, original) {
     patched[zoneSymbol('OriginalDelegate')] = original;
+}
+var isDetectedIEOrEdge = false;
+var ieOrEdge = false;
+function isIE() {
+    try {
+        var ua = internalWindow.navigator.userAgent;
+        if (ua.indexOf('MSIE ') !== -1 || ua.indexOf('Trident/') !== -1) {
+            return true;
+        }
+    }
+    catch (error) {
+    }
+    return false;
+}
+function isIEOrEdge() {
+    if (isDetectedIEOrEdge) {
+        return ieOrEdge;
+    }
+    isDetectedIEOrEdge = true;
+    try {
+        var ua = internalWindow.navigator.userAgent;
+        if (ua.indexOf('MSIE ') !== -1 || ua.indexOf('Trident/') !== -1 || ua.indexOf('Edge/') !== -1) {
+            ieOrEdge = true;
+        }
+    }
+    catch (error) {
+    }
+    return ieOrEdge;
 }
 
 /**
@@ -1536,21 +1632,6 @@ Zone.__load_patch('toString', function (global) {
         }
         return originalObjectToString.call(this);
     };
-});
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-Zone.__load_patch('node_util', function (global, Zone, api) {
-    api.patchOnProperties = patchOnProperties;
-    api.patchMethod = patchMethod;
-    api.bindArguments = bindArguments;
-    api.patchMacroTask = patchMacroTask;
-    setShouldCopySymbolProperties(true);
 });
 
 /**
@@ -2111,6 +2192,18 @@ function findEventTasks(target, eventName) {
     }
     return foundTasks;
 }
+function patchEventPrototype(global, api) {
+    var Event = global['Event'];
+    if (Event && Event.prototype) {
+        api.patchMethod(Event.prototype, 'stopImmediatePropagation', function (delegate) { return function (self, args) {
+            self[IMMEDIATE_PROPAGATION_SYMBOL] = true;
+            // we need to call the native stopImmediatePropagation
+            // in case in some hybrid application, some part of
+            // application will be controlled by zone, some are not
+            delegate && delegate.apply(self, args);
+        }; });
+    }
+}
 
 /**
  * @license
@@ -2119,93 +2212,506 @@ function findEventTasks(target, eventName) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-Zone.__load_patch('EventEmitter', function (global) {
-    // For EventEmitter
-    var EE_ADD_LISTENER = 'addListener';
-    var EE_PREPEND_LISTENER = 'prependListener';
-    var EE_REMOVE_LISTENER = 'removeListener';
-    var EE_REMOVE_ALL_LISTENER = 'removeAllListeners';
-    var EE_LISTENERS = 'listeners';
-    var EE_ON = 'on';
-    var compareTaskCallbackVsDelegate = function (task, delegate) {
-        // same callback, same capture, same event name, just return
-        return task.callback === delegate || task.callback.listener === delegate;
-    };
-    var eventNameToString = function (eventName) {
-        if (typeof eventName === 'string') {
-            return eventName;
-        }
-        if (!eventName) {
-            return '';
-        }
-        return eventName.toString().replace('(', '_').replace(')', '_');
-    };
-    function patchEventEmitterMethods(obj) {
-        var result = patchEventTarget(global, [obj], {
-            useG: false,
-            add: EE_ADD_LISTENER,
-            rm: EE_REMOVE_LISTENER,
-            prepend: EE_PREPEND_LISTENER,
-            rmAll: EE_REMOVE_ALL_LISTENER,
-            listeners: EE_LISTENERS,
-            chkDup: false,
-            rt: true,
-            diff: compareTaskCallbackVsDelegate,
-            eventNameToString: eventNameToString
-        });
-        if (result && result[0]) {
-            obj[EE_ON] = obj[EE_ADD_LISTENER];
-        }
+function patchCallbacks(api, target, targetName, method, callbacks) {
+    var symbol = Zone.__symbol__(method);
+    if (target[symbol]) {
+        return;
     }
-    // EventEmitter
-    var events;
-    try {
-        events = require('events');
-    }
-    catch (err) {
-    }
-    if (events && events.EventEmitter) {
-        patchEventEmitterMethods(events.EventEmitter.prototype);
-    }
-});
-
-/**
- * @license
- * Copyright Google Inc. All Rights Reserved.
- *
- * Use of this source code is governed by an MIT-style license that can be
- * found in the LICENSE file at https://angular.io/license
- */
-Zone.__load_patch('fs', function () {
-    var fs;
-    try {
-        fs = require('fs');
-    }
-    catch (err) {
-    }
-    // watch, watchFile, unwatchFile has been patched
-    // because EventEmitter has been patched
-    var TO_PATCH_MACROTASK_METHODS = [
-        'access', 'appendFile', 'chmod', 'chown', 'close', 'exists', 'fchmod',
-        'fchown', 'fdatasync', 'fstat', 'fsync', 'ftruncate', 'futimes', 'lchmod',
-        'lchown', 'link', 'lstat', 'mkdir', 'mkdtemp', 'open', 'read',
-        'readdir', 'readFile', 'readlink', 'realpath', 'rename', 'rmdir', 'stat',
-        'symlink', 'truncate', 'unlink', 'utimes', 'write', 'writeFile',
-    ];
-    if (fs) {
-        TO_PATCH_MACROTASK_METHODS.filter(function (name) { return !!fs[name] && typeof fs[name] === 'function'; })
-            .forEach(function (name) {
-            patchMacroTask(fs, name, function (self, args) {
-                return {
-                    name: 'fs.' + name,
-                    args: args,
-                    cbIdx: args.length > 0 ? args.length - 1 : -1,
-                    target: self
-                };
+    var nativeDelegate = target[symbol] = target[method];
+    target[method] = function (name, opts, options) {
+        if (opts && opts.prototype) {
+            callbacks.forEach(function (callback) {
+                var source = targetName + "." + method + "::" + callback;
+                var prototype = opts.prototype;
+                if (prototype.hasOwnProperty(callback)) {
+                    var descriptor = api.ObjectGetOwnPropertyDescriptor(prototype, callback);
+                    if (descriptor && descriptor.value) {
+                        descriptor.value = api.wrapWithCurrentZone(descriptor.value, source);
+                        api._redefineProperty(opts.prototype, callback, descriptor);
+                    }
+                    else if (prototype[callback]) {
+                        prototype[callback] = api.wrapWithCurrentZone(prototype[callback], source);
+                    }
+                }
+                else if (prototype[callback]) {
+                    prototype[callback] = api.wrapWithCurrentZone(prototype[callback], source);
+                }
             });
+        }
+        return nativeDelegate.call(target, name, opts, options);
+    };
+    api.attachOriginToPatched(target[method], nativeDelegate);
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/*
+ * This is necessary for Chrome and Chrome mobile, to enable
+ * things like redefining `createdCallback` on an element.
+ */
+var zoneSymbol$1 = Zone.__symbol__;
+var _defineProperty = Object[zoneSymbol$1('defineProperty')] = Object.defineProperty;
+var _getOwnPropertyDescriptor = Object[zoneSymbol$1('getOwnPropertyDescriptor')] =
+    Object.getOwnPropertyDescriptor;
+var _create = Object.create;
+var unconfigurablesKey = zoneSymbol$1('unconfigurables');
+function propertyPatch() {
+    Object.defineProperty = function (obj, prop, desc) {
+        if (isUnconfigurable(obj, prop)) {
+            throw new TypeError('Cannot assign to read only property \'' + prop + '\' of ' + obj);
+        }
+        var originalConfigurableFlag = desc.configurable;
+        if (prop !== 'prototype') {
+            desc = rewriteDescriptor(obj, prop, desc);
+        }
+        return _tryDefineProperty(obj, prop, desc, originalConfigurableFlag);
+    };
+    Object.defineProperties = function (obj, props) {
+        Object.keys(props).forEach(function (prop) {
+            Object.defineProperty(obj, prop, props[prop]);
         });
+        return obj;
+    };
+    Object.create = function (obj, proto) {
+        if (typeof proto === 'object' && !Object.isFrozen(proto)) {
+            Object.keys(proto).forEach(function (prop) {
+                proto[prop] = rewriteDescriptor(obj, prop, proto[prop]);
+            });
+        }
+        return _create(obj, proto);
+    };
+    Object.getOwnPropertyDescriptor = function (obj, prop) {
+        var desc = _getOwnPropertyDescriptor(obj, prop);
+        if (desc && isUnconfigurable(obj, prop)) {
+            desc.configurable = false;
+        }
+        return desc;
+    };
+}
+function _redefineProperty(obj, prop, desc) {
+    var originalConfigurableFlag = desc.configurable;
+    desc = rewriteDescriptor(obj, prop, desc);
+    return _tryDefineProperty(obj, prop, desc, originalConfigurableFlag);
+}
+function isUnconfigurable(obj, prop) {
+    return obj && obj[unconfigurablesKey] && obj[unconfigurablesKey][prop];
+}
+function rewriteDescriptor(obj, prop, desc) {
+    // issue-927, if the desc is frozen, don't try to change the desc
+    if (!Object.isFrozen(desc)) {
+        desc.configurable = true;
     }
+    if (!desc.configurable) {
+        // issue-927, if the obj is frozen, don't try to set the desc to obj
+        if (!obj[unconfigurablesKey] && !Object.isFrozen(obj)) {
+            _defineProperty(obj, unconfigurablesKey, { writable: true, value: {} });
+        }
+        if (obj[unconfigurablesKey]) {
+            obj[unconfigurablesKey][prop] = true;
+        }
+    }
+    return desc;
+}
+function _tryDefineProperty(obj, prop, desc, originalConfigurableFlag) {
+    try {
+        return _defineProperty(obj, prop, desc);
+    }
+    catch (error) {
+        if (desc.configurable) {
+            // In case of errors, when the configurable flag was likely set by rewriteDescriptor(), let's
+            // retry with the original flag value
+            if (typeof originalConfigurableFlag == 'undefined') {
+                delete desc.configurable;
+            }
+            else {
+                desc.configurable = originalConfigurableFlag;
+            }
+            try {
+                return _defineProperty(obj, prop, desc);
+            }
+            catch (error) {
+                var descJson = null;
+                try {
+                    descJson = JSON.stringify(desc);
+                }
+                catch (error) {
+                    descJson = desc.toString();
+                }
+                console.log("Attempting to configure '" + prop + "' with descriptor '" + descJson + "' on object '" + obj + "' and got error, giving up: " + error);
+            }
+        }
+        else {
+            throw error;
+        }
+    }
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @fileoverview
+ * @suppress {globalThis}
+ */
+var globalEventHandlersEventNames = [
+    'abort',
+    'animationcancel',
+    'animationend',
+    'animationiteration',
+    'auxclick',
+    'beforeinput',
+    'blur',
+    'cancel',
+    'canplay',
+    'canplaythrough',
+    'change',
+    'compositionstart',
+    'compositionupdate',
+    'compositionend',
+    'cuechange',
+    'click',
+    'close',
+    'contextmenu',
+    'curechange',
+    'dblclick',
+    'drag',
+    'dragend',
+    'dragenter',
+    'dragexit',
+    'dragleave',
+    'dragover',
+    'drop',
+    'durationchange',
+    'emptied',
+    'ended',
+    'error',
+    'focus',
+    'focusin',
+    'focusout',
+    'gotpointercapture',
+    'input',
+    'invalid',
+    'keydown',
+    'keypress',
+    'keyup',
+    'load',
+    'loadstart',
+    'loadeddata',
+    'loadedmetadata',
+    'lostpointercapture',
+    'mousedown',
+    'mouseenter',
+    'mouseleave',
+    'mousemove',
+    'mouseout',
+    'mouseover',
+    'mouseup',
+    'mousewheel',
+    'orientationchange',
+    'pause',
+    'play',
+    'playing',
+    'pointercancel',
+    'pointerdown',
+    'pointerenter',
+    'pointerleave',
+    'pointerlockchange',
+    'mozpointerlockchange',
+    'webkitpointerlockerchange',
+    'pointerlockerror',
+    'mozpointerlockerror',
+    'webkitpointerlockerror',
+    'pointermove',
+    'pointout',
+    'pointerover',
+    'pointerup',
+    'progress',
+    'ratechange',
+    'reset',
+    'resize',
+    'scroll',
+    'seeked',
+    'seeking',
+    'select',
+    'selectionchange',
+    'selectstart',
+    'show',
+    'sort',
+    'stalled',
+    'submit',
+    'suspend',
+    'timeupdate',
+    'volumechange',
+    'touchcancel',
+    'touchmove',
+    'touchstart',
+    'touchend',
+    'transitioncancel',
+    'transitionend',
+    'waiting',
+    'wheel'
+];
+var documentEventNames = [
+    'afterscriptexecute', 'beforescriptexecute', 'DOMContentLoaded', 'freeze', 'fullscreenchange',
+    'mozfullscreenchange', 'webkitfullscreenchange', 'msfullscreenchange', 'fullscreenerror',
+    'mozfullscreenerror', 'webkitfullscreenerror', 'msfullscreenerror', 'readystatechange',
+    'visibilitychange', 'resume'
+];
+var windowEventNames = [
+    'absolutedeviceorientation',
+    'afterinput',
+    'afterprint',
+    'appinstalled',
+    'beforeinstallprompt',
+    'beforeprint',
+    'beforeunload',
+    'devicelight',
+    'devicemotion',
+    'deviceorientation',
+    'deviceorientationabsolute',
+    'deviceproximity',
+    'hashchange',
+    'languagechange',
+    'message',
+    'mozbeforepaint',
+    'offline',
+    'online',
+    'paint',
+    'pageshow',
+    'pagehide',
+    'popstate',
+    'rejectionhandled',
+    'storage',
+    'unhandledrejection',
+    'unload',
+    'userproximity',
+    'vrdisplyconnected',
+    'vrdisplaydisconnected',
+    'vrdisplaypresentchange'
+];
+var htmlElementEventNames = [
+    'beforecopy', 'beforecut', 'beforepaste', 'copy', 'cut', 'paste', 'dragstart', 'loadend',
+    'animationstart', 'search', 'transitionrun', 'transitionstart', 'webkitanimationend',
+    'webkitanimationiteration', 'webkitanimationstart', 'webkittransitionend'
+];
+var mediaElementEventNames = ['encrypted', 'waitingforkey', 'msneedkey', 'mozinterruptbegin', 'mozinterruptend'];
+var ieElementEventNames = [
+    'activate',
+    'afterupdate',
+    'ariarequest',
+    'beforeactivate',
+    'beforedeactivate',
+    'beforeeditfocus',
+    'beforeupdate',
+    'cellchange',
+    'controlselect',
+    'dataavailable',
+    'datasetchanged',
+    'datasetcomplete',
+    'errorupdate',
+    'filterchange',
+    'layoutcomplete',
+    'losecapture',
+    'move',
+    'moveend',
+    'movestart',
+    'propertychange',
+    'resizeend',
+    'resizestart',
+    'rowenter',
+    'rowexit',
+    'rowsdelete',
+    'rowsinserted',
+    'command',
+    'compassneedscalibration',
+    'deactivate',
+    'help',
+    'mscontentzoom',
+    'msmanipulationstatechanged',
+    'msgesturechange',
+    'msgesturedoubletap',
+    'msgestureend',
+    'msgesturehold',
+    'msgesturestart',
+    'msgesturetap',
+    'msgotpointercapture',
+    'msinertiastart',
+    'mslostpointercapture',
+    'mspointercancel',
+    'mspointerdown',
+    'mspointerenter',
+    'mspointerhover',
+    'mspointerleave',
+    'mspointermove',
+    'mspointerout',
+    'mspointerover',
+    'mspointerup',
+    'pointerout',
+    'mssitemodejumplistitemremoved',
+    'msthumbnailclick',
+    'stop',
+    'storagecommit'
+];
+var webglEventNames = ['webglcontextrestored', 'webglcontextlost', 'webglcontextcreationerror'];
+var formEventNames = ['autocomplete', 'autocompleteerror'];
+var detailEventNames = ['toggle'];
+var frameEventNames = ['load'];
+var frameSetEventNames = ['blur', 'error', 'focus', 'load', 'resize', 'scroll', 'messageerror'];
+var marqueeEventNames = ['bounce', 'finish', 'start'];
+var XMLHttpRequestEventNames = [
+    'loadstart', 'progress', 'abort', 'error', 'load', 'progress', 'timeout', 'loadend',
+    'readystatechange'
+];
+var IDBIndexEventNames = ['upgradeneeded', 'complete', 'abort', 'success', 'error', 'blocked', 'versionchange', 'close'];
+var websocketEventNames = ['close', 'error', 'open', 'message'];
+var workerEventNames = ['error', 'message'];
+var eventNames = globalEventHandlersEventNames.concat(webglEventNames, formEventNames, detailEventNames, documentEventNames, windowEventNames, htmlElementEventNames, ieElementEventNames);
+function filterProperties(target, onProperties, ignoreProperties) {
+    if (!ignoreProperties || ignoreProperties.length === 0) {
+        return onProperties;
+    }
+    var tip = ignoreProperties.filter(function (ip) { return ip.target === target; });
+    if (!tip || tip.length === 0) {
+        return onProperties;
+    }
+    var targetIgnoreProperties = tip[0].ignoreProperties;
+    return onProperties.filter(function (op) { return targetIgnoreProperties.indexOf(op) === -1; });
+}
+function patchFilteredProperties(target, onProperties, ignoreProperties, prototype) {
+    // check whether target is available, sometimes target will be undefined
+    // because different browser or some 3rd party plugin.
+    if (!target) {
+        return;
+    }
+    var filteredProperties = filterProperties(target, onProperties, ignoreProperties);
+    patchOnProperties(target, filteredProperties, prototype);
+}
+function propertyDescriptorPatch(api, _global) {
+    if (isNode && !isMix) {
+        return;
+    }
+    if (Zone[api.symbol('patchEvents')]) {
+        // events are already been patched by legacy patch.
+        return;
+    }
+    var supportsWebSocket = typeof WebSocket !== 'undefined';
+    var ignoreProperties = _global['__Zone_ignore_on_properties'];
+    // for browsers that we can patch the descriptor:  Chrome & Firefox
+    if (isBrowser) {
+        var internalWindow = window;
+        var ignoreErrorProperties = isIE ? [{ target: internalWindow, ignoreProperties: ['error'] }] : [];
+        // in IE/Edge, onProp not exist in window object, but in WindowPrototype
+        // so we need to pass WindowPrototype to check onProp exist or not
+        patchFilteredProperties(internalWindow, eventNames.concat(['messageerror']), ignoreProperties ? ignoreProperties.concat(ignoreErrorProperties) : ignoreProperties, ObjectGetPrototypeOf(internalWindow));
+        patchFilteredProperties(Document.prototype, eventNames, ignoreProperties);
+        if (typeof internalWindow['SVGElement'] !== 'undefined') {
+            patchFilteredProperties(internalWindow['SVGElement'].prototype, eventNames, ignoreProperties);
+        }
+        patchFilteredProperties(Element.prototype, eventNames, ignoreProperties);
+        patchFilteredProperties(HTMLElement.prototype, eventNames, ignoreProperties);
+        patchFilteredProperties(HTMLMediaElement.prototype, mediaElementEventNames, ignoreProperties);
+        patchFilteredProperties(HTMLFrameSetElement.prototype, windowEventNames.concat(frameSetEventNames), ignoreProperties);
+        patchFilteredProperties(HTMLBodyElement.prototype, windowEventNames.concat(frameSetEventNames), ignoreProperties);
+        patchFilteredProperties(HTMLFrameElement.prototype, frameEventNames, ignoreProperties);
+        patchFilteredProperties(HTMLIFrameElement.prototype, frameEventNames, ignoreProperties);
+        var HTMLMarqueeElement_1 = internalWindow['HTMLMarqueeElement'];
+        if (HTMLMarqueeElement_1) {
+            patchFilteredProperties(HTMLMarqueeElement_1.prototype, marqueeEventNames, ignoreProperties);
+        }
+        var Worker_1 = internalWindow['Worker'];
+        if (Worker_1) {
+            patchFilteredProperties(Worker_1.prototype, workerEventNames, ignoreProperties);
+        }
+    }
+    patchFilteredProperties(XMLHttpRequest.prototype, XMLHttpRequestEventNames, ignoreProperties);
+    var XMLHttpRequestEventTarget = _global['XMLHttpRequestEventTarget'];
+    if (XMLHttpRequestEventTarget) {
+        patchFilteredProperties(XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype, XMLHttpRequestEventNames, ignoreProperties);
+    }
+    if (typeof IDBIndex !== 'undefined') {
+        patchFilteredProperties(IDBIndex.prototype, IDBIndexEventNames, ignoreProperties);
+        patchFilteredProperties(IDBRequest.prototype, IDBIndexEventNames, ignoreProperties);
+        patchFilteredProperties(IDBOpenDBRequest.prototype, IDBIndexEventNames, ignoreProperties);
+        patchFilteredProperties(IDBDatabase.prototype, IDBIndexEventNames, ignoreProperties);
+        patchFilteredProperties(IDBTransaction.prototype, IDBIndexEventNames, ignoreProperties);
+        patchFilteredProperties(IDBCursor.prototype, IDBIndexEventNames, ignoreProperties);
+    }
+    if (supportsWebSocket) {
+        patchFilteredProperties(WebSocket.prototype, websocketEventNames, ignoreProperties);
+    }
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+Zone.__load_patch('util', function (global, Zone, api) {
+    api.patchOnProperties = patchOnProperties;
+    api.patchMethod = patchMethod;
+    api.bindArguments = bindArguments;
+    api.patchMacroTask = patchMacroTask;
+    // In earlier version of zone.js (<0.9.0), we use env name `__zone_symbol__BLACK_LISTED_EVENTS` to
+    // define which events will not be patched by `Zone.js`.
+    // In newer version (>=0.9.0), we change the env name to `__zone_symbol__UNPATCHED_EVENTS` to keep
+    // the name consistent with angular repo.
+    // The  `__zone_symbol__BLACK_LISTED_EVENTS` is deprecated, but it is still be supported for
+    // backwards compatibility.
+    var SYMBOL_BLACK_LISTED_EVENTS = Zone.__symbol__('BLACK_LISTED_EVENTS');
+    var SYMBOL_UNPATCHED_EVENTS = Zone.__symbol__('UNPATCHED_EVENTS');
+    if (global[SYMBOL_UNPATCHED_EVENTS]) {
+        global[SYMBOL_BLACK_LISTED_EVENTS] = global[SYMBOL_UNPATCHED_EVENTS];
+    }
+    if (global[SYMBOL_BLACK_LISTED_EVENTS]) {
+        Zone[SYMBOL_BLACK_LISTED_EVENTS] = Zone[SYMBOL_UNPATCHED_EVENTS] =
+            global[SYMBOL_BLACK_LISTED_EVENTS];
+    }
+    api.patchEventPrototype = patchEventPrototype;
+    api.patchEventTarget = patchEventTarget;
+    api.isIEOrEdge = isIEOrEdge;
+    api.ObjectDefineProperty = ObjectDefineProperty;
+    api.ObjectGetOwnPropertyDescriptor = ObjectGetOwnPropertyDescriptor;
+    api.ObjectCreate = ObjectCreate;
+    api.ArraySlice = ArraySlice;
+    api.patchClass = patchClass;
+    api.wrapWithCurrentZone = wrapWithCurrentZone;
+    api.filterProperties = filterProperties;
+    api.attachOriginToPatched = attachOriginToPatched;
+    api._redefineProperty = _redefineProperty;
+    api.patchCallbacks = patchCallbacks;
+    api.getGlobalObjects = function () { return ({
+        globalSources: globalSources,
+        zoneSymbolEventNames: zoneSymbolEventNames$1,
+        eventNames: eventNames,
+        isBrowser: isBrowser,
+        isMix: isMix,
+        isNode: isNode,
+        TRUE_STR: TRUE_STR,
+        FALSE_STR: FALSE_STR,
+        ZONE_SYMBOL_PREFIX: ZONE_SYMBOL_PREFIX,
+        ADD_EVENT_LISTENER_STR: ADD_EVENT_LISTENER_STR,
+        REMOVE_EVENT_LISTENER_STR: REMOVE_EVENT_LISTENER_STR
+    }); };
 });
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 
 /**
  * @license
@@ -2341,137 +2847,280 @@ function patchTimer(window, setName, cancelName, nameSuffix) {
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-var set = 'set';
-var clear = 'clear';
-Zone.__load_patch('node_timers', function (global, Zone) {
-    // Timers
-    var globalUseTimeoutFromTimer = false;
-    try {
-        var timers = require('timers');
-        var globalEqualTimersTimeout = global.setTimeout === timers.setTimeout;
-        if (!globalEqualTimersTimeout && !isMix) {
-            // 1. if isMix, then we are in mix environment such as Electron
-            // we should only patch timers.setTimeout because global.setTimeout
-            // have been patched
-            // 2. if global.setTimeout not equal timers.setTimeout, check
-            // whether global.setTimeout use timers.setTimeout or not
-            var originSetTimeout_1 = timers.setTimeout;
-            timers.setTimeout = function () {
-                globalUseTimeoutFromTimer = true;
-                return originSetTimeout_1.apply(this, arguments);
-            };
-            var detectTimeout = global.setTimeout(function () { }, 100);
-            clearTimeout(detectTimeout);
-            timers.setTimeout = originSetTimeout_1;
-        }
-        patchTimer(timers, set, clear, 'Timeout');
-        patchTimer(timers, set, clear, 'Interval');
-        patchTimer(timers, set, clear, 'Immediate');
-    }
-    catch (error) {
-        // timers module not exists, for example, when we using nativeScript
-        // timers is not available
-    }
-    if (isMix) {
-        // if we are in mix environment, such as Electron,
-        // the global.setTimeout has already been patched,
-        // so we just patch timers.setTimeout
+function patchCustomElements(_global, api) {
+    var _a = api.getGlobalObjects(), isBrowser = _a.isBrowser, isMix = _a.isMix;
+    if ((!isBrowser && !isMix) || !('customElements' in _global)) {
         return;
     }
-    if (!globalUseTimeoutFromTimer) {
-        // 1. global setTimeout equals timers setTimeout
-        // 2. or global don't use timers setTimeout(maybe some other library patch setTimeout)
-        // 3. or load timers module error happens, we should patch global setTimeout
-        patchTimer(global, set, clear, 'Timeout');
-        patchTimer(global, set, clear, 'Interval');
-        patchTimer(global, set, clear, 'Immediate');
+    var callbacks = ['connectedCallback', 'disconnectedCallback', 'adoptedCallback', 'attributeChangedCallback'];
+    api.patchCallbacks(api, _global.customElements, 'customElements', 'define', callbacks);
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+function eventTargetPatch(_global, api) {
+    var _a = api.getGlobalObjects(), eventNames = _a.eventNames, zoneSymbolEventNames = _a.zoneSymbolEventNames, TRUE_STR = _a.TRUE_STR, FALSE_STR = _a.FALSE_STR, ZONE_SYMBOL_PREFIX = _a.ZONE_SYMBOL_PREFIX;
+    //  predefine all __zone_symbol__ + eventName + true/false string
+    for (var i = 0; i < eventNames.length; i++) {
+        var eventName = eventNames[i];
+        var falseEventName = eventName + FALSE_STR;
+        var trueEventName = eventName + TRUE_STR;
+        var symbol = ZONE_SYMBOL_PREFIX + falseEventName;
+        var symbolCapture = ZONE_SYMBOL_PREFIX + trueEventName;
+        zoneSymbolEventNames[eventName] = {};
+        zoneSymbolEventNames[eventName][FALSE_STR] = symbol;
+        zoneSymbolEventNames[eventName][TRUE_STR] = symbolCapture;
     }
-    else {
-        // global use timers setTimeout, but not equals
-        // this happens when use nodejs v0.10.x, global setTimeout will
-        // use a lazy load version of timers setTimeout
-        // we should not double patch timer's setTimeout
-        // so we only store the __symbol__ for consistency
-        global[Zone.__symbol__('setTimeout')] = global.setTimeout;
-        global[Zone.__symbol__('setInterval')] = global.setInterval;
-        global[Zone.__symbol__('setImmediate')] = global.setImmediate;
+    var EVENT_TARGET = _global['EventTarget'];
+    if (!EVENT_TARGET || !EVENT_TARGET.prototype) {
+        return;
+    }
+    api.patchEventTarget(_global, [EVENT_TARGET && EVENT_TARGET.prototype]);
+    return true;
+}
+function patchEvent(global, api) {
+    api.patchEventPrototype(global, api);
+}
+
+/**
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
+/**
+ * @fileoverview
+ * @suppress {missingRequire}
+ */
+Zone.__load_patch('legacy', function (global) {
+    var legacyPatch = global[Zone.__symbol__('legacyPatch')];
+    if (legacyPatch) {
+        legacyPatch();
     }
 });
-// patch process related methods
-Zone.__load_patch('nextTick', function () {
-    // patch nextTick as microTask
-    patchMicroTask(process, 'nextTick', function (self, args) {
-        return {
-            name: 'process.nextTick',
-            args: args,
-            cbIdx: (args.length > 0 && typeof args[0] === 'function') ? 0 : -1,
-            target: process
-        };
-    });
+Zone.__load_patch('timers', function (global) {
+    var set = 'set';
+    var clear = 'clear';
+    patchTimer(global, set, clear, 'Timeout');
+    patchTimer(global, set, clear, 'Interval');
+    patchTimer(global, set, clear, 'Immediate');
 });
-Zone.__load_patch('handleUnhandledPromiseRejection', function (global, Zone, api) {
-    Zone[api.symbol('unhandledPromiseRejectionHandler')] =
-        findProcessPromiseRejectionHandler('unhandledRejection');
-    Zone[api.symbol('rejectionHandledHandler')] =
-        findProcessPromiseRejectionHandler('rejectionHandled');
-    // handle unhandled promise rejection
-    function findProcessPromiseRejectionHandler(evtName) {
-        return function (e) {
-            var eventTasks = findEventTasks(process, evtName);
-            eventTasks.forEach(function (eventTask) {
-                // process has added unhandledrejection event listener
-                // trigger the event listener
-                if (evtName === 'unhandledRejection') {
-                    eventTask.invoke(e.rejection, e.promise);
-                }
-                else if (evtName === 'rejectionHandled') {
-                    eventTask.invoke(e.promise);
-                }
-            });
-        };
-    }
+Zone.__load_patch('requestAnimationFrame', function (global) {
+    patchTimer(global, 'request', 'cancel', 'AnimationFrame');
+    patchTimer(global, 'mozRequest', 'mozCancel', 'AnimationFrame');
+    patchTimer(global, 'webkitRequest', 'webkitCancel', 'AnimationFrame');
 });
-// Crypto
-Zone.__load_patch('crypto', function () {
-    var crypto;
-    try {
-        crypto = require('crypto');
-    }
-    catch (err) {
-    }
-    // use the generic patchMacroTask to patch crypto
-    if (crypto) {
-        var methodNames = ['randomBytes', 'pbkdf2'];
-        methodNames.forEach(function (name) {
-            patchMacroTask(crypto, name, function (self, args) {
-                return {
-                    name: 'crypto.' + name,
-                    args: args,
-                    cbIdx: (args.length > 0 && typeof args[args.length - 1] === 'function') ?
-                        args.length - 1 :
-                        -1,
-                    target: crypto
-                };
-            });
+Zone.__load_patch('blocking', function (global, Zone) {
+    var blockingMethods = ['alert', 'prompt', 'confirm'];
+    for (var i = 0; i < blockingMethods.length; i++) {
+        var name_1 = blockingMethods[i];
+        patchMethod(global, name_1, function (delegate, symbol, name) {
+            return function (s, args) {
+                return Zone.current.run(delegate, global, args, name);
+            };
         });
     }
 });
-Zone.__load_patch('console', function (global, Zone) {
-    var consoleMethods = ['dir', 'log', 'info', 'error', 'warn', 'assert', 'debug', 'timeEnd', 'trace'];
-    consoleMethods.forEach(function (m) {
-        var originalMethod = console[Zone.__symbol__(m)] = console[m];
-        if (originalMethod) {
-            console[m] = function () {
-                var args = ArraySlice.call(arguments);
-                if (Zone.current === Zone.root) {
-                    return originalMethod.apply(this, args);
-                }
-                else {
-                    return Zone.root.run(originalMethod, this, args);
+Zone.__load_patch('EventTarget', function (global, Zone, api) {
+    patchEvent(global, api);
+    eventTargetPatch(global, api);
+    // patch XMLHttpRequestEventTarget's addEventListener/removeEventListener
+    var XMLHttpRequestEventTarget = global['XMLHttpRequestEventTarget'];
+    if (XMLHttpRequestEventTarget && XMLHttpRequestEventTarget.prototype) {
+        api.patchEventTarget(global, [XMLHttpRequestEventTarget.prototype]);
+    }
+    patchClass('MutationObserver');
+    patchClass('WebKitMutationObserver');
+    patchClass('IntersectionObserver');
+    patchClass('FileReader');
+});
+Zone.__load_patch('on_property', function (global, Zone, api) {
+    propertyDescriptorPatch(api, global);
+    propertyPatch();
+});
+Zone.__load_patch('customElements', function (global, Zone, api) {
+    patchCustomElements(global, api);
+});
+Zone.__load_patch('XHR', function (global, Zone) {
+    // Treat XMLHttpRequest as a macrotask.
+    patchXHR(global);
+    var XHR_TASK = zoneSymbol('xhrTask');
+    var XHR_SYNC = zoneSymbol('xhrSync');
+    var XHR_LISTENER = zoneSymbol('xhrListener');
+    var XHR_SCHEDULED = zoneSymbol('xhrScheduled');
+    var XHR_URL = zoneSymbol('xhrURL');
+    var XHR_ERROR_BEFORE_SCHEDULED = zoneSymbol('xhrErrorBeforeScheduled');
+    function patchXHR(window) {
+        var XMLHttpRequestPrototype = XMLHttpRequest.prototype;
+        function findPendingTask(target) {
+            return target[XHR_TASK];
+        }
+        var oriAddListener = XMLHttpRequestPrototype[ZONE_SYMBOL_ADD_EVENT_LISTENER];
+        var oriRemoveListener = XMLHttpRequestPrototype[ZONE_SYMBOL_REMOVE_EVENT_LISTENER];
+        if (!oriAddListener) {
+            var XMLHttpRequestEventTarget_1 = window['XMLHttpRequestEventTarget'];
+            if (XMLHttpRequestEventTarget_1) {
+                var XMLHttpRequestEventTargetPrototype = XMLHttpRequestEventTarget_1.prototype;
+                oriAddListener = XMLHttpRequestEventTargetPrototype[ZONE_SYMBOL_ADD_EVENT_LISTENER];
+                oriRemoveListener = XMLHttpRequestEventTargetPrototype[ZONE_SYMBOL_REMOVE_EVENT_LISTENER];
+            }
+        }
+        var READY_STATE_CHANGE = 'readystatechange';
+        var SCHEDULED = 'scheduled';
+        function scheduleTask(task) {
+            var data = task.data;
+            var target = data.target;
+            target[XHR_SCHEDULED] = false;
+            target[XHR_ERROR_BEFORE_SCHEDULED] = false;
+            // remove existing event listener
+            var listener = target[XHR_LISTENER];
+            if (!oriAddListener) {
+                oriAddListener = target[ZONE_SYMBOL_ADD_EVENT_LISTENER];
+                oriRemoveListener = target[ZONE_SYMBOL_REMOVE_EVENT_LISTENER];
+            }
+            if (listener) {
+                oriRemoveListener.call(target, READY_STATE_CHANGE, listener);
+            }
+            var newListener = target[XHR_LISTENER] = function () {
+                if (target.readyState === target.DONE) {
+                    // sometimes on some browsers XMLHttpRequest will fire onreadystatechange with
+                    // readyState=4 multiple times, so we need to check task state here
+                    if (!data.aborted && target[XHR_SCHEDULED] && task.state === SCHEDULED) {
+                        // check whether the xhr has registered onload listener
+                        // if that is the case, the task should invoke after all
+                        // onload listeners finish.
+                        var loadTasks = target['__zone_symbol__loadfalse'];
+                        if (loadTasks && loadTasks.length > 0) {
+                            var oriInvoke_1 = task.invoke;
+                            task.invoke = function () {
+                                // need to load the tasks again, because in other
+                                // load listener, they may remove themselves
+                                var loadTasks = target['__zone_symbol__loadfalse'];
+                                for (var i = 0; i < loadTasks.length; i++) {
+                                    if (loadTasks[i] === task) {
+                                        loadTasks.splice(i, 1);
+                                    }
+                                }
+                                if (!data.aborted && task.state === SCHEDULED) {
+                                    oriInvoke_1.call(task);
+                                }
+                            };
+                            loadTasks.push(task);
+                        }
+                        else {
+                            task.invoke();
+                        }
+                    }
+                    else if (!data.aborted && target[XHR_SCHEDULED] === false) {
+                        // error occurs when xhr.send()
+                        target[XHR_ERROR_BEFORE_SCHEDULED] = true;
+                    }
                 }
             };
+            oriAddListener.call(target, READY_STATE_CHANGE, newListener);
+            var storedTask = target[XHR_TASK];
+            if (!storedTask) {
+                target[XHR_TASK] = task;
+            }
+            sendNative.apply(target, data.args);
+            target[XHR_SCHEDULED] = true;
+            return task;
         }
-    });
+        function placeholderCallback() { }
+        function clearTask(task) {
+            var data = task.data;
+            // Note - ideally, we would call data.target.removeEventListener here, but it's too late
+            // to prevent it from firing. So instead, we store info for the event listener.
+            data.aborted = true;
+            return abortNative.apply(data.target, data.args);
+        }
+        var openNative = patchMethod(XMLHttpRequestPrototype, 'open', function () { return function (self, args) {
+            self[XHR_SYNC] = args[2] == false;
+            self[XHR_URL] = args[1];
+            return openNative.apply(self, args);
+        }; });
+        var XMLHTTPREQUEST_SOURCE = 'XMLHttpRequest.send';
+        var fetchTaskAborting = zoneSymbol('fetchTaskAborting');
+        var fetchTaskScheduling = zoneSymbol('fetchTaskScheduling');
+        var sendNative = patchMethod(XMLHttpRequestPrototype, 'send', function () { return function (self, args) {
+            if (Zone.current[fetchTaskScheduling] === true) {
+                // a fetch is scheduling, so we are using xhr to polyfill fetch
+                // and because we already schedule macroTask for fetch, we should
+                // not schedule a macroTask for xhr again
+                return sendNative.apply(self, args);
+            }
+            if (self[XHR_SYNC]) {
+                // if the XHR is sync there is no task to schedule, just execute the code.
+                return sendNative.apply(self, args);
+            }
+            else {
+                var options = { target: self, url: self[XHR_URL], isPeriodic: false, args: args, aborted: false };
+                var task = scheduleMacroTaskWithCurrentZone(XMLHTTPREQUEST_SOURCE, placeholderCallback, options, scheduleTask, clearTask);
+                if (self && self[XHR_ERROR_BEFORE_SCHEDULED] === true && !options.aborted &&
+                    task.state === SCHEDULED) {
+                    // xhr request throw error when send
+                    // we should invoke task instead of leaving a scheduled
+                    // pending macroTask
+                    task.invoke();
+                }
+            }
+        }; });
+        var abortNative = patchMethod(XMLHttpRequestPrototype, 'abort', function () { return function (self, args) {
+            var task = findPendingTask(self);
+            if (task && typeof task.type == 'string') {
+                // If the XHR has already completed, do nothing.
+                // If the XHR has already been aborted, do nothing.
+                // Fix #569, call abort multiple times before done will cause
+                // macroTask task count be negative number
+                if (task.cancelFn == null || (task.data && task.data.aborted)) {
+                    return;
+                }
+                task.zone.cancelTask(task);
+            }
+            else if (Zone.current[fetchTaskAborting] === true) {
+                // the abort is called from fetch polyfill, we need to call native abort of XHR.
+                return abortNative.apply(self, args);
+            }
+            // Otherwise, we are trying to abort an XHR which has not yet been sent, so there is no
+            // task
+            // to cancel. Do nothing.
+        }; });
+    }
+});
+Zone.__load_patch('geolocation', function (global) {
+    /// GEO_LOCATION
+    if (global['navigator'] && global['navigator'].geolocation) {
+        patchPrototype(global['navigator'].geolocation, ['getCurrentPosition', 'watchPosition']);
+    }
+});
+Zone.__load_patch('PromiseRejectionEvent', function (global, Zone) {
+    // handle unhandled promise rejection
+    function findPromiseRejectionHandler(evtName) {
+        return function (e) {
+            var eventTasks = findEventTasks(global, evtName);
+            eventTasks.forEach(function (eventTask) {
+                // windows has added unhandledrejection event listener
+                // trigger the event listener
+                var PromiseRejectionEvent = global['PromiseRejectionEvent'];
+                if (PromiseRejectionEvent) {
+                    var evt = new PromiseRejectionEvent(evtName, { promise: e.promise, reason: e.rejection });
+                    eventTask.invoke(evt);
+                }
+            });
+        };
+    }
+    if (global['PromiseRejectionEvent']) {
+        Zone[zoneSymbol('unhandledPromiseRejectionHandler')] =
+            findPromiseRejectionHandler('unhandledrejection');
+        Zone[zoneSymbol('rejectionHandledHandler')] =
+            findPromiseRejectionHandler('rejectionhandled');
+    }
 });
 
 /**
