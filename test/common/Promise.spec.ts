@@ -103,7 +103,7 @@ describe(
 
       xit('should ensure that Promise this is instanceof Promise', () => {
         expect(() => {
-          Promise.call({}, null);
+          Promise.call({}, () => null);
         }).toThrowError('Must be an instanceof Promise.');
       });
 
@@ -488,18 +488,22 @@ describe(
       });
 
       describe('Promise subclasses', function() {
-        class MyPromise {
+        class MyPromise<T> {
           private _promise: Promise<any>;
           constructor(init: any) {
             this._promise = new Promise(init);
           }
 
-          catch() {
-            return this._promise.catch.apply(this._promise, arguments);
+          catch<TResult = never>(onrejected?: ((reason: any) => TResult | PromiseLike<TResult>)|
+                                 undefined|null): Promise<T|TResult> {
+            return this._promise.catch.call(this._promise, onrejected);
           };
 
-          then() {
-            return this._promise.then.apply(this._promise, arguments);
+          then<TResult1 = T, TResult2 = never>(
+              onfulfilled?: ((value: T) => TResult1 | PromiseLike<TResult1>)|undefined|null,
+              onrejected?: ((reason: any) => TResult2 | PromiseLike<TResult2>)|undefined|
+              null): Promise<any> {
+            return this._promise.then.call(this._promise, onfulfilled, onrejected);
           };
         }
 

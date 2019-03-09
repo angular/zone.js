@@ -57,7 +57,7 @@ const internalWindow: any = isWindowExists ? window : undefined;
 const _global: any = isWindowExists && internalWindow || typeof self === 'object' && self || global;
 
 const REMOVE_ATTRIBUTE = 'removeAttribute';
-const NULL_ON_PROP_VALUE: any[] = [null];
+const NULL_ON_PROP_VALUE: [any] = [null];
 
 export function bindArguments(args: any[], source: string): any[] {
   for (let i = args.length - 1; i >= 0; i--) {

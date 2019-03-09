@@ -7,6 +7,9 @@
  */
 
 Zone.__load_patch('fetch', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
+  interface FetchTaskData extends TaskData {
+    fetchArgs?: any[];
+  }
   let fetch = global['fetch'];
   if (typeof fetch !== 'function') {
     return;
@@ -46,7 +49,7 @@ Zone.__load_patch('fetch', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
     const signal = options && options.signal;
     return new Promise((res, rej) => {
       const task = Zone.current.scheduleMacroTask(
-          'fetch', placeholder, args,
+          'fetch', placeholder, {fetchArgs: args} as FetchTaskData,
           () => {
             let fetchPromise;
             let zone = Zone.current;

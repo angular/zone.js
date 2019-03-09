@@ -386,7 +386,7 @@ describe('XMLHttpRequest', function() {
          };
          expect(req.onreadystatechange).toBe(listener);
          req.onreadystatechange = function() {
-           return listener.apply(this, arguments);
+           return listener.call(this);
          };
          req.send();
        });

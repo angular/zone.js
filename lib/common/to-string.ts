@@ -21,7 +21,7 @@ Zone.__load_patch('toString', (global: any) => {
       const originalDelegate = this[ORIGINAL_DELEGATE_SYMBOL];
       if (originalDelegate) {
         if (typeof originalDelegate === 'function') {
-          return originalFunctionToString.apply(this[ORIGINAL_DELEGATE_SYMBOL], arguments);
+          return originalFunctionToString.call(originalDelegate);
         } else {
           return Object.prototype.toString.call(originalDelegate);
         }
@@ -29,17 +29,17 @@ Zone.__load_patch('toString', (global: any) => {
       if (this === Promise) {
         const nativePromise = global[PROMISE_SYMBOL];
         if (nativePromise) {
-          return originalFunctionToString.apply(nativePromise, arguments);
+          return originalFunctionToString.call(nativePromise);
         }
       }
       if (this === Error) {
         const nativeError = global[ERROR_SYMBOL];
         if (nativeError) {
-          return originalFunctionToString.apply(nativeError, arguments);
+          return originalFunctionToString.call(nativeError);
         }
       }
     }
-    return originalFunctionToString.apply(this, arguments);
+    return originalFunctionToString.call(this);
   };
   (newFunctionToString as any)[ORIGINAL_DELEGATE_SYMBOL] = originalFunctionToString;
   Function.prototype.toString = newFunctionToString;
@@ -52,6 +52,6 @@ Zone.__load_patch('toString', (global: any) => {
     if (this instanceof Promise) {
       return PROMISE_OBJECT_TO_STRING;
     }
-    return originalObjectToString.apply(this, arguments);
+    return originalObjectToString.call(this);
   };
 });
