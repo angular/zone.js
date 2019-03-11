@@ -40,7 +40,7 @@ module.exports = function(config) {
 
     logLevel: config.LOG_INFO,
 
-    browsers: ['ChromeHeadless'],
+    browsers: ['Chrome','ChromeHeadless'],
 
     captureTimeout: 60000,
     retryLimit: 4,
