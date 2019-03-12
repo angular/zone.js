@@ -164,7 +164,11 @@
       this.on('fail', (test: any, err: any) => {
         const proxyZoneSpec = testZone && testZone.get('ProxyZoneSpec');
         if (proxyZoneSpec && err) {
-          err.message += proxyZoneSpec.getAndClearPendingTasksInfo();
+          try {
+            // try catch here in case err.message is not writable
+            err.message += proxyZoneSpec.getAndClearPendingTasksInfo();
+          } catch (error) {
+          }
         }
       });
 
