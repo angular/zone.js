@@ -6,8 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {isBrowser, zoneSymbol} from '../../lib/common/utils';
-import {ifEnvSupports, isSupportSetErrorStack} from '../test-util';
+import {isBrowser, isIE, zoneSymbol} from '../../lib/common/utils';
+import {ifEnvSupports, isSafari, isSupportSetErrorStack} from '../test-util';
 
 const defineProperty = (Object as any)[zoneSymbol('defineProperty')] || Object.defineProperty;
 
@@ -79,6 +79,40 @@ describe(
              button.dispatchEvent(clickEvent);
 
              document.body.removeChild(button);
+           });
+         }));
+
+      it('should not overwrite long stack traces data for different optimized eventTasks',
+         ifEnvSupports(() => isBrowser, function() {
+           lstz.run(function() {
+             const button = document.createElement('button');
+             const clickEvent = document.createEvent('Event');
+             clickEvent.initEvent('click', true, true);
+             document.body.appendChild(button);
+
+             const div = document.createElement('div');
+             const enterEvent = document.createEvent('Event');
+             enterEvent.initEvent('mouseenter', true, true);
+             document.body.appendChild(div);
+
+             button.addEventListener('click', function() {
+               throw new Error('clickError');
+             });
+
+             div.addEventListener('mouseenter', function() {
+               throw new Error('enterError');
+             });
+
+             button.dispatchEvent(clickEvent);
+             div.dispatchEvent(enterEvent);
+
+             expect(log.length).toBe(2);
+             if (!isSafari() && !isIE()) {
+               expect(log[0].stack === log[1].stack).toBe(false);
+             }
+
+             document.body.removeChild(button);
+             document.body.removeChild(div);
            });
          }));
 

@@ -109,6 +109,12 @@ function renderLongStackTrace(frames: LongStackTrace[], stack?: string): string 
         trace.length = this.longStackTraceLimit;
       }
       if (!task.data) task.data = {};
+      if (task.type === 'eventTask') {
+        // Fix issue https://github.com/angular/zone.js/issues/1195,
+        // For event task of browser, by default, all task will share a
+        // singleton instance of data object, we should create a new one here
+        task.data = {...task.data};
+      }
       (task.data as any)[creationTrace] = trace;
     }
     return parentZoneDelegate.scheduleTask(targetZone, task);
