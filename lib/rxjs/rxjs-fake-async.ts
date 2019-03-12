@@ -10,12 +10,12 @@ import {asapScheduler, asyncScheduler, Scheduler} from 'rxjs';
 
 Zone.__load_patch('rxjs.Scheduler.now', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   api.patchMethod(Scheduler, 'now', (delegate: Function) => (self: any, args: any[]) => {
-    return Date.now.apply(self, args);
+    return Date.now.call(self);
   });
   api.patchMethod(asyncScheduler, 'now', (delegate: Function) => (self: any, args: any[]) => {
-    return Date.now.apply(self, args);
+    return Date.now.call(self);
   });
   api.patchMethod(asapScheduler, 'now', (delegate: Function) => (self: any, args: any[]) => {
-    return Date.now.apply(self, args);
+    return Date.now.call(self);
   });
 });

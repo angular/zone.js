@@ -188,13 +188,13 @@
   }
   interface QueueRunnerAttrs {
     queueableFns: {fn: Function}[];
-    onComplete: () => void;
     clearStack: (fn: any) => void;
-    onException: (error: any) => void;
     catchException: () => boolean;
+    fail: () => void;
+    onComplete: () => void;
+    onException: (error: any) => void;
     userContext: any;
     timeout: {setTimeout: Function; clearTimeout: Function};
-    fail: () => void;
   }
 
   const QueueRunner = (jasmine as any).QueueRunner as {
@@ -202,12 +202,7 @@
   };
   (jasmine as any).QueueRunner = (function(_super) {
     __extends(ZoneQueueRunner, _super);
-    function ZoneQueueRunner(attrs: {
-      onComplete: Function;
-      userContext?: any;
-      timeout?: {setTimeout: Function; clearTimeout: Function};
-      onException?: (error: any) => void;
-    }) {
+    function ZoneQueueRunner(attrs: QueueRunnerAttrs) {
       attrs.onComplete = (fn => () => {
         // All functions are done, clear the test zone.
         this.testProxyZone = null;

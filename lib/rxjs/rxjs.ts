@@ -151,7 +151,7 @@ import {Observable, Subscriber, Subscription} from 'rxjs';
       if (subscriptionZone && subscriptionZone !== currentZone) {
         return subscriptionZone.run(next, this, arguments, nextSource);
       } else {
-        return next.apply(this, arguments);
+        return next.apply(this, arguments as any);
       }
     };
 
@@ -164,7 +164,7 @@ import {Observable, Subscriber, Subscription} from 'rxjs';
       if (subscriptionZone && subscriptionZone !== currentZone) {
         return subscriptionZone.run(error, this, arguments, errorSource);
       } else {
-        return error.apply(this, arguments);
+        return error.apply(this, arguments as any);
       }
     };
 
@@ -177,7 +177,7 @@ import {Observable, Subscriber, Subscription} from 'rxjs';
       if (subscriptionZone && subscriptionZone !== currentZone) {
         return subscriptionZone.run(complete, this, arguments, completeSource);
       } else {
-        return complete.apply(this, arguments);
+        return complete.call(this);
       }
     };
   };
