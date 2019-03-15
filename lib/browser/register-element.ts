@@ -6,10 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {isBrowser, isMix} from '../common/utils';
-import {patchCallbacks} from './custom-elements';
-
-export function registerElementPatch(_global: any) {
+export function registerElementPatch(_global: any, api: _ZonePrivate) {
+  const {isBrowser, isMix} = api.getGlobalObjects()!;
   if ((!isBrowser && !isMix) || !('registerElement' in (<any>_global).document)) {
     return;
   }
@@ -17,5 +15,5 @@ export function registerElementPatch(_global: any) {
   const callbacks =
       ['createdCallback', 'attachedCallback', 'detachedCallback', 'attributeChangedCallback'];
 
-  patchCallbacks(document, 'Document', 'registerElement', callbacks);
+  api.patchCallbacks(api, document, 'Document', 'registerElement', callbacks);
 }

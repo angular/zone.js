@@ -321,7 +321,7 @@ interface _ZonePrivate {
   microtaskDrainDone: () => void;
   showUncaughtError: () => boolean;
   patchEventTarget: (global: any, apis: any[], options?: any) => boolean[];
-  patchOnProperties: (obj: any, properties: string[]|null) => void;
+  patchOnProperties: (obj: any, properties: string[]|null, prototype?: any) => void;
   patchThen: (ctro: Function) => void;
   setNativePromise: (nativePromise: any) => void;
   patchMethod:
@@ -331,6 +331,27 @@ interface _ZonePrivate {
   bindArguments: (args: any[], source: string) => any[];
   patchMacroTask:
       (obj: any, funcName: string, metaCreator: (self: any, args: any[]) => any) => void;
+  patchEventPrototype: (_global: any, api: _ZonePrivate) => void;
+  isIEOrEdge: () => boolean;
+  ObjectDefineProperty:
+      (o: any, p: PropertyKey, attributes: PropertyDescriptor&ThisType<any>) => any;
+  ObjectGetOwnPropertyDescriptor: (o: any, p: PropertyKey) => PropertyDescriptor | undefined;
+  ObjectCreate(o: object|null, properties?: PropertyDescriptorMap&ThisType<any>): any;
+  ArraySlice(start?: number, end?: number): any[];
+  patchClass: (className: string) => void;
+  wrapWithCurrentZone: (callback: any, source: string) => any;
+  filterProperties: (target: any, onProperties: string[], ignoreProperties: any[]) => string[];
+  attachOriginToPatched: (target: any, origin: any) => void;
+  _redefineProperty: (target: any, callback: string, desc: any) => void;
+  patchCallbacks:
+      (api: _ZonePrivate, target: any, targetName: string, method: string,
+       callbacks: string[]) => void;
+  getGlobalObjects: () => {
+    globalSources: any, zoneSymbolEventNames: any, eventNames: string[], isBrowser: boolean,
+        isMix: boolean, isNode: boolean, TRUE_STR: string, FALSE_STR: string,
+        ZONE_SYMBOL_PREFIX: string, ADD_EVENT_LISTENER_STR: string,
+        REMOVE_EVENT_LISTENER_STR: string
+  } | undefined;
 }
 
 /** @internal */
@@ -1356,6 +1377,19 @@ const Zone: ZoneType = (function(global: any) {
         nativeMicroTaskQueuePromise = NativePromise.resolve(0);
       }
     },
+    patchEventPrototype: () => noop,
+    isIEOrEdge: () => false,
+    getGlobalObjects: () => undefined,
+    ObjectDefineProperty: () => noop,
+    ObjectGetOwnPropertyDescriptor: () => undefined,
+    ObjectCreate: () => undefined,
+    ArraySlice: () => [],
+    patchClass: () => noop,
+    wrapWithCurrentZone: () => noop,
+    filterProperties: () => [],
+    attachOriginToPatched: () => noop,
+    _redefineProperty: () => noop,
+    patchCallbacks: () => noop
   };
   let _currentZoneFrame: _ZoneFrame = {parent: null, zone: new Zone(null, null)};
   let _currentTask: Task|null = null;

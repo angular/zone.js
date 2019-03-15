@@ -12,7 +12,6 @@
  */
 
 // issue #989, to reduce bundle size, use short name
-
 /** Object.getOwnPropertyDescriptor */
 export const ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 /** Object.defineProperty */
@@ -513,7 +512,7 @@ export function isIEOrEdge() {
     if (ua.indexOf('MSIE ') !== -1 || ua.indexOf('Trident/') !== -1 || ua.indexOf('Edge/') !== -1) {
       ieOrEdge = true;
     }
-    return ieOrEdge;
   } catch (error) {
   }
+  return ieOrEdge;
 }

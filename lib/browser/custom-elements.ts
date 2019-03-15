@@ -6,43 +6,8 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {attachOriginToPatched, isBrowser, isMix, ObjectGetOwnPropertyDescriptor, wrapWithCurrentZone} from '../common/utils';
-
-import {_redefineProperty} from './define-property';
-
-export function patchCallbacks(
-    target: any, targetName: string, method: string, callbacks: string[]) {
-  const symbol = Zone.__symbol__(method);
-  if (target[symbol]) {
-    return;
-  }
-  const nativeDelegate = target[symbol] = target[method];
-  target[method] = function(name: any, opts: any, options?: any) {
-    if (opts && opts.prototype) {
-      callbacks.forEach(function(callback) {
-        const source = `${targetName}.${method}::` + callback;
-        const prototype = opts.prototype;
-        if (prototype.hasOwnProperty(callback)) {
-          const descriptor = ObjectGetOwnPropertyDescriptor(prototype, callback);
-          if (descriptor && descriptor.value) {
-            descriptor.value = wrapWithCurrentZone(descriptor.value, source);
-            _redefineProperty(opts.prototype, callback, descriptor);
-          } else if (prototype[callback]) {
-            prototype[callback] = wrapWithCurrentZone(prototype[callback], source);
-          }
-        } else if (prototype[callback]) {
-          prototype[callback] = wrapWithCurrentZone(prototype[callback], source);
-        }
-      });
-    }
-
-    return nativeDelegate.call(target, name, opts, options);
-  };
-
-  attachOriginToPatched(target[method], nativeDelegate);
-}
-
-export function patchCustomElements(_global: any) {
+export function patchCustomElements(_global: any, api: _ZonePrivate) {
+  const {isBrowser, isMix} = api.getGlobalObjects()!;
   if ((!isBrowser && !isMix) || !('customElements' in _global)) {
     return;
   }
@@ -50,5 +15,5 @@ export function patchCustomElements(_global: any) {
   const callbacks =
       ['connectedCallback', 'disconnectedCallback', 'adoptedCallback', 'attributeChangedCallback'];
 
-  patchCallbacks(_global.customElements, 'customElements', 'define', callbacks);
+  api.patchCallbacks(api, _global.customElements, 'customElements', 'define', callbacks);
 }

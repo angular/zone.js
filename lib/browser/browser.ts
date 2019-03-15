@@ -18,7 +18,13 @@ import {patchCustomElements} from './custom-elements';
 import {propertyPatch} from './define-property';
 import {eventTargetPatch, patchEvent} from './event-target';
 import {propertyDescriptorPatch} from './property-descriptor';
-import {registerElementPatch} from './register-element';
+
+Zone.__load_patch('legacy', (global: any) => {
+  const legacyPatch = global[Zone.__symbol__('legacyPatch')];
+  if (legacyPatch) {
+    legacyPatch();
+  }
+});
 
 Zone.__load_patch('timers', (global: any) => {
   const set = 'set';
@@ -66,7 +72,7 @@ Zone.__load_patch('on_property', (global: any, Zone: ZoneType, api: _ZonePrivate
 });
 
 Zone.__load_patch('customElements', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
-  patchCustomElements(global);
+  patchCustomElements(global, api);
 });
 
 Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {

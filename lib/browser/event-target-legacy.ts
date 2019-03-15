@@ -6,12 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {globalSources, patchEventPrototype, patchEventTarget, zoneSymbolEventNames} from '../common/events';
-import {FALSE_STR, isIEOrEdge, TRUE_STR, ZONE_SYMBOL_PREFIX} from '../common/utils';
-
-import {eventNames} from './property-descriptor';
-
 export function eventTargetLegacyPatch(_global: any, api: _ZonePrivate) {
+  const {eventNames, globalSources, zoneSymbolEventNames, TRUE_STR, FALSE_STR, ZONE_SYMBOL_PREFIX} =
+      api.getGlobalObjects()!;
   const WTF_ISSUE_555 =
       'Anchor,Area,Audio,BR,Base,BaseFont,Body,Button,Canvas,Content,DList,Directory,Div,Embed,FieldSet,Font,Form,Frame,FrameSet,HR,Head,Heading,Html,IFrame,Image,Input,Keygen,LI,Label,Legend,Link,Map,Marquee,Media,Menu,Meta,Meter,Mod,OList,Object,OptGroup,Option,Output,Paragraph,Pre,Progress,Quote,Script,Select,Source,Span,Style,TableCaption,TableCell,TableCol,Table,TableRow,TableSection,TextArea,Title,Track,UList,Unknown,Video';
   const NO_EVENT_TARGET =
@@ -36,7 +33,7 @@ export function eventTargetLegacyPatch(_global: any, api: _ZonePrivate) {
 
   const isDisableIECheck = _global['__Zone_disable_IE_check'] || false;
   const isEnableCrossContextCheck = _global['__Zone_enable_cross_context_check'] || false;
-  const ieOrEdge = isIEOrEdge();
+  const ieOrEdge = api.isIEOrEdge();
 
   const ADD_EVENT_LISTENER_SOURCE = '.addEventListener:';
   const FUNCTION_WRAPPER = '[object FunctionWrapper]';
@@ -103,11 +100,11 @@ export function eventTargetLegacyPatch(_global: any, api: _ZonePrivate) {
   }
   // vh is validateHandler to check event handler
   // is valid or not(for security check)
-  patchEventTarget(_global, apiTypes, {vh: checkIEAndCrossContext});
+  api.patchEventTarget(_global, apiTypes, {vh: checkIEAndCrossContext});
 
   return true;
 }
 
 export function patchEvent(global: any, api: _ZonePrivate) {
-  patchEventPrototype(global, api);
+  api.patchEventPrototype(global, api);
 }
