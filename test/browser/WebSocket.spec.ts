@@ -44,6 +44,10 @@ if (!window['saucelabs']) {
              it('should be patched in a Web Worker', done => {
                const worker = new Worker('/base/build/test/ws-webworker-context.js');
                worker.onmessage = (e: MessageEvent) => {
+                 if (e.data !== 'pass' && e.data !== 'fail') {
+                   fail(`web worker ${e.data}`);
+                   return;
+                 }
                  expect(e.data).toBe('pass');
                  done();
                };

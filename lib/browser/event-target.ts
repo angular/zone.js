@@ -6,12 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {globalSources, patchEventPrototype, patchEventTarget, zoneSymbolEventNames} from '../common/events';
-import {FALSE_STR, TRUE_STR, ZONE_SYMBOL_PREFIX} from '../common/utils';
-
-import {eventNames} from './property-descriptor';
-
 export function eventTargetPatch(_global: any, api: _ZonePrivate) {
+  const {eventNames, zoneSymbolEventNames, TRUE_STR, FALSE_STR, ZONE_SYMBOL_PREFIX} =
+      api.getGlobalObjects()!;
   //  predefine all __zone_symbol__ + eventName + true/false string
   for (let i = 0; i < eventNames.length; i++) {
     const eventName = eventNames[i];
@@ -28,12 +25,11 @@ export function eventTargetPatch(_global: any, api: _ZonePrivate) {
   if (!EVENT_TARGET || !EVENT_TARGET.prototype) {
     return;
   }
-  patchEventTarget(_global, [EVENT_TARGET && EVENT_TARGET.prototype]);
-  api.patchEventTarget = patchEventTarget;
+  api.patchEventTarget(_global, [EVENT_TARGET && EVENT_TARGET.prototype]);
 
   return true;
 }
 
 export function patchEvent(global: any, api: _ZonePrivate) {
-  patchEventPrototype(global, api);
+  api.patchEventPrototype(global, api);
 }

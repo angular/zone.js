@@ -6,7 +6,12 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {bindArguments, patchMacroTask, patchMethod, patchOnProperties} from '../common/utils';
+import {globalSources, patchEventPrototype, patchEventTarget, zoneSymbolEventNames} from '../common/events';
+import {ADD_EVENT_LISTENER_STR, ArraySlice, attachOriginToPatched, bindArguments, FALSE_STR, isBrowser, isIEOrEdge, isMix, isNode, ObjectCreate, ObjectDefineProperty, ObjectGetOwnPropertyDescriptor, patchClass, patchMacroTask, patchMethod, patchOnProperties, REMOVE_EVENT_LISTENER_STR, TRUE_STR, wrapWithCurrentZone, ZONE_SYMBOL_PREFIX} from '../common/utils';
+
+import {patchCallbacks} from './browser-util';
+import {_redefineProperty} from './define-property';
+import {eventNames, filterProperties} from './property-descriptor';
 
 Zone.__load_patch('util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   api.patchOnProperties = patchOnProperties;
@@ -28,4 +33,30 @@ Zone.__load_patch('util', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
     (Zone as any)[SYMBOL_BLACK_LISTED_EVENTS] = (Zone as any)[SYMBOL_UNPATCHED_EVENTS] =
         global[SYMBOL_BLACK_LISTED_EVENTS];
   }
+  api.patchEventPrototype = patchEventPrototype;
+  api.patchEventTarget = patchEventTarget;
+  api.isIEOrEdge = isIEOrEdge;
+  api.ObjectDefineProperty = ObjectDefineProperty;
+  api.ObjectGetOwnPropertyDescriptor = ObjectGetOwnPropertyDescriptor;
+  api.ObjectCreate = ObjectCreate;
+  api.ArraySlice = ArraySlice;
+  api.patchClass = patchClass;
+  api.wrapWithCurrentZone = wrapWithCurrentZone;
+  api.filterProperties = filterProperties;
+  api.attachOriginToPatched = attachOriginToPatched;
+  api._redefineProperty = _redefineProperty;
+  api.patchCallbacks = patchCallbacks;
+  api.getGlobalObjects = () => ({
+    globalSources,
+    zoneSymbolEventNames,
+    eventNames,
+    isBrowser,
+    isMix,
+    isNode,
+    TRUE_STR,
+    FALSE_STR,
+    ZONE_SYMBOL_PREFIX,
+    ADD_EVENT_LISTENER_STR,
+    REMOVE_EVENT_LISTENER_STR
+  });
 });

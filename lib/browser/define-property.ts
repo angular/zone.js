@@ -6,12 +6,12 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {zoneSymbol} from '../common/utils';
 /*
  * This is necessary for Chrome and Chrome mobile, to enable
  * things like redefining `createdCallback` on an element.
  */
 
+const zoneSymbol = Zone.__symbol__;
 const _defineProperty = (Object as any)[zoneSymbol('defineProperty')] = Object.defineProperty;
 const _getOwnPropertyDescriptor = (Object as any)[zoneSymbol('getOwnPropertyDescriptor')] =
     Object.getOwnPropertyDescriptor;

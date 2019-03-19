@@ -10,9 +10,7 @@
  * @suppress {globalThis}
  */
 
-import {isBrowser, isIE, isMix, isNode, ObjectDefineProperty, ObjectGetOwnPropertyDescriptor, ObjectGetPrototypeOf, patchClass, patchOnProperties, wrapWithCurrentZone, zoneSymbol} from '../common/utils';
-
-import * as webSocketPatch from './websocket';
+import {isBrowser, isIE, isMix, isNode, ObjectGetPrototypeOf, patchOnProperties} from '../common/utils';
 
 const globalEventHandlersEventNames = [
   'abort',
@@ -273,7 +271,6 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
     // events are already been patched by legacy patch.
     return;
   }
-
   const supportsWebSocket = typeof WebSocket !== 'undefined';
   const ignoreProperties: IgnoreProperty[] = _global['__Zone_ignore_on_properties'];
   // for browsers that we can patch the descriptor:  Chrome & Firefox
