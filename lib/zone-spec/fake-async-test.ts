@@ -346,6 +346,15 @@ class FakeAsyncTestZoneSpec implements ZoneSpec {
   }
 
   static patchDate() {
+    if (!!global[Zone.__symbol__('disableDatePatching')]) {
+      // we don't want to patch global Date
+      // because in some case, global Date
+      // is already being patched, we need to provide
+      // an option to let user still use their
+      // own version of Date.
+      return;
+    }
+
     if (global['Date'] === FakeDate) {
       // already patched
       return;
