@@ -1,5 +1,6 @@
 build/
 build-esm/
+build-esm-2015/
 blink-core/
 blink-idl/
 parsed-idl/
