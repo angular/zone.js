@@ -113,7 +113,10 @@ function renderLongStackTrace(frames: LongStackTrace[], stack?: string): string 
         // Fix issue https://github.com/angular/zone.js/issues/1195,
         // For event task of browser, by default, all task will share a
         // singleton instance of data object, we should create a new one here
-        task.data = {...task.data};
+
+        // The cast to `any` is required to workaround a closure bug which wrongly applies
+        // URL sanitization rules to .data access.
+        (task.data as any) = {...(task.data as any)};
       }
       (task.data as any)[creationTrace] = trace;
     }
