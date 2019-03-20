@@ -219,13 +219,14 @@ describe(
           let resolve: Function|null = null;
 
           testZone.run(function() {
-            new Promise(function(resolveFn) {
-              resolve = resolveFn;
-            }).finally(function() {
-              expect(arguments.length).toBe(0);
-              expect(Zone.current).toBe(testZone);
-              done();
-            });
+            (new Promise(function(resolveFn) {
+               resolve = resolveFn;
+             }) as any)
+                .finally(function() {
+                  expect(arguments.length).toBe(0);
+                  expect(Zone.current).toBe(testZone);
+                  done();
+                });
           });
 
           resolve!('value');
@@ -235,13 +236,14 @@ describe(
           let reject: Function|null = null;
 
           testZone.run(function() {
-            new Promise(function(_, rejectFn) {
-              reject = rejectFn;
-            }).finally(function() {
-              expect(arguments.length).toBe(0);
-              expect(Zone.current).toBe(testZone);
-              done();
-            });
+            (new Promise(function(_, rejectFn) {
+               reject = rejectFn;
+             }) as any)
+                .finally(function() {
+                  expect(arguments.length).toBe(0);
+                  expect(Zone.current).toBe(testZone);
+                  done();
+                });
           });
 
           reject!('error');
