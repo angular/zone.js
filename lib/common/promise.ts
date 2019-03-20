@@ -5,10 +5,6 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-interface Promise<T> {
-  finally<U>(onFinally?: () => U | PromiseLike<U>): Promise<T>;
-}
-
 Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
   const ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
   const ObjectDefineProperty = Object.defineProperty;
@@ -146,7 +142,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       if (state !== REJECTED && value instanceof ZoneAwarePromise &&
           value.hasOwnProperty(symbolState) && value.hasOwnProperty(symbolValue) &&
           (value as any)[symbolState] !== UNRESOLVED) {
-        clearRejectedNoCatch(<Promise<any>>value);
+        clearRejectedNoCatch(<Promise<any>>value as any);
         resolvePromise(promise, (value as any)[symbolState], (value as any)[symbolValue]);
       } else if (state !== REJECTED && typeof then === 'function') {
         try {
@@ -379,7 +375,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       if ((this as any)[symbolState] == UNRESOLVED) {
         (<any[]>(this as any)[symbolValue]).push(zone, chainPromise, onFulfilled, onRejected);
       } else {
-        scheduleResolveOrReject(this, zone, chainPromise, onFulfilled, onRejected);
+        scheduleResolveOrReject(this, zone, chainPromise as any, onFulfilled, onRejected);
       }
       return chainPromise;
     }
@@ -397,7 +393,7 @@ Zone.__load_patch('ZoneAwarePromise', (global: any, Zone: ZoneType, api: _ZonePr
       if ((this as any)[symbolState] == UNRESOLVED) {
         (<any[]>(this as any)[symbolValue]).push(zone, chainPromise, onFinally, onFinally);
       } else {
-        scheduleResolveOrReject(this, zone, chainPromise, onFinally, onFinally);
+        scheduleResolveOrReject(this, zone, chainPromise as any, onFinally, onFinally);
       }
       return chainPromise;
     }
