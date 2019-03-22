@@ -72,8 +72,6 @@ var __spread = (undefined && undefined.__spread) || function () {
     };
     var Scheduler = /** @class */ (function () {
         function Scheduler() {
-            // Next scheduler id.
-            this.nextId = 1;
             // Scheduler queue with the tuple of end time and callback function - sorted by end time.
             this._schedulerQueue = [];
             // Current simulated time in millis.
@@ -95,7 +93,7 @@ var __spread = (undefined && undefined.__spread) || function () {
             if (isPeriodic === void 0) { isPeriodic = false; }
             if (isRequestAnimationFrame === void 0) { isRequestAnimationFrame = false; }
             if (id === void 0) { id = -1; }
-            var currentId = id < 0 ? this.nextId++ : id;
+            var currentId = id < 0 ? Scheduler.nextId++ : id;
             var endTime = this._currentTime + delay;
             // Insert so that scheduler queue remains sorted by end time.
             var newEntry = {
@@ -212,6 +210,8 @@ var __spread = (undefined && undefined.__spread) || function () {
             }
             return this._currentTime - startTime;
         };
+        // Next scheduler id.
+        Scheduler.nextId = 1;
         return Scheduler;
     }());
     var FakeAsyncTestZoneSpec = /** @class */ (function () {
@@ -292,7 +292,7 @@ var __spread = (undefined && undefined.__spread) || function () {
         };
         FakeAsyncTestZoneSpec.prototype._setTimeout = function (fn, delay, args, isTimer) {
             if (isTimer === void 0) { isTimer = true; }
-            var removeTimerFn = this._dequeueTimer(this._scheduler.nextId);
+            var removeTimerFn = this._dequeueTimer(Scheduler.nextId);
             // Queue the callback and dequeue the timer on success and error.
             var cb = this._fnAndFlush(fn, { onSuccess: removeTimerFn, onError: removeTimerFn });
             var id = this._scheduler.scheduleFunction(cb, delay, args, false, !isTimer);
@@ -306,7 +306,7 @@ var __spread = (undefined && undefined.__spread) || function () {
             this._scheduler.removeScheduledFunctionWithId(id);
         };
         FakeAsyncTestZoneSpec.prototype._setInterval = function (fn, interval, args) {
-            var id = this._scheduler.nextId;
+            var id = Scheduler.nextId;
             var completers = { onSuccess: null, onError: this._dequeuePeriodicTimer(id) };
             var cb = this._fnAndFlush(fn, completers);
             // Use the callback created above to requeue on success.
@@ -336,6 +336,14 @@ var __spread = (undefined && undefined.__spread) || function () {
             this._scheduler.setCurrentRealTime(realTime);
         };
         FakeAsyncTestZoneSpec.patchDate = function () {
+            if (!!global[Zone.__symbol__('disableDatePatching')]) {
+                // we don't want to patch global Date
+                // because in some case, global Date
+                // is already being patched, we need to provide
+                // an option to let user still use their
+                // own version of Date.
+                return;
+            }
             if (global['Date'] === FakeDate) {
                 // already patched
                 return;

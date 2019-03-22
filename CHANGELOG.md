@@ -1,3 +1,41 @@
+<a name="0.9.0"></a>
+# [0.9.0](https://github.com/angular/zone.js/compare/v0.8.29...0.9.0) (2019-03-12)
+
+
+### Bug Fixes
+
+* **lint:** fix [#1168](https://github.com/angular/zone.js/issues/1168), remove unused = null code ([#1171](https://github.com/angular/zone.js/issues/1171)) ([917e2af](https://github.com/angular/zone.js/commit/917e2af))
+* **test:** fix [#1155](https://github.com/angular/zone.js/issues/1155), try/catch modify error.message ([#1157](https://github.com/angular/zone.js/issues/1157)) ([7e983d1](https://github.com/angular/zone.js/commit/7e983d1))
+* **test:** fix: make fakeAsync test spec timer id global ([d32e79b](https://github.com/angular/zone.js/commit/d32e79b))
+* **build:** fix: closure related fixes ([2a8415d](https://github.com/angular/zone.js/commit/2a8415d))
+* **compile:** fix: remove finally definition from Promise interface ([47dd3f4](https://github.com/angular/zone.js/commit/47dd3f4))
+
+### Doc
+
+* **doc:** [#1181](https://github.com/angular/zone.js/pull/1181), Fix the typo in timer module documentation ([8f78b55](https://github.com/angular/zone.js/commit/8f78b55))
+* **doc:** [#1163](https://github.com/angular/zone.js/pull/1163), Update YouTube video link ([f171821](https://github.com/angular/zone.js/commit/f171821))
+* **doc:** [#1151](https://github.com/angular/zone.js/pull/1151), Re-phrase the lines for better understanding ([2a6444b](https://github.com/angular/zone.js/commit/2a6444b))
+* **doc:** [#1152](https://github.com/angular/zone.js/pull/1152), change the word TimerTask to MacroTask ([f3995de](https://github.com/angular/zone.js/commit/f3995de))
+
+
+### Features
+
+* **test:** add benchmark page ([#1076](https://github.com/angular/zone.js/issues/1076)) ([128649a](https://github.com/angular/zone.js/commit/128649a))
+* **test:** test(promise): add test cases for Promise.all with sync then operation ([#1158](https://github.com/angular/zone.js/issues/1158)) ([0b44e83](https://github.com/angular/zone.js/commit/0b44e83))
+* **test:** feat: add an option __zone_symbol__disableDatePatching to allow disabling Date patching ([c378f87](https://github.com/angular/zone.js/commit/c378f87))
+
+### Env
+
+* **env:** change BLACK_LISTED_EVENTS to DISABLE_EVENTS ([9c65d25](https://github.com/angular/zone.js/commit/9c65d25))
+
+### Build 
+
+* **build:** build zone-evergreen.js in es2015, add terser minify support ([2ad936b](https://github.com/angular/zone.js/commit/2ad936b))
+* **build:** upgrade to pass jasmine 3.3 test ([82dfd75](https://github.com/angular/zone.js/commit/82dfd75))
+* **build:** upgrade to typescript 3.2.2 ([fcdd559](https://github.com/angular/zone.js/commit/fcdd559))
+* **build:** separate zone.js into evergreen only and legacy included bundles ([ac3851e](https://github.com/angular/zone.js/commit/ac3851e))
+* **build:** make legacy standalone bundle ([a5fe09b](https://github.com/angular/zone.js/commit/a5fe09b))
+
 <a name="0.8.29"></a>
 ## [0.8.29](https://github.com/angular/zone.js/compare/v0.8.28...0.8.29) (2019-01-22)
 
