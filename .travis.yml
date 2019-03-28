@@ -17,9 +17,11 @@ env:
     # This SSO token belongs to github account angular-github-ratelimit-token which has no access
     # (password is in Valentine)
     - TSD_GITHUB_TOKEN=ef474500309daea53d5991b3079159a29520a40b
+    - DISPLAY=:99.0
 
 before_install:
   - npm install -g yarn
+  - "sh -e /etc/init.d/xvfb start"
 before_script:
   - mkdir -p $LOGS_DIR
   - ./scripts/sauce/sauce_connect_setup.sh
