@@ -147,7 +147,7 @@ export function patchEventTarget(
             invokeTask(copyTasks[i], target, event, true);
           }
         };
-        const mergedTask = {...copyTasks[0]};
+        const mergedTask = Object.create(copyTasks[0]);
         mergedTask.callback = mergedCallback;
         invokeTask(mergedTask, target, event);
       }
