@@ -8,7 +8,7 @@
 
 export function patchCustomElements(_global: any, api: _ZonePrivate) {
   const {isBrowser, isMix} = api.getGlobalObjects()!;
-  if ((!isBrowser && !isMix) || !('customElements' in _global)) {
+  if ((!isBrowser && !isMix) || !_global['customElements'] || !('customElements' in _global)) {
     return;
   }
 
