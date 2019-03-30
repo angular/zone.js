@@ -309,7 +309,11 @@ export function propertyDescriptorPatch(api: _ZonePrivate, _global: any) {
       patchFilteredProperties(Worker.prototype, workerEventNames, ignoreProperties);
     }
   }
-  patchFilteredProperties(XMLHttpRequest.prototype, XMLHttpRequestEventNames, ignoreProperties);
+  const XMLHttpRequest = _global['XMLHttpRequest'];
+  if (XMLHttpRequest) {
+    // XMLHttpRequest is not available in ServiceWorker, so we need to check here
+    patchFilteredProperties(XMLHttpRequest.prototype, XMLHttpRequestEventNames, ignoreProperties);
+  }
   const XMLHttpRequestEventTarget = _global['XMLHttpRequestEventTarget'];
   if (XMLHttpRequestEventTarget) {
     patchFilteredProperties(

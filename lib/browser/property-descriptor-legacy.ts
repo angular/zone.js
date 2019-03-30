@@ -18,8 +18,8 @@ export function propertyDescriptorLegacyPatch(api: _ZonePrivate, _global: any) {
     return;
   }
 
-  const supportsWebSocket = typeof WebSocket !== 'undefined';
-  if (!canPatchViaPropertyDescriptor(api)) {
+  if (!canPatchViaPropertyDescriptor(api, _global)) {
+    const supportsWebSocket = typeof WebSocket !== 'undefined';
     // Safari, Android browsers (Jelly Bean)
     patchViaCapturingAllTheEvents(api);
     api.patchClass('XMLHttpRequest');
@@ -30,7 +30,7 @@ export function propertyDescriptorLegacyPatch(api: _ZonePrivate, _global: any) {
   }
 }
 
-function canPatchViaPropertyDescriptor(api: _ZonePrivate) {
+function canPatchViaPropertyDescriptor(api: _ZonePrivate, _global: any) {
   const {isBrowser, isMix} = api.getGlobalObjects()!;
   if ((isBrowser || isMix) &&
       !api.ObjectGetOwnPropertyDescriptor(HTMLElement.prototype, 'onclick') &&
@@ -39,8 +39,28 @@ function canPatchViaPropertyDescriptor(api: _ZonePrivate) {
     // IDL interface attributes are not configurable
     const desc = api.ObjectGetOwnPropertyDescriptor(Element.prototype, 'onclick');
     if (desc && !desc.configurable) return false;
+    // try to use onclick to detect whether we can patch via propertyDescriptor
+    // because XMLHttpRequest is not available in service worker
+    if (desc) {
+      api.ObjectDefineProperty(Element.prototype, 'onclick', {
+        enumerable: true,
+        configurable: true,
+        get: function() {
+          return true;
+        }
+      });
+      const div = document.createElement('div');
+      const result = !!div.onclick;
+      api.ObjectDefineProperty(Element.prototype, 'onclick', desc);
+      return result;
+    }
   }
 
+  const XMLHttpRequest = _global['XMLHttpRequest'];
+  if (!XMLHttpRequest) {
+    // XMLHttpRequest is not available in service worker
+    return false;
+  }
   const ON_READY_STATE_CHANGE = 'onreadystatechange';
   const XMLHttpRequestPrototype = XMLHttpRequest.prototype;
 
