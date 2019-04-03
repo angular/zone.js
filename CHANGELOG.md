@@ -26,7 +26,7 @@
 
 ### Env
 
-* **env:** change BLACK_LISTED_EVENTS to DISABLE_EVENTS ([9c65d25](https://github.com/angular/zone.js/commit/9c65d25))
+* **env:** change BLACK_LISTED_EVENTS to UNPATCHED_EVENTS ([9c65d25](https://github.com/angular/zone.js/commit/9c65d25))
 
 ### Build 
 
