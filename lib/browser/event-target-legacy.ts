@@ -101,7 +101,7 @@ export function eventTargetLegacyPatch(_global: any, api: _ZonePrivate) {
   // vh is validateHandler to check event handler
   // is valid or not(for security check)
   api.patchEventTarget(_global, apiTypes, {vh: checkIEAndCrossContext});
-  (Zone as any)[api.symbol('patchEventTarget')] = true;
+  (Zone as any)[api.symbol('patchEventTarget')] = !!_global[EVENT_TARGET];
   return true;
 }
 
