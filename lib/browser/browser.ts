@@ -137,13 +137,13 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
             // check whether the xhr has registered onload listener
             // if that is the case, the task should invoke after all
             // onload listeners finish.
-            const loadTasks = target['__zone_symbol__loadfalse'];
+            const loadTasks = target[Zone.__symbol__('loadfalse')];
             if (loadTasks && loadTasks.length > 0) {
               const oriInvoke = task.invoke;
               task.invoke = function() {
                 // need to load the tasks again, because in other
                 // load listener, they may remove themselves
-                const loadTasks = target['__zone_symbol__loadfalse'];
+                const loadTasks = target[Zone.__symbol__('loadfalse')];
                 for (let i = 0; i < loadTasks.length; i++) {
                   if (loadTasks[i] === task) {
                     loadTasks.splice(i, 1);

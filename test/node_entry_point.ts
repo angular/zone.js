@@ -7,12 +7,14 @@
  */
 
 // Must be loaded before zone loads, so that zone can detect WTF.
-if (typeof global !== 'undefined' &&
-    (global as any)['__zone_symbol__fakeAsyncPatchLock'] !== false) {
-  (global as any)['__zone_symbol__fakeAsyncPatchLock'] = true;
-}
 import './wtf_mock';
 import './test_fake_polyfill';
+
+// Zone symbol prefix is set to '__zone_symbol_test__' in node-env-setup.ts.
+if (typeof global !== 'undefined' &&
+    (global as any)['__zone_symbol_test__fakeAsyncPatchLock'] !== false) {
+  (global as any)['__zone_symbol_test__fakeAsyncPatchLock'] = true;
+}
 
 // Setup tests for Zone without microtask support
 import '../lib/testing/zone-testing';
