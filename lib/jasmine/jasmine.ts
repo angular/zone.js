@@ -210,8 +210,8 @@
         ambientZone.scheduleMicroTask('jasmine.onComplete', fn);
       })(attrs.onComplete);
 
-      const nativeSetTimeout = _global['__zone_symbol__setTimeout'];
-      const nativeClearTimeout = _global['__zone_symbol__clearTimeout'];
+      const nativeSetTimeout = _global[Zone.__symbol__('setTimeout')];
+      const nativeClearTimeout = _global[Zone.__symbol__('clearTimeout')];
       if (nativeSetTimeout) {
         // should run setTimeout inside jasmine outside of zone
         attrs.timeout = {

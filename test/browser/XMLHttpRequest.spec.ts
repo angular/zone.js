@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 
-import {ifEnvSupports, ifEnvSupportsWithDone, supportPatchXHROnProperty} from '../test-util';
+import {ifEnvSupports, ifEnvSupportsWithDone, supportPatchXHROnProperty, zoneSymbol} from '../test-util';
 
 describe('XMLHttpRequest', function() {
   let testZone: Zone;
@@ -45,7 +45,7 @@ describe('XMLHttpRequest', function() {
               .toMatch(/\> Zone\:invokeTask.*addEventListener\:load/);
         }
         // if browser can patch onload
-        if ((req as any)['__zone_symbol__loadfalse']) {
+        if ((req as any)[zoneSymbol('loadfalse')]) {
           expect(logs).toEqual(['onload']);
         }
         done();
@@ -278,8 +278,8 @@ describe('XMLHttpRequest', function() {
     }
     req.addEventListener('readystatechange', function(ev) {
       if (req.readyState === 4) {
-        const xhrScheduled = (req as any)['__zone_symbol__xhrScheduled'];
-        const task = (req as any)['__zone_symbol__xhrTask'];
+        const xhrScheduled = (req as any)[zoneSymbol('xhrScheduled')];
+        const task = (req as any)[zoneSymbol('xhrTask')];
         if (xhrScheduled === false) {
           expect(task.state).toEqual('scheduling');
           setTimeout(() => {
@@ -323,7 +323,7 @@ describe('XMLHttpRequest', function() {
       let isError = false;
       let timerId = null;
       try {
-        timerId = (window as any)['__zone_symbol__setTimeout'](() => {
+        timerId = (window as any)[zoneSymbol('setTimeout')](() => {
           expect(logs).toEqual([
             `{"microTask":false,"macroTask":true,"eventTask":false,"change":"macroTask"}`,
             `{"microTask":false,"macroTask":false,"eventTask":false,"change":"macroTask"}`
@@ -333,7 +333,7 @@ describe('XMLHttpRequest', function() {
         req.send();
       } catch (error) {
         isError = true;
-        (window as any)['__zone_symbol__clearTimeout'](timerId);
+        (window as any)[zoneSymbol('clearTimeout')](timerId);
         done();
       }
     });

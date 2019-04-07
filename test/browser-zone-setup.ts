@@ -6,8 +6,9 @@
  * found in the LICENSE file at https://angular.io/license
  */
 if (typeof window !== 'undefined') {
+  const zoneSymbol = (window as any).Zone.__symbol__;
   (window as any)['__Zone_enable_cross_context_check'] = true;
-  (window as any)['__zone_symbol__fakeAsyncPatchLock'] = true;
+  (window as any)[zoneSymbol('fakeAsyncPatchLock')] = true;
 }
 import '../lib/common/to-string';
 import '../lib/browser/api-util';

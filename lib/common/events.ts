@@ -43,8 +43,8 @@ const OPTIMIZED_ZONE_EVENT_TASK_DATA: EventTaskData = {
 export const zoneSymbolEventNames: any = {};
 export const globalSources: any = {};
 
-const EVENT_NAME_SYMBOL_REGX = /^__zone_symbol__(\w+)(true|false)$/;
-const IMMEDIATE_PROPAGATION_SYMBOL = ('__zone_symbol__propagationStopped');
+const EVENT_NAME_SYMBOL_REGX = new RegExp('^' + ZONE_SYMBOL_PREFIX + '(\\w+)(true|false)$');
+const IMMEDIATE_PROPAGATION_SYMBOL = zoneSymbol('propagationStopped');
 
 export interface PatchEventTargetOptions {
   // validateHandler
@@ -327,7 +327,7 @@ export function patchEventTarget(
     const compare =
         (patchOptions && patchOptions.diff) ? patchOptions.diff : compareTaskCallbackVsDelegate;
 
-    const blackListedEvents: string[] = (Zone as any)[Zone.__symbol__('BLACK_LISTED_EVENTS')];
+    const blackListedEvents: string[] = (Zone as any)[zoneSymbol('BLACK_LISTED_EVENTS')];
 
     const makeAddListener = function(
         nativeListener: any, addSource: string, customScheduleFn: any, customCancelFn: any,
