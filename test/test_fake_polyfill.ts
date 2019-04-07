@@ -72,8 +72,12 @@ Object.defineProperties(TestTarget.prototype, {
   }
 });
 
+// Zone symbol prefix may be set in *-env-setup.ts (browser & node),
+// but this file is used in multiple scenarios, and Zone isn't loaded at this point yet.
+const zoneSymbolPrefix = global['__Zone_symbol_prefix'] || '__zone_symbol__';
+
 global['__Zone_ignore_on_properties'] =
     [{target: TestTarget.prototype, ignoreProperties: ['prop1']}];
-global['__zone_symbol__FakeAsyncTestMacroTask'] = [{source: 'TestClass.myTimeout'}];
-global['__zone_symbol__UNPATCHED_EVENTS'] = ['scroll'];
+global[zoneSymbolPrefix + 'FakeAsyncTestMacroTask'] = [{source: 'TestClass.myTimeout'}];
+global[zoneSymbolPrefix + 'UNPATCHED_EVENTS'] = ['scroll'];
 })(typeof window === 'object' && window || typeof self === 'object' && self || global);

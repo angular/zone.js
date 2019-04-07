@@ -1,5 +1,5 @@
 require('./dist/zone-node.js');
-Zone[('__zone_symbol__ignoreConsoleErrorUncaughtError')] = true;
+Zone[Zone.__symbol__('ignoreConsoleErrorUncaughtError')] = true;
 module.exports.deferred = function() {
   const p = {};
   p.promise = new Promise((resolve, reject) => {

@@ -8,7 +8,7 @@
 
 import {patchFilteredProperties} from '../../lib/browser/property-descriptor';
 import {patchEventTarget} from '../../lib/common/events';
-import {isBrowser, isIEOrEdge, isMix, zoneSymbol} from '../../lib/common/utils';
+import {isIEOrEdge, zoneSymbol} from '../../lib/common/utils';
 import {getEdgeVersion, getIEVersion, ifEnvSupports, ifEnvSupportsWithDone, isEdge} from '../test-util';
 
 import Spy = jasmine.Spy;
@@ -306,8 +306,8 @@ describe('Zone', function() {
                const logs: string[] = [];
                const EventTarget = (window as any)['EventTarget'];
                let oriAddEventListener = EventTarget && EventTarget.prototype ?
-                   (EventTarget.prototype as any)['__zone_symbol__addEventListener'] :
-                   (HTMLSpanElement.prototype as any)['__zone_symbol__addEventListener'];
+                   (EventTarget.prototype as any)[zoneSymbol('addEventListener')] :
+                   (HTMLSpanElement.prototype as any)[zoneSymbol('addEventListener')];
 
                if (!oriAddEventListener) {
                  // no patched addEventListener found
@@ -334,7 +334,7 @@ describe('Zone', function() {
                  return oriAddEventListener.apply(this, arguments);
                };
 
-               (HTMLSpanElement.prototype as any)['__zone_symbol__addEventListener'] = null;
+               (HTMLSpanElement.prototype as any)[zoneSymbol('addEventListener')] = null;
 
                patchEventTarget(window, [HTMLSpanElement.prototype]);
 
@@ -356,10 +356,10 @@ describe('Zone', function() {
                expect(logs).toEqual(['listener1', 'listener2']);
                document.body.removeChild(span);
                if (EventTarget) {
-                 (EventTarget.prototype as any)['__zone_symbol__addEventListener'] =
+                 (EventTarget.prototype as any)[zoneSymbol('addEventListener')] =
                      oriAddEventListener;
                } else {
-                 (HTMLSpanElement.prototype as any)['__zone_symbol__addEventListener'] =
+                 (HTMLSpanElement.prototype as any)[zoneSymbol('addEventListener')] =
                      oriAddEventListener;
                }
              }));

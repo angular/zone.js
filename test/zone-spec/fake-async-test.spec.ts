@@ -11,7 +11,7 @@ import '../../lib/rxjs/rxjs-fake-async';
 import {Observable} from 'rxjs';
 import {delay} from 'rxjs/operators';
 
-import {isNode, patchMacroTask} from '../../lib/common/utils';
+import {isNode, patchMacroTask, zoneSymbol} from '../../lib/common/utils';
 import {ifEnvSupports} from '../test-util';
 
 function supportNode() {
@@ -22,7 +22,7 @@ function supportNode() {
 
 function supportClock() {
   const _global: any = typeof window === 'undefined' ? global : window;
-  return typeof jasmine.clock === 'function' && _global['__zone_symbol__fakeAsyncPatchLock'];
+  return typeof jasmine.clock === 'function' && _global[zoneSymbol('fakeAsyncPatchLock')];
 }
 
 (supportClock as any).message = 'support patch clock';

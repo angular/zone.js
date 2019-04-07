@@ -15,7 +15,7 @@ import {propertyDescriptorLegacyPatch} from './property-descriptor-legacy';
 import {registerElementPatch} from './register-element';
 
 (function(_global: any) {
-_global['__zone_symbol__legacyPatch'] = function() {
+_global[Zone.__symbol__('legacyPatch')] = function() {
   const Zone = _global['Zone'];
   Zone.__load_patch('registerElement', (global: any, Zone: ZoneType, api: _ZonePrivate) => {
     registerElementPatch(global, api);

@@ -2,7 +2,7 @@
 
 var assert = require('assert');
 var adapter = require('./promise-adapter');
-var P = global['__zone_symbol__Promise'];
+var P = global[Zone.__symbol__('Promise')];
 
 var someRejectionReason = {message: 'some rejection reason'};
 var anotherReason = {message: 'another rejection reason'};

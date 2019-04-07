@@ -466,6 +466,8 @@ gulp.task('build', [
 ]);
 
 function nodeTest(specFiles, cb) {
+  require('./build/test/node-env-setup');
+
   // load zone-node here to let jasmine be able to use jasmine.clock().install()
   // without throw error
   require('./build/lib/node/rollup-main');
