@@ -24,7 +24,7 @@ export function eventTargetLegacyPatch(_global: any, api: _ZonePrivate) {
     // Workaround for: https://github.com/google/tracing-framework/issues/555
     apis = WTF_ISSUE_555_ARRAY.map((v) => 'HTML' + v + 'Element').concat(NO_EVENT_TARGET);
   } else if (_global[EVENT_TARGET]) {
-    // EventTarget is already patched in browser.ts
+    apis.push(EVENT_TARGET);
   } else {
     // Note: EventTarget is not available in all browsers,
     // if it's not available, we instead patch the APIs in the IDL that inherit from EventTarget
@@ -101,7 +101,7 @@ export function eventTargetLegacyPatch(_global: any, api: _ZonePrivate) {
   // vh is validateHandler to check event handler
   // is valid or not(for security check)
   api.patchEventTarget(_global, apiTypes, {vh: checkIEAndCrossContext});
-
+  (Zone as any)[api.symbol('patchEventTarget')] = !!_global[EVENT_TARGET];
   return true;
 }
 
