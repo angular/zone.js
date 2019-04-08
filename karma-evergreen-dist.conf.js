@@ -16,6 +16,7 @@ module.exports = function(config) {
     }
   }
 
+  config.files.push('build/test/browser-env-setup.js');
   config.files.push('build/test/wtf_mock.js');
   config.files.push('build/test/test_fake_polyfill.js');
   config.files.push('build/test/custom_error.js');

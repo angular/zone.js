@@ -673,6 +673,16 @@ const Zone: ZoneType = (function(global: any) {
     performance && performance['measure'] && performance['measure'](name, label);
   }
   mark('Zone');
+
+  // Initialize before it's accessed below.
+  // __Zone_symbol_prefix global can be used to override the default zone
+  // symbol prefix with a custom one if needed.
+  const symbolPrefix = global['__Zone_symbol_prefix'] || '__zone_symbol__';
+
+  function __symbol__(name: string) {
+    return symbolPrefix + name;
+  }
+  
   const checkDuplicate = global[__symbol__('forceDuplicateZoneCheck')] === true;
   if (global['Zone']) {
     // if global['Zone'] already exists (maybe zone.js was already loaded or
@@ -1291,14 +1301,6 @@ const Zone: ZoneType = (function(global: any) {
     }
   }
 
-  // Initialize before it's accessed below.
-  // __Zone_symbol_prefix global can be used to override the default zone
-  // symbol prefix with a custom one if needed.
-  const symbolPrefix = global['__Zone_symbol_prefix'] || '__zone_symbol__';
-
-  function __symbol__(name: string) {
-    return symbolPrefix + name;
-  }
 
   //////////////////////////////////////////////////////
   //////////////////////////////////////////////////////
