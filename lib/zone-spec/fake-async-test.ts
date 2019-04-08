@@ -143,7 +143,8 @@ class Scheduler {
         if (doTick) {
           doTick(this._currentTime - lastCurrentTime);
         }
-        let retval = current.func.apply(global, current.args);
+        let retval = current.func.apply(
+            global, current.isRequestAnimationFrame ? [this._currentTime] : current.args);
         if (!retval) {
           // Uncaught exception in the current scheduled function. Stop processing the queue.
           break;

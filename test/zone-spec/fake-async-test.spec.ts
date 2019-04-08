@@ -741,6 +741,24 @@ describe('FakeAsyncTestZoneSpec', () => {
                      expect(ran).toEqual(true);
                    });
                  });
+                 it('should pass timestamp as parameter', () => {
+                   let timestamp = 0;
+                   let timestamp1 = 0;
+                   fakeAsyncTestZone.run(() => {
+                     requestAnimationFrame((ts) => {
+                       timestamp = ts;
+                       requestAnimationFrame(ts1 => {
+                         timestamp1 = ts1;
+                       });
+                     });
+                     const elapsed = testZoneSpec.flush(20, true);
+                     const elapsed1 = testZoneSpec.flush(20, true);
+                     expect(elapsed).toEqual(16);
+                     expect(elapsed1).toEqual(16);
+                     expect(timestamp).toEqual(16);
+                     expect(timestamp1).toEqual(32);
+                   });
+                 });
                }));
     });
   });
