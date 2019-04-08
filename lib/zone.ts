@@ -682,7 +682,7 @@ const Zone: ZoneType = (function(global: any) {
   function __symbol__(name: string) {
     return symbolPrefix + name;
   }
-  
+
   const checkDuplicate = global[__symbol__('forceDuplicateZoneCheck')] === true;
   if (global['Zone']) {
     // if global['Zone'] already exists (maybe zone.js was already loaded or
