@@ -22,7 +22,8 @@ function supportNode() {
 
 function supportClock() {
   const _global: any = typeof window === 'undefined' ? global : window;
-  return typeof jasmine.clock === 'function' && _global['__zone_symbol__fakeAsyncPatchLock'];
+  return typeof jasmine.clock === 'function' &&
+      _global['__zone_symbol__fakeAsyncAutoFakeAsyncWhenClockPatched'];
 }
 
 (supportClock as any).message = 'support patch clock';
