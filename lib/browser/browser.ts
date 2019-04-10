@@ -94,6 +94,11 @@ Zone.__load_patch('XHR', (global: any, Zone: ZoneType) => {
   }
 
   function patchXHR(window: any) {
+    const XMLHttpRequest = window['XMLHttpRequest'];
+    if (!XMLHttpRequest) {
+      // XMLHttpRequest is not available in service worker
+      return;
+    }
     const XMLHttpRequestPrototype: any = XMLHttpRequest.prototype;
 
     function findPendingTask(target: any) {

@@ -8,7 +8,7 @@
 if (typeof window !== 'undefined') {
   const zoneSymbol = (window as any).Zone.__symbol__;
   (window as any)['__Zone_enable_cross_context_check'] = true;
-  (window as any)[zoneSymbol('fakeAsyncPatchLock')] = true;
+  (window as any)[zoneSymbol('fakeAsyncAutoFakeAsyncWhenClockPatched')] = true;
 }
 import '../lib/common/to-string';
 import '../lib/browser/api-util';
