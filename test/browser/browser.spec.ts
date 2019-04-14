@@ -448,6 +448,40 @@ describe('Zone', function() {
         expect(eventListenerSpy).toHaveBeenCalled();
       });
 
+      it('should support addEventListener multiple times with different listeners but only trigger hook once',
+         function() {
+           const scheduleSpy = jasmine.createSpy('schedule');
+           const invokeSpy = jasmine.createSpy('invoke');
+           const eventListenerSpy1 = jasmine.createSpy('eventListener1');
+           const eventListenerSpy2 = jasmine.createSpy('eventListener2');
+           const zone = rootZone.fork({
+             name: 'spy',
+             onScheduleTask: (
+                 parentZoneDelegate: ZoneDelegate, currentZone: Zone, targetZone: Zone, task: Task):
+                 any => {
+                   scheduleSpy();
+                   return parentZoneDelegate.scheduleTask(targetZone, task);
+                 },
+             onInvokeTask:
+                 (parentZoneDelegate, currentZone, targetZone, task, applyThis, applyArgs) => {
+                   invokeSpy();
+                   return parentZoneDelegate.invokeTask(targetZone, task, applyThis, applyArgs);
+                 }
+           });
+
+           zone.run(function() {
+             button.addEventListener('click', eventListenerSpy1);
+             button.addEventListener('click', eventListenerSpy2);
+           });
+
+           button.dispatchEvent(clickEvent);
+
+           expect(scheduleSpy.calls.count()).toBe(2);
+           expect(invokeSpy.calls.count()).toBe(1);
+           expect(eventListenerSpy1).toHaveBeenCalled();
+           expect(eventListenerSpy2).toHaveBeenCalled();
+         });
+
       it('should be able to access addEventListener information in onScheduleTask', function() {
         const hookSpy = jasmine.createSpy('hook');
         const eventListenerSpy = jasmine.createSpy('eventListener');

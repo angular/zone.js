@@ -1587,7 +1587,7 @@ function patchEventTarget(_global, apis, patchOptions) {
     const ADD_EVENT_LISTENER_SOURCE = '.' + ADD_EVENT_LISTENER + ':';
     const PREPEND_EVENT_LISTENER = 'prependListener';
     const PREPEND_EVENT_LISTENER_SOURCE = '.' + PREPEND_EVENT_LISTENER + ':';
-    const invokeTask = function (task, target, event) {
+    const invokeTask = function (task, target, event, mergeCallback = false) {
         // for better performance, check isRemoved which is set
         // by removeEventListener
         if (task.isRemoved) {
@@ -1600,7 +1600,12 @@ function patchEventTarget(_global, apis, patchOptions) {
             task.originalDelegate = delegate;
         }
         // invoke static task.invoke
-        task.invoke(task, target, [event]);
+        if (mergeCallback) {
+            task.callback.call(target, event);
+        }
+        else {
+            task.invoke(task, target, [event]);
+        }
         const options = task.options;
         if (options && typeof options === 'object' && options.once) {
             // if options.once is true, after invoke once remove listener here
@@ -1628,17 +1633,22 @@ function patchEventTarget(_global, apis, patchOptions) {
             if (tasks.length === 1) {
                 invokeTask(tasks[0], target, event);
             }
-            else {
+            else if (tasks.length > 1) {
                 // https://github.com/angular/zone.js/issues/836
                 // copy the tasks array before invoke, to avoid
                 // the callback will remove itself or other listener
                 const copyTasks = tasks.slice();
-                for (let i = 0; i < copyTasks.length; i++) {
-                    if (event && event[IMMEDIATE_PROPAGATION_SYMBOL] === true) {
-                        break;
+                const mergedCallback = function () {
+                    for (let i = 0; i < copyTasks.length; i++) {
+                        if (event && event[IMMEDIATE_PROPAGATION_SYMBOL] === true) {
+                            return;
+                        }
+                        invokeTask(copyTasks[i], target, event, true);
                     }
-                    invokeTask(copyTasks[i], target, event);
-                }
+                };
+                const mergedTask = Object.create(copyTasks[0]);
+                mergedTask.callback = mergedCallback;
+                invokeTask(mergedTask, target, event);
             }
         }
     };
