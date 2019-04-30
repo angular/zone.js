@@ -1,3 +1,19 @@
+<a name="0.9.1"></a>
+## [0.9.1](https://github.com/angular/zone.js/compare/v0.9.0...0.9.1) (2019-04-30)
+
+
+### Bug Fixes
+
+* ensure that EventTarget is patched prior to legacy property descriptor patch ([#1214](https://github.com/angular/zone.js/issues/1214)) ([aca4728](https://github.com/angular/zone.js/commit/aca4728))
+* fakeAsyncTest requestAnimationFrame should pass timestamp as parameter ([#1220](https://github.com/angular/zone.js/issues/1220)) ([62b8525](https://github.com/angular/zone.js/commit/62b8525)), closes [#1216](https://github.com/angular/zone.js/issues/1216)
+
+
+### Features
+
+* add option to disable jasmine clock patch, also rename the flag of auto jump in FakeAsyncTest ([#1222](https://github.com/angular/zone.js/issues/1222)) ([10e1b0c](https://github.com/angular/zone.js/commit/10e1b0c))
+
+
+
 <a name="0.9.0"></a>
 # [0.9.0](https://github.com/angular/zone.js/compare/v0.8.29...0.9.0) (2019-03-12)
 
