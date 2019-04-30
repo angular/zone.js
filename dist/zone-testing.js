@@ -435,7 +435,13 @@ Zone['SyncTestZoneSpec'] = SyncTestZoneSpec;
     var syncZone = ambientZone.fork(new SyncTestZoneSpec('jasmine.describe'));
     var symbol = Zone.__symbol__;
     // whether patch jasmine clock when in fakeAsync
-    var enableClockPatch = _global[symbol('fakeAsyncPatchLock')] === true;
+    var disablePatchingJasmineClock = _global[symbol('fakeAsyncDisablePatchingClock')] === true;
+    // the original variable name fakeAsyncPatchLock is not accurate, so the name will be
+    // fakeAsyncAutoFakeAsyncWhenClockPatched and if this enablePatchingJasmineClock is false, we also
+    // automatically disable the auto jump into fakeAsync feature
+    var enableAutoFakeAsyncWhenClockPatched = !disablePatchingJasmineClock &&
+        ((_global[symbol('fakeAsyncPatchLock')] === true) ||
+            (_global[symbol('fakeAsyncAutoFakeAsyncWhenClockPatched')] === true));
     var ignoreUnhandledRejection = _global[symbol('ignoreUnhandledRejection')] === true;
     if (!ignoreUnhandledRejection) {
         var globalErrors_1 = jasmine.GlobalErrors;
@@ -484,48 +490,50 @@ Zone['SyncTestZoneSpec'] = SyncTestZoneSpec;
             return originalJasmineFn.apply(this, arguments);
         };
     });
-    // need to patch jasmine.clock().mockDate and jasmine.clock().tick() so
-    // they can work properly in FakeAsyncTest
-    var originalClockFn = (jasmine[symbol('clock')] = jasmine['clock']);
-    jasmine['clock'] = function () {
-        var clock = originalClockFn.apply(this, arguments);
-        if (!clock[symbol('patched')]) {
-            clock[symbol('patched')] = symbol('patched');
-            var originalTick_1 = (clock[symbol('tick')] = clock.tick);
-            clock.tick = function () {
-                var fakeAsyncZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
-                if (fakeAsyncZoneSpec) {
-                    return fakeAsyncZoneSpec.tick.apply(fakeAsyncZoneSpec, arguments);
+    if (!disablePatchingJasmineClock) {
+        // need to patch jasmine.clock().mockDate and jasmine.clock().tick() so
+        // they can work properly in FakeAsyncTest
+        var originalClockFn_1 = (jasmine[symbol('clock')] = jasmine['clock']);
+        jasmine['clock'] = function () {
+            var clock = originalClockFn_1.apply(this, arguments);
+            if (!clock[symbol('patched')]) {
+                clock[symbol('patched')] = symbol('patched');
+                var originalTick_1 = (clock[symbol('tick')] = clock.tick);
+                clock.tick = function () {
+                    var fakeAsyncZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
+                    if (fakeAsyncZoneSpec) {
+                        return fakeAsyncZoneSpec.tick.apply(fakeAsyncZoneSpec, arguments);
+                    }
+                    return originalTick_1.apply(this, arguments);
+                };
+                var originalMockDate_1 = (clock[symbol('mockDate')] = clock.mockDate);
+                clock.mockDate = function () {
+                    var fakeAsyncZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
+                    if (fakeAsyncZoneSpec) {
+                        var dateTime = arguments.length > 0 ? arguments[0] : new Date();
+                        return fakeAsyncZoneSpec.setCurrentRealTime.apply(fakeAsyncZoneSpec, dateTime && typeof dateTime.getTime === 'function' ? [dateTime.getTime()] :
+                            arguments);
+                    }
+                    return originalMockDate_1.apply(this, arguments);
+                };
+                // for auto go into fakeAsync feature, we need the flag to enable it
+                if (enableAutoFakeAsyncWhenClockPatched) {
+                    ['install', 'uninstall'].forEach(function (methodName) {
+                        var originalClockFn = (clock[symbol(methodName)] = clock[methodName]);
+                        clock[methodName] = function () {
+                            var FakeAsyncTestZoneSpec = Zone['FakeAsyncTestZoneSpec'];
+                            if (FakeAsyncTestZoneSpec) {
+                                jasmine[symbol('clockInstalled')] = 'install' === methodName;
+                                return;
+                            }
+                            return originalClockFn.apply(this, arguments);
+                        };
+                    });
                 }
-                return originalTick_1.apply(this, arguments);
-            };
-            var originalMockDate_1 = (clock[symbol('mockDate')] = clock.mockDate);
-            clock.mockDate = function () {
-                var fakeAsyncZoneSpec = Zone.current.get('FakeAsyncTestZoneSpec');
-                if (fakeAsyncZoneSpec) {
-                    var dateTime = arguments.length > 0 ? arguments[0] : new Date();
-                    return fakeAsyncZoneSpec.setCurrentRealTime.apply(fakeAsyncZoneSpec, dateTime && typeof dateTime.getTime === 'function' ? [dateTime.getTime()] :
-                        arguments);
-                }
-                return originalMockDate_1.apply(this, arguments);
-            };
-            // for auto go into fakeAsync feature, we need the flag to enable it
-            if (enableClockPatch) {
-                ['install', 'uninstall'].forEach(function (methodName) {
-                    var originalClockFn = (clock[symbol(methodName)] = clock[methodName]);
-                    clock[methodName] = function () {
-                        var FakeAsyncTestZoneSpec = Zone['FakeAsyncTestZoneSpec'];
-                        if (FakeAsyncTestZoneSpec) {
-                            jasmine[symbol('clockInstalled')] = 'install' === methodName;
-                            return;
-                        }
-                        return originalClockFn.apply(this, arguments);
-                    };
-                });
             }
-        }
-        return clock;
-    };
+            return clock;
+        };
+    }
     /**
      * Gets a function wrapping the body of a Jasmine `describe` block to execute in a
      * synchronous-only zone.
@@ -539,7 +547,7 @@ Zone['SyncTestZoneSpec'] = SyncTestZoneSpec;
         var isClockInstalled = !!jasmine[symbol('clockInstalled')];
         var testProxyZoneSpec = queueRunner.testProxyZoneSpec;
         var testProxyZone = queueRunner.testProxyZone;
-        if (isClockInstalled && enableClockPatch) {
+        if (isClockInstalled && enableAutoFakeAsyncWhenClockPatched) {
             // auto run a fakeAsync
             var fakeAsyncModule = Zone[Zone.__symbol__('fakeAsyncTest')];
             if (fakeAsyncModule && typeof fakeAsyncModule.fakeAsync === 'function') {
@@ -1025,7 +1033,7 @@ var __spread = (undefined && undefined.__spread) || function () {
                     if (doTick) {
                         doTick(this._currentTime - lastCurrentTime);
                     }
-                    var retval = current_1.func.apply(global, current_1.args);
+                    var retval = current_1.func.apply(global, current_1.isRequestAnimationFrame ? [this._currentTime] : current_1.args);
                     if (!retval) {
                         // Uncaught exception in the current scheduled function. Stop processing the queue.
                         break;
