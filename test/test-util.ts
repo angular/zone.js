@@ -21,7 +21,10 @@
  *
  *  ifEnvSupports(supportsOnClick, function() { ... });
  */
-import {isNode} from '../lib/common/utils';
+import {isNode, zoneSymbol} from '../lib/common/utils';
+
+// Re-export for convenience.
+export {zoneSymbol};
 
 declare const global: any;
 export function ifEnvSupports(test: any, block: Function): () => void {

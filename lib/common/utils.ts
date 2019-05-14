@@ -34,8 +34,8 @@ export const ZONE_SYMBOL_REMOVE_EVENT_LISTENER = Zone.__symbol__(REMOVE_EVENT_LI
 export const TRUE_STR = 'true';
 /** false string const */
 export const FALSE_STR = 'false';
-/** __zone_symbol__ string const */
-export const ZONE_SYMBOL_PREFIX = '__zone_symbol__';
+/** Zone symbol prefix string const. */
+export const ZONE_SYMBOL_PREFIX = Zone.__symbol__('');
 
 export function wrapWithCurrentZone<T extends Function>(callback: T, source: string): T {
   return Zone.current.wrap(callback, source);

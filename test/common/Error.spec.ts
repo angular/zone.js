@@ -6,7 +6,7 @@
  * found in the LICENSE file at https://angular.io/license
  */
 import {isBrowser} from '../../lib/common/utils';
-import {isSafari} from '../test-util';
+import {isSafari, zoneSymbol} from '../test-util';
 
 // simulate @angular/facade/src/error.ts
 class BaseError extends Error {
@@ -439,7 +439,7 @@ describe('ZoneAwareError', () => {
     it('should be able to generate zone free stack even NativeError stack is readonly', function() {
       const _global: any =
           typeof window === 'object' && window || typeof self === 'object' && self || global;
-      const NativeError = _global['__zone_symbol__Error'];
+      const NativeError = _global[zoneSymbol('Error')];
       const desc = Object.getOwnPropertyDescriptor(NativeError.prototype, 'stack');
       if (desc) {
         const originalSet: ((value: any) => void)|undefined = desc.set;

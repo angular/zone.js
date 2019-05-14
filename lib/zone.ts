@@ -154,6 +154,7 @@ interface Zone {
    * @returns {any} The value for the key, or `undefined` if not found.
    */
   get(key: string): any;
+
   /**
    * Returns a Zone which defines a `key`.
    *
@@ -163,6 +164,7 @@ interface Zone {
    * @returns {Zone} The Zone which defines the `key`, `null` if not found.
    */
   getZoneWith(key: string): Zone|null;
+
   /**
    * Used to create a child zone.
    *
@@ -170,6 +172,7 @@ interface Zone {
    * @returns {Zone} A new child zone.
    */
   fork(zoneSpec: ZoneSpec): Zone;
+
   /**
    * Wraps a callback function in a new function which will properly restore the current zone upon
    * invocation.
@@ -184,6 +187,7 @@ interface Zone {
    * @returns {function(): *} A function which will invoke the `callback` through [Zone.runGuarded].
    */
   wrap<F extends Function>(callback: F, source: string): F;
+
   /**
    * Invokes a function in a given zone.
    *
@@ -196,6 +200,7 @@ interface Zone {
    * @returns {any} Value from the `callback` function.
    */
   run<T>(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): T;
+
   /**
    * Invokes a function in a given zone and catches any exceptions.
    *
@@ -211,6 +216,7 @@ interface Zone {
    * @returns {any} Value from the `callback` function.
    */
   runGuarded<T>(callback: Function, applyThis?: any, applyArgs?: any[], source?: string): T;
+
   /**
    * Execute the Task by restoring the [Zone.currentTask] in the Task's zone.
    *
@@ -287,6 +293,7 @@ interface ZoneType {
    * duration of the run method callback.
    */
   current: Zone;
+
   /**
    * @returns {Task} The task associated with the current execution.
    */
@@ -666,7 +673,17 @@ const Zone: ZoneType = (function(global: any) {
     performance && performance['measure'] && performance['measure'](name, label);
   }
   mark('Zone');
-  const checkDuplicate = global[('__zone_symbol__forceDuplicateZoneCheck')] === true;
+
+  // Initialize before it's accessed below.
+  // __Zone_symbol_prefix global can be used to override the default zone
+  // symbol prefix with a custom one if needed.
+  const symbolPrefix = global['__Zone_symbol_prefix'] || '__zone_symbol__';
+
+  function __symbol__(name: string) {
+    return symbolPrefix + name;
+  }
+
+  const checkDuplicate = global[__symbol__('forceDuplicateZoneCheck')] === true;
   if (global['Zone']) {
     // if global['Zone'] already exists (maybe zone.js was already loaded or
     // some other lib also registered a global object named Zone), we may need
@@ -1284,6 +1301,7 @@ const Zone: ZoneType = (function(global: any) {
     }
   }
 
+
   //////////////////////////////////////////////////////
   //////////////////////////////////////////////////////
   ///  MICROTASK QUEUE
@@ -1396,10 +1414,6 @@ const Zone: ZoneType = (function(global: any) {
   let _numberOfNestedTaskFrames = 0;
 
   function noop() {}
-
-  function __symbol__(name: string) {
-    return '__zone_symbol__' + name;
-  }
 
   performanceMeasure('Zone', 'Zone');
   return global['Zone'] = Zone;
