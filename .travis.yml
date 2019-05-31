@@ -29,12 +29,16 @@ script:
   - yarn tslint
   - node_modules/.bin/gulp lint
   - node_modules/.bin/gulp format:enforce
-  - node_modules/.bin/gulp build
   - node_modules/.bin/gulp filesize
   - scripts/closure/closure_compiler.sh
   - node_modules/.bin/gulp promisetest
   - yarn promisefinallytest
-  - yarn test:phantomjs-single
+  - yarn build:bazel
+  - yarn build:bazel:test
+  - rm -rf dist/*.js
+  - cp build/bin/npm_package/dist/* dist/
+  - rm -rf build
+  - yarn tsc
   - node_modules/.bin/karma start karma-dist-sauce-jasmine.conf.js --single-run
   - node_modules/.bin/karma start karma-build-sauce-mocha.conf.js --single-run
   - node_modules/.bin/karma start karma-dist-sauce-selenium3-jasmine.conf.js --single-run
@@ -49,10 +53,11 @@ script:
   - node simple-server.js 2>&1> server.log&
   - node ./test/webdriver/test.sauce.js
   - yarn add jasmine@3.0.0 jasmine-core@3.0.0 mocha@5.0.1
-  - yarn test:phantomjs-single
   - node_modules/.bin/karma start karma-dist-sauce-jasmine3.conf.js --single-run
   - node_modules/.bin/karma start karma-build-sauce-selenium3-mocha.conf.js --single-run
   - node_modules/.bin/gulp test/node
   - node_modules/.bin/gulp test/node -no-patch-clock
   - cp ./test/browser/custom-element.spec.js ./build/test/browser
+  - git checkout .
+  - ls build/test
   - node_modules/.bin/karma start karma-evergreen-dist-sauce-jasmine.conf.js --single-run

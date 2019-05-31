@@ -27,15 +27,13 @@ describe(
       let customElements;
 
       customElements = testZone.run(function() {
-        callbackNames.map(function(callbackName) {
+        callbackNames.forEach(function(callbackName) {
           const fullCallbackName = callbackName + 'Callback';
           const proto = Object.create(HTMLElement.prototype);
           (proto as any)[fullCallbackName] = function(arg: any) {
             callbacks[callbackName](arg);
           };
-          return (<any>document).registerElement('x-' + callbackName.toLowerCase(), {
-            prototype: proto
-          });
+          (<any>document).registerElement('x-' + callbackName.toLowerCase(), {prototype: proto});
         });
       });
 

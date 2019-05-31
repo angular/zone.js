@@ -1,5 +1,7 @@
+bazel-out
 build/
 build-esm/
+build-esm-2015/
 blink-core/
 blink-idl/
 parsed-idl/
@@ -7,4 +9,3 @@ parsed-idl/
 .idea
 .vscode
 npm-debug.log
-build-esm/

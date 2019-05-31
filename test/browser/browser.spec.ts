@@ -401,6 +401,7 @@ describe('Zone', function() {
                    // Edge 14, error will be undefined.
                    expect(error).toBe(testError);
                  }
+                 (window as any).onerror = null;
                  setTimeout(done);
                  return true;
                };

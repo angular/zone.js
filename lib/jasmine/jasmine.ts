@@ -7,7 +7,7 @@
  */
 
 'use strict';
-(() => {
+((_global: any) => {
   const __extends = function(d: any, b: any) {
     for (const p in b)
       if (b.hasOwnProperty(p)) d[p] = b[p];
@@ -16,8 +16,6 @@
     }
     d.prototype = b === null ? Object.create(b) : ((__.prototype = b.prototype), new (__ as any)());
   };
-  const _global: any =
-      typeof window !== 'undefined' && window || typeof self !== 'undefined' && self || global;
   // Patch jasmine's describe/it/beforeEach/afterEach functions so test code always runs
   // in a testZone (ProxyZone). (See: angular/zone.js#91 & angular/angular#10503)
   if (!Zone) throw new Error('Missing: zone.js');
@@ -305,4 +303,4 @@
     };
     return ZoneQueueRunner;
   })(QueueRunner);
-})();
+})(global);
