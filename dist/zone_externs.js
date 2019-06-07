@@ -1,10 +1,10 @@
 /**
-* @license
-* Copyright Google Inc. All Rights Reserved.
-*
-* Use of this source code is governed by an MIT-style license that can be
-* found in the LICENSE file at https://angular.io/license
-*/
+ * @license
+ * Copyright Google Inc. All Rights Reserved.
+ *
+ * Use of this source code is governed by an MIT-style license that can be
+ * found in the LICENSE file at https://angular.io/license
+ */
 
 /**
  * @fileoverview Externs for zone.js
@@ -15,7 +15,7 @@
 /**
  * @interface
  */
-var Zone = function(){};
+var Zone = function() {};
 /**
  * @type {!Zone} The parent Zone.
  */
@@ -25,7 +25,10 @@ Zone.prototype.parent;
  */
 Zone.prototype.name;
 
-Zone.assertZonePatched = function(){};
+Zone.assertZonePatched = function() {};
+
+Zone.__symbol__ = function(name) {};
+Zone.__load_patch = function(name, fn) {};
 
 /**
  * @type {!Zone} Returns the current [Zone]. Returns the current zone. The only way to change
@@ -53,7 +56,7 @@ Zone.root;
  * @param {!string} key The key to retrieve.
  * @returns {?} The value for the key, or `undefined` if not found.
  */
-Zone.prototype.get = function(key){};
+Zone.prototype.get = function(key) {};
 
 /**
  * Returns a Zone which defines a `key`.
@@ -63,7 +66,7 @@ Zone.prototype.get = function(key){};
  * @param {!string} key The key to use for identification of the returned zone.
  * @returns {?Zone} The Zone which defines the `key`, `null` if not found.
  */
-Zone.prototype.getZoneWith = function(key){};
+Zone.prototype.getZoneWith = function(key) {};
 
 /**
  * Used to create a child zone.
@@ -71,7 +74,7 @@ Zone.prototype.getZoneWith = function(key){};
  * @param {!ZoneSpec} zoneSpec A set of rules which the child zone should follow.
  * @returns {!Zone} A new child zone.
  */
-Zone.prototype.fork = function(zoneSpec){};
+Zone.prototype.fork = function(zoneSpec) {};
 
 /**
  * Wraps a callback function in a new function which will properly restore the current zone upon
@@ -144,7 +147,8 @@ Zone.prototype.scheduleMicroTask = function(source, callback, data, customSchedu
  * @param {?function(!Task)=} customCancel
  * @return {!MacroTask} macroTask
  */
-Zone.prototype.scheduleMacroTask = function(source, callback, data, customSchedule, customCancel) {};
+Zone.prototype.scheduleMacroTask = function(
+    source, callback, data, customSchedule, customCancel) {};
 
 /**
  * @param {string} source
@@ -154,19 +158,20 @@ Zone.prototype.scheduleMacroTask = function(source, callback, data, customSchedu
  * @param {?function(!Task)=} customCancel
  * @return {!EventTask} eventTask
  */
-Zone.prototype.scheduleEventTask = function(source, callback, data, customSchedule, customCancel) {};
+Zone.prototype.scheduleEventTask = function(
+    source, callback, data, customSchedule, customCancel) {};
 
 /**
  * @param {!Task} task
  * @return {!Task} task
  */
-Zone.prototype.scheduleTask = function(task){};
+Zone.prototype.scheduleTask = function(task) {};
 
 /**
  * @param {!Task} task
  * @return {!Task} task
  */
-Zone.prototype.cancelTask = function(task){};
+Zone.prototype.cancelTask = function(task) {};
 
 /**
  * @record
@@ -323,7 +328,7 @@ ZoneDelegate.prototype.hasTask = function(targetZone, hasTaskState) {};
 /**
  * @interface
  */
-var HasTaskState = function(){};
+var HasTaskState = function() {};
 
 /**
  * @type {boolean}
@@ -345,17 +350,17 @@ HasTaskState.prototype.change;
 /**
  * @interface
  */
-var TaskType = function(){};
+var TaskType = function() {};
 
 /**
  * @interface
  */
-var TaskState = function(){};
+var TaskState = function() {};
 
 /**
  * @interface
  */
-var TaskData = function(){};
+var TaskData = function() {};
 /**
  * @type {boolean|undefined}
  */

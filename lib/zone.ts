@@ -309,10 +309,15 @@ interface ZoneType {
    */
   root: Zone;
 
-  /** @internal */
+  /**
+   * load patch for specified API, this will not be internal API because we should allow user to
+   * define their own patch
+   */
   __load_patch(name: string, fn: _PatchFn): void;
 
-  /** Was @ internal but this prevents compiling tests as separate unit */
+  /**
+   * Zone symbol API, this is not an internal API because we use this __symbol__ function in angular
+   */
   __symbol__(name: string): string;
 }
 
