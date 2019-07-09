@@ -113,12 +113,12 @@ import {Observable, Subscriber, Subscription} from 'rxjs';
         },
         set: function(this: Subscription, unsubscribe: any) {
           (this as any)._zone = Zone.current;
-          (this as any)._zoneUnsubscribe = function() {
+          (this as any)._zoneUnsubscribe = unsubscribe ? function() {
             if (this._zone && this._zone !== Zone.current) {
               return this._zone.run(unsubscribe, this, arguments);
             }
             return unsubscribe.apply(this, arguments);
-          };
+          } : function() {};
         }
       }
     });
