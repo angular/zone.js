@@ -5,7 +5,13 @@
  * Use of this source code is governed by an MIT-style license that can be
  * found in the LICENSE file at https://angular.io/license
  */
-
+if (process.arch == "arm64" || process.arch == "aarch64")
+{
+        browser= 'ChromeHeadless';
+}
+else{
+        browser= 'Chrome';
+}
 module.exports = function(config) {
   config.set({
     basePath: '',
@@ -40,7 +46,7 @@ module.exports = function(config) {
 
     logLevel: config.LOG_INFO,
 
-    browsers: ['Chrome'],
+    browsers: [browser],
 
     captureTimeout: 60000,
     retryLimit: 4,
