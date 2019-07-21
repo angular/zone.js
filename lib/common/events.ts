@@ -10,7 +10,7 @@
  * @suppress {missingRequire}
  */
 
-import {ADD_EVENT_LISTENER_STR, attachOriginToPatched, FALSE_STR, isIE, isIEOrEdge, ObjectGetPrototypeOf, REMOVE_EVENT_LISTENER_STR, TRUE_STR, ZONE_SYMBOL_PREFIX, zoneSymbol} from './utils';
+import {ADD_EVENT_LISTENER_STR, attachOriginToPatched, FALSE_STR, isIEOrEdge, isNode, ObjectGetPrototypeOf, REMOVE_EVENT_LISTENER_STR, TRUE_STR, ZONE_SYMBOL_PREFIX, zoneSymbol} from './utils';
 
 /** @internal **/
 interface EventTaskData extends TaskData {
@@ -55,8 +55,8 @@ const OPTIMIZED_ZONE_EVENT_TASK_DATA: EventTaskData = {
 export const zoneSymbolEventNames: any = {};
 export const globalSources: any = {};
 
-const EVENT_NAME_SYMBOL_REGX = /^__zone_symbol__(\w+)(true|false)$/;
-const IMMEDIATE_PROPAGATION_SYMBOL = ('__zone_symbol__propagationStopped');
+const EVENT_NAME_SYMBOL_REGX = new RegExp('^' + ZONE_SYMBOL_PREFIX + '(\\w+)(true|false)$');
+const IMMEDIATE_PROPAGATION_SYMBOL = zoneSymbol('propagationStopped');
 
 export interface PatchEventTargetOptions {
   // validateHandler
@@ -81,6 +81,8 @@ export interface PatchEventTargetOptions {
   diff?: (task: any, delegate: any) => boolean;
   // support passive or not
   supportPassive?: boolean;
+  // get string from eventName (in nodejs, eventName maybe Symbol)
+  eventNameToString?: (eventName: any) => string;
 }
 
 export function patchEventTarget(
@@ -98,16 +100,6 @@ export function patchEventTarget(
 
   const PREPEND_EVENT_LISTENER = 'prependListener';
   const PREPEND_EVENT_LISTENER_SOURCE = '.' + PREPEND_EVENT_LISTENER + ':';
-
-  Object.keys(pointerEventsMap).forEach(msEventName => {
-    const eventName = pointerEventsMap[msEventName];
-    zoneSymbolEventNames[eventName] = {};
-    zoneSymbolEventNames[eventName][FALSE_STR] = ZONE_SYMBOL_PREFIX + eventName + FALSE_STR;
-    zoneSymbolEventNames[eventName][TRUE_STR] = ZONE_SYMBOL_PREFIX + eventName + TRUE_STR;
-    zoneSymbolEventNames[msEventName] = {};
-    zoneSymbolEventNames[msEventName][FALSE_STR] = ZONE_SYMBOL_PREFIX + msEventName + FALSE_STR;
-    zoneSymbolEventNames[msEventName][TRUE_STR] = ZONE_SYMBOL_PREFIX + msEventName + TRUE_STR;
-  });
 
   const invokeTask = function(task: any, target: any, event: Event) {
     // for better performance, check isRemoved which is set
@@ -144,15 +136,7 @@ export function patchEventTarget(
     // event.target is needed for Samsung TV and SourceBuffer
     // || global is needed https://github.com/angular/zone.js/issues/190
     const target: any = this || event.target || _global;
-    let tasks = target[zoneSymbolEventNames[event.type][FALSE_STR]];
-    if (isIEOrEdge) {
-      const pointerMappedEvent = pointerEventsMap[event.type];
-      const msTasks =
-          pointerMappedEvent && target[zoneSymbolEventNames[pointerMappedEvent]][FALSE_STR];
-      if (msTasks) {
-        tasks = tasks.concat(msTasks);
-      }
-    }
+    const tasks = target[zoneSymbolEventNames[event.type][FALSE_STR]];
     if (tasks) {
       // invoke all tasks which attached to current target with given event.type and capture = false
       // for performance concern, if task.length === 1, just invoke
@@ -184,15 +168,7 @@ export function patchEventTarget(
     // event.target is needed for Samsung TV and SourceBuffer
     // || global is needed https://github.com/angular/zone.js/issues/190
     const target: any = this || event.target || _global;
-    let tasks = target[zoneSymbolEventNames[event.type][TRUE_STR]];
-    if (isIEOrEdge) {
-      const pointerMappedEvent = pointerEventsMap[event.type];
-      const msTasks =
-          pointerMappedEvent && target[zoneSymbolEventNames[pointerMappedEvent]][FALSE_STR];
-      if (msTasks) {
-        tasks = tasks.concat(msTasks);
-      }
-    }
+    const tasks = target[zoneSymbolEventNames[event.type][TRUE_STR]];
     if (tasks) {
       // invoke all tasks which attached to current target with given event.type and capture = false
       // for performance concern, if task.length === 1, just invoke
@@ -249,6 +225,8 @@ export function patchEventTarget(
     if (proto[zoneSymbolAddEventListener]) {
       return false;
     }
+
+    const eventNameToString = patchOptions && patchOptions.eventNameToString;
 
     // a shared global taskData to pass data for scheduleEventTask
     // so we do not need to create a new object just for pass some data
@@ -361,15 +339,24 @@ export function patchEventTarget(
     const compare =
         (patchOptions && patchOptions.diff) ? patchOptions.diff : compareTaskCallbackVsDelegate;
 
-    const blackListedEvents: string[] = (Zone as any)[Zone.__symbol__('BLACK_LISTED_EVENTS')];
+    const blackListedEvents: string[] = (Zone as any)[zoneSymbol('BLACK_LISTED_EVENTS')];
 
     const makeAddListener = function(
         nativeListener: any, addSource: string, customScheduleFn: any, customCancelFn: any,
         returnTarget = false, prepend = false) {
       return function() {
         const target = this || _global;
+        let eventName = arguments[0];
+        if (isIEOrEdge) {
+          const msEventName = pointerEventsMap[eventName];
+          eventName = msEventName ? msEventName : eventName;
+        }
         let delegate = arguments[1];
         if (!delegate) {
+          return nativeListener.apply(this, arguments);
+        }
+        if (isNode && eventName === 'uncaughtException') {
+          // don't patch uncaughtException of nodejs to prevent endless loop
           return nativeListener.apply(this, arguments);
         }
 
@@ -388,11 +375,6 @@ export function patchEventTarget(
           return;
         }
 
-        let eventName = arguments[0];
-        if (isIEOrEdge) {
-          const msEventName = pointerEventsMap[eventName];
-          eventName = msEventName ? msEventName : eventName;
-        }
         const options = arguments[2];
 
         if (blackListedEvents) {
@@ -422,8 +404,10 @@ export function patchEventTarget(
         let symbolEventName;
         if (!symbolEventNames) {
           // the code is duplicate, but I just want to get some better performance
-          const falseEventName = eventName + FALSE_STR;
-          const trueEventName = eventName + TRUE_STR;
+          const falseEventName =
+              (eventNameToString ? eventNameToString(eventName) : eventName) + FALSE_STR;
+          const trueEventName =
+              (eventNameToString ? eventNameToString(eventName) : eventName) + TRUE_STR;
           const symbol = ZONE_SYMBOL_PREFIX + falseEventName;
           const symbolCapture = ZONE_SYMBOL_PREFIX + trueEventName;
           zoneSymbolEventNames[eventName] = {};
@@ -463,7 +447,8 @@ export function patchEventTarget(
           source = targetSource[eventName];
         }
         if (!source) {
-          source = constructorName + addSource + eventName;
+          source = constructorName + addSource +
+              (eventNameToString ? eventNameToString(eventName) : eventName);
         }
         // do not create a new object as task.data to pass those things
         // just use the global shared one
@@ -606,10 +591,15 @@ export function patchEventTarget(
 
     proto[LISTENERS_EVENT_LISTENER] = function() {
       const target = this || _global;
-      const eventName = arguments[0];
+      let eventName = arguments[0];
+      if (isIEOrEdge) {
+        const msEventName = pointerEventsMap[eventName];
+        eventName = msEventName ? msEventName : eventName;
+      }
 
       const listeners: any[] = [];
-      const tasks = findEventTasks(target, eventName);
+      const tasks =
+          findEventTasks(target, eventNameToString ? eventNameToString(eventName) : eventName);
 
       for (let i = 0; i < tasks.length; i++) {
         const task: any = tasks[i];
